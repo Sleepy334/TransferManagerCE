@@ -66,30 +66,66 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public void Initialize()
+        public bool Initialize(out string strError)
         {
             // bind vanilla transfermanager fields
             _TransferManager = Singleton<TransferManager>.instance;
             if (_TransferManager == null)
             {
-                Debug.LogError("ERROR: No instance of TransferManager found!");
-                return;
+                strError = "ERROR: No instance of TransferManager found!";
+                Debug.LogError(strError);
+                return false;
             }
 
-            var incomingCount = typeof(TransferManager).GetField("m_incomingCount", BindingFlags.NonPublic | BindingFlags.Instance);
-            var incomingOffers = typeof(TransferManager).GetField("m_incomingOffers", BindingFlags.NonPublic | BindingFlags.Instance);
-            var incomingAmount = typeof(TransferManager).GetField("m_incomingAmount", BindingFlags.NonPublic | BindingFlags.Instance);
-            var outgoingCount = typeof(TransferManager).GetField("m_outgoingCount", BindingFlags.NonPublic | BindingFlags.Instance);
-            var outgoingOffers = typeof(TransferManager).GetField("m_outgoingOffers", BindingFlags.NonPublic | BindingFlags.Instance);
-            var outgoingAmount = typeof(TransferManager).GetField("m_outgoingAmount", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo? incomingCount = typeof(TransferManager).GetField("m_incomingCount", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (incomingCount == null)
+            { 
+                strError = "ERROR: m_incomingCount is null!";
+                Debug.LogError(strError);
+                return false;
+            }
+            FieldInfo? incomingOffers = typeof(TransferManager).GetField("m_incomingOffers", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (incomingOffers == null)
+            {
+                strError = "ERROR: m_incomingOffers is null!";
+                Debug.LogError(strError);
+                return false;
+            }
+            FieldInfo? incomingAmount = typeof(TransferManager).GetField("m_incomingAmount", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (incomingAmount == null)
+            {
+                strError = "ERROR: m_incomingAmount is null!";
+                Debug.LogError(strError);
+                return false;
+            }
+            FieldInfo? outgoingCount = typeof(TransferManager).GetField("m_outgoingCount", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (outgoingCount == null)
+            {
+                strError = "ERROR: m_outgoingCount is null!";
+                Debug.LogError(strError);
+                return false;
+            }
+            FieldInfo? outgoingOffers = typeof(TransferManager).GetField("m_outgoingOffers", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (outgoingOffers == null)
+            {
+                strError = "ERROR: m_outgoingOffers is null!";
+                Debug.LogError(strError);
+                return false;
+            }
+            FieldInfo? outgoingAmount = typeof(TransferManager).GetField("m_outgoingAmount", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (outgoingAmount == null)
+            {
+                strError = "ERROR: m_outgoingAmount is null!";
+                Debug.LogError(strError);
+                return false;
+            }
 
-            m_incomingCount = incomingCount.GetValue(_TransferManager) as ushort[];
-            m_incomingOffers = incomingOffers.GetValue(_TransferManager) as TransferManager.TransferOffer[];
-            m_incomingAmount = incomingAmount.GetValue(_TransferManager) as int[];
-            m_outgoingCount = outgoingCount.GetValue(_TransferManager) as ushort[];
-            m_outgoingOffers = outgoingOffers.GetValue(_TransferManager) as TransferManager.TransferOffer[];
-            m_outgoingAmount = outgoingAmount.GetValue(_TransferManager) as int[];
-
+            m_incomingCount = (ushort[]) incomingCount.GetValue(_TransferManager);
+            m_incomingOffers = (TransferManager.TransferOffer[]) incomingOffers.GetValue(_TransferManager);
+            m_incomingAmount = (int[]) incomingAmount.GetValue(_TransferManager);
+            m_outgoingCount = (ushort[]) outgoingCount.GetValue(_TransferManager);
+            m_outgoingOffers = (TransferManager.TransferOffer[]) outgoingOffers.GetValue(_TransferManager);
+            m_outgoingAmount = (int[]) outgoingAmount.GetValue(_TransferManager);
 
             // allocate object pool of work packages
             workQueue = new Queue<TransferJob>(TransferManager.TRANSFER_REASON_COUNT);
@@ -104,15 +140,16 @@ namespace TransferManagerCE.CustomManager
                 m_transferResultRingBuffer[i].material = TransferManager.TransferReason.None;
             }
 
-            /*
             unsafe
             {
-                DebugLog.LogInfo($"CustomTransferDispatcher initialized, workqueue count is {workQueue.Count}, results ringbuffer size is {_transferResultRingBuffer.Length}");
+                DebugLog.LogInfo($"CustomTransferDispatcher initialized, workqueue count is {workQueue.Count}, results ringbuffer size is {m_transferResultRingBuffer.Length}");
                 DebugLog.LogInfo($"TransferOffer memsize: {sizeof(TransferManager.TransferOffer)}");
                 long memsize = (long)sizeof(TransferManager.TransferOffer) * ((2 * 256 * 8 * 128) + (2*256*8));
                 DebugLog.LogInfo($"Total memory size is: (2x256x8x128 + 2x256x8) x TransferOffer MemSize = {memsize} bytes, = {memsize>>20} MB");
             }
-            */
+
+            strError = "";
+            return true;
         }
 
         public void Delete()

@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
+using TransferManagerCE.Util;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -41,12 +39,11 @@ namespace TransferManagerCE.CustomManager
             {
                 pooledJobs.Push(new TransferJob());
             }
-            /*
+            
             unsafe
             {
                 DebugLog.LogDebug(DebugLog.REASON_ALL, $"TransferJobPool initialized, pool stack size is {pooledJobs.Count}");
             }
-            */
         }
 
         public void Delete()

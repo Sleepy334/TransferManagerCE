@@ -13,17 +13,12 @@ namespace TransferManagerCE.Patch
             // disabled in settings? ->use stock transfer manager
             if (ModSettings.GetSettings().optionEnableNewTransferManager)
             {
-                //Profiling.timerCounterMETM++;
-                //Profiling.timerMETM.Start();
-
                 // Dispatch to TransferDispatcher
                 CustomTransferDispatcher.Instance.SubmitMatchOfferJob(material);
                 return false;
             } 
             else
             {
-                //Profiling.timerCounterVanilla++;
-                //Profiling.timerVanilla.Start();
                 return true;
             }
         }
@@ -34,17 +29,8 @@ namespace TransferManagerCE.Patch
         {
             if (ModSettings.GetSettings().optionEnableNewTransferManager)
             {
-                //Profiling.timerMETM_StartTransfers.Start();
                 // Start queued transfers:
                 CustomTransferDispatcher.Instance.StartTransfers();
-                //Profiling.timerMETM_StartTransfers.Stop();
-            }
-            else
-            {
-#if (PROFILE)
-            Profiling.timerMETM.Stop();
-            Profiling.timerVanilla.Stop();
-#endif
             }
 
         }

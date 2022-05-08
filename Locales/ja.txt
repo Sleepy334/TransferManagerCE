@@ -1,0 +1,18 @@
+﻿DEBUGPROFILE	DEBUGGING / PROFILING ONLY
+optionEnableNewTransferManager	ENABLE/DISABLE TRANSFER MANAGER
+GROUP_GENERAL	一般オプション
+optionPathfindChirper	移動経路/経路探索の問題をChirperで通知
+optionPathfindChirper_txt	道路ネットワークの経路に問題があって目的地まで到達できない場合は、定期的にChirperで通知します。 Chirperで通知された住民をクリックすると、雇用先・居住中の建物が分かります。 また、カスタムした建物名(無い場合はデフォルト名)がある場合は、その名前も表示されます。 Chirperは通知するだけで、「問題を探して修正する必要」があります。
+GROUP_SERVICE_OPTIONS	サービスのオプション
+optionPreferLocalService	地区優先型の都市サービスを有効化
+optionPreferLocalService_txt	優先度の低い都市サービスは同じ地区内(近隣の地区外)のみで照合して、 都市サービスの利便性が更に向上します。 未達成の要求で優先度が高くなると、 近くにある都市サービスから提供して処理します。 対象: ゴミ処理/警察関係/医療関係/整備車両/郵便/タクシー
+GROUP_WAREHOUSE_OPTIONS	商品配送のオプション
+optionWarehouseFirst	倉庫を優先
+optionWarehouseFirst_txt	使用可能な場合は、 倉庫経由で全ての商品配送(輸出入)を行うことをお勧めします。 倉庫周辺の交通量が増えるため、 倉庫を戦略的かつ適切に配置することが要求されます
+optionWarehouseReserveTrucks	都市内の配送用に倉庫のトラックを確保
+optionWarehouseReserveTrucks_txt	「倉庫を優先」機能と併用を推奨: 倉庫にあるトラックの台数 25％を都市内の配送用に確保して、 全てのトラックが輸出で使用される現象を防止します
+optionWarehouseNewBalanced	倉庫の地区性を改善
+optionWarehouseNewBalanced_txt	倉庫は輸出入の判定を決める前に、都市内にある各倉庫から購入・もしくは売却を一時的に待ちます。 この結果、不要な輸出入が削減され、都市内の倉庫間の移送や輸送効率が向上します。 輸出入は通常通り行われるので注意してください。
+GROUP_EXPORTIMPORT_OPTIONS	輸出入のオプション
+optionPreferExportShipPlaneTrain	輸出入は高速道路経由よりも、船舶/飛行機/鉄道を優先
+optionPreferExportShipPlaneTrain_txt	これは実験的な機能です！

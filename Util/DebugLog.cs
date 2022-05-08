@@ -38,16 +38,24 @@ namespace TransferManagerCE.Util
         {
             if (!_init)
             {
-                // truncate new log
-                FileStream fs = File.Create(LOG_FILE_NAME);
-                fs.Close();
+                try
+                {
+                    // truncate new log
+                    FileStream fs = File.Create(LOG_FILE_NAME);
+                    fs.Close();
 
-                _listener = new TextWriterTraceListener(LOG_FILE_NAME);
-                Trace.Listeners.Add(_listener);
-                Trace.AutoFlush = false;
-                _init = true;
+                    _listener = new TextWriterTraceListener(LOG_FILE_NAME);
+                    Trace.Listeners.Add(_listener);
+                    Trace.AutoFlush = false;
+                    _init = true;
 
-                Trace.WriteLine(DateTime.Now);
+                    Trace.WriteLine(DateTime.Now);
+                }
+                catch (Exception ex)
+                {
+                    _init = false;
+                }
+                
             }
         }
 

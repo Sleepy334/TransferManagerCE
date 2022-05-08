@@ -1,0 +1,18 @@
+﻿DEBUGPROFILE	DEBUGGING / PROFILING ONLY
+optionEnableNewTransferManager	ENABLE/DISABLE TRANSFER MANAGER
+GROUP_GENERAL	一般选项
+optionPathfindChirper	关于路由/路径查找问题的鸣叫
+optionPathfindChirper_txt	当由于你的道路网络的路由问题而导致转移无法到达目标时，会定期鸣叫问题。点击发出鸣叫的Cim，可以知道他在哪座大楼工作或居住。如果有的话，也会显示自定义的建筑名称（否则就是内部模型名称）。这只鸟只是通知--你必须解决这些问题
+GROUP_SERVICE_OPTIONS	服务选项
+optionPreferLocalService	首选本地服务
+optionPreferLocalService_txt	通过仅将低优先级请求与同一区域内（或任何区域外）的服务建筑进行匹配，进一步提高服务的局部性。 一旦未完成的请求成为高优先级，它将由附近的任何服务提供服务。 影响：垃圾、警察、医疗保健、维修、邮件、出租车。
+GROUP_WAREHOUSE_OPTIONS	货物交付选项
+optionWarehouseFirst	仓库优先
+optionWarehouseFirst_txt	如果有的话，最好通过仓库进行所有货物交付（入库和出库）。 将增加仓库流量，因此您的仓库最好位于战略位置。
+optionWarehouseReserveTrucks	为本地转运预留仓库货运卡车
+optionWarehouseReserveTrucks_txt	仓库优先的建议启用：为城市需求预留 25% 的仓库卡车容量，防止所有卡车用于出口。
+optionWarehouseNewBalanced	仓库改善区域
+optionWarehouseNewBalanced_txt	BALANCED/FILL/EMPTY模式下的仓库将等待从本地仓库购买或出售到本地仓库，然后再决定分别进口/出口。 这应该会减少不必要的进出口，并使同城仓库转移更加可靠。 请注意，导入/导出仍然会发生。
+GROUP_EXPORTIMPORT_OPTIONS	导出/导入选项
+optionPreferExportShipPlaneTrain	进口/出口更喜欢使用轮船/飞机/火车而不是高速公路
+optionPreferExportShipPlaneTrain_txt	实验功能！

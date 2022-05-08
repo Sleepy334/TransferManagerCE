@@ -8,7 +8,7 @@ namespace TransferManagerCE
 	{
 		public static string ModName => "TransferManager CE " + Version;
 
-		private static string Version = "v1.0";
+		private static string Version = "v1.0.4";
 		public static string Title => "TransferManager CE" + " " + Version;
 
 		public static bool IsDebug = false;
