@@ -7,6 +7,15 @@ namespace TransferManagerCE
         private static bool s_bHasSmarterFireFightersBeenCheckedRunning = false;
         private static bool s_bIsSmarterFireFightersRunning = false;
 
+        private static bool s_bHasUnifiedUIBeenCheckedRunning = false;
+        private static bool s_bIsUnifiedUIRunning = false;
+
+        private static bool s_bHasPloppableRicoBeenCheckedRunning = false;
+        private static bool s_bIsPloppableRicoRunning = false;
+
+        private static bool s_bHasRepainterBeenCheckedRunning = false;
+        private static bool s_bIsRepainterRunning = false;
+
         public static void SearchPlugins()
         {
             string sPlugins = "";
@@ -49,6 +58,69 @@ namespace TransferManagerCE
             else
             {
                 return IsPluginRunning(sSMARTER_FIREFIGHTERS_ID);
+            }
+        }
+
+        public static bool IsUnifiedUIRunning()
+        {
+            const string sUNIFIED_UI_ID = "2255219025";
+
+            // Only cache result once map is loaded
+            if (TransferManagerLoader.IsLoaded())
+            {
+                if (!s_bHasUnifiedUIBeenCheckedRunning)
+                {
+                    s_bIsUnifiedUIRunning = IsPluginRunning(sUNIFIED_UI_ID);
+                    s_bHasUnifiedUIBeenCheckedRunning = true;
+                }
+
+                return s_bIsUnifiedUIRunning;
+            }
+            else
+            {
+                return IsPluginRunning(sUNIFIED_UI_ID);
+            }
+        }
+
+        public static bool IsPloppableRICORunning()
+        {
+            const string sMOD_ID = "2016920607";
+
+            // Only cache result once map is loaded
+            if (TransferManagerLoader.IsLoaded())
+            {
+                if (!s_bHasPloppableRicoBeenCheckedRunning)
+                {
+                    s_bIsPloppableRicoRunning = IsPluginRunning(sMOD_ID);
+                    s_bHasPloppableRicoBeenCheckedRunning = true;
+                }
+
+                return s_bIsPloppableRicoRunning;
+            }
+            else
+            {
+                return IsPluginRunning(sMOD_ID);
+            }
+        }
+
+        public static bool IsRepainterRunning()
+        {
+            const string sMOD_ID = "2101551127";
+
+            // Only cache result once map is loaded
+            if (TransferManagerLoader.IsLoaded())
+            {
+                if (!s_bHasRepainterBeenCheckedRunning)
+                {
+                    s_bIsRepainterRunning = IsPluginRunning(sMOD_ID);
+                    s_bHasRepainterBeenCheckedRunning = true;
+                }
+
+                return s_bIsRepainterRunning;
+            }
+            else
+            {
+                return IsPluginRunning(sMOD_ID);
             }
         }
     }

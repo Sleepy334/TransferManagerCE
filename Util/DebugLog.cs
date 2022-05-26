@@ -8,8 +8,6 @@ using ColossalFramework.Plugins;
 using HarmonyLib;
 using ICities;
 using static ColossalFramework.Plugins.PluginManager;
-using static TransferManager.TransferReason;
-
 
 namespace TransferManagerCE.Util
 {
@@ -19,7 +17,8 @@ namespace TransferManagerCE.Util
         public const LogReason REASON_ALL = (LogReason)255;
 
         public enum LogReason : int { 
-            ANALYSE1 = TransferManager.TransferReason.Crime,
+            //ANALYSE1 = TransferManager.TransferReason.Sick,
+            //ANALYSE1 = TransferManager.TransferReason.Dead,
             //ANALYSE2 = TransferManager.TransferReason.Garbage,
             //ANALYSE3 = TransferManager.TransferReason.GarbageTransfer,
             //ANALYSE4 = TransferManager.TransferReason.Goods,
@@ -68,7 +67,6 @@ namespace TransferManagerCE.Util
             }
         }
 
-
         public static void LogError(string msg, bool popup = false)
         {
             LogInfo($"[TransferManagerCE] ERROR: {msg}");
@@ -99,11 +97,29 @@ namespace TransferManagerCE.Util
             Trace.Flush();
         }
 
-        public static void LogDebug(LogReason reason, string msg)
+        public static void LogOnly(string msg)
+        {
+            if (!_init)
+            {
+                InitLogging();
+            }
+            Trace.WriteLine(msg);
+            if ((DateTime.Now - _lastFlush).TotalMilliseconds > LOG_FLUSH_INTERVALL)
+            {
+                _lastFlush = DateTime.Now;
+                Trace.Flush();
+            }
+        }
+
+        public static void LogOnly(LogReason reason, string msg)
         {
             if (Enum.IsDefined(typeof(LogReason), reason))
             {
-                LogInfo(msg);
+                if (!_init)
+                {
+                    InitLogging();
+                }
+                LogOnly(msg);
             }
         }
 

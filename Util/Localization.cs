@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using ColossalFramework.Globalization;
 using ColossalFramework.Plugins;
+using TransferManagerCE.Settings;
 
 namespace TransferManagerCE.Util
 {
@@ -13,20 +14,24 @@ namespace TransferManagerCE.Util
         private static Locale LocaleFromFile(string file)
         {
             var locale = new Locale();
-            using (var reader = new StreamReader(File.OpenRead(file)))
+            if (File.Exists(file))
             {
-                string line;
-                while ((line = reader.ReadLine()) != null)
+                using (var reader = new StreamReader(File.OpenRead(file)))
                 {
-                    var rows = line.Split('\t');
-                    if (rows.Length < 2)
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        //Debug.LogErrorFormat("Not enough tabs in locale string from {0}:\n'{1}'", file, line);
-                        continue;
+                        var rows = line.Split('\t');
+                        if (rows.Length < 2)
+                        {
+                            //Debug.LogErrorFormat("Not enough tabs in locale string from {0}:\n'{1}'", file, line);
+                            continue;
+                        }
+                        locale.AddLocalizedString(new Locale.Key { m_Identifier = rows[0] }, rows[1]);
                     }
-                    locale.AddLocalizedString(new Locale.Key { m_Identifier = rows[0] }, rows[1]);
                 }
             }
+            
             return locale;
         }
 
@@ -36,7 +41,7 @@ namespace TransferManagerCE.Util
             return Path.Combine(modPath, $"Locales/{lang}.txt");
         }
 
-        public static string Get(string id)
+        private static string GetValue(string id)
         {
             var lang = LocaleManager.instance.language ?? "en";
             if (!localeStore.ContainsKey(lang))
@@ -44,6 +49,17 @@ namespace TransferManagerCE.Util
                 localeStore.Add(lang, LocaleFromFile(LocalePath(File.Exists(LocalePath(lang)) ? lang : "en")));
             }
             return localeStore[lang].Get(new Locale.Key { m_Identifier = id });
+        }
+
+        public static string Get(string sKey)
+        {
+            string sText = GetValue(sKey);
+            if (string.IsNullOrEmpty(sText) || sText.Contains(sKey))
+            {
+                // Try the inbuilt english settings
+                sText = SettingsTextEN.GetSettingText(sKey);
+            }
+            return sText;
         }
     }
 }

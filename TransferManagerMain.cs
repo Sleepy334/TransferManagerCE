@@ -1,18 +1,19 @@
-﻿using CitiesHarmony.API;
-using ColossalFramework.UI;
-using ICities;
+﻿using ICities;
 
 namespace TransferManagerCE
 {
-    public class TransferToolMain : IUserMod
+    public class TransferManagerMain : IUserMod
 	{
-		public static string ModName => "TransferManager CE " + Version;
-
-		private static string Version = "v1.0.4";
-		public static string Title => "TransferManager CE" + " " + Version;
+		private static string Version = "v1.3.8";
+#if TEST_RELEASE || TEST_DEBUG
+		public static string ModName => "TransferManager CE " + Version + " TEST";
+		public static string Title => ModName;
+#else
+		public static string ModName => "TransferManager CE " + Version; 
+		public static string Title => "TransferManager CE " + Version;
+#endif
 
 		public static bool IsDebug = false;
-
 		public static bool IsEnabled = false;
 
 		public string Name
@@ -28,18 +29,11 @@ namespace TransferManagerCE
 		public void OnEnabled()
 		{
 			IsEnabled = true;
-			Debug.Log(Title);
-			HarmonyHelper.DoOnHarmonyReady(() => Patcher.PatchAll());
 		}
 
 		public void OnDisabled()
 		{
 			IsEnabled = false;
-
-			if (HarmonyHelper.IsHarmonyInstalled)
-			{
-				Patcher.UnpatchAll();
-			}
 		}
 
 		// Sets up a settings user interface

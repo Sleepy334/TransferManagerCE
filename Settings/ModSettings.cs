@@ -52,36 +52,127 @@ namespace TransferManagerCE.Settings
         {
             get;
             set;
-        } = true;
+        } = false;
 
         [XmlElement("optionWarehouseFirst")]
         public bool optionWarehouseFirst
         {
             get;
             set;
-        } = true;
+        } = false;
 
         [XmlElement("optionPreferExportShipPlaneTrain")]
         public bool optionPreferExportShipPlaneTrain
         {
             get;
             set;
-        } = true;
+        } = false;
 
         [XmlElement("optionWarehouseReserveTrucks")]
         public bool optionWarehouseReserveTrucks
         {
             get;
             set;
-        } = true;
+        } = false;
 
         [XmlElement("optionWarehouseNewBalanced")]
         public bool optionWarehouseNewBalanced
         {
             get;
             set;
+        } = false;
+
+        public bool TransferIssueLocationSaved
+        {
+            get;
+            set;
+        } = false;
+
+        public Vector3 TransferIssueLocation
+        {
+            get;
+            set;
+        }
+
+        public bool TransferIssueShowWithVehiclesOnRoute
+        {
+            get;
+            set;
+        } = false;
+
+        public bool TransferBuildingLocationSaved
+        {
+            get;
+            set;
+        } = false;
+
+        public Vector3 TransferBuildingLocation
+        {
+            get;
+            set;
+        }
+
+        public bool CallAgainEnabled
+        {
+            get;
+            set;
         } = true;
-        
+
+        public int CallAgainUpdateRate
+        {
+            get;
+            set;
+        } = 5;
+
+        public int HealthcareThreshold
+        {
+            get;
+            set;
+        } = 60;
+
+        public int HealthcareRate
+        {
+            get;
+            set;
+        } = 5;
+
+        public int DeathcareThreshold
+        {
+            get;
+            set;
+        } = 60;
+
+        public int DeathcareRate
+        {
+            get;
+            set;
+        } = 5;
+
+        public bool TransferPanelDeleteResolved
+        {
+            get;
+            set;
+        } = true;
+
+        public bool TransferManagerExperimentalDeathcare
+        {
+            get;
+            set;
+        } = false;
+
+        public bool StatisticsEnabled
+        {
+            get;
+            set;
+        } = true;
+
+        public static SavedInputKey TransferIssueHotkey = new SavedInputKey(
+            "TransferManager_TransferIssue_Hotkey", SETTINGS_FILE_NAME,
+            key: KeyCode.Alpha3, control: true, shift: false, alt: false, true);
+
+        public static SavedInputKey StatsPanelHotkey = new SavedInputKey(
+            "TransferManager_Stats_Hotkey", SETTINGS_FILE_NAME,
+            key: KeyCode.Alpha5, control: true, shift: false, alt: false, true);
 
         static ModSettings()
         {
@@ -123,7 +214,6 @@ namespace TransferManagerCE.Settings
         /// </summary>
         public void Save()
         {
-            Debug.Log("Saving settings: " + SettingsFile); 
             try
             {
                 // Pretty straightforward.
@@ -132,8 +222,6 @@ namespace TransferManagerCE.Settings
                     XmlSerializer xmlSerializer = new XmlSerializer(typeof(ModSettings)); 
                     xmlSerializer.Serialize(writer, ModSettings.GetSettings());
                 }
-
-                Debug.Log("User Setting Configuration successful saved."); 
             }
             catch (Exception ex)
             {

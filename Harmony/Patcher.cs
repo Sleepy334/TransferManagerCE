@@ -27,6 +27,9 @@ namespace TransferManagerCE
                 // Transfer Manager harmony patches
                 patchList.Add(typeof(Patch.TransferManagerMatchOfferPatch));
                 patchList.Add(typeof(Patch.CarAIPathfindFailurePatch));
+                patchList.Add(typeof(Patch.TransferManagerAddIncomingPatch));
+                patchList.Add(typeof(Patch.TransferManagerAddOutgoingPatch));
+                patchList.Add(typeof(Patch.TransferManagerStartTransferPatch));
 
                 // Improved services AI patches
                 if (!DependencyUtilities.IsSmarterFireFightersRunning())

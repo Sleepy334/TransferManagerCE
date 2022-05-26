@@ -11,19 +11,37 @@ namespace TransferManagerCE
 		public SettingsUI()
         {
         }
-        
+
         public void OnSettingsUI(UIHelper helper)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+
+            // Title
+            UIComponent pnlMain = (UIComponent)helper.self;
+            UILabel txtTitle = AddDescription(pnlMain, "title", pnlMain, 1.0f, TransferManagerMain.Title);
+            txtTitle.textScale = 1.2f;
+
+            // Add tabstrip.
+            ExtUITabstrip tabStrip = ExtUITabstrip.Create(helper);
+            UIHelper tabTransferManager = tabStrip.AddTabPage(Localization.Get("tabTransferManager"), true);
+            UIHelper tabCallAgain = tabStrip.AddTabPage(Localization.Get("tabCallAgain"), true);
+            UIHelper tabMisc = tabStrip.AddTabPage(Localization.Get("tabMisc"), true);
+
+            // Tranfer Manager tab
+            SetupTransferManagerTab(tabTransferManager);
+
+            // Call Again tab
+            SetupCallAgainTab(tabCallAgain);
+
+            SetupMiscTab(tabMisc);
+        }
+
+        public void SetupTransferManagerTab(UIHelper helper)
         {
 			ModSettings oSettings = ModSettings.GetSettings();
 
             UIHelperBase group0 = helper.AddGroup(Localization.Get("DEBUGPROFILE"));
             group0.AddCheckbox(Localization.Get("optionEnableNewTransferManager"), oSettings.optionEnableNewTransferManager, (index) => setOptionEnableNewTransferManager(index));
-
-            UIHelperBase groupGeneral = helper.AddGroup(Localization.Get("GROUP_GENERAL"));
-            groupGeneral.AddCheckbox(Localization.Get("optionPathfindChirper"), oSettings.optionPathfindChirper, (index) => setOptionPathfindChirper(index));
-            UIPanel txtPanel0 = (groupGeneral as UIHelper).self as UIPanel;
-            UILabel txtLabel0 = AddDescription(txtPanel0, "optionPathfindChirper_txt", txtPanel0, 1.0f, Localization.Get("optionPathfindChirper_txt"));
-
 
             UIHelperBase group1 = helper.AddGroup(Localization.Get("GROUP_SERVICE_OPTIONS"));
             group1.AddCheckbox(Localization.Get("optionPreferLocalService"), oSettings.optionPreferLocalService, (index) => setOptionPreferLocalService(index));
@@ -49,13 +67,59 @@ namespace TransferManagerCE
             group3.AddCheckbox(Localization.Get("optionPreferExportShipPlaneTrain"), oSettings.optionPreferExportShipPlaneTrain, (index) => setOptionPreferExportShipPlaneTrain(index));
             UIPanel txtPanel3 = (group3 as UIHelper).self as UIPanel;
             UILabel txtLabel3 = AddDescription(txtPanel3, "optionPreferExportShipPlaneTrain_txt", txtPanel3, 1.0f, Localization.Get("optionPreferExportShipPlaneTrain_txt"));
+
+            // Experimental section
+            UIHelperBase groupExperimental = helper.AddGroup(Localization.Get("GROUP_EXPERIMENTAL_DEATHCARE"));
+            UIPanel panelExperimental = (groupExperimental as UIHelper).self as UIPanel;
+            groupExperimental.AddCheckbox(Localization.Get("optionDeathcareExperimental"), oSettings.TransferManagerExperimentalDeathcare, OnExperimentalDeathcare);
+            UILabel txtDeathcareExperimental = AddDescription(panelExperimental, "txtDeathcareExperimental", panelExperimental, 1.0f, Localization.Get("txtDeathcareExperimental"));
         }
 
+        public void SetupCallAgainTab(UIHelper helper)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+
+            helper.AddCheckbox(Localization.Get("CallAgainEnabled"), oSettings.CallAgainEnabled, OnCallAgainChanged);
+            SettingsSlider.Create(helper, Localization.Get("sliderCallAgainUpdateRate"), 2f, 10f, 1f, (float)oSettings.CallAgainUpdateRate, OnCallAgainUpdateRateValueChanged);
+            UIScrollablePanel pnlPanel3 = (UIScrollablePanel) helper.self;
+            UILabel txtLabel1 = AddDescription(pnlPanel3, "CallAgainDescriptionThreshold", pnlPanel3, 1.0f, Localization.Get("CallAgainDescriptionThreshold"));
+            UILabel txtLabel2 = AddDescription(pnlPanel3, "CallAgainDescriptionRate", pnlPanel3, 1.0f, Localization.Get("CallAgainDescriptionRate"));
+            
+            // Health care threshold Slider
+            UIHelper oHealthcareGroup = (UIHelper)helper.AddGroup(Localization.Get("GROUP_CALLAGAIN_HEALTHCARE"));
+            SettingsSlider oHealthcareThresholdSlider = SettingsSlider.Create(oHealthcareGroup, Localization.Get("CallAgainHealthcareThreshold"), 0f, 255f, 1f, (float)oSettings.HealthcareThreshold, OnHealthcareThresholdValueChanged);
+            SettingsSlider oHealthcareRateSlider = SettingsSlider.Create(oHealthcareGroup, Localization.Get("CallAgainHealthcareRate"), 1f, 30f, 1f, (float)oSettings.HealthcareRate, OnHealthcareRateValueChanged);
+
+            // Health care threshold Slider
+            UIHelper oDeathcareGroup = (UIHelper)helper.AddGroup(Localization.Get("GROUP_CALLAGAIN_DEATHCARE"));
+            SettingsSlider oDeathcareThresholdSlider = SettingsSlider.Create(oDeathcareGroup, Localization.Get("CallAgainDeathcareThreshold"), 0f, 255f, 1f, (float)oSettings.DeathcareThreshold, OnDeathcareThresholdValueChanged);
+            SettingsSlider oDeathcareRateSlider = SettingsSlider.Create(oDeathcareGroup, Localization.Get("CallAgainDeathcareRate"), 1f, 30f, 1f, (float)oSettings.DeathcareRate, OnDeathcareRateValueChanged);
+        }
+
+        public void SetupMiscTab(UIHelper helper)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+
+            // Transfer Issue Panel
+            UIHelper groupTransferIssue = (UIHelper)helper.AddGroup(Localization.Get("GROUP_TRANSFERISSUE_PANEL"));
+            UIPanel panel = (UIPanel)groupTransferIssue.self;
+            UIKeymappingsPanel keymappingsTransferIssue = panel.gameObject.AddComponent<UIKeymappingsPanel>();
+            keymappingsTransferIssue.AddKeymapping(Localization.Get("keyOpenTransferIssuePanel"), ModSettings.TransferIssueHotkey); // Automatically saved
+            groupTransferIssue.AddCheckbox(Localization.Get("optionShowIssuesWithVehiclesOnRoute"), oSettings.TransferIssueShowWithVehiclesOnRoute, OnVehiclesOnRouteChanged);
+
+            // Statistics group
+            UIHelper groupStats = (UIHelper)helper.AddGroup(Localization.Get("GROUP_STATISTICS_PANEL"));
+            groupStats.AddCheckbox(Localization.Get("StatisticsPanelEnabled"), oSettings.StatisticsEnabled, OnStatisticsEnabledChanged);
+
+            UIPanel panelStats = (UIPanel)groupStats.self;
+            UIKeymappingsPanel keymappingsStatsPanel = panelStats.gameObject.AddComponent<UIKeymappingsPanel>();
+            keymappingsStatsPanel.AddKeymapping(Localization.Get("keyOpenStatisticsPanel"), ModSettings.StatsPanelHotkey); // Automatically saved
+        }
         /* 
          * Code adapted from PropAnarchy under MIT license
          */
         private static readonly Color32 m_greyColor = new Color32(0xe6, 0xe6, 0xe6, 0xee);
-        private static UILabel AddDescription(UIPanel panel, string name, UIComponent alignTo, float fontScale, string text)
+        private static UILabel AddDescription(UIComponent panel, string name, UIComponent alignTo, float fontScale, string text)
         {
             UILabel desc = panel.AddUIComponent<UILabel>();
             desc.name = name;
@@ -69,13 +133,83 @@ namespace TransferManagerCE
             return desc;
         }
 
+        public static void OnVehiclesOnRouteChanged(bool value)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.TransferIssueShowWithVehiclesOnRoute = value;
+            oSettings.Save();
+        }
+
+        public static void OnStatisticsEnabledChanged(bool value)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.StatisticsEnabled = value;
+            oSettings.Save();
+
+            // Initialise stats now
+            if (value)
+            {
+                TransferManagerStats.Init();
+            }
+        }
+
+        public static void OnCallAgainUpdateRateValueChanged(float value)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.CallAgainUpdateRate = (int)value;
+            oSettings.Save();
+        }
+
+        public static void OnExperimentalDeathcare(bool enabled)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.TransferManagerExperimentalDeathcare = enabled;
+            oSettings.Save();
+        }
+
+        public static void OnDeathcareThresholdValueChanged(float value)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.DeathcareThreshold = (int)value;
+            oSettings.Save();
+        }
+
+        public static void OnDeathcareRateValueChanged(float value)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.DeathcareRate = (int)value;
+            oSettings.Save();
+        }
+
+        public static void OnCallAgainChanged(bool enabled)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.CallAgainEnabled = enabled;
+            oSettings.Save();
+        }
+
+        public static void OnHealthcareThresholdValueChanged(float value)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.HealthcareThreshold = (int)value;
+            oSettings.Save();
+        }
+
+        public static void OnHealthcareRateValueChanged(float value)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.HealthcareRate = (int)value;
+            oSettings.Save();
+        }
 
         public static void setOptionEnableNewTransferManager(bool index)
         {
             ModSettings oSettings = ModSettings.GetSettings(); 
             oSettings.optionEnableNewTransferManager = index;
             oSettings.Save();
-            //DebugLog.LogDebug(DebugLog.REASON_ALL, $"** OPTION ENABLE/DISABLE: {optionEnableNewTransferManager} **");
+
+            // Reset the stats as we have changed Transfer Manager.
+            TransferManagerStats.Init();
         }
 
         public static void setOptionPreferLocalService(bool index)

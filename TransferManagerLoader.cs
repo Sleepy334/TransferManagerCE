@@ -1,24 +1,31 @@
 ﻿using CitiesHarmony.API;
 using ColossalFramework.UI;
 using ICities;
+using System.Collections.Generic;
 using TransferManagerCE.CustomManager;
+using UnityEngine;
 
 namespace TransferManagerCE
 {
     public class TransferManagerLoader : LoadingExtensionBase
     {
         private static bool s_loaded = false;
-        private const int iHARMONY_PATCH_COUNT = 7;
+        private static UITextureAtlas? s_atlas = null;
 
         public static bool IsLoaded() { return s_loaded; }
 
         public override void OnLevelLoaded(LoadMode mode)
         {
             Debug.Log("OnLevelLoaded");
-            if (TransferToolMain.IsEnabled && (mode == LoadMode.LoadGame || mode == LoadMode.NewGame))
+            if (TransferManagerMain.IsEnabled && (mode == LoadMode.LoadGame || mode == LoadMode.NewGame))
             {
                 s_loaded = true;
 
+                // Harmony
+                if (HarmonyHelper.IsHarmonyInstalled)
+                {
+                    Patcher.PatchAll();
+                }
                 if (!IsHarmonyValid())
                 {
                     s_loaded = false;
@@ -31,13 +38,15 @@ namespace TransferManagerCE
                     strMessage += "If you could send TransferManagerCE.log to the author that would be great\r\n";
                     strMessage += "\r\n";
                     strMessage += "You could try Compatibility Report to check for mod compatibility or use Load Order Mod to ensure your mods are loaded in the correct order.";
-                    UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel").SetMessage("Transfer Manager CE Error", strMessage, true);
-                    
+                    Prompt.Info("Transfer Manager CE", strMessage);
                     return;
                 }
 
                 // Create TransferJobPool and initialize
                 TransferJobPool.Instance.Initialize();
+
+                // Initialise stats
+                TransferManagerStats.Init();
 
                 // Create TransferDispatcher and initialize
                 string strError;
@@ -61,21 +70,22 @@ namespace TransferManagerCE
                     strMessage += "If you could send TransferManagerCE.log to the author that would be great\r\n";
                     strMessage += "\r\n";
                     strMessage += strError;
-                    UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel").SetMessage("Transfer Manager CE Error", strMessage, true);
-                    
+                    Prompt.Info("Transfer Manager CE", strMessage);
                     return;
                 }
 
                 // Display warning about fire fighting patches
                 if (DependencyUtilities.IsSmarterFireFightersRunning())
                 {
-                    string strMessage = "Smarter Firefighters: Improved AI detected\r\n";
+                    string strMessage = "Smarter Firefighters: Improved AI mod detected\r\n";
                     strMessage += "\r\n";
                     strMessage += "The following harmony patches have not been applied due to mod conflict:\r\n";
                     strMessage += "FireTruckAI\r\n";
                     strMessage += "FireCopterAI\r\n";
-                    UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel").SetMessage("Transfer Manager CE", strMessage, true);
+                    Prompt.Info("Transfer Manager CE", strMessage);
                 }
+
+                InfoPanelButtons.AddInfoPanelButtons();
             }
         }
 
@@ -86,6 +96,7 @@ namespace TransferManagerCE
             if (s_loaded)
             {
                 // Unload
+                Patcher.UnpatchAll();
             }
         }
 
@@ -99,6 +110,40 @@ namespace TransferManagerCE
             }
 
             return false;
+        }
+
+        public static UITextureAtlas? LoadResources()
+        {
+            if (s_atlas == null)
+            {
+                string[] spriteNames = new string[]
+                {
+                    "clear",
+                    "Transfer"
+                };
+
+                s_atlas = ResourceLoader.CreateTextureAtlas("TransferManagerCEAtlas", spriteNames, "TransferManagerCE.Resources.");
+                if (s_atlas == null)
+                {
+                    Debug.Log("Loading of resources failed.");
+                }
+
+                UITextureAtlas defaultAtlas = ResourceLoader.GetAtlas("Ingame");
+                Texture2D[] textures = new Texture2D[]
+                {
+                    defaultAtlas["ToolbarIconGroup6Focused"].texture,
+                    defaultAtlas["ToolbarIconGroup6Hovered"].texture,
+                    defaultAtlas["ToolbarIconGroup6Normal"].texture,
+                    defaultAtlas["ToolbarIconGroup6Pressed"].texture
+                };
+
+                if (s_atlas != null)
+                {
+                    ResourceLoader.AddTexturesInAtlas(s_atlas, textures);
+                }
+            }
+
+            return s_atlas;
         }
     }
 }

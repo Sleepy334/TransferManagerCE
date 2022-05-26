@@ -133,9 +133,9 @@ namespace TransferManagerCE.CustomManager
                     return OFFER_MATCHMODE.BALANCED;
 
                 // Services which should be outgoing first, but also benefit from incoming match-making (vehicles in the field with capacity to spare)
+                case TransferReason.Dead:               //Dead: outgoing offer (passive)
                 case TransferReason.Garbage:            //Garbage: outgoing offer (passive) from buldings with garbage to be collected, incoming (active) from landfills
-                case TransferReason.Crime:              //Crime: outgoing offer (passive) 
-                case TransferReason.Dead:               //Dead: outgoing offer (passive) 
+                case TransferReason.Crime:              //Crime: outgoing offer (passive)             
                 case TransferReason.Collapsed:          //Collapsed: outgoing (passive) from buildings
                 case TransferReason.Collapsed2:         //Collapsed2: helicopter
                 case TransferReason.Snow:               //outgoing (passive) from netsegements, incoming (active) from snowdumps
@@ -225,15 +225,34 @@ namespace TransferManagerCE.CustomManager
             }
 
             // determine buildings or vehicle parent buildings
-            ushort buildingIncoming = 0, buildingOutgoing = 0;
+            ushort buildingIncoming = 0;
+            ushort buildingOutgoing = 0;
 
-            if (offerIn.Building != 0) buildingIncoming = offerIn.Building;
-            else if (offerIn.Vehicle != 0) buildingIncoming = _VehicleManager.m_vehicles.m_buffer[offerIn.Vehicle].m_sourceBuilding;
-            else if (offerIn.Citizen != 0) buildingIncoming = _CitizenManager.m_citizens.m_buffer[offerIn.Citizen].m_homeBuilding;
+            if (offerIn.Building != 0)
+            {
+                buildingIncoming = offerIn.Building;
+            }
+            else if (offerIn.Vehicle != 0)
+            {
+                buildingIncoming = _VehicleManager.m_vehicles.m_buffer[offerIn.Vehicle].m_sourceBuilding;
+            }
+            else if (offerIn.Citizen != 0)
+            {
+                buildingIncoming = _CitizenManager.m_citizens.m_buffer[offerIn.Citizen].m_homeBuilding;
+            }
 
-            if (offerOut.Building != 0) buildingOutgoing = offerOut.Building;
-            else if (offerOut.Vehicle != 0) buildingOutgoing = _VehicleManager.m_vehicles.m_buffer[offerOut.Vehicle].m_sourceBuilding;
-            else if (offerOut.Citizen != 0) buildingOutgoing = _CitizenManager.m_citizens.m_buffer[offerOut.Citizen].m_homeBuilding;
+            if (offerOut.Building != 0)
+            {
+                buildingOutgoing = offerOut.Building;
+            }
+            else if (offerOut.Vehicle != 0)
+            {
+                buildingOutgoing = _VehicleManager.m_vehicles.m_buffer[offerOut.Vehicle].m_sourceBuilding;
+            }
+            else if (offerOut.Citizen != 0)
+            {
+                buildingOutgoing = _CitizenManager.m_citizens.m_buffer[offerOut.Citizen].m_homeBuilding;
+            }
 
             // get respective districts
             byte districtIncoming = _DistrictManager.GetDistrict(_BuildingManager.m_buildings.m_buffer[buildingIncoming].m_position);
@@ -267,11 +286,12 @@ namespace TransferManagerCE.CustomManager
 
             if ((offer.Building != 0) && (_BuildingManager.m_buildings.m_buffer[offer.Building].Info?.m_buildingAI is OutsideConnectionAI))
             {
-                DebugLog.LogDebug((DebugLog.LogReason)material, $"       ** Outside Offer: material: {material}, {DebugInspectOffer(ref offer)}, SubService class is: {_BuildingManager.m_buildings.m_buffer[offer.Building].Info?.m_class.m_subService}");
+                DebugLog.LogOnly((DebugLog.LogReason)material, $"       ** Outside Offer: material: {material}, {DebugInspectOffer(ref offer)}, SubService class is: {_BuildingManager.m_buildings.m_buffer[offer.Building].Info?.m_class.m_subService}");
 
-                if ((_BuildingManager.m_buildings.m_buffer[offer.Building].Info?.m_class.m_subService == ItemClass.SubService.PublicTransportTrain) ||
-                    (_BuildingManager.m_buildings.m_buffer[offer.Building].Info?.m_class.m_subService == ItemClass.SubService.PublicTransportShip) ||
-                    (_BuildingManager.m_buildings.m_buffer[offer.Building].Info?.m_class.m_subService == ItemClass.SubService.PublicTransportPlane))
+                ItemClass.SubService? subService = _BuildingManager.m_buildings.m_buffer[offer.Building].Info?.m_class.m_subService;
+                if ((subService == ItemClass.SubService.PublicTransportTrain) ||
+                    (subService == ItemClass.SubService.PublicTransportShip) ||
+                    (subService == ItemClass.SubService.PublicTransportPlane))
                     return OUTSIDE_MODIFIER;
             }
 
@@ -285,17 +305,20 @@ namespace TransferManagerCE.CustomManager
             const float WAREHOUSE_MODIFIER = 0.1f;   //modifier for distance for warehouse
 
             if (!ModSettings.GetSettings().optionWarehouseFirst)
+            {
                 return 1f;
+            }
 
             if (offer.Exclude)  //TransferOffer.Exclude is only ever set by WarehouseAI!
             {
-                Building.Flags isFilling = (_BuildingManager.m_buildings.m_buffer[offer.Building].m_flags & Building.Flags.Filling);
-                Building.Flags isEmptying = (_BuildingManager.m_buildings.m_buffer[offer.Building].m_flags & Building.Flags.Downgrading);
+                Building.Flags flags = _BuildingManager.m_buildings.m_buffer[offer.Building].m_flags;
+                bool isFilling = (flags & Building.Flags.Filling) == Building.Flags.Filling;
+                bool isEmptying = (flags & Building.Flags.Downgrading) == Building.Flags.Downgrading;
 
                 // Filling Warehouses dont like to fulfill outgoing offers,
                 // emptying warehouses dont like to fulfill incoming offers
-                if ((whInOut == WAREHOUSE_OFFERTYPE.INCOMING && isEmptying != Building.Flags.None) ||
-                    (whInOut == WAREHOUSE_OFFERTYPE.OUTGOING && isFilling != Building.Flags.None))
+                if ((whInOut == WAREHOUSE_OFFERTYPE.INCOMING && isEmptying) ||
+                    (whInOut == WAREHOUSE_OFFERTYPE.OUTGOING && isFilling))
                 {
                     return WAREHOUSE_MODIFIER * 2;   //distance factorSqrt x2 further away
                 }
@@ -311,21 +334,23 @@ namespace TransferManagerCE.CustomManager
         [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private static bool WarehouseCanTransfer(ref TransferOffer incomingOffer, ref TransferOffer outgoingOffer, TransferReason material)
         {
+            Building[] aBuildingManagerBuffer = _BuildingManager.m_buildings.m_buffer;
+
             // Option: optionWarehouseReserveTrucks
             if ((ModSettings.GetSettings().optionWarehouseReserveTrucks) && (outgoingOffer.Exclude && outgoingOffer.Active)) //further checks only relevant if outgoing from warehouse and active
             {
                 // is outgoing a warehouse with active delivery, and is counterpart incoming an outside connection?
-                if ((incomingOffer.Building != 0) && (_BuildingManager.m_buildings.m_buffer[incomingOffer.Building].Info?.m_buildingAI is OutsideConnectionAI && _BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].Info?.m_buildingAI is WarehouseAI))
+                if ((incomingOffer.Building != 0) && (aBuildingManagerBuffer[incomingOffer.Building].Info?.m_buildingAI is OutsideConnectionAI && aBuildingManagerBuffer[outgoingOffer.Building].Info?.m_buildingAI is WarehouseAI))
                 {
                     // guards: there are warehouses that DO NOT derive from warehouseAI, notably BARGES by bloodypenguin. We ignore them here and just allow any transfer.
-                    int total = (_BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].Info?.m_buildingAI as WarehouseAI).m_truckCount;
+                    int total = (aBuildingManagerBuffer[outgoingOffer.Building].Info?.m_buildingAI as WarehouseAI).m_truckCount;
                     int count = 0, cargo = 0, capacity = 0, outside = 0;
                     float maxExport = (total * 0.75f);
 
-                    CalculateOwnVehiclesDG(_BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].Info?.m_buildingAI as WarehouseAI,
-                                            outgoingOffer.Building, ref _BuildingManager.m_buildings.m_buffer[outgoingOffer.Building], material, ref count, ref cargo, ref capacity, ref outside);
+                    CalculateOwnVehiclesDG(aBuildingManagerBuffer[outgoingOffer.Building].Info?.m_buildingAI as WarehouseAI,
+                                            outgoingOffer.Building, ref aBuildingManagerBuffer[outgoingOffer.Building], material, ref count, ref cargo, ref capacity, ref outside);
 
-                    DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"       ** checking canTransfer: total: {total}, ccco: {count}/{cargo}/{capacity}/{outside} => {((float)(outside + 1f) > maxExport)}");
+                    DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"       ** checking canTransfer: total: {total}, ccco: {count}/{cargo}/{capacity}/{outside} => {((float)(outside + 1f) > maxExport)}");
                     if ((float)(outside + 1f) > maxExport)
                         return false;   //dont need further checks, we would be over reserved truck limit
                 }
@@ -335,14 +360,14 @@ namespace TransferManagerCE.CustomManager
             if (ModSettings.GetSettings().optionWarehouseNewBalanced && (outgoingOffer.Exclude || incomingOffer.Exclude))
             {
                 // attempting to import?
-                if ((incomingOffer.Exclude) && (outgoingOffer.Building != 0) && (_BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].Info?.m_buildingAI is OutsideConnectionAI && _BuildingManager.m_buildings.m_buffer[incomingOffer.Building].Info?.m_buildingAI is WarehouseAI))
+                if ((incomingOffer.Exclude) && (outgoingOffer.Building != 0) && (aBuildingManagerBuffer[outgoingOffer.Building].Info?.m_buildingAI is OutsideConnectionAI && aBuildingManagerBuffer[incomingOffer.Building].Info?.m_buildingAI is WarehouseAI))
                 {
-                    bool isFilling  = (_BuildingManager.m_buildings.m_buffer[incomingOffer.Building].m_flags & (Building.Flags.Filling)) != Building.Flags.None;
-                    bool isBalanced = (_BuildingManager.m_buildings.m_buffer[incomingOffer.Building].m_flags & (Building.Flags.Downgrading)) == Building.Flags.None &&
-                                      (_BuildingManager.m_buildings.m_buffer[incomingOffer.Building].m_flags & (Building.Flags.Filling)) == Building.Flags.None;
+                    bool isFilling  = (aBuildingManagerBuffer[incomingOffer.Building].m_flags & (Building.Flags.Filling)) != Building.Flags.None;
+                    bool isBalanced = (aBuildingManagerBuffer[incomingOffer.Building].m_flags & (Building.Flags.Downgrading)) == Building.Flags.None &&
+                                      (aBuildingManagerBuffer[incomingOffer.Building].m_flags & (Building.Flags.Filling)) == Building.Flags.None;
 
-                    float current_filllevel = (float)(_BuildingManager.m_buildings.m_buffer[incomingOffer.Building].m_customBuffer1 * 100) / ((_BuildingManager.m_buildings.m_buffer[incomingOffer.Building].Info.m_buildingAI as WarehouseAI).m_storageCapacity);
-                    DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"       ** warehouse checking import restrictions: balanced/filling={isBalanced}/{isFilling}, filllevel={current_filllevel}");
+                    float current_filllevel = (float)(aBuildingManagerBuffer[incomingOffer.Building].m_customBuffer1 * 100) / ((aBuildingManagerBuffer[incomingOffer.Building].Info.m_buildingAI as WarehouseAI).m_storageCapacity);
+                    DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"       ** warehouse checking import restrictions: balanced/filling={isBalanced}/{isFilling}, filllevel={current_filllevel}");
 
                     if (isBalanced && current_filllevel >= 0.25f)
                         return false;   //balanced: over 25% fill level: no more imports!
@@ -352,14 +377,14 @@ namespace TransferManagerCE.CustomManager
                 }
 
                 // attempting to export?
-                else if ((outgoingOffer.Exclude) && (incomingOffer.Building != 0) && (_BuildingManager.m_buildings.m_buffer[incomingOffer.Building].Info?.m_buildingAI is OutsideConnectionAI && _BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].Info?.m_buildingAI is WarehouseAI))
+                else if ((outgoingOffer.Exclude) && (incomingOffer.Building != 0) && (aBuildingManagerBuffer[incomingOffer.Building].Info?.m_buildingAI is OutsideConnectionAI && aBuildingManagerBuffer[outgoingOffer.Building].Info?.m_buildingAI is WarehouseAI))
                 {
-                    bool isEmptying = (_BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].m_flags & (Building.Flags.Downgrading)) != Building.Flags.None;
-                    bool isBalanced = (_BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].m_flags & (Building.Flags.Downgrading)) == Building.Flags.None &&
-                                      (_BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].m_flags & (Building.Flags.Filling)) == Building.Flags.None;
+                    bool isEmptying = (aBuildingManagerBuffer[outgoingOffer.Building].m_flags & (Building.Flags.Downgrading)) != Building.Flags.None;
+                    bool isBalanced = (aBuildingManagerBuffer[outgoingOffer.Building].m_flags & (Building.Flags.Downgrading)) == Building.Flags.None &&
+                                      (aBuildingManagerBuffer[outgoingOffer.Building].m_flags & (Building.Flags.Filling)) == Building.Flags.None;
 
-                    float current_filllevel = (float)(_BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].m_customBuffer1 * 100) / ((_BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].Info.m_buildingAI as WarehouseAI).m_storageCapacity);
-                    DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"       ** warehouse checking export restrictions: balanced/empyting={isBalanced}/{isEmptying}, filllevel={current_filllevel}");
+                    float current_filllevel = (float)(aBuildingManagerBuffer[outgoingOffer.Building].m_customBuffer1 * 100) / ((aBuildingManagerBuffer[outgoingOffer.Building].Info.m_buildingAI as WarehouseAI).m_storageCapacity);
+                    DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"       ** warehouse checking export restrictions: balanced/empyting={isBalanced}/{isEmptying}, filllevel={current_filllevel}");
                     
                     if (isBalanced && current_filllevel <= 0.75f)
                         return false;   //balanced: under 75% fill level: no more exports!
@@ -390,7 +415,7 @@ namespace TransferManagerCE.CustomManager
 
                 if (result)
                 {
-                    DebugLog.LogDebug(DebugLog.REASON_PATHFIND, $"       ** Pathfindfailure: Excluded: material:{job.material}, in:{incomingOffer.Building}({DebugInspectOffer(ref incomingOffer)}) and out:{outgoingOffer.Building}({DebugInspectOffer(ref outgoingOffer)})");
+                    DebugLog.LogOnly(DebugLog.REASON_PATHFIND, $"       ** Pathfindfailure: Excluded: material:{job.material}, in:{incomingOffer.Building}({DebugInspectOffer(ref incomingOffer)}) and out:{outgoingOffer.Building}({DebugInspectOffer(ref outgoingOffer)})");
                 }
             }
 
@@ -404,7 +429,7 @@ namespace TransferManagerCE.CustomManager
 
                 if (result)
                 {
-                    DebugLog.LogDebug(DebugLog.REASON_PATHFIND, $"       ** Pathfindfailure: Excluded incoming outsideconnection: material:{job.material}, {incomingOffer.Building}({DebugInspectOffer(ref incomingOffer)})");
+                    DebugLog.LogOnly(DebugLog.REASON_PATHFIND, $"       ** Pathfindfailure: Excluded incoming outsideconnection: material:{job.material}, {incomingOffer.Building}({DebugInspectOffer(ref incomingOffer)})");
                 }
             }
             else if ((outgoingOffer.Building != 0) && _BuildingManager.m_buildings.m_buffer[outgoingOffer.Building].Info?.m_buildingAI is OutsideConnectionAI)
@@ -416,7 +441,7 @@ namespace TransferManagerCE.CustomManager
 
                 if (result)
                 {
-                    DebugLog.LogDebug(DebugLog.REASON_PATHFIND, $"       ** Pathfindfailure: Excluded ougoing outsideconnection: material:{job.material}, {outgoingOffer.Building}({DebugInspectOffer(ref outgoingOffer)})");
+                    DebugLog.LogOnly(DebugLog.REASON_PATHFIND, $"       ** Pathfindfailure: Excluded ougoing outsideconnection: material:{job.material}, {outgoingOffer.Building}({DebugInspectOffer(ref outgoingOffer)})");
                 }
             }
 
@@ -424,16 +449,76 @@ namespace TransferManagerCE.CustomManager
         }
 
 
-        private static String DebugInspectOffer(ref TransferOffer offer)
+        public static String DebugInspectOffer(ref TransferOffer offer)
         {
-            var instB = default(InstanceID);
-            instB.Building = offer.Building;
-            return (offer.Building > 0 && offer.Building < _BuildingManager.m_buildings.m_size) ? _BuildingManager.m_buildings.m_buffer[offer.Building].Info?.name + "(" + _InstanceManager.GetName(instB) + ")"
-                    : (offer.Vehicle > 0 && offer.Vehicle < _VehicleManager.m_vehicles.m_size)  ? _VehicleManager.m_vehicles.m_buffer[offer.Vehicle].Info?.name 
-                    : (offer.Citizen > 0) ? $"Citizen={offer.Citizen}"
-                    : (offer.NetSegment > 0) ? $"NetSegment={offer.NetSegment}"
-                    : (offer.TransportLine > 0) ? $"TransportLine={offer.TransportLine}"
-                    : "unknown";
+            string sMessage = "";
+            sMessage += "Priority:" + offer.Priority;
+            sMessage += " Amount: " + offer.Amount;
+            if (offer.Building > 0 && offer.Building < BuildingManager.instance.m_buildings.m_size)
+            {
+                var instB = default(InstanceID);
+                instB.Building = offer.Building;
+                sMessage += " (" + offer.Building + ")" + BuildingManager.instance.m_buildings.m_buffer[offer.Building].Info?.name + "(" + InstanceManager.instance.GetName(instB) + ")";
+            }
+            if (offer.Vehicle > 0 && offer.Vehicle < VehicleManager.instance.m_vehicles.m_size)
+            {
+                sMessage += " (" + offer.Vehicle + ")" + VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle].Info?.name;
+            }
+            if (offer.Citizen > 0)
+            {
+                sMessage += $" Citizen:{offer.Citizen}";
+                Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
+                sMessage += $" Building:{oCitizen.GetBuildingByLocation()}";
+            }
+            if (offer.NetSegment > 0)
+            {
+                sMessage += $" NetSegment={offer.NetSegment}";
+            }
+            if (offer.TransportLine > 0)
+            {
+                sMessage += $" TransportLine={offer.TransportLine}";
+            }
+            if (sMessage.Length == 0)
+            {
+                sMessage = " unknown";
+            }
+            return sMessage;
+        }
+
+        public static string DebugInspectOffer2(TransferOffer offer)
+        {
+            string sMessage = "";
+            sMessage += "Priority:" + offer.Priority;
+            sMessage += " Amount: " + offer.Amount;
+            if (offer.Building > 0 && offer.Building < BuildingManager.instance.m_buildings.m_size)
+            {
+                var instB = default(InstanceID);
+                instB.Building = offer.Building;
+                sMessage += " (" + offer.Building + ")" + BuildingManager.instance.m_buildings.m_buffer[offer.Building].Info?.name + "(" + InstanceManager.instance.GetName(instB) + ")";
+            }
+            if (offer.Vehicle > 0 && offer.Vehicle < VehicleManager.instance.m_vehicles.m_size)
+            {
+                sMessage += " (" + offer.Vehicle + ")" + VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle].Info?.name;
+            }
+            if (offer.Citizen > 0)
+            {
+                sMessage += $" Citizen:{offer.Citizen}";
+                Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
+                sMessage += $" Building:{oCitizen.GetBuildingByLocation()}";
+            }
+            if (offer.NetSegment > 0)
+            {
+                sMessage += $" NetSegment={offer.NetSegment}";
+            }
+            if (offer.TransportLine > 0)
+            {
+                sMessage += $" TransportLine={offer.TransportLine}";
+            }
+            if (sMessage.Length == 0)
+            {
+                sMessage = " unknown";
+            }
+            return sMessage;
         }
 
 
@@ -444,14 +529,14 @@ namespace TransferManagerCE.CustomManager
             {
                 ref TransferOffer incomingOffer = ref job.m_incomingOffers[i];
                 String bname = DebugInspectOffer(ref incomingOffer);
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   in #{i}: prio: {incomingOffer.Priority}, act {incomingOffer.Active}, excl {incomingOffer.Exclude}, amt {incomingOffer.Amount}, bvcnt {incomingOffer.Building}/{incomingOffer.Vehicle}/{incomingOffer.Citizen}/{incomingOffer.NetSegment}/{incomingOffer.TransportLine} name={bname}");
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   in #{i}: prio: {incomingOffer.Priority}, act {incomingOffer.Active}, excl {incomingOffer.Exclude}, amt {incomingOffer.Amount}, bvcnt {incomingOffer.Building}/{incomingOffer.Vehicle}/{incomingOffer.Citizen}/{incomingOffer.NetSegment}/{incomingOffer.TransportLine} name={bname}");
             }
 
             for (int i = 0; i < offerCountOutgoing; i++)
             {
                 ref TransferOffer outgoingOffer = ref job.m_outgoingOffers[i];
                 String bname = DebugInspectOffer(ref outgoingOffer);
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   out #{i}: prio: {outgoingOffer.Priority}, act {outgoingOffer.Active}, excl {outgoingOffer.Exclude}, amt {outgoingOffer.Amount}, bvcnt {outgoingOffer.Building}/{outgoingOffer.Vehicle}/{outgoingOffer.Citizen}/{outgoingOffer.NetSegment}/{outgoingOffer.TransportLine} name={bname}");
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   out #{i}: prio: {outgoingOffer.Priority}, act {outgoingOffer.Active}, excl {outgoingOffer.Exclude}, amt {outgoingOffer.Amount}, bvcnt {outgoingOffer.Building}/{outgoingOffer.Vehicle}/{outgoingOffer.Citizen}/{outgoingOffer.NetSegment}/{outgoingOffer.TransportLine} name={bname}");
             }
         }
 
@@ -479,17 +564,13 @@ namespace TransferManagerCE.CustomManager
                 }
                 else
                 {
-                    // chirp about pathfinding issues
-                    PathFindFailure.SendPathFindChirp();
-
                     // clean pathfind LRU
                     PathFindFailure.RemoveOldEntries();
 
                     // wait for signal
-                    DebugLog.LogDebug(DebugLog.REASON_ALL, $"MatchOffersThread: waiting for work signal...");
+                    DebugLog.LogOnly(DebugLog.REASON_ALL, $"MatchOffersThread: waiting for work signal...");
                     CustomTransferDispatcher._waitHandle.WaitOne();
                 }
-
             }
 
             DebugLog.LogInfo($"MatchOffersThread: Thread ended.");
@@ -514,7 +595,7 @@ namespace TransferManagerCE.CustomManager
 
 
             // DEBUG LOGGING
-            DebugLog.LogInfo($"-- TRANSFER REASON: {material.ToString()}, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, count in {job.m_incomingCount}, count out {job.m_outgoingCount}");
+            DebugLog.LogOnly((DebugLog.LogReason)material, $"-- TRANSFER REASON: {material.ToString()}, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, count in {job.m_incomingCount}, count out {job.m_outgoingCount}");
 #if (DEBUG)
             DebugPrintAllOffers(material, job.m_incomingCount, job.m_outgoingCount);
 #endif
@@ -527,17 +608,16 @@ namespace TransferManagerCE.CustomManager
             // -------------------------------------------------------------------------------------------
             if (match_mode == OFFER_MATCHMODE.OUTGOING_FIRST)
             {
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   ###MatchMode OUTGOING FIRST###");
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   ###MatchMode OUTGOING FIRST###");
                 bool has_counterpart_offers = true;
 
                 // 1st loop: all OUTGOING offers by descending priority
                 for (int offerIndex = 0; offerIndex < job.m_outgoingCount; offerIndex++)
                 {
                     int prio_lower_limit = Math.Max(0, 2 - job.m_outgoingOffers[offerIndex].Priority);
-
                     if (job.m_incomingAmount <= 0 || !has_counterpart_offers)
                     {
-                        DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   ### MATCHMODE EXIT, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, has_counterparts {has_counterpart_offers} ###");
+                        DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   ### MATCHMODE EXIT, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, has_counterparts {has_counterpart_offers} ###");
                         goto END_OFFERMATCHING;
                     }
 
@@ -551,7 +631,7 @@ namespace TransferManagerCE.CustomManager
             // -------------------------------------------------------------------------------------------
             if (match_mode == OFFER_MATCHMODE.INCOMING_FIRST)
             {
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   ###MatchMode INCOMING FIRST###");
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   ###MatchMode INCOMING FIRST###");
                 bool has_counterpart_offers = true;
 
                 // 1st loop: all INCOMING offers by descending priority
@@ -561,7 +641,7 @@ namespace TransferManagerCE.CustomManager
 
                     if (job.m_outgoingAmount <= 0 || !has_counterpart_offers)
                     {
-                        DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   ### MATCHMODE EXIT, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, has_counterparts {has_counterpart_offers} ###");
+                        DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   ### MATCHMODE EXIT, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, has_counterparts {has_counterpart_offers} ###");
                         goto END_OFFERMATCHING;
                     }
 
@@ -575,7 +655,7 @@ namespace TransferManagerCE.CustomManager
             // -------------------------------------------------------------------------------------------
             if (match_mode == OFFER_MATCHMODE.BALANCED)
             {
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   ###MatchMode BALANCED###");
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   ###MatchMode BALANCED###");
                 bool has_counterpart_offers = true;
                 int maxoffers = job.m_incomingCount + job.m_outgoingCount;
 
@@ -606,7 +686,7 @@ namespace TransferManagerCE.CustomManager
                     // no more matches possible?
                     if (job.m_incomingAmount <= 0 || job.m_outgoingAmount <= 0 || !has_counterpart_offers)
                     {
-                        DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   ### MATCHMODE EXIT, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, has_counterparts {has_counterpart_offers} ###");
+                        DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   ### MATCHMODE EXIT, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, has_counterparts {has_counterpart_offers} ###");
                         goto END_OFFERMATCHING;
                     }
                 }
@@ -629,9 +709,9 @@ namespace TransferManagerCE.CustomManager
 
             // guard: offer valid?
             if (incomingOffer.Amount <= 0) return true;
-
-            DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   ###Matching INCOMING offer: {DebugInspectOffer(ref incomingOffer)}, priority: {incomingOffer.Priority}, remaining amount outgoing: {job.m_outgoingAmount}");
-
+#if DEBUG
+            DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   ###Matching INCOMING offer: {DebugInspectOffer(ref incomingOffer)}, priority: {incomingOffer.Priority}, remaining amount outgoing: {job.m_outgoingAmount}");
+#endif
             int bestmatch_position = -1;
             float bestmatch_distance = float.MaxValue;
             bool counterpartMatchesLeft = false;
@@ -674,13 +754,17 @@ namespace TransferManagerCE.CustomManager
                 }
 
                 counterpartMatchesLeft = true;
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"       -> Matching outgoing offer: {DebugInspectOffer(ref outgoingOffer)}, amt {outgoingOffer.Amount}, local:{isLocalAllowed}, canTransfer:{canTransfer}, distance: {distance}@{districtFactor}/{distanceFactor}, bestmatch: {bestmatch_distance}");                
+#if DEBUG
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"       -> Matching outgoing offer: {DebugInspectOffer(ref outgoingOffer)}, priority: {outgoingOffer.Priority}, amt {outgoingOffer.Amount}, local:{isLocalAllowed}, canTransfer:{canTransfer}, distance: {distance}@{districtFactor}/{distanceFactor}, bestmatch: {bestmatch_distance}");
+#endif
             }
 
             // Select bestmatch
             if (bestmatch_position != -1)
             {
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"       -> Selecting bestmatch: {DebugInspectOffer(ref job.m_outgoingOffers[bestmatch_position])}");
+#if DEBUG
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"       -> Selecting bestmatch: {DebugInspectOffer(ref job.m_outgoingOffers[bestmatch_position])}");
+#endif
                 // ATTENTION: last outgoingOffer is NOT necessarily the bestmatch!
 
                 // Start the transfer
@@ -707,9 +791,9 @@ namespace TransferManagerCE.CustomManager
 
             // guard: offer valid?
             if (outgoingOffer.Amount <= 0) return true;
-
-            DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"   ###Matching OUTGOING offer: {DebugInspectOffer(ref outgoingOffer)}, priority: {outgoingOffer.Priority}, remaining amount incoming: {job.m_incomingAmount}");
-
+#if DEBUG
+            DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   ###Matching OUTGOING offer: {DebugInspectOffer(ref outgoingOffer)}, priority: {outgoingOffer.Priority}, remaining amount incoming: {job.m_incomingAmount}");
+#endif
             int bestmatch_position = -1;
             float bestmatch_distance = float.MaxValue;
             bool counterpartMatchesLeft = false;
@@ -752,17 +836,19 @@ namespace TransferManagerCE.CustomManager
                 }
 
                 counterpartMatchesLeft = true;
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"       -> Matching incoming offer: {DebugInspectOffer(ref incomingOffer)}, amt {incomingOffer.Amount}, local:{isLocalAllowed}, canTransfer:{canTransfer}, distance: {distance}@{districtFactor}/{distanceFactor}, bestmatch: {bestmatch_distance}");
+#if DEBUG
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"       -> Matching incoming offer: {DebugInspectOffer(ref incomingOffer)}, amt {incomingOffer.Amount}, local:{isLocalAllowed}, canTransfer:{canTransfer}, distance: {distance}@{districtFactor}/{distanceFactor}, bestmatch: {bestmatch_distance}");
+#endif
             }
 
             // Select bestmatch
             if (bestmatch_position != -1)
             {
-                DebugLog.LogDebug((DebugLog.LogReason)(job.material), $"       -> Selecting bestmatch: {DebugInspectOffer(ref job.m_incomingOffers[bestmatch_position])}");
-                // ATTENTION: last incomingOffer is NOT necessarily the bestmatch!
-
                 // Start the transfer
                 int deltaamount = Math.Min(outgoingOffer.Amount, job.m_incomingOffers[bestmatch_position].Amount);
+#if DEBUG
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"       -> Selecting bestmatch: {DebugInspectOffer(ref job.m_incomingOffers[bestmatch_position])} Amount: {deltaamount}");
+#endif
                 QueueStartTransferMatch(job.material, ref outgoingOffer, ref job.m_incomingOffers[bestmatch_position], deltaamount);
 
                 // reduce offer amount

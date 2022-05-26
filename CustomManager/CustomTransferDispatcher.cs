@@ -172,7 +172,6 @@ namespace TransferManagerCE.CustomManager
             {
                 workQueue.Enqueue(job);
                 _waitHandle.Set();
-                DebugLog.LogInfo($"Enqueued job at position {workQueue.Count}.");
             }
         }
 
@@ -222,10 +221,15 @@ namespace TransferManagerCE.CustomManager
         public void SubmitMatchOfferJob(TransferManager.TransferReason material)
         {
             // dont submit jobs for None reason or with no amounts
-            if (material == TransferManager.TransferReason.None) return;
+            if (material == TransferManager.TransferReason.None)
+            {
+                return;
+            }
             if ((m_incomingAmount[(int)material] == 0) || (m_outgoingAmount[(int)material] == 0))
             {
-                ClearAllTransferOffers(material);
+                // At the end of vanilla Match offers it clears all transfers for the requested material
+                // So clear them here as well to match that
+                ClearAllTransferOffers(material); 
                 return;
             }
 
@@ -246,7 +250,9 @@ namespace TransferManagerCE.CustomManager
             job.m_outgoingAmount = m_outgoingAmount[(int)material];
             int offer_offset;
 
-            for (int priority = 7, jobInIdx=0, jobOutIdx=0; priority >= 0; --priority)
+            int jobInIdx = 0;
+            int jobOutIdx = 0;
+            for (int priority = 7; priority >= 0; --priority)
             {
                 offer_offset = (int)material * 8 + priority;
                 job.m_incomingCount += m_incomingCount[offer_offset];
@@ -254,18 +260,15 @@ namespace TransferManagerCE.CustomManager
 
                 // linear copy to job's offer arrays
                 //** TODO: evaluate speedup via unsafe pointer memcpy **
-
-                for (int offerIndex = 0; offerIndex < m_incomingCount[offer_offset]; offerIndex++, jobInIdx++)
+                for (int offerIndex = 0; offerIndex < m_incomingCount[offer_offset]; offerIndex++)
                 {
-                    job.m_incomingOffers[jobInIdx] = m_incomingOffers[offer_offset * 256 + offerIndex];
+                    job.m_incomingOffers[jobInIdx++] = m_incomingOffers[offer_offset * 256 + offerIndex];
                 }
                     
-                for (int offerIndex = 0; offerIndex < m_outgoingCount[offer_offset]; offerIndex++, jobOutIdx++)
+                for (int offerIndex = 0; offerIndex < m_outgoingCount[offer_offset]; offerIndex++)
                 {
-                    job.m_outgoingOffers[jobOutIdx] = m_outgoingOffers[offer_offset * 256 + offerIndex];
+                    job.m_outgoingOffers[jobOutIdx++] = m_outgoingOffers[offer_offset * 256 + offerIndex];
                 }
-                    
-
             }
 
             // DEBUG mode: print job summary
@@ -302,6 +305,8 @@ namespace TransferManagerCE.CustomManager
                 if (oResult.material != TransferManager.TransferReason.None)
                 {
                     CustomTransferManager.TransferManagerStartTransferDG(_TransferManager, oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
+                    TransferManagerCEThreading.StartTransfer(oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
+
                 }
 
                 newReadPos = _ringbufReadPosition + 1;
@@ -313,7 +318,7 @@ namespace TransferManagerCE.CustomManager
             }
 
             _ringBufMaxUsageCount = num_transfers_initiated > _ringBufMaxUsageCount ? num_transfers_initiated : _ringBufMaxUsageCount;
-            DebugLog.LogInfo($"StartTransfers: initiated {num_transfers_initiated} transfers.");
+            DebugLog.LogOnly($"StartTransfers: initiated {num_transfers_initiated} transfers.");
         }
 
         /// <summary>
@@ -335,9 +340,7 @@ namespace TransferManagerCE.CustomManager
         [Conditional("DEBUG")]
         private void DebugJobSummarize(TransferJob job)
         {
-            DebugLog.LogInfo($"TRANSFER JOB: {job.material.ToString()}, amount in/out: {job.m_incomingAmount}/{job.m_outgoingAmount}; total offer count in/out: {job.m_incomingCount}/{job.m_outgoingCount}");
+            DebugLog.LogOnly((DebugLog.LogReason)job.material, $"TRANSFER JOB: {job.material.ToString()}, amount in/out: {job.m_incomingAmount}/{job.m_outgoingAmount}; total offer count in/out: {job.m_incomingCount}/{job.m_outgoingCount}");
         }
-
     }
-
 }

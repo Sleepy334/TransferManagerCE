@@ -42,7 +42,7 @@ namespace TransferManagerCE.CustomManager
             
             unsafe
             {
-                DebugLog.LogDebug(DebugLog.REASON_ALL, $"TransferJobPool initialized, pool stack size is {pooledJobs.Count}");
+                DebugLog.LogOnly(DebugLog.REASON_ALL, $"TransferJobPool initialized, pool stack size is {pooledJobs.Count}");
             }
         }
 

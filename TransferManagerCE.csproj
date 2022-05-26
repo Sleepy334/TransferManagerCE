@@ -4,18 +4,29 @@
     <TargetFramework>net35</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>latest</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Deterministic>False</Deterministic>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Configurations>Debug;Release;TEST Release;TEST Debug</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>False</Optimize>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TEST Debug|AnyCPU'">
+    <Optimize>False</Optimize>
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TEST Release|AnyCPU'">
+    <Optimize>True</Optimize>
+    <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
   </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
@@ -26,6 +37,16 @@
     <Compile Remove="common\**" />
     <EmbeddedResource Remove="common\**" />
     <None Remove="common\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\clear.png" />
+    <None Remove="Resources\Transfer.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\clear.png" />
+    <EmbeddedResource Include="Resources\Transfer.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,6 +64,9 @@
     </Reference>
     <Reference Include="ICities">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\ICities.dll</HintPath>
+    </Reference>
+    <Reference Include="UnifiedUILib">
+      <HintPath>..\..\References\UnifiedUILib.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\UnityEngine.dll</HintPath>

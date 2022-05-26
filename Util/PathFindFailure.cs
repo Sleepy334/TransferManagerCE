@@ -8,10 +8,10 @@ using TransferManagerCE.Settings;
 namespace TransferManagerCE.Util
 {
     [StructLayout(LayoutKind.Sequential)]
-    struct PATHFINDPAIR
+    public struct PATHFINDPAIR
     {
-        ushort sourceBuilding;
-        ushort targetBuilding;
+        public ushort sourceBuilding;
+        public ushort targetBuilding;
 
         public PATHFINDPAIR(ushort source, ushort target)
         {
@@ -29,13 +29,15 @@ namespace TransferManagerCE.Util
     public sealed class PathFindFailure
     {
         // building-to-building
-        const int MAX_PATHFIND = 128;
+        const int MAX_PATHFIND = 256;
         static Dictionary<PATHFINDPAIR, long> _pathfindFails = new Dictionary<PATHFINDPAIR, long>(MAX_PATHFIND);
-        static Dictionary<ushort, int> _pathfindBuildingsCounter = new Dictionary<ushort, int>(MAX_PATHFIND);
 
         // building-to-outsideconnection
         const int MAX_OUTSIDECONNECTIONS = 256;
         static Dictionary<PATHFINDPAIR, long> _outsideConnectionFails = new Dictionary<PATHFINDPAIR, long>(MAX_OUTSIDECONNECTIONS);
+
+        // Chirper and Transfer Issue building fail counters
+        static Dictionary<ushort, int> _totalPathfindBuildingsCounter = new Dictionary<ushort, int>();
 
         // Statistics
         #region STATISTICS
@@ -49,11 +51,47 @@ namespace TransferManagerCE.Util
         #endregion
 
         static readonly object _dictionaryLock = new object();
-        const long LRU_INTERVALL = TimeSpan.TicksPerMillisecond * 1000 * 15; //15 sec
-        const long CHIRP_INTERVALL = TimeSpan.TicksPerMillisecond * 1000 * 60; //1 min
+        public const long LRU_INTERVALL = TimeSpan.TicksPerMillisecond * 1000 * 60; //15 sec
         static long lru_lastCleaned;
-        static long last_chirp;
 
+        public static Dictionary<PATHFINDPAIR, long> GetPathFailsCopy()
+        {
+            Dictionary<PATHFINDPAIR, long> copy;
+            lock (_dictionaryLock)
+            {
+                copy = new Dictionary<PATHFINDPAIR, long>(_pathfindFails);
+            }
+            return copy;
+        }
+
+        public static Dictionary<PATHFINDPAIR, long> GetOutsideFailsCopy()
+        {
+            Dictionary<PATHFINDPAIR, long> copy;
+            lock (_dictionaryLock)
+            {
+                copy = new Dictionary<PATHFINDPAIR, long>(_outsideConnectionFails);
+            }
+            return copy;
+        }
+
+        public static int GetTotalPathFailures()
+        {
+            return _pathfindFails.Count + _outsideConnectionFails.Count;
+        }
+
+        public static int GetTotalPathFailures(ushort usBuilding)
+        {
+            int iValue;
+            if (_totalPathfindBuildingsCounter.TryGetValue(usBuilding, out iValue))
+            {
+                return iValue;
+            }
+            else
+            {
+                return 0;
+            }
+
+        }
 
         /// <summary>
         /// Add or update failure pair
@@ -72,7 +110,9 @@ namespace TransferManagerCE.Util
             {
                 if (_pathfindFails.Count >= MAX_PATHFIND)
                 {
-                    DebugLog.LogInfo($"Pathfindfailure: Count is {_pathfindFails.Count}, Removing key {_pathfindFails.OrderBy(x => x.Value).First().Key.PrintKey()}");
+#if DEBUG 
+                    //DebugLog.LogInfo($"Pathfindfailure: Count is {_pathfindFails.Count}, Removing key {_pathfindFails.OrderBy(x => x.Value).First().Key.PrintKey()}");
+#endif
                     lock (_dictionaryLock)
                     {
                         _pathfindFails.Remove(_pathfindFails.OrderBy(x => x.Value).First().Key);
@@ -80,7 +120,9 @@ namespace TransferManagerCE.Util
                 }
 
                 _pathfindFails.Add(_pair, DateTime.Now.Ticks);
-                DebugLog.LogInfo($"Pathfindfailure: Added key {_pair.PrintKey()}, Count is {_pathfindFails.Count}");
+#if DEBUG
+                //DebugLog.LogInfo($"Pathfindfailure: Added key {_pair.PrintKey()}, Count is {_pathfindFails.Count}");
+#endif
             }
 
 
@@ -106,7 +148,9 @@ namespace TransferManagerCE.Util
             {
                 if (_outsideConnectionFails.Count >= MAX_OUTSIDECONNECTIONS)
                 {
-                    DebugLog.LogInfo($"Pathfindfailure: outsideconnection fail count is {_outsideConnectionFails.Count}, Removing key {_outsideConnectionFails.OrderBy(x => x.Value).First().Key.PrintKey()}");
+#if DEBUG                    
+                    //DebugLog.LogInfo($"Pathfindfailure: outsideconnection fail count is {_outsideConnectionFails.Count}, Removing key {_outsideConnectionFails.OrderBy(x => x.Value).First().Key.PrintKey()}");
+#endif
                     lock (_dictionaryLock)
                     {
                         _outsideConnectionFails.Remove(_outsideConnectionFails.OrderBy(x => x.Value).First().Key);
@@ -114,9 +158,13 @@ namespace TransferManagerCE.Util
                 }
 
                 _outsideConnectionFails.Add(_pair, DateTime.Now.Ticks);
-                DebugLog.LogInfo($"Pathfindfailure: Added outsideconnection fail {_pair.PrintKey()}, Count is {_outsideConnectionFails.Count}");
+#if DEBUG
+                //DebugLog.LogInfo($"Pathfindfailure: Added outsideconnection fail {_pair.PrintKey()}, Count is {_outsideConnectionFails.Count}");
+#endif
             }
 
+            UpdateBuildingFailCount(source);
+            UpdateBuildingFailCount(target);
         }
 
 
@@ -126,13 +174,17 @@ namespace TransferManagerCE.Util
         private static void UpdateBuildingFailCount(ushort buildingID)
         {
             int failcount;
-            if (_pathfindBuildingsCounter.TryGetValue(buildingID, out failcount))
+            
+            // Total count, doesn't reset
+            if (_totalPathfindBuildingsCounter.TryGetValue(buildingID, out failcount))
             {
                 failcount++;
-                _pathfindBuildingsCounter[buildingID] = failcount;
+                _totalPathfindBuildingsCounter[buildingID] = failcount;
             }
             else
-                _pathfindBuildingsCounter.Add(buildingID, 1);
+            {
+                _totalPathfindBuildingsCounter.Add(buildingID, 1);
+            } 
         }
 
 
@@ -169,7 +221,10 @@ namespace TransferManagerCE.Util
                     }
                 }
 
-                DebugLog.LogInfo($"Pathfindfailure: LRU removed {failpair_remove_count} pairs + {failoutside_remove_count} outsideconnections, new count is {_pathfindFails.Count} pairs + {_outsideConnectionFails.Count} outsideconnections");
+                if (failpair_remove_count > 0 || failoutside_remove_count > 0)
+                {
+                    DebugLog.LogInfo($"Pathfindfailure: LRU removed {failpair_remove_count} pairs + {failoutside_remove_count} outsideconnections, new count is {_pathfindFails.Count} pairs + {_outsideConnectionFails.Count} outsideconnections");
+                }
             }
         }
 
@@ -214,7 +269,7 @@ namespace TransferManagerCE.Util
         {
                 var sourceBuilding = Singleton<BuildingManager>.instance.m_buildings.m_buffer[data.m_sourceBuilding];
                 var targetBuilding = Singleton<BuildingManager>.instance.m_buildings.m_buffer[data.m_targetBuilding];
-
+/*
 #if (DEBUG)
                 var instB = default(InstanceID);
                 instB.Building = data.m_sourceBuilding;
@@ -223,58 +278,21 @@ namespace TransferManagerCE.Util
                 var targetName = Singleton<InstanceManager>.instance.GetName(instB);
                 DebugLog.LogInfo($"Pathfindfailure: from '{sourceName}'[{data.m_sourceBuilding}: {sourceBuilding.Info?.name}({sourceBuilding.Info?.m_class})] --> '{targetName}'[{data.m_targetBuilding}: {targetBuilding.Info?.name}({targetBuilding.Info?.m_class})]");
 #endif
-
-            if (((data.m_targetBuilding != 0) && !(targetBuilding.Info?.m_buildingAI is OutsideConnectionAI)) &&
-                ((data.m_sourceBuilding != 0) && !(sourceBuilding.Info?.m_buildingAI is OutsideConnectionAI)))
+*/
+            if (data.m_sourceBuilding != 0 && data.m_targetBuilding != 0)
             {
-                AddFailPair(data.m_sourceBuilding, data.m_targetBuilding);
-            }
-            else if (((data.m_targetBuilding != 0) && (targetBuilding.Info?.m_buildingAI is OutsideConnectionAI)) ||
-                     ((data.m_sourceBuilding != 0) && (sourceBuilding.Info?.m_buildingAI is OutsideConnectionAI)))
-            {
-                AddOutsideConnectionFail(data.m_sourceBuilding, data.m_targetBuilding);
-            }
-
-        }
-
-
-        /// <summary>
-        /// Create chirper message about pathfind issues
-        /// </summary>
-        public static void SendPathFindChirp()
-        {
-            long diffTime = DateTime.Now.Ticks - last_chirp;
-            if (diffTime > CHIRP_INTERVALL)
-            {
-                last_chirp = DateTime.Now.Ticks;
-
-                if (ModSettings.GetSettings().optionPathfindChirper && (_pathfindBuildingsCounter.Count > 0))
+                bool bSourceOutside = sourceBuilding.Info?.m_buildingAI is OutsideConnectionAI;
+                bool btargetOutside = targetBuilding.Info?.m_buildingAI is OutsideConnectionAI;
+                if (bSourceOutside || btargetOutside)
                 {
-                    // get top failed building
-                    var pair = _pathfindBuildingsCounter.OrderByDescending(x => x.Value).First();
-                    ushort buildingKey = pair.Key;
-                    int buildingFailedCount = pair.Value;
-
-                    var instB = default(InstanceID);
-                    instB.Building = buildingKey;
-                    var senderBuilding = Singleton<BuildingManager>.instance.m_buildings.m_buffer[buildingKey];
-                    var buildingName = Singleton<InstanceManager>.instance.GetName(instB);
-                        
-                    if (buildingFailedCount > 1)
-                    {
-                        uint sender = FindCitizenOfBuilding(senderBuilding);
-                        string hashtag = ((senderBuilding.Info.m_class.GetZone() == ItemClass.Zone.ResidentialLow) || (senderBuilding.Info.m_class.GetZone() == ItemClass.Zone.ResidentialHigh)) ? "#ilivethere" : "#iworkthere";
-                        Singleton<MessageManager>.instance.QueueMessage(new CustomCitizenMessage(sender, $"@mayor: FIX YOUR ROAD NETWORK!\n{_pathfindBuildingsCounter.Count} unrouted transfers recenty! Most common:\n{buildingName}({senderBuilding.Info?.name}) -- #ROUTING #{buildingFailedCount} FAILS! {hashtag}!", null));
-                        DebugLog.LogInfo($"@mayor: FIX YOUR ROAD NETWORK!\n{_pathfindBuildingsCounter.Count} unrouted transfers recently! Most common:\n{buildingName}({senderBuilding.Info?.name}) -- #ROUTING #{buildingFailedCount} FAILS! {hashtag}!");
-                        total_chirps_sent++;
-                    }
+                    AddOutsideConnectionFail(data.m_sourceBuilding, data.m_targetBuilding);
                 }
-
-                // clear building fail counter
-                _pathfindBuildingsCounter.Clear();
+                else
+                {
+                    AddFailPair(data.m_sourceBuilding, data.m_targetBuilding);
+                }
             }
         }
-
 
         /// <summary>
         /// FInd citizen working there or living there for chirp origin

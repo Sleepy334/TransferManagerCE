@@ -8,12 +8,12 @@ namespace TransferManagerCE
     {
         public static void Log(string sText)
         {
-            UnityEngine.Debug.Log("[" + TransferToolMain.Title + "]\r\n" + GetCallingFunction() + ": " + sText);
+            UnityEngine.Debug.Log("[" + TransferManagerMain.Title + "]\r\n" + GetCallingFunction() + ": " + sText);
         }
 
         public static void LogError(string sText)
         {
-            UnityEngine.Debug.LogError("[" + TransferToolMain.Title + "]\r\n" + GetCallingFunction() + ": " + sText);
+            UnityEngine.Debug.LogError("[" + TransferManagerMain.Title + "]\r\n" + GetCallingFunction() + ": " + sText);
         }
 
         public static void Log(Exception ex)
