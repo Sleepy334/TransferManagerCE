@@ -1,16 +1,17 @@
 ﻿using ICities;
+using TransferManagerCE.Util;
 
 namespace TransferManagerCE
 {
     public class TransferManagerMain : IUserMod
 	{
-		private static string Version = "v1.3.8";
+		private static string Version = "v1.6.9";
 #if TEST_RELEASE || TEST_DEBUG
 		public static string ModName => "TransferManager CE " + Version + " TEST";
 		public static string Title => ModName;
 #else
 		public static string ModName => "TransferManager CE " + Version; 
-		public static string Title => "TransferManager CE " + Version;
+		public static string Title => "Transfer Manager CE " + " " + Version;
 #endif
 
 		public static bool IsDebug = false;
@@ -29,6 +30,8 @@ namespace TransferManagerCE
 		public void OnEnabled()
 		{
 			IsEnabled = true;
+
+			Localization.LoadAllLanguageFiles();
 		}
 
 		public void OnDisabled()

@@ -9,6 +9,7 @@
     <Deterministic>False</Deterministic>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <Configurations>Debug;Release;TEST Release;TEST Debug</Configurations>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -40,11 +41,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Locales\en.csv" />
     <None Remove="Resources\clear.png" />
     <None Remove="Resources\Transfer.png" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Locales\en.csv" />
     <EmbeddedResource Include="Resources\clear.png" />
     <EmbeddedResource Include="Resources\Transfer.png" />
   </ItemGroup>

@@ -48,6 +48,10 @@ namespace TransferManagerCE
                 // Initialise stats
                 TransferManagerStats.Init();
 
+                MatchLogging.Init();
+
+                BuildingManager.instance.EventBuildingReleased += BuildingReleasedHandler;
+
                 // Create TransferDispatcher and initialize
                 string strError;
                 if (CustomTransferDispatcher.Instance.Initialize(out strError))
@@ -86,6 +90,7 @@ namespace TransferManagerCE
                 }
 
                 InfoPanelButtons.AddInfoPanelButtons();
+                SelectionTool.AddSelectionTool();
             }
         }
 
@@ -144,6 +149,14 @@ namespace TransferManagerCE
             }
 
             return s_atlas;
+        }
+
+        public void BuildingReleasedHandler(ushort building)
+        {
+            if (building != 0)
+            {
+                BuildingSettings.ReleaseBuilding(building);
+            }
         }
     }
 }
