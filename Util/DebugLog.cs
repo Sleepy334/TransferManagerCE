@@ -16,7 +16,8 @@ namespace TransferManagerCE.Util
         public const LogReason REASON_PATHFIND = (LogReason)254;
         public const LogReason REASON_ALL = (LogReason)255;
 
-        public enum LogReason : int { 
+        public enum LogReason : int {
+            //ANALYSE1 = TransferManager.TransferReason.Dead,
             //ANALYSE1 = TransferManager.TransferReason.Sick,
             //ANALYSE1 = TransferManager.TransferReason.Dead,
             //ANALYSE2 = TransferManager.TransferReason.Garbage,

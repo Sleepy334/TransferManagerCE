@@ -16,10 +16,10 @@ namespace TransferManagerCE.Data
             return CitiesUtils.GetDeadCitizens(m_buildingId, building).Count.ToString();
         }
         
-        public override string GetDescription()
+        public override string GetTimer()
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            return "Timer: " + building.m_deathProblemTimer.ToString();
+            return building.m_deathProblemTimer.ToString();
         }
         
     }

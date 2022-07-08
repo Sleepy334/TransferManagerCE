@@ -15,12 +15,18 @@ namespace TransferManagerCE.Patch
             // Update the stats for the specific material
             if (ModSettings.GetSettings().StatisticsEnabled && TransferManagerStats.s_Stats != null)
             {
-                TransferManagerStats.s_Stats[(int)material].m_stats.TotalOutgoingCount++;
-                TransferManagerStats.s_Stats[(int)material].m_stats.TotalOutgoingAmount += offer.Amount;
+                if ((int)material < TransferManagerStats.s_Stats.Length)
+                {
+                    TransferManagerStats.s_Stats[(int)material].TotalOutgoingCount++;
+                    TransferManagerStats.s_Stats[(int)material].TotalOutgoingAmount += offer.Amount;
+                }
 
                 // Update the stats
-                TransferManagerStats.s_Stats[255].m_stats.TotalOutgoingCount++;
-                TransferManagerStats.s_Stats[255].m_stats.TotalOutgoingAmount += offer.Amount;
+                if (TransferManagerStats.iMATERIAL_TOTAL_LOCATION < TransferManagerStats.s_Stats.Length)
+                {
+                    TransferManagerStats.s_Stats[TransferManagerStats.iMATERIAL_TOTAL_LOCATION].TotalOutgoingCount++;
+                    TransferManagerStats.s_Stats[TransferManagerStats.iMATERIAL_TOTAL_LOCATION].TotalOutgoingAmount += offer.Amount;
+                }
             }
             
             return true; // Handle normally

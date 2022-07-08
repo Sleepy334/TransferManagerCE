@@ -1,6 +1,7 @@
 using ColossalFramework;
 using System.Collections.Generic;
 using UnityEngine;
+using static TransferManager;
 
 namespace TransferManagerCE
 {
@@ -69,7 +70,7 @@ namespace TransferManagerCE
         {
             List<ushort> list = new List<ushort>();
 
-            List<ushort> vehicles = GetVehiclesForBuilding(buidlingId);
+            List<ushort> vehicles = GetGuestVehiclesForBuilding(buidlingId);
             foreach (ushort vehicleId in vehicles)
             {
                 Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
@@ -87,7 +88,7 @@ namespace TransferManagerCE
         {
             List<ushort> list = new List<ushort>();
 
-            List<ushort> vehicles = GetVehiclesForBuilding(buidlingId);
+            List<ushort> vehicles = GetGuestVehiclesForBuilding(buidlingId);
             foreach (ushort vehicleId in vehicles)
             {
                 Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
@@ -101,11 +102,32 @@ namespace TransferManagerCE
             return list;
         }
 
+        public static List<ushort> GetGoodsTrucksOnRoute(ushort buidlingId)
+        {
+            List<ushort> list = new List<ushort>();
+
+            List<ushort> vehicles = GetGuestVehiclesForBuilding(buidlingId);
+            foreach (ushort vehicleId in vehicles)
+            {
+                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
+                if ((vehicle.m_flags & Vehicle.Flags.TransferToTarget) == Vehicle.Flags.TransferToTarget &&
+                    (vehicle.Info != null && (vehicle.Info.m_vehicleAI is CargoTruckAI) &&
+                    ((TransferReason)vehicle.m_transferType == TransferReason.Goods || (TransferReason)vehicle.m_transferType == TransferManager.TransferReason.Food)) &&
+                    vehicle.m_sourceBuilding != 0) // Quite often importing vehicles have no target till they get to a cargo staion etc...
+
+                {
+                    list.Add(vehicleId);
+                }
+            }
+
+            return list;
+        }
+
         public static List<ushort> GetPoliceOnRoute(ushort buidlingId)
         {
             List<ushort> list = new List<ushort>();
 
-            List<ushort> vehicles = GetVehiclesForBuilding(buidlingId);
+            List<ushort> vehicles = GetGuestVehiclesForBuilding(buidlingId);
             foreach (ushort vehicleId in vehicles)
             {
                 Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
@@ -119,7 +141,7 @@ namespace TransferManagerCE
             return list;
         }
 
-        public static List<ushort> GetVehiclesForBuilding(ushort buidlingId)
+        public static List<ushort> GetGuestVehiclesForBuilding(ushort buidlingId)
         {
             List<ushort> list = new List<ushort>();
 
@@ -132,6 +154,24 @@ namespace TransferManagerCE
 
                 Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
                 vehicleId = vehicle.m_nextGuestVehicle;
+            }
+
+            return list;
+        }
+
+        public static List<ushort> GetOwnVehiclesForBuilding(ushort buidlingId)
+        {
+            List<ushort> list = new List<ushort>();
+
+            Building building = BuildingManager.instance.m_buildings.m_buffer[buidlingId];
+
+            ushort vehicleId = building.m_ownVehicles;
+            while (vehicleId != 0)
+            {
+                list.Add(vehicleId);
+
+                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
+                vehicleId = vehicle.m_nextOwnVehicle;
             }
 
             return list;
@@ -152,20 +192,32 @@ namespace TransferManagerCE
 
         public static string GetBuildingName(ushort buildingId)
         {
-            if (buildingId != 0)
+            if (buildingId != 0 && buildingId < BuildingManager.instance.m_buildings.m_size)
             {
+                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                if (building.m_flags != Building.Flags.None)
+                {
+                    string sName = Singleton<BuildingManager>.instance.GetBuildingName(buildingId, InstanceID.Empty);
+                    if (string.IsNullOrEmpty(sName))
+                    {
+                        sName = "Building (" + buildingId + ") ";
+                    }
 #if DEBUG
-                return "(" + buildingId + ") " + Singleton<BuildingManager>.instance.GetBuildingName(buildingId, InstanceID.Empty);
-#else
-                return Singleton<BuildingManager>.instance.GetBuildingName(buildingId, InstanceID.Empty);
+                    sName = "(" + buildingId + ") " + sName;
 #endif
+                    return sName;
+                } 
+                else
+                {
+                    return "Abandoned (" + buildingId + ") ";
+                }
             }
             return "";
         }
 
-        public static string GetVehicleName(ushort vehicleId, bool bShowId = true)
+        public static string GetVehicleName(ushort vehicleId)
         {
-            if (vehicleId != 0)
+            if (vehicleId > 0 && vehicleId < VehicleManager.instance.m_vehicles.m_size)
             {
 #if DEBUG
                 return "(" + vehicleId + ") " + Singleton<VehicleManager>.instance.GetVehicleName(vehicleId);
@@ -235,6 +287,118 @@ namespace TransferManagerCE
                 InstanceID buildingInstance = new InstanceID { Citizen = CitizenId };
                 ToolsModifierControl.cameraController.SetTarget(buildingInstance, oPosition, false);
             }
+        }
+
+        public static void ShowPosition(Vector3 position)
+        {
+            ToolsModifierControl.cameraController.m_targetPosition = position;
+        }
+        
+
+        public static int GetWarehouseTruckCount(ushort buildingId)
+        {
+            if (buildingId != 0)
+            {
+                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                WarehouseAI? warehouse = building.Info?.m_buildingAI as WarehouseAI;
+                if (warehouse != null)
+                {
+                    return warehouse.m_truckCount;
+                }
+                else if (building.Info?.m_buildingAI.GetType().ToString() == "CargoFerries.AI.CargoFerryWarehouseHarborAI")
+                {
+                    return 25; // Just return default number for now
+                }
+            }
+            
+            return 0;
+        }
+
+        public static string GetDetectedDistricts(ushort buildingId)
+        {
+            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+            byte district = DistrictManager.instance.GetDistrict(building.m_position);
+            byte park = DistrictManager.instance.GetPark(building.m_position);
+
+            string sMessage = "";
+            if (district != 0)
+            {
+                sMessage += DistrictManager.instance.GetDistrictName(district);
+            }
+            if (park != 0)
+            {
+                if (sMessage.Length > 0)
+                {
+                    sMessage += ", ";
+                }
+                sMessage += DistrictManager.instance.GetParkName(park);               
+            }
+
+            return sMessage;
+        }
+
+        public static bool IsInDistrict(ushort buildingId)
+        {
+            byte district = 0;
+            if (buildingId != 0)
+            {
+                Building inBuilding = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                district = DistrictManager.instance.GetDistrict(inBuilding.m_position);
+            }
+
+            return district != 0;
+        }
+
+        public static bool IsInPark(ushort buildingId)
+        {
+            byte park = 0;
+            if (buildingId != 0)
+            {
+                Building inBuilding = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                park = DistrictManager.instance.GetPark(inBuilding.m_position);
+            }
+
+            return park != 0;
+        }
+
+        public static bool IsSameDistrict(ushort firstBuildingId, ushort secondBuildingId)
+        {
+            // get respective districts
+            byte districtIncoming = 0;
+            if (firstBuildingId != 0)
+            {
+                Building inBuilding = BuildingManager.instance.m_buildings.m_buffer[firstBuildingId];
+                districtIncoming = DistrictManager.instance.GetDistrict(inBuilding.m_position);
+            }
+
+            byte districtOutgoing = 0;
+            if (secondBuildingId != 0)
+            {
+                Building outBuilding = BuildingManager.instance.m_buildings.m_buffer[secondBuildingId];
+                districtOutgoing = DistrictManager.instance.GetDistrict(outBuilding.m_position);
+            }
+
+            return districtIncoming == districtOutgoing && districtIncoming != 0;
+        }
+
+        public static bool IsSamePark(ushort firstBuildingId, ushort secondBuildingId)
+        {
+            // get respective districts
+            byte parkFirst = 0;
+            if (firstBuildingId != 0)
+            {
+                Building inBuilding = BuildingManager.instance.m_buildings.m_buffer[firstBuildingId];
+                parkFirst = DistrictManager.instance.GetPark(inBuilding.m_position);
+            }
+
+            byte parkSecond = 0;
+            if (secondBuildingId != 0)
+            {
+                Building outBuilding = BuildingManager.instance.m_buildings.m_buffer[secondBuildingId];
+                parkSecond = DistrictManager.instance.GetPark(outBuilding.m_position);
+            }
+
+            return parkFirst == parkSecond && parkFirst != 0;
         }
     }
 }

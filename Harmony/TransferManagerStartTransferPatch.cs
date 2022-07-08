@@ -11,11 +11,11 @@ namespace TransferManagerCE.Patch
         [HarmonyPrefix]
         public static bool Prefix(TransferManager __instance, TransferManager.TransferReason material, TransferManager.TransferOffer offerOut, TransferManager.TransferOffer offerIn, int delta)
         {
-            if (!ModSettings.GetSettings().optionEnableNewTransferManager)
-            {
-                TransferManagerCEThreading.StartTransfer(material, offerOut, offerIn, delta);
-            }
-            return true; // Handle normally
+            // Record Transfer Matches
+            TransferManagerCEThreading.StartTransfer(material, offerOut, offerIn, delta);
+
+            // Handle normally
+            return true; 
         }
     } //TransferManagerStartTransferPatch
 }

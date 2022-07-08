@@ -16,6 +16,9 @@ namespace TransferManagerCE
         private static bool s_bHasRepainterBeenCheckedRunning = false;
         private static bool s_bIsRepainterRunning = false;
 
+        private static bool s_bHasAdvancedBuildingLevelBeenCheckedRunning = false;
+        private static bool s_bIsAdvancedBuildingLevelRunning = false;
+
         public static void SearchPlugins()
         {
             string sPlugins = "";
@@ -117,6 +120,27 @@ namespace TransferManagerCE
                 }
 
                 return s_bIsRepainterRunning;
+            }
+            else
+            {
+                return IsPluginRunning(sMOD_ID);
+            }
+        }
+
+        public static bool IsAdvancedBuildingLevelRunning()
+        {
+            const string sMOD_ID = "2133705267";
+
+            // Only cache result once map is loaded
+            if (TransferManagerLoader.IsLoaded())
+            {
+                if (!s_bHasAdvancedBuildingLevelBeenCheckedRunning)
+                {
+                    s_bIsAdvancedBuildingLevelRunning = IsPluginRunning(sMOD_ID);
+                    s_bHasAdvancedBuildingLevelBeenCheckedRunning = true;
+                }
+
+                return s_bIsAdvancedBuildingLevelRunning;
             }
             else
             {

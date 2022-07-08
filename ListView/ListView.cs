@@ -174,20 +174,30 @@ namespace SleepyCommon
             {
                 for (int i = 0; i < items.Length; i++)
                 {
-                    if (i < m_rows.Count)
+                    if (items[i] != null)
                     {
-                        m_rows[i].SetData(items[i]);
-                    }
-                    else
-                    {
-                        AddItem(items[i]);
+                        if (i < m_rows.Count)
+                        {
+                            if (items[i] != null)
+                            {
+                                m_rows[i].SetData(items[i]);
+                            }                            
+                        }
+                        else
+                        {
+                            AddItem(items[i]);
+                        }
                     }
                 }
 
                 // Remove items if we have too many
                 while (m_rows.Count > items.Length)
                 {
-                    UnityEngine.Object.Destroy((UnityEngine.Object)m_rows[m_rows.Count - 1].gameObject);
+                    ListViewRow row = m_rows[m_rows.Count - 1];
+                    if (row != null)
+                    {
+                        UnityEngine.Object.Destroy(row.gameObject);
+                    }
                     m_rows.RemoveAt(m_rows.Count - 1);
                 }
             }

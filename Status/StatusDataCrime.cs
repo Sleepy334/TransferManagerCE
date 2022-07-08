@@ -13,7 +13,7 @@ namespace TransferManagerCE.Data
         public override string GetValue()
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            return building.m_crimeBuffer.ToString();
+            return building.m_crimeBuffer + "/" + CitiesUtils.GetCriminals(m_buildingId, building).Count;
         }
     }
 }

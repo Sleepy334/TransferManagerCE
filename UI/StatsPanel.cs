@@ -19,7 +19,7 @@ namespace TransferManagerCE
         public const int iLISTVIEW_STATS_HEIGHT = 300;
 
         public const int iCOLUMN_MATERIAL_WIDTH = 120;
-        public const int iCOLUMN_WIDTH = 70;
+        public const int iCOLUMN_WIDTH = 60;
         public const int iCOLUMN_BIGGER_WIDTH = 95;
 
         private UITitleBar? m_title = null;
@@ -73,12 +73,13 @@ namespace TransferManagerCE
             if (m_listStats != null)
             {
                 m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, "Material", "Material", iCOLUMN_MATERIAL_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_OUT_COUNT, "OUT Count", "Transfer offer priority", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_OUT_COUNT, "OUT #", "Transfer offer priority", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
                 m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_OUT_AMOUNT, "OUT Amount", "Transfer Offer Amount", iCOLUMN_BIGGER_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_IN_COUNT, "IN Count", "IN Count", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_IN_COUNT, "IN #", "IN Count", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
                 m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_IN_AMOUNT, "IN Amount", "Reason for transfer request", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
                 m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_COUNT, "Matches", "Offer description", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
                 m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_AMOUNT, "Match Amount", "Offer description", iCOLUMN_BIGGER_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_DISTANCE, "Avg Dist.", "Offer description", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
                 m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_OUT_PERCENT, "OUT%", "Offer description", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
                 m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_IN_PERCENT, "IN%", "Offer description", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
             }
@@ -110,11 +111,11 @@ namespace TransferManagerCE
 
         public void OnCloseClick(UIComponent component, UIMouseEventParameter eventParam)
         {
+            Hide();
             if (m_listStats != null)
             {
                 m_listStats.Clear();
             }
-            Hide();
         }
 
         public void UpdatePanel()
@@ -122,9 +123,14 @@ namespace TransferManagerCE
             if (m_listStats != null)
             {
                 // Currently only reason up to Biofuel bus are used.
-                StatsContainer[] statsContainers = new StatsContainer[((int) TransferReason.BiofuelBus) + 1];
-                statsContainers[0] = TransferManagerStats.s_Stats[255]; // Totals first
-                for (int i = 0; i < (int)TransferReason.BiofuelBus; i++)
+                StatsContainer[] statsContainers = new StatsContainer[(int) TransferReason.BiofuelBus + 2];
+
+                // Totals first
+                statsContainers[0] = TransferManagerStats.s_Stats[TransferManagerStats.iMATERIAL_TOTAL_LOCATION];
+                statsContainers[0].m_material = TransferReason.None;
+
+                // Now add rest of materials in order
+                for (int i = 0; i <= (int)TransferReason.BiofuelBus; i++)
                 {
                     statsContainers[i + 1] = TransferManagerStats.s_Stats[i];
                 }

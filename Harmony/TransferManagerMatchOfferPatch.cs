@@ -10,7 +10,7 @@ namespace TransferManagerCE.Patch
         [HarmonyPrefix]
         public static bool Prefix(TransferManager.TransferReason material)
         {
-            // disabled in settings? ->use stock transfer manager
+            // Check if disabled in settings? or not supported material
             if (ModSettings.GetSettings().optionEnableNewTransferManager)
             {
                 // Dispatch to TransferDispatcher
@@ -19,6 +19,7 @@ namespace TransferManagerCE.Patch
             } 
             else
             {
+                // Handle with vanilla Transfer Manager
                 return true;
             }
         }

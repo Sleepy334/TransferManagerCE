@@ -5,6 +5,7 @@ namespace TransferManagerCE
 {
     public class InfoPanelButtons
     {
+        private static UIButton? m_button = null;
         /// <summary>
         /// Adds Ploppable RICO settings buttons to building info panels to directly access that building's RICO settings.
         /// </summary>
@@ -21,9 +22,12 @@ namespace TransferManagerCE
 
             // Warehouse building
             AddInfoPanelButton(UIView.library.Get<WarehouseWorldInfoPanel>(typeof(WarehouseWorldInfoPanel).Name));
+
+            // Warehouse building
+            AddInfoPanelButton(UIView.library.Get<ShelterWorldInfoPanel>(typeof(ShelterWorldInfoPanel).Name));
         }
 
-
+        
         /// <summary>
         /// Adds a Ploppable RICO button to a building info panel to directly access that building's RICO settings.
         /// The button will be added to the right of the panel with a small margin from the panel edge, at the relative Y position specified.
@@ -58,53 +62,90 @@ namespace TransferManagerCE
                 Debug.Log("couldn't find ProblemsPanel relative position");
             }
 
-            UIButton panelButton = infoPanel.component.AddUIComponent<UIButton>();
-
-            // Basic button setup.
-            panelButton.size = new Vector2(34, 34);
-            panelButton.normalBgSprite = "ToolbarIconGroup6Normal";
-            panelButton.normalFgSprite = "Transfer";
-            panelButton.focusedBgSprite = "ToolbarIconGroup6Focused";
-            panelButton.hoveredBgSprite = "ToolbarIconGroup6Hovered";
-            panelButton.pressedBgSprite = "ToolbarIconGroup6Pressed";
-            panelButton.disabledBgSprite = "ToolbarIconGroup6Disabled";
-            panelButton.name = "TransferManagerCEButton";
-            panelButton.tooltip = "Open Transfer Manager CE";
-            panelButton.atlas = TransferManagerLoader.LoadResources();
-
-            // Set position.
-            float fXOffset = -5f;
-            if (infoPanel is ZonedBuildingWorldInfoPanel || infoPanel is CityServiceWorldInfoPanel)
+            m_button = infoPanel.component.AddUIComponent<UIButton>();
+            if (m_button != null)
             {
-                if (DependencyUtilities.IsPloppableRICORunning())
+                // Basic button setup.
+                m_button.size = new Vector2(34, 34);
+                m_button.normalBgSprite = "ToolbarIconGroup6Normal";
+                m_button.normalFgSprite = "Transfer";
+                m_button.focusedBgSprite = "ToolbarIconGroup6Focused";
+                m_button.hoveredBgSprite = "ToolbarIconGroup6Hovered";
+                m_button.pressedBgSprite = "ToolbarIconGroup6Pressed";
+                m_button.disabledBgSprite = "ToolbarIconGroup6Disabled";
+                m_button.name = "TransferManagerCEButton";
+                m_button.tooltip = "Open Transfer Manager CE";
+                m_button.atlas = TransferManagerLoader.LoadResources();
+                m_button.eventMouseEnter += OnMouseEnter;
+         
+                // Buttons to avoid
+                // RICO = 5f
+                // Repainter = 42f
+                // Advanced building control = 62f
+                float fXOffset = -5f;
+                if (infoPanel is ZonedBuildingWorldInfoPanel || infoPanel is CityServiceWorldInfoPanel)
                 {
-                    // Next to ploppable RICO button
-                    fXOffset += -panelButton.width;
+                    if (DependencyUtilities.IsPloppableRICORunning())
+                    {
+                        fXOffset += -m_button.width;
+
+                        if (DependencyUtilities.IsRepainterRunning())
+                        {
+                            fXOffset += -m_button.width + 4f; // Button not as big move it back a bit
+
+                            if (infoPanel is ZonedBuildingWorldInfoPanel && DependencyUtilities.IsAdvancedBuildingLevelRunning())
+                            {
+                                // Need to shift past all 3 buttons
+                                fXOffset += -m_button.width + 10f; // Some of the other icons arent as big, pull it back a bit
+                            }
+                        }
+                    }
                 }
-                if (DependencyUtilities.IsRepainterRunning())
+
+                m_button.AlignTo(infoPanel.component, UIAlignAnchor.TopRight);
+                m_button.relativePosition += new Vector3(fXOffset, relativeY, 0f);
+
+                // Event handler.
+                m_button.eventClick += (control, clickEvent) =>
                 {
-                    // Next to Repainter button
-                    fXOffset += -panelButton.width;
-                }
+                    TransferBuildingPanel.Init();
+
+                    // Select current building in the building details panel and show.
+                    if (WorldInfoPanel.GetCurrentInstanceID().Building != 0)
+                    {
+                        // Open building panel
+                        TransferBuildingPanel.Instance?.SetPanelBuilding(WorldInfoPanel.GetCurrentInstanceID().Building);
+                    }
+
+                    WorldInfoPanel.HideAllWorldInfoPanels();
+
+                    if (SelectionTool.Instance != null)
+                    {
+                        SelectionTool.Instance.Enable();
+                    }
+                    else
+                    {
+                        Debug.Log("Selection tool is null"); 
+                        TransferBuildingPanel.Instance?.ShowPanel();
+                    }
+                
+                };
             }
+        }
 
-            panelButton.AlignTo(infoPanel.component, UIAlignAnchor.TopRight);
-            panelButton.relativePosition += new Vector3(fXOffset, relativeY, 0f);
-            
-            // Event handler.
-            panelButton.eventClick += (control, clickEvent) =>
+        public static void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            if (component != null)
             {
-                // Select current building in the building details panel and show.
-                Debug.Log("Button pressed: " + WorldInfoPanel.GetCurrentInstanceID());
                 if (WorldInfoPanel.GetCurrentInstanceID().Building != 0)
                 {
-                    // Open building panel
-                    TransferManagerCEThreading.ShowTransferBuildingPanel(WorldInfoPanel.GetCurrentInstanceID().Building);
+                    component.tooltip = BuildingSettings.GetTooltipText(WorldInfoPanel.GetCurrentInstanceID().Building);
                 }
-
-                // Manually unfocus control, otherwise it can stay focused until next UI event (looks untidy).
-                control.Unfocus();
-            };
+                else
+                {
+                    component.tooltip = "Open Transfer Manager CE";
+                }
+            }
         }
     }
 }

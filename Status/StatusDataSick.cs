@@ -16,10 +16,10 @@ namespace TransferManagerCE.Data
             return CitiesUtils.GetSickCitizens(m_buildingId, building).Count.ToString();
         }
         
-        public override string GetDescription()
+        public override string GetTimer()
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            return "Timer: " + building.m_healthProblemTimer.ToString();
+            return building.m_healthProblemTimer.ToString();
         }
         
     }

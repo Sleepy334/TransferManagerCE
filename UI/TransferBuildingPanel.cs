@@ -1,50 +1,95 @@
-using ColossalFramework;
 using ColossalFramework.UI;
 using SleepyCommon;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using TransferManagerCE.CustomManager;
+using System.Linq;
 using TransferManagerCE.Data;
-using TransferManagerCE.Patch;
 using TransferManagerCE.Settings;
 using TransferManagerCE.Util;
 using UnityEngine;
-using static TransferManager;
+using static TransferManagerCE.BuildingTypeHelper;
 
 namespace TransferManagerCE
 {
     public class TransferBuildingPanel : UIPanel
     {
+        enum TabIndex
+        {
+            TAB_SETTINGS,
+            TAB_STATUS,
+            TAB_VEHICLES,
+            TAB_TRANSFERS,
+        }
+        
+        public static TransferBuildingPanel? Instance = null;
+
         const int iMARGIN = 8;
         public const int iHEADER_HEIGHT = 20;
 
-        public const int iLISTVIEW_MATCHES_HEIGHT = 200;
-        public const int iLISTVIEW_OFFERS_HEIGHT = 300;
+        public const int iLISTVIEW_MATCHES_HEIGHT = 250;
+        public const int iLISTVIEW_OFFERS_HEIGHT = 196;
 
-        public const int iCOLUMN_WIDTH = 80;
-        public const int iCOLUMN_MATERIAL_WIDTH = 150;
-        public const int iCOLUMN_VEHICLE_WIDTH = 200;
-        public const int iCOLUMN_DESCRIPTION_WIDTH = 300;
+        public const int iCOLUMN_WIDTH_XS = 20;
+        public const int iCOLUMN_WIDTH_SMALL = 60;
+        public const int iCOLUMN_WIDTH_NORMAL = 80;
+        public const int iCOLUMN_WIDTH_LARGE = 100;
+        public const int iCOLUMN_WIDTH_XLARGE = 200;
+        public const int iCOLUMN_WIDTH_250 = 250;
+        public const int iCOLUMN_WIDTH_300 = 300;
+        
 
         private UITitleBar? m_title = null;
+        private UITabStrip? m_tabStrip = null;
+
+        // Settings tab
+        private UIDropDown? m_dropPreferLocalIncoming = null;
+        private UIDropDown? m_dropPreferLocalOutgoing = null;
+        private UIPanel? m_panelImportExport = null;
+        private UICheckBox? m_chkAllowImport = null;
+        private UICheckBox? m_chkAllowExport = null;
+        private UIPanel? m_panelGoodsDelivery = null;
+        private UICheckBox? m_chkReserveCargoTrucks = null;
+        private UILabel? m_lblCustomTransferManagerWarning = null;
+        private UILabel? m_lblDetectedDistricts = null;
+        private UIButton? m_btnApplyToAllDistrict = null;
+        private UIButton? m_btnApplyToAllPark = null;
+        private UIButton? m_btnApplyToAllMap = null;
+
+        // Status tab
+        private ListView m_listStatus = null;
+        private ListView m_listVehicles = null;
+
+        // Transfers tab
         private UILabel? m_lblSource = null;
         private UILabel? m_lblOffers = null;
         private UILabel? m_lblMatches = null;
         private ListView m_listOffers = null;
         private ListView m_listMatches = null;
-        private ListView m_listStatus = null;
-        private UITabStrip? m_tabStrip = null;
 
         public ushort m_buildingId = 0;
 
         private List<OfferData> m_TransferOffers = null;
-        private List<MatchData> m_Matches = null;
 
         public TransferBuildingPanel() : base()
         {
             m_TransferOffers = new List<OfferData>();
-            m_Matches = new List<MatchData>();
+        }
+
+        public static bool IsVisible()
+        {
+            return Instance != null && Instance.isVisible;
+        }
+
+        public static void Init()
+        {
+            if (Instance == null)
+            {
+                Instance = UIView.GetAView().AddUIComponent(typeof(TransferBuildingPanel)) as TransferBuildingPanel;
+                if (Instance == null)
+                {
+                    Prompt.Info("Transfer Manager CE", "Error creating Transfer Building Panel.");
+                }
+            }
         }
 
         public override void Start()
@@ -53,15 +98,12 @@ namespace TransferManagerCE
             name = "TransferBuildingPanel";
             width = 700;
             height = 600;
-            padding = new RectOffset(iMARGIN, iMARGIN, 4, 4);
-            autoLayout = true;
-            autoLayoutDirection = LayoutDirection.Vertical;
             backgroundSprite = "UnlockingPanel2";
             canFocus = true;
             isInteractive = true;
             isVisible = false;
             playAudioEvents = true;
-            m_ClipChildren = true;
+            clipChildren = true;
             eventPositionChanged += (sender, e) =>
             {
                 ModSettings settings = ModSettings.GetSettings();
@@ -79,16 +121,24 @@ namespace TransferManagerCE
             {
                 CenterToParent();
             }
-
+            
             // Title Bar
             m_title = AddUIComponent<UITitleBar>();
             m_title.SetOnclickHandler(OnCloseClick);
+            m_title.SetStatsHandler(OnStatsClick);
             m_title.title = "Transfer Manager CE";
 
+            UIPanel mainPanel = AddUIComponent<UIPanel>();
+            mainPanel.width = width;
+            mainPanel.height = height;
+            mainPanel.padding = new RectOffset(iMARGIN, iMARGIN, iMARGIN, iMARGIN);
+            mainPanel.relativePosition = new Vector3(0f, m_title.height);
+            mainPanel.autoLayout = true;
+            mainPanel.autoLayoutDirection = LayoutDirection.Vertical;
+
             // Object label
-            m_lblSource = AddUIComponent<UILabel>();
-            m_lblSource.width = width - (iMARGIN * 2);
-            m_lblSource.height = 25;
+            m_lblSource = mainPanel.AddUIComponent<UILabel>();
+            m_lblSource.autoSize = true;
             m_lblSource.padding = new RectOffset(4, 4, 4, 4);
             m_lblSource.text = "Select Building";
             m_lblSource.textAlignment = UIHorizontalAlignment.Center;
@@ -111,7 +161,126 @@ namespace TransferManagerCE
                 }
             };
 
-            m_tabStrip = UITabStrip.Create(this, width - 20f, height - m_lblSource.height - m_title.height - 10, null);
+            m_tabStrip = UITabStrip.Create(mainPanel, width - 20f, height - m_lblSource.height - m_title.height - 10, OnTabChanged);
+
+            UIPanel tabSettings = m_tabStrip.AddTab(Localization.Get("tabBuildingPanelSettings"));
+            if (tabSettings != null)
+            {
+                tabSettings.autoLayout = true;
+                tabSettings.autoLayoutDirection = LayoutDirection.Vertical;
+                tabSettings.padding = new RectOffset(10, 10, 10, 10);
+
+                m_lblCustomTransferManagerWarning = tabSettings.AddUIComponent<UILabel>();
+                if (m_lblCustomTransferManagerWarning != null)
+                {
+                    m_lblCustomTransferManagerWarning.text = Localization.Get("txtBuildingPanelTransferManagerWarning");
+                    m_lblCustomTransferManagerWarning.textColor = Color.red;
+                }
+
+                UIHelper helper = new UIHelper(tabSettings);
+
+                // Prefer local services
+                UIHelper helperServiceOptions = (UIHelper)helper.AddGroup(Localization.Get("GROUP_BUILDINGPANEL_DISTRICT"));
+                string[] itemsPreferLocal = {
+                    Localization.Get("dropdownBuildingPanelPreferLocal1"),
+                    Localization.Get("dropdownBuildingPanelPreferLocal2"),
+                    Localization.Get("dropdownBuildingPanelPreferLocal3"),
+                };
+                m_dropPreferLocalIncoming = UIUtils.AddDropDown(helperServiceOptions, Localization.Get("dropdownBuildingPanelIncomingPreferLocalLabel"), itemsPreferLocal, (int)BuildingSettings.PreferLocalDistrictServicesIncoming(m_buildingId));
+                if (m_dropPreferLocalIncoming != null)
+                {
+                    m_dropPreferLocalIncoming.eventSelectedIndexChanged += OnIncomingPreferLocalServices;
+                }
+                m_dropPreferLocalOutgoing = UIUtils.AddDropDown(helperServiceOptions, Localization.Get("dropdownBuildingPanelOutgoingPreferLocalLabel"), itemsPreferLocal, (int)BuildingSettings.PreferLocalDistrictServicesOutgoing(m_buildingId));
+                if (m_dropPreferLocalOutgoing != null)
+                {
+                    m_dropPreferLocalOutgoing.eventSelectedIndexChanged += OnOutgoingPreferLocalServices;
+                }
+
+                m_lblDetectedDistricts = ((UIPanel)helperServiceOptions.self).AddUIComponent<UILabel>();
+                if (m_lblDetectedDistricts != null)
+                {
+                    m_lblDetectedDistricts.text = "Detected Districts: " + CitiesUtils.GetDetectedDistricts(m_buildingId);
+                    m_lblDetectedDistricts.autoSize = false;
+                    m_lblDetectedDistricts.width = tabSettings.width - 40;
+                    m_lblDetectedDistricts.height = 25;
+                    m_lblDetectedDistricts.textAlignment = UIHorizontalAlignment.Center;
+                    m_lblDetectedDistricts.verticalAlignment = UIVerticalAlignment.Middle;
+                    //m_lblDetectedDistricts.backgroundSprite = "InfoviewPanel";
+                    //m_lblDetectedDistricts.color = Color.red;
+                }
+
+                // Outside connections
+                m_panelImportExport = tabSettings.AddUIComponent<UIPanel>();
+                if (m_panelImportExport != null)
+                {
+                    m_panelImportExport.width = width;
+                    m_panelImportExport.height = 120;
+                    m_panelImportExport.autoLayout = true;
+                    m_panelImportExport.autoLayoutDirection = LayoutDirection.Vertical;
+                    UIHelper helperImportExport = new UIHelper(m_panelImportExport);
+                    UIHelper helperOutsideConnections = (UIHelper)helperImportExport.AddGroup(Localization.Get("GROUP_BUILDINGPANEL_OUTSIDE_CONNECTIONS"));
+                    m_chkAllowImport = (UICheckBox)helperOutsideConnections.AddCheckbox(Localization.Get("chkAllowImport"), BuildingSettings.IsReserveCargoTrucks(m_buildingId), OnAllowImportChanged);
+                    m_chkAllowExport = (UICheckBox)helperOutsideConnections.AddCheckbox(Localization.Get("chkAllowExport"), BuildingSettings.IsReserveCargoTrucks(m_buildingId), OnAllowExportChanged);
+                }
+
+                // Good delivery
+                m_panelGoodsDelivery = tabSettings.AddUIComponent<UIPanel>();
+                if (m_panelGoodsDelivery != null)
+                {
+                    m_panelGoodsDelivery.width = width;
+                    m_panelGoodsDelivery.height = 100;
+                    m_panelGoodsDelivery.autoLayout = true;
+                    m_panelGoodsDelivery.autoLayoutDirection = LayoutDirection.Vertical;
+                    UIHelper helperGoodsDelivery = new UIHelper(m_panelGoodsDelivery);
+                    UIHelper helperGoodsDeliveryOptions = (UIHelper)helperGoodsDelivery.AddGroup(Localization.Get("GROUP_BUILDINGPANEL_GOODS_DELIVERY"));
+                    m_chkReserveCargoTrucks = (UICheckBox)helperGoodsDeliveryOptions.AddCheckbox(Localization.Get("chkBuildingPanelReserveWarehouseTrucks"), BuildingSettings.IsReserveCargoTrucks(m_buildingId), OnReserveCargoTrucksChanged);
+                }
+
+                // Apply to all
+                UIHelper helperApplyToAll = (UIHelper)helper.AddGroup(Localization.Get("GROUP_BUILDINGPANEL_APPLYTOALL"));
+                UIPanel panelApplyToAll = ((UIPanel)helperApplyToAll.self).AddUIComponent<UIPanel>();
+                panelApplyToAll.width = tabSettings.width;
+                panelApplyToAll.height = 25;
+                panelApplyToAll.autoLayout = true;
+                panelApplyToAll.autoLayoutDirection = LayoutDirection.Horizontal;
+                panelApplyToAll.autoFitChildrenHorizontally = true;
+                panelApplyToAll.autoLayoutPadding = new RectOffset(0, 20, 0, 0);
+
+                m_btnApplyToAllDistrict = panelApplyToAll.AddUIComponent<UIButton>();
+                m_btnApplyToAllDistrict.text = "District";
+                m_btnApplyToAllDistrict.eventClick += OnApplyToAllDistrictClicked;
+                m_btnApplyToAllDistrict.autoSize = false;
+                m_btnApplyToAllDistrict.width = 100;
+                m_btnApplyToAllDistrict.height = 30;
+                m_btnApplyToAllDistrict.normalBgSprite = "ButtonMenu";
+                m_btnApplyToAllDistrict.hoveredBgSprite = "ButtonMenuHovered";
+                m_btnApplyToAllDistrict.disabledBgSprite = "ButtonMenuDisabled";
+                m_btnApplyToAllDistrict.pressedBgSprite = "ButtonMenuPressed";
+
+                m_btnApplyToAllPark = panelApplyToAll.AddUIComponent<UIButton>();
+                m_btnApplyToAllPark.text = "Park/Industry Area";
+                m_btnApplyToAllPark.eventClick += OnApplyToAllParkClicked;
+                m_btnApplyToAllPark.autoSize = false;
+                m_btnApplyToAllPark.width = 200;
+                m_btnApplyToAllPark.height = 30;
+                m_btnApplyToAllPark.normalBgSprite = "ButtonMenu";
+                m_btnApplyToAllPark.hoveredBgSprite = "ButtonMenuHovered";
+                m_btnApplyToAllPark.disabledBgSprite = "ButtonMenuDisabled";
+                m_btnApplyToAllPark.pressedBgSprite = "ButtonMenuPressed";
+
+                m_btnApplyToAllMap = panelApplyToAll.AddUIComponent<UIButton>();
+                m_btnApplyToAllMap.text = "Map";
+                m_btnApplyToAllMap.eventClick += OnApplyToAllWholeMapClicked;
+                m_btnApplyToAllMap.autoSize = false;
+                m_btnApplyToAllMap.width = 60;
+                m_btnApplyToAllMap.height = 30;
+                m_btnApplyToAllMap.normalBgSprite = "ButtonMenu";
+                m_btnApplyToAllMap.hoveredBgSprite = "ButtonMenuHovered";
+                m_btnApplyToAllMap.disabledBgSprite = "ButtonMenuDisabled";
+                m_btnApplyToAllMap.pressedBgSprite = "ButtonMenuPressed";
+            }
+
             UIPanel? tabStatus = m_tabStrip.AddTab(Localization.Get("tabBuildingPanelStatus"));
             if (tabStatus != null)
             {
@@ -122,12 +291,30 @@ namespace TransferManagerCE
                 m_listStatus = ListView.Create(tabStatus, "ScrollbarTrack", 0.8f, tabStatus.width, tabStatus.height - 10);
                 if (m_listStatus != null)
                 {
-                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("listBuildingPanelStatusColumn1"), "Type of material", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("listBuildingPanelStatusColumn2"), "Current value", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listBuildingPanelStatusColumn3"), "Responder", iCOLUMN_VEHICLE_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listBuildingPanelStatusColumn4"), "Vehicle", iCOLUMN_VEHICLE_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("listBuildingPanelStatusColumn5"), "Status description", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("listBuildingPanelStatusColumn1"), "Type of material", iCOLUMN_WIDTH_NORMAL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("listBuildingPanelStatusColumn2"), "Current value", iCOLUMN_WIDTH_SMALL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_TIMER, Localization.Get("listBuildingPanelStatusColumn5"), "Timer", iCOLUMN_WIDTH_SMALL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listBuildingPanelStatusColumn3"), "Responder", iCOLUMN_WIDTH_250, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listStatus.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listBuildingPanelStatusColumn4"), "Vehicle", iCOLUMN_WIDTH_250, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
                     m_listStatus.HandleSort(ListViewRowComparer.Columns.COLUMN_PRIORITY);
+                }
+            }
+
+            UIPanel? tabVehicles = m_tabStrip.AddTab(Localization.Get("tabBuildingPanelVehicles"));
+            if (tabVehicles != null)
+            {
+                tabVehicles.autoLayout = true;
+                tabVehicles.autoLayoutDirection = LayoutDirection.Vertical;
+
+                // Vehicles list
+                m_listVehicles = ListView.Create(tabVehicles, "ScrollbarTrack", 0.8f, tabVehicles.width, tabVehicles.height - 10);
+                if (m_listVehicles != null)
+                {
+                    m_listVehicles.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("listBuildingPanelStatusColumn1"), "Type of material", iCOLUMN_WIDTH_NORMAL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listVehicles.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("listBuildingPanelStatusColumn2"), "Vehicle transfer value", iCOLUMN_WIDTH_NORMAL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listVehicles.AddColumn(ListViewRowComparer.Columns.COLUMN_VEHICLE, Localization.Get("listBuildingPanelStatusColumn4"), "Vehicle", iCOLUMN_WIDTH_250, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listVehicles.AddColumn(ListViewRowComparer.Columns.COLUMN_VEHICLE_TARGET, Localization.Get("listBuildingPanelVehicleTarget"), "Target", iCOLUMN_WIDTH_250, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listVehicles.HandleSort(ListViewRowComparer.Columns.COLUMN_PRIORITY);
                 }
             }
 
@@ -148,34 +335,35 @@ namespace TransferManagerCE
                 m_listOffers = ListView.Create(tabTransfers, "ScrollbarTrack", 0.8f, tabTransfers.width, iLISTVIEW_OFFERS_HEIGHT);
                 if (m_listOffers != null)
                 {
-                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_INOUT, Localization.Get("listBuildingPanelOffersColumn1"), "Transfer Direction", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("listBuildingPanelOffersColumn2"), "Reason for transfer request", iCOLUMN_MATERIAL_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listBuildingPanelOffersColumn3"), "Transfer offer priority", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    // Active goes here in next version
-                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, Localization.Get("listBuildingPanelOffersColumn5"), "Transfer Offer Amount", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("listBuildingPanelOffersColumn6"), "Offer description", iCOLUMN_DESCRIPTION_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_INOUT, Localization.Get("listBuildingPanelOffersColumn1"), "Transfer Direction", iCOLUMN_WIDTH_NORMAL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("listBuildingPanelOffersColumn2"), "Reason for transfer request", iCOLUMN_WIDTH_LARGE, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listBuildingPanelOffersColumn3"), "Transfer offer priority", iCOLUMN_WIDTH_NORMAL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_ACTIVE, Localization.Get("listBuildingPanelOffersColumn4"), "Transfer offer Active/Passive", iCOLUMN_WIDTH_NORMAL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, Localization.Get("listBuildingPanelOffersColumn5"), "Transfer Offer Amount", iCOLUMN_WIDTH_NORMAL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("listBuildingPanelOffersColumn6"), "Offer description", iCOLUMN_WIDTH_250, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                     m_listOffers.HandleSort(ListViewRowComparer.Columns.COLUMN_PRIORITY);
                 }
-
 
                 m_lblMatches = tabTransfers.AddUIComponent<UILabel>();
                 m_lblMatches.width = tabTransfers.width;
                 m_lblMatches.height = 20;
                 m_lblMatches.padding = new RectOffset(4, 4, 4, 4);
-                m_lblMatches.text = "Match Offers";
+                m_lblMatches.text = Localization.Get("labelBuildingPanelMatchOffers");
 
                 // Offer list
-                m_listMatches = ListView.Create(tabTransfers, "ScrollbarTrack", 0.8f, tabTransfers.width, 144f);
+                m_listMatches = ListView.Create(tabTransfers, "ScrollbarTrack", 0.7f, tabTransfers.width, iLISTVIEW_MATCHES_HEIGHT);
                 if (m_listMatches != null)
                 {
                     //m_listMatches.width = width - 20;
                     //m_listMatches.height = iLISTVIEW_MATCHES_HEIGHT;
-                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listBuildingPanelMatchesColumn1"), "Time of match", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("listBuildingPanelMatchesColumn2"), "Reason for transfer request", iCOLUMN_MATERIAL_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    // Active goes here next version
-                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, Localization.Get("listBuildingPanelMatchesColumn4"), "Transfer match amount", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_DELTAAMOUNT, Localization.Get("listBuildingPanelMatchesColumn5"), "Transfer match delta", iCOLUMN_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("listBuildingPanelMatchesColumn6"), "Match description", iCOLUMN_DESCRIPTION_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listBuildingPanelMatchesColumn1"), "Time of match", iCOLUMN_WIDTH_SMALL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("listBuildingPanelMatchesColumn2"), "Reason for transfer request", iCOLUMN_WIDTH_LARGE, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_INOUT, Localization.Get("listBuildingPanelOffersColumn1"), "", iCOLUMN_WIDTH_SMALL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_ACTIVE, Localization.Get("listBuildingPanelMatchesColumn3"), "Active or Passive for this match", iCOLUMN_WIDTH_SMALL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, Localization.Get("listBuildingPanelMatchesColumn4"), "Transfer match amount", iCOLUMN_WIDTH_SMALL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_DISTANCE, "d", "Transfer distance", iCOLUMN_WIDTH_SMALL, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, "P", "In priority / Out priority", iCOLUMN_WIDTH_XS, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("listBuildingPanelMatchesColumn6"), "Match description", iCOLUMN_WIDTH_250, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                     m_listMatches.HandleSort(ListViewRowComparer.Columns.COLUMN_TIME);
                     m_listMatches.HandleSort(ListViewRowComparer.Columns.COLUMN_TIME);
                 }
@@ -184,7 +372,34 @@ namespace TransferManagerCE
             m_tabStrip.SelectTabIndex(0);
 
             isVisible = true;
+            UpdateSettingsTab();
+            UpdateVehicleTab();
             UpdatePanel();
+        }
+
+        public void OnAllowImportChanged(bool bChecked)
+        {
+            BuildingSettings.SetImport(m_buildingId, bChecked);
+        }
+
+        public void OnAllowExportChanged(bool bChecked)
+        {
+            BuildingSettings.SetExport(m_buildingId, bChecked);
+        }
+
+        public void OnIncomingPreferLocalServices(UIComponent component, int Value)
+        {
+            BuildingSettings.PreferLocalDistrictServicesIncoming(m_buildingId, (BuildingSettings.PreferLocal)Value);
+        }
+
+        public void OnOutgoingPreferLocalServices(UIComponent component, int Value)
+        {
+            BuildingSettings.PreferLocalDistrictServicesOutgoing(m_buildingId, (BuildingSettings.PreferLocal)Value);
+        }
+
+        public void OnReserveCargoTrucksChanged(bool isChecked)
+        {
+            BuildingSettings.ReserveCargoTrucks(m_buildingId, isChecked);
         }
 
         private void FitToScreen()
@@ -196,160 +411,246 @@ namespace TransferManagerCE
             absolutePosition = oFitPosition;
         }
 
+        public bool CanShowSettingsTab()
+        {
+            return BuildingTypeHelper.CanRestrictDistrict(m_buildingId) ||
+                    BuildingTypeHelper.CanImport(m_buildingId) ||
+                    BuildingTypeHelper.CanExport(m_buildingId);
+        }
+
+        public void UpdateSettingsTab()
+        {
+            if (m_tabStrip != null)
+            {
+                BuildingType eType = GetBuildingType(m_buildingId);
+                if (CanShowSettingsTab()) 
+                {
+                    m_tabStrip.SetTabVisible((int)TabIndex.TAB_SETTINGS, true);
+
+                    if (m_lblCustomTransferManagerWarning != null)
+                    {
+                        m_lblCustomTransferManagerWarning.isVisible = !ModSettings.GetSettings().optionEnableNewTransferManager;
+                    }
+
+                    if (m_dropPreferLocalIncoming != null)
+                    {
+                        m_dropPreferLocalIncoming.selectedIndex = (int) BuildingSettings.PreferLocalDistrictServicesIncoming(m_buildingId);
+                    }
+                    if (m_dropPreferLocalOutgoing != null)
+                    {
+                        m_dropPreferLocalOutgoing.selectedIndex = (int)BuildingSettings.PreferLocalDistrictServicesOutgoing(m_buildingId);
+                    }
+                    if (m_lblDetectedDistricts != null)
+                    {
+                        m_lblDetectedDistricts.text = "Detected Districts: " + CitiesUtils.GetDetectedDistricts(m_buildingId);
+                        m_lblDetectedDistricts.textAlignment = UIHorizontalAlignment.Center;
+                    }
+
+                    if (m_panelImportExport != null)
+                    {
+                        bool bCanImport = CanImport(m_buildingId);
+                        bool bCanExport = CanExport(m_buildingId);
+                        if (bCanImport || bCanExport)
+                        {
+                            m_panelImportExport.Show();
+
+                            if (m_chkAllowImport != null)
+                            {
+                                m_chkAllowImport.isEnabled = bCanImport;
+                                m_chkAllowImport.isChecked = BuildingSettings.GetImport(m_buildingId);
+                            }
+                            if (m_chkAllowExport != null)
+                            {
+                                m_chkAllowExport.isEnabled = bCanExport;
+                                m_chkAllowExport.isChecked = BuildingSettings.GetExport(m_buildingId);
+                            }
+                        }
+                        else
+                        {
+                            m_panelImportExport.Hide();
+                        }
+                    }
+
+                    if (m_panelGoodsDelivery != null)
+                    {
+                        if (BuildingTypeHelper.IsWarehouse(m_buildingId))
+                        {
+                            m_panelGoodsDelivery.Show();
+
+                            if (m_chkReserveCargoTrucks != null)
+                            {
+                                // If the global setting is on then disable this button.
+                                if (ModSettings.GetSettings().optionWarehouseReserveTrucks)
+                                {
+                                    m_chkReserveCargoTrucks.isEnabled = false;
+                                    m_chkReserveCargoTrucks.isChecked = true;
+                                }
+                                else
+                                {
+                                    m_chkReserveCargoTrucks.isEnabled = true;
+                                    m_chkReserveCargoTrucks.isChecked = BuildingSettings.IsReserveCargoTrucks(m_buildingId);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            m_panelGoodsDelivery.Hide();
+                        }
+                    }
+
+                    if (m_btnApplyToAllDistrict != null)
+                    {
+                        m_btnApplyToAllDistrict.isEnabled = CitiesUtils.IsInDistrict(m_buildingId);
+                    }
+                    if (m_btnApplyToAllPark != null)
+                    {
+                        m_btnApplyToAllPark.isEnabled = CitiesUtils.IsInPark(m_buildingId);
+                    }
+                }
+                else
+                {
+                    m_tabStrip.SetTabVisible((int)TabIndex.TAB_SETTINGS, false);
+                }
+            }
+        }
+
+        public void UpdateVehicleTab()
+        {
+            if (m_tabStrip != null)
+            {
+                if (HasVehicles(m_buildingId))
+                {
+                    m_tabStrip.SetTabVisible((int)TabIndex.TAB_VEHICLES, true);
+                }
+                else
+                {
+                    m_tabStrip.SetTabVisible((int)TabIndex.TAB_VEHICLES, false);
+                }
+            }
+        }
+
         public void SetPanelBuilding(ushort buildingId)
         {
             m_buildingId = buildingId;
             m_TransferOffers.Clear();
-            m_Matches.Clear();
+            UpdateSettingsTab();
+            UpdateVehicleTab();
             UpdatePanel();
         }
 
-        public void StartTransfer(TransferReason material, TransferOffer outgoingOffer, TransferOffer incomingOffer, int deltaamount)
+        public void ShowPanel(ushort buildingId)
         {
-            if (m_buildingId != 0)
+            SetPanelBuilding(buildingId);
+            ShowPanel();
+        }
+
+        public void ShowPanel()
+        {
+            UpdatePanel();
+            Show(true);
+        }
+
+        public void HidePanel()
+        {
+            if (m_listStatus != null)
             {
-                if (outgoingOffer.Building == m_buildingId)
-                {
-                    m_Matches.Insert(0, new MatchData(material, false, outgoingOffer, incomingOffer, deltaamount));
-                }
-                if (outgoingOffer.Citizen != 0)
-                {
-                    Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[outgoingOffer.Citizen];
-                    if (oCitizen.GetBuildingByLocation() == m_buildingId)
-                    {
-                        m_Matches.Insert(0, new MatchData(material, false, outgoingOffer, incomingOffer, deltaamount));
-                    }
-                }
-
-                if (incomingOffer.Building == m_buildingId)
-                {
-                    m_Matches.Insert(0, new MatchData(material, true, outgoingOffer, incomingOffer, deltaamount));
-                }
-                if (incomingOffer.Citizen != 0)
-                {
-                    Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[incomingOffer.Citizen];
-                    if (oCitizen.GetBuildingByLocation() == m_buildingId)
-                    {
-                        m_Matches.Insert(0, new MatchData(material, true, outgoingOffer, incomingOffer, deltaamount));
-                    }
-                }
+                m_listStatus.Clear();
             }
-
-            // Limit matches to last 20.
-            while (m_Matches.Count > 20)
+            if (m_listOffers != null)
             {
-                m_Matches.RemoveAt(m_Matches.Count - 1);
+                m_listOffers.Clear();
             }
+            if (m_listMatches != null)
+            {
+                m_listMatches.Clear();
+            }
+            if (SelectionTool.Instance != null)
+            {
+                SelectionTool.Instance.Disable();
+            }
+            Hide();
         }
 
-        new public void Show()
+        public void TogglePanel()
         {
-            UpdatePanel();
-            base.Show();
-            UpdatePanel();
-        }
-
-        new public void Hide()
-        {
-            base.Hide();
+            if (isVisible)
+            {
+                HidePanel();
+            }
+            else
+            {
+                ShowPanel();
+            }
         }
 
         public void OnCloseClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            Hide();
+            HidePanel();
         }
 
-        private List<StatusContainer> GetStatusList()
+        public void OnStatsClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            List<StatusContainer> listStatus = new List<StatusContainer>();
+            TransferManagerCEThreading.ToggleStatsPanel();
+        }
 
-            if (m_buildingId != 0)
+        public void OnTabChanged(int index)
+        {
+            UpdatePanel();
+        }
+
+        public List<VehicleData> GetVehicles()
+        {
+            List<VehicleData> list = new List<VehicleData>();
+
+            List<ushort> vehicles = CitiesUtils.GetOwnVehiclesForBuilding(m_buildingId);
+            foreach(ushort vehicleId in vehicles)
             {
-                bool bAddedDead = false;
-                bool bAddedSick = false;
-                bool bAddedGarbage = false;
-                bool bAddedFire = false;
-                bool bAddedCrime = false;
-                bool bAddedMail = false;
+                list.Add(new VehicleData(vehicleId));
+            }
 
-                List<ushort> vehicles = CitiesUtils.GetVehiclesForBuilding(m_buildingId);
-                foreach (ushort vehicleId in vehicles) 
+            return list;
+        }
+
+        public void OnApplyToAllDistrictClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            BuildingSettings settings = BuildingSettings.GetSettings(m_buildingId);
+
+            for (int i = 0; i < BuildingManager.instance.m_buildings.m_buffer.Length; ++i)
+            {
+                if (CitiesUtils.IsSameDistrict(m_buildingId, (ushort)i) && BuildingTypeHelper.IsSameType(m_buildingId, (ushort) i))
                 {
-                    Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                    if ((vehicle.m_flags & Vehicle.Flags.TransferToSource) == Vehicle.Flags.TransferToSource && vehicle.Info != null)
-                    {
-                        // Found a vehicle for this building
-                        if (vehicle.Info.m_vehicleAI is HearseAI)
-                        {
-                            // Hearse
-                            listStatus.Add(new StatusContainer(new StatusDataDead(m_buildingId, vehicle.m_sourceBuilding, vehicleId)));
-                            bAddedDead = true;
-                        }
-                        else if (vehicle.Info.m_vehicleAI is AmbulanceAI)
-                        {
-                            listStatus.Add(new StatusContainer(new StatusDataSick(m_buildingId, vehicle.m_sourceBuilding, vehicleId)));
-                            bAddedSick = true;
-                        }
-                        else if (vehicle.Info.m_vehicleAI is GarbageTruckAI)
-                        {
-                            listStatus.Add(new StatusContainer(new StatusDataGarbage(m_buildingId, vehicle.m_sourceBuilding, vehicleId)));
-                            bAddedGarbage = true;
-                        }
-                        else if (vehicle.Info.m_vehicleAI is FireTruckAI)
-                        {
-                            listStatus.Add(new StatusContainer(new StatusDataFire(m_buildingId, vehicle.m_sourceBuilding, vehicleId)));
-                            bAddedFire = true;
-                        }
-                        else if (vehicle.Info.m_vehicleAI is FireCopterAI)
-                        {
-                            listStatus.Add(new StatusContainer(new StatusDataFire2(m_buildingId, vehicle.m_sourceBuilding, vehicleId)));
-                            bAddedFire = true;
-                        }
-                        else if (vehicle.Info.m_vehicleAI is PoliceCarAI)
-                        {
-                            listStatus.Add(new StatusContainer(new StatusDataCrime(m_buildingId, vehicle.m_sourceBuilding, vehicleId)));
-                            bAddedCrime = true;
-                        }
-                        else if (vehicle.Info.m_vehicleAI is PoliceCopterAI)
-                        {
-                            listStatus.Add(new StatusContainer(new StatusDataCrime(m_buildingId, vehicle.m_sourceBuilding, vehicleId)));
-                            bAddedCrime = true;
-                        }
-                        else if (vehicle.Info.m_vehicleAI is PostVanAI)
-                        {
-                            listStatus.Add(new StatusContainer(new StatusDataMail(m_buildingId, vehicle.m_sourceBuilding, vehicleId)));
-                            bAddedMail = true;
-                        }
-                        
-                    }
+                    BuildingSettings.SetSettings((ushort) i, settings);
                 }
-                if (!bAddedDead)
+            }
+            
+        }
+
+        public void OnApplyToAllParkClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            BuildingSettings settings = BuildingSettings.GetSettings(m_buildingId);
+
+            for (int i = 0; i < BuildingManager.instance.m_buildings.m_buffer.Length; ++i)
+            {
+                if (CitiesUtils.IsSamePark(m_buildingId, (ushort)i) && BuildingTypeHelper.IsSameType(m_buildingId, (ushort)i))
                 {
-                    listStatus.Add(new StatusContainer(new StatusDataDead(m_buildingId, 0, 0)));
+                    BuildingSettings.SetSettings((ushort)i, settings);
                 }
-                if (!bAddedSick)
+            }
+        }
+
+
+        public void OnApplyToAllWholeMapClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            BuildingSettings settings = BuildingSettings.GetSettings(m_buildingId);
+
+            for (int i = 0; i < BuildingManager.instance.m_buildings.m_buffer.Length; ++i)
+            {
+                if (BuildingTypeHelper.IsSameType(m_buildingId, (ushort)i))
                 {
-                    listStatus.Add(new StatusContainer(new StatusDataSick(m_buildingId, 0, 0)));
-                }
-                if (!bAddedGarbage)
-                {
-                    listStatus.Add(new StatusContainer(new StatusDataGarbage(m_buildingId, 0, 0)));
-                }
-                if (!bAddedFire)
-                {
-                    listStatus.Add(new StatusContainer(new StatusDataFire(m_buildingId, 0, 0)));
-                }
-                if (!bAddedCrime)
-                {
-                    listStatus.Add(new StatusContainer(new StatusDataCrime(m_buildingId, 0, 0)));
-                }
-                if (!bAddedMail)
-                {
-                    listStatus.Add(new StatusContainer(new StatusDataMail(m_buildingId, 0, 0)));
+                    BuildingSettings.SetSettings((ushort)i, settings);
                 }
             }
 
-            return listStatus;
         }
 
         public void UpdatePanel()
@@ -360,21 +661,53 @@ namespace TransferManagerCE
                 {
                     m_lblSource.text = CitiesUtils.GetBuildingName(m_buildingId);
                 }
-                if (m_listOffers != null)
+                if (m_tabStrip != null)
                 {
-                    List<OfferData> offers = TransferManagerUtils.GetOffersForBuilding(m_buildingId);
-                    offers.Sort();
-                    m_listOffers.SetItems(offers.ToArray());
-                }
-                if (m_listMatches != null)
-                {
-                    m_listMatches.SetItems(m_Matches.ToArray());
-                }
-                if (m_listStatus != null)
-                {
-                    List<StatusContainer> list = GetStatusList();
-                    list.Sort();
-                    m_listStatus.SetItems(list.ToArray());
+                    switch ((TabIndex) m_tabStrip.GetSelectTabIndex())
+                    {
+                        case TabIndex.TAB_SETTINGS: // Settings
+                            {
+                                break;
+                            }
+                        case TabIndex.TAB_STATUS: // Status
+                            {
+                                if (m_listStatus != null)
+                                {
+                                    List<StatusContainer> list = StatusHelper.GetStatusList(m_buildingId);
+                                    list.Sort();
+                                    m_listStatus.SetItems(list.ToArray());
+                                }
+                                break;
+                            }
+                        case TabIndex.TAB_VEHICLES: // Vehicles
+                            {
+                                if (m_listVehicles != null)
+                                {
+                                    List<VehicleData> vehicles = GetVehicles();
+                                    m_listVehicles.SetItems(vehicles.ToArray());
+                                }
+                                break;
+                            }
+                        case TabIndex.TAB_TRANSFERS: // Transfers
+                            {
+                                if (m_listOffers != null)
+                                {
+                                    List<OfferData> offers = TransferManagerUtils.GetOffersForBuilding(m_buildingId);
+                                    offers.Sort();
+                                    m_listOffers.SetItems(offers.Take(30).ToArray());
+                                }
+                                if (m_listMatches != null && MatchLogging.instance != null)
+                                {
+                                    List<MatchData> list = MatchLogging.instance.GetMatchesForBuilding(m_buildingId);
+                                    if (list != null)
+                                    {
+                                        list.Sort();
+                                        m_listMatches.SetItems(list.Take(30).ToArray());
+                                    }
+                                }
+                                break;
+                            }
+                    }
                 }
             }
         }

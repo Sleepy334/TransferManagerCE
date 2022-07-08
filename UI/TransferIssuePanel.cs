@@ -7,11 +7,21 @@ using System.Linq;
 using TransferManagerCE.Settings;
 using TransferManagerCE.Util;
 using UnityEngine;
+using static TransferManager;
 
 namespace TransferManagerCE
 {
     public class TransferIssuePanel : UIPanel
     {
+        enum TabOrder
+        {
+            TAB_PATHING,
+            TAB_OUTSIDE,
+            TAB_DEAD,
+            TAB_SICK,
+            TAB_GOODS,
+        }
+        
         const int iMARGIN = 8;
         public const int iCOLUMN_WIDTH_VALUE = 40;
         public const int iCOLUMN_WIDTH_TIME = 60;
@@ -23,12 +33,17 @@ namespace TransferManagerCE
 
         private UITitleBar? m_title = null;
         private ListView m_listPathing = null;
+        private ListView m_listOutside = null;
         private ListView m_listSick = null;
+        private ListView m_listGoods = null;
         private ListView m_listDead = null;
         private UITabStrip? m_tabStrip = null;
+        TransferIssueHelper? m_issueHelper = null;
+        private UICheckBox? m_chkShowIssuesWithVehicles = null;
 
         public TransferIssuePanel() : base()
         {
+            m_issueHelper = new TransferIssueHelper();
         }
 
         public override void Start()
@@ -69,8 +84,8 @@ namespace TransferManagerCE
             m_title.SetOnclickHandler(OnCloseClick);
             m_title.title = Localization.Get("titleTransferIssuesPanel");
 
-            m_tabStrip = UITabStrip.Create(this, width - 20f, height - m_title.height - 10, OnTabChanged);
-            
+            m_tabStrip = UITabStrip.Create(this, width - 20f, height - m_title.height - 10 - 20 , OnTabChanged);
+
             // Pathing
             UIPanel? tabPathing = m_tabStrip.AddTab(Localization.Get("tabTransferIssuesPathing"));
             if (tabPathing != null)
@@ -88,6 +103,23 @@ namespace TransferManagerCE
                 }
 
                 m_tabStrip.SelectTabIndex(0);
+            }
+
+            // Pathing
+            UIPanel? tabOutside = m_tabStrip.AddTab(Localization.Get("tabTransferIssuesOutside"));
+            if (tabOutside != null)
+            {
+                tabOutside.autoLayout = true;
+                tabOutside.autoLayoutDirection = LayoutDirection.Vertical;
+
+                // Issue list
+                m_listOutside = ListView.Create(tabOutside, "ScrollbarTrack", 0.8f, tabOutside.width, tabOutside.height - 10);
+                if (m_listOutside != null)
+                {
+                    m_listOutside.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listPathingColumn1"), "Issue type", iCOLUMN_WIDTH_TIME, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listOutside.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listPathingColumn2"), "Source location for path", iCOLUMN_WIDTH_PATHING_BUILDING, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listOutside.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listPathingColumn3"), "Target destination for path", iCOLUMN_WIDTH_PATHING_BUILDING, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                }
             }
 
             // Dead
@@ -132,8 +164,38 @@ namespace TransferManagerCE
                 }
             }
 
+            // Sick
+            UIPanel? tabGoods = m_tabStrip.AddTab(Localization.Get("tabTransferIssuesGoods"));
+            if (tabGoods != null)
+            {
+                tabGoods.autoLayout = true;
+                tabGoods.autoLayoutDirection = LayoutDirection.Vertical;
+
+                // Issue list
+                m_listGoods = ListView.Create(tabGoods, "ScrollbarTrack", 0.7f, tabGoods.width, tabGoods.height - 10);
+                if (m_listGoods != null)
+                {
+                    m_listGoods.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("tabTransferIssuesGoods"), "", iCOLUMN_WIDTH_VALUE, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listGoods.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listDeadColumn2"), "", iCOLUMN_WIDTH_VALUE, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listGoods.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listDeadColumn3"), "", iCOLUMN_VEHICLE_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listGoods.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listDeadColumn4"), "", iCOLUMN_VEHICLE_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listGoods.AddColumn(ListViewRowComparer.Columns.COLUMN_VEHICLE, Localization.Get("listDeadColumn5"), "", iCOLUMN_VEHICLE_WIDTH, TransferBuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listGoods.HandleSort(ListViewRowComparer.Columns.COLUMN_TIME);
+                    m_listGoods.HandleSort(ListViewRowComparer.Columns.COLUMN_TIME);
+                }
+            }
+
+            UIHelper helper = new UIHelper(this);
+            m_chkShowIssuesWithVehicles = (UICheckBox)helper.AddCheckbox(Localization.Get("optionShowIssuesWithVehiclesOnRoute"), ModSettings.GetSettings().TransferIssueShowWithVehiclesOnRoute, OnShowIssuesClicked);
+
             isVisible = true;
             UpdatePanel();
+        }
+
+        private void OnShowIssuesClicked(bool bEnabled)
+        {
+            ModSettings.GetSettings().TransferIssueShowWithVehiclesOnRoute = bEnabled;
+            ModSettings.GetSettings().Save();
         }
 
         private void FitToScreen()
@@ -147,7 +209,6 @@ namespace TransferManagerCE
 
         new public void Show()
         {
-            UpdatePanel();
             base.Show();
             UpdatePanel();
         }
@@ -157,6 +218,10 @@ namespace TransferManagerCE
             if (m_listPathing != null) 
             {
                 m_listPathing.Clear();
+            }
+            if (m_listOutside != null)
+            {
+                m_listOutside.Clear();
             }
             if (m_listDead != null)
             {
@@ -178,12 +243,6 @@ namespace TransferManagerCE
         {
             List<PathingContainer> list = new List<PathingContainer>();
 
-            Dictionary<Util.PATHFINDPAIR, long> outsideFailures = Util.PathFindFailure.GetOutsideFailsCopy();
-            foreach (KeyValuePair<Util.PATHFINDPAIR, long> kvp in outsideFailures)
-            {
-                list.Add(new PathingContainer(kvp.Value, kvp.Key.sourceBuilding, kvp.Key.targetBuilding));
-            }
-
             Dictionary<Util.PATHFINDPAIR, long> failures = Util.PathFindFailure.GetPathFailsCopy();
             foreach (KeyValuePair<Util.PATHFINDPAIR, long> kvp in failures)
             {
@@ -193,78 +252,14 @@ namespace TransferManagerCE
             return list;
         }
 
-        public List<TransferIssueContainer> GetDeadIssues()
+        public List<PathingContainer> GetOutsideIssues()
         {
-            List<TransferIssueContainer> list = new List<TransferIssueContainer>();
+            List<PathingContainer> list = new List<PathingContainer>();
 
-            for (int i = 0; i < BuildingManager.instance.m_buildings.m_buffer.Length; i++)
+            Dictionary<Util.PATHFINDPAIR, long> outsideFailures = Util.PathFindFailure.GetOutsideFailsCopy();
+            foreach (KeyValuePair<Util.PATHFINDPAIR, long> kvp in outsideFailures)
             {
-                ushort sourceBuilding = (ushort)i;
-                Building building = BuildingManager.instance.m_buildings.m_buffer[sourceBuilding];
-
-                // Dead issues
-                if (building.m_deathProblemTimer > ModSettings.GetSettings().DeathcareThreshold)
-                {
-                    List<uint> cimDead = CitiesUtils.GetDeadCitizens(sourceBuilding, building);
-                    if (cimDead.Count > 0)
-                    {
-                        List<ushort> vehicles = CitiesUtils.GetHearsesOnRoute(sourceBuilding);
-                        if (vehicles.Count > 0)
-                        {
-                            if (ModSettings.GetSettings().TransferIssueShowWithVehiclesOnRoute)
-                            {
-                                foreach (ushort vehicleId in vehicles)
-                                {
-                                    Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                                    list.Add(new TransferIssueContainer(TransferManager.TransferReason.Dead, cimDead.Count, building.m_deathProblemTimer, sourceBuilding, vehicle.m_sourceBuilding, vehicleId));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            list.Add(new TransferIssueContainer(TransferManager.TransferReason.Dead, cimDead.Count, building.m_deathProblemTimer, sourceBuilding, 0, 0));
-                        }
-                    }
-                }
-            }
-
-            return list;
-        }
-
-        public List<TransferIssueContainer> GetSickIssues()
-        {
-            List<TransferIssueContainer> list = new List<TransferIssueContainer>();
-
-            for (int i = 0; i < BuildingManager.instance.m_buildings.m_buffer.Length; i++)
-            {
-                ushort sourceBuilding = (ushort)i;
-                Building building = BuildingManager.instance.m_buildings.m_buffer[sourceBuilding];
-
-                // Health issues
-                if (building.m_healthProblemTimer > ModSettings.GetSettings().HealthcareThreshold)
-                {
-                    List<uint> cimSick = CitiesUtils.GetSickCitizens(sourceBuilding, building);
-                    if (cimSick.Count > 0)
-                    {
-                        List<ushort> vehicles = CitiesUtils.GetAmbulancesOnRoute(sourceBuilding);
-                        if (vehicles.Count > 0)
-                        {
-                            if (ModSettings.GetSettings().TransferIssueShowWithVehiclesOnRoute)
-                            {
-                                foreach (ushort vehicleId in vehicles)
-                                {
-                                    Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                                    list.Add(new TransferIssueContainer(TransferManager.TransferReason.Sick, cimSick.Count, building.m_healthProblemTimer, sourceBuilding, vehicle.m_sourceBuilding, vehicleId));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            list.Add(new TransferIssueContainer(TransferManager.TransferReason.Sick, cimSick.Count, building.m_healthProblemTimer, sourceBuilding, 0, 0));
-                        }
-                        
-                    }
-                }
+                list.Add(new PathingContainer(kvp.Value, kvp.Key.sourceBuilding, kvp.Key.targetBuilding));
             }
 
             return list;
@@ -277,10 +272,12 @@ namespace TransferManagerCE
 
         public void UpdatePanel()
         {
-            if (m_tabStrip != null && m_tabStrip.Count >= 3) {
-                switch (m_tabStrip.GetSelectTabIndex())
+            if (m_tabStrip != null && m_tabStrip.Count >= 3 && m_issueHelper != null) {
+                m_issueHelper.UpdateIssues();
+
+                switch ((TabOrder) m_tabStrip.GetSelectTabIndex())
                 {
-                    case 0:
+                    case TabOrder.TAB_PATHING:
                         {
                             if (m_listPathing != null)
                             {
@@ -289,34 +286,70 @@ namespace TransferManagerCE
                                 m_listPathing.SetItems(list.Take(100).ToArray());
 
                                 // Update tab to show count
-                                m_tabStrip.SetTabText(0, Localization.Get("tabTransferIssuesPathing") + " (" + list.Count + ")");
-                                m_tabStrip.SetTabText(1, Localization.Get("tabTransferIssuesDead") + " (" + GetDeadIssues().Count() + ")");
-                                m_tabStrip.SetTabText(2, Localization.Get("tabTransferIssuesSick") + " (" + GetSickIssues().Count() + ")");
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_PATHING, Localization.Get("tabTransferIssuesPathing") + " (" + list.Count + ")");
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_OUTSIDE, Localization.Get("tabTransferIssuesOutside") + " (" + GetOutsideIssues().Count + ")");
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_DEAD, Localization.Get("tabTransferIssuesDead") + " (" + m_issueHelper.GetIssues(TransferReason.Dead).Count() + ")");
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_SICK, Localization.Get("tabTransferIssuesSick") + " (" + m_issueHelper.GetIssues(TransferReason.Sick).Count() + ")");
                             }
                         }
                         break;
-                    case 1:
+                    case TabOrder.TAB_OUTSIDE:
                         {
-                            List<TransferIssueContainer> list = GetDeadIssues();
+                            if (m_listOutside != null)
+                            {
+                                List<PathingContainer> list = GetOutsideIssues();
+                                list.Sort();
+                                m_listOutside.SetItems(list.Take(100).ToArray());
+
+                                // Update tab to show count
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_PATHING, Localization.Get("tabTransferIssuesPathing") + " (" + GetPathingIssues().Count + ")");
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_OUTSIDE, Localization.Get("tabTransferIssuesOutside") + " (" + list.Count + ")");
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_DEAD, Localization.Get("tabTransferIssuesDead") + " (" + m_issueHelper.GetIssues(TransferReason.Dead).Count() + ")");
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_SICK, Localization.Get("tabTransferIssuesSick") + " (" + m_issueHelper.GetIssues(TransferReason.Sick).Count() + ")");
+                                m_tabStrip.SetTabText((int)TabOrder.TAB_GOODS, Localization.Get("tabTransferIssuesGoods") + " (" + m_issueHelper.GetIssues(TransferReason.Goods).Count() + ")");
+                            }
+                        }
+                        break;
+                    case TabOrder.TAB_DEAD:
+                        {
+                            List<TransferIssueContainer> list = m_issueHelper.GetIssues(TransferReason.Dead);
                             list.Sort();
                             m_listDead.SetItems(list.Take(100).ToArray());
 
                             // Update tab to show count
-                            m_tabStrip.SetTabText(0, Localization.Get("tabTransferIssuesPathing") + " (" + PathFindFailure.GetTotalPathFailures() + ")");
-                            m_tabStrip.SetTabText(1, Localization.Get("tabTransferIssuesDead") + " (" + list.Count + ")");
-                            m_tabStrip.SetTabText(2, Localization.Get("tabTransferIssuesSick") + " (" + GetSickIssues().Count() + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_PATHING, Localization.Get("tabTransferIssuesPathing") + " (" + GetPathingIssues().Count + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_OUTSIDE, Localization.Get("tabTransferIssuesOutside") + " (" + GetOutsideIssues().Count + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_DEAD, Localization.Get("tabTransferIssuesDead") + " (" + m_issueHelper.GetIssues(TransferReason.Dead).Count() + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_SICK, Localization.Get("tabTransferIssuesSick") + " (" + m_issueHelper.GetIssues(TransferReason.Sick).Count() + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_GOODS, Localization.Get("tabTransferIssuesGoods") + " (" + m_issueHelper.GetIssues(TransferReason.Goods).Count() + ")");
                         }
                         break;
-                    case 2:
+                    case TabOrder.TAB_SICK:
                         {
-                            List<TransferIssueContainer> list = GetSickIssues();
+                            List<TransferIssueContainer> list = m_issueHelper.GetIssues(TransferReason.Sick);
                             list.Sort();
                             m_listSick.SetItems(list.Take(100).ToArray());
 
                             // Update tab to show count
-                            m_tabStrip.SetTabText(0, Localization.Get("tabTransferIssuesPathing") + " (" + PathFindFailure.GetTotalPathFailures() + ")");
-                            m_tabStrip.SetTabText(1, Localization.Get("tabTransferIssuesDead") + " (" + GetDeadIssues().Count() + ")");
-                            m_tabStrip.SetTabText(2, Localization.Get("tabTransferIssuesSick") + " (" + list.Count + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_PATHING, Localization.Get("tabTransferIssuesPathing") + " (" + GetPathingIssues().Count + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_OUTSIDE, Localization.Get("tabTransferIssuesOutside") + " (" + GetOutsideIssues().Count + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_DEAD, Localization.Get("tabTransferIssuesDead") + " (" + m_issueHelper.GetIssues(TransferReason.Dead).Count() + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_SICK, Localization.Get("tabTransferIssuesSick") + " (" + m_issueHelper.GetIssues(TransferReason.Sick).Count() + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_GOODS, Localization.Get("tabTransferIssuesGoods") + " (" + m_issueHelper.GetIssues(TransferReason.Goods).Count() + ")");
+                        }
+                        break;
+                    case TabOrder.TAB_GOODS:
+                        {
+                            List<TransferIssueContainer> list = m_issueHelper.GetIssues(TransferReason.Goods);
+                            list.Sort();
+                            m_listGoods.SetItems(list.Take(100).ToArray());
+
+                            // Update tab to show count
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_PATHING, Localization.Get("tabTransferIssuesPathing") + " (" + GetPathingIssues().Count + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_OUTSIDE, Localization.Get("tabTransferIssuesOutside") + " (" + GetOutsideIssues().Count + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_DEAD, Localization.Get("tabTransferIssuesDead") + " (" + m_issueHelper.GetIssues(TransferReason.Dead).Count() + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_SICK, Localization.Get("tabTransferIssuesSick") + " (" + m_issueHelper.GetIssues(TransferReason.Sick).Count() + ")");
+                            m_tabStrip.SetTabText((int)TabOrder.TAB_GOODS, Localization.Get("tabTransferIssuesGoods") + " (" + m_issueHelper.GetIssues(TransferReason.Goods).Count() + ")");
                         }
                         break;
                 }
@@ -336,6 +369,10 @@ namespace TransferManagerCE
             if (m_listSick != null)
             {
                 Destroy(m_listSick.gameObject);
+            }
+            if (m_listGoods != null)
+            {
+                Destroy(m_listGoods.gameObject);
             }
             if (m_title != null)
             {

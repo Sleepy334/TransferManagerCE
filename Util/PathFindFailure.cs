@@ -31,13 +31,14 @@ namespace TransferManagerCE.Util
         // building-to-building
         const int MAX_PATHFIND = 256;
         static Dictionary<PATHFINDPAIR, long> _pathfindFails = new Dictionary<PATHFINDPAIR, long>(MAX_PATHFIND);
-
         // building-to-outsideconnection
         const int MAX_OUTSIDECONNECTIONS = 256;
         static Dictionary<PATHFINDPAIR, long> _outsideConnectionFails = new Dictionary<PATHFINDPAIR, long>(MAX_OUTSIDECONNECTIONS);
+        static readonly object _dictionaryLock = new object();
 
         // Chirper and Transfer Issue building fail counters
         static Dictionary<ushort, int> _totalPathfindBuildingsCounter = new Dictionary<ushort, int>();
+        static readonly object s_pathCounterLock = new object();
 
         // Statistics
         #region STATISTICS
@@ -50,7 +51,6 @@ namespace TransferManagerCE.Util
         public static int GetTotalChirps() => total_chirps_sent;
         #endregion
 
-        static readonly object _dictionaryLock = new object();
         public const long LRU_INTERVALL = TimeSpan.TicksPerMillisecond * 1000 * 60; //15 sec
         static long lru_lastCleaned;
 
@@ -81,16 +81,48 @@ namespace TransferManagerCE.Util
 
         public static int GetTotalPathFailures(ushort usBuilding)
         {
-            int iValue;
-            if (_totalPathfindBuildingsCounter.TryGetValue(usBuilding, out iValue))
+            lock (s_pathCounterLock)
             {
-                return iValue;
+                int iValue;
+                if (_totalPathfindBuildingsCounter.TryGetValue(usBuilding, out iValue))
+                {
+                    return iValue;
+                }
+                else
+                {
+                    return 0;
+                }
             }
-            else
-            {
-                return 0;
-            }
+        }
 
+        public static void ResetPathingStatistics()
+        {
+            lock (s_pathCounterLock)
+            {
+                _totalPathfindBuildingsCounter.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Increase buidign fail count
+        /// </summary>
+        private static void UpdateBuildingFailCount(ushort buildingID)
+        {
+            lock (s_pathCounterLock)
+            {
+                int failcount;
+
+                // Total count, doesn't reset
+                if (_totalPathfindBuildingsCounter.TryGetValue(buildingID, out failcount))
+                {
+                    failcount++;
+                    _totalPathfindBuildingsCounter[buildingID] = failcount;
+                }
+                else
+                {
+                    _totalPathfindBuildingsCounter.Add(buildingID, 1);
+                }
+            }
         }
 
         /// <summary>
@@ -166,27 +198,6 @@ namespace TransferManagerCE.Util
             UpdateBuildingFailCount(source);
             UpdateBuildingFailCount(target);
         }
-
-
-        /// <summary>
-        /// Increase buidign fail count
-        /// </summary>
-        private static void UpdateBuildingFailCount(ushort buildingID)
-        {
-            int failcount;
-            
-            // Total count, doesn't reset
-            if (_totalPathfindBuildingsCounter.TryGetValue(buildingID, out failcount))
-            {
-                failcount++;
-                _totalPathfindBuildingsCounter[buildingID] = failcount;
-            }
-            else
-            {
-                _totalPathfindBuildingsCounter.Add(buildingID, 1);
-            } 
-        }
-
 
         /// <summary>
         /// Cleanup old entries by last used

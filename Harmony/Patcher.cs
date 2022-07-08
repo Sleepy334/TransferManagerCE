@@ -41,6 +41,9 @@ namespace TransferManagerCE
                 patchList.Add(typeof(Patch.Police.PoliceCopterAIAISimulationStepPatch));
                 patchList.Add(typeof(Patch.Garbage.GarbageTruckAIPatchSimulationStepPatch));
 
+                // General patches
+                patchList.Add(typeof(Patch.EscapePatch));
+
                 s_iHarmonyPatches = patchList.Count;
 
                 string sMessage = "Patching the following functions:\r\n";
@@ -50,8 +53,6 @@ namespace TransferManagerCE
                     harmony.CreateClassProcessor(patchType).Patch();
                 }
                 Debug.Log(sMessage);
-
-                //harmony.PatchAll(Assembly.GetExecutingAssembly());
             }
         }
 

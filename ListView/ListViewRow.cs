@@ -54,10 +54,13 @@ namespace SleepyCommon
             }
         }
 
-        public void Setup(ListData data)
+        public void Setup(ListData? data)
         {
-            data.CreateColumns(this, m_columns);
-            UpdateData();
+            if (data != null)
+            {
+                data.CreateColumns(this, m_columns);
+                UpdateData();
+            }
         }
 
         public void AddColumn(ListViewRowComparer.Columns eColumn, string sText, string sTooltip, int iWidth, UIHorizontalAlignment oTextAlignment, UIAlignAnchor oAncor)

@@ -39,7 +39,7 @@ namespace TransferManagerCE
                             if (offerSearch.Citizen == offer.Citizen && !existing.Contains(offerSearch))
                             {
 #if DEBUG
-                                Debug.Log($"CALL AGAIN: Existing transfer offer {CustomTransferManager.DebugInspectOffer2(offer)} DETECTED");
+                                Debug.Log($"CALL AGAIN: Existing transfer offer {TransferManagerUtils.DebugOffer(offer)} DETECTED");
 #endif
                                 existing.Add(offerSearch);
                             }
@@ -60,49 +60,46 @@ namespace TransferManagerCE
             // Reflect transfer offer fields.
             FieldInfo incomingField = typeof(TransferManager).GetField("m_incomingOffers", BindingFlags.Instance | BindingFlags.NonPublic);
             FieldInfo outgoingField = typeof(TransferManager).GetField("m_outgoingOffers", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo incomingCountField = typeof(TransferManager).GetField("m_incomingCount", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo outgoingCountField = typeof(TransferManager).GetField("m_outgoingCount", BindingFlags.NonPublic | BindingFlags.Instance);
+            
             TransferOffer[] incomingOffers = incomingField.GetValue(manager) as TransferOffer[];
             TransferOffer[] outgoingOffers = outgoingField.GetValue(manager) as TransferOffer[];
+            ushort[] incomingCount = (ushort[])incomingCountField.GetValue(manager);
+            ushort[] outgoingCount = (ushort[])outgoingCountField.GetValue(manager);
 
             // Find offers to this building.
             if (incomingOffers != null && outgoingOffers != null)
             {
-                for (int i = 0; i < incomingOffers.Length; ++i)
+                for (int material = 0; material < TRANSFER_REASON_COUNT; material++)
                 {
-                    // Calculate reason and priority
-                    TransferManager.TransferReason material = (TransferManager.TransferReason)((i & 0xFFFFF800) >> 11);
-                    int priority = (i & 0x0700) >> 8;
+                    // Loop through outgoing for this material
+                    int material_offset = material * 8;
+                    int offer_offset;
 
-                    // Incoming offers.
-                    if (incomingOffers[i].Amount > 0)
+                    for (int priority = 7; priority >= 0; --priority)
                     {
-                        if (incomingOffers[i].Building == buildingId)
+                        offer_offset = material_offset + priority;
+                        for (int offerIndex = 0; offerIndex < outgoingCount[offer_offset]; offerIndex++)
                         {
-                            offers.Add(new OfferData(material, true, incomingOffers[i], priority));
-                        }
-                        else if (incomingOffers[i].Citizen != 0)
-                        {
-                            Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[incomingOffers[i].Citizen];
-                            if (oCitizen.GetBuildingByLocation() == buildingId)
+                            TransferOffer offer = outgoingOffers[offer_offset * 256 + offerIndex];
+                            if (GetOfferBuilding(ref offer) == buildingId)
                             {
-                                offers.Add(new OfferData(material, true, incomingOffers[i], priority));
+                                offers.Add(new OfferData((TransferReason)material, false, offer));
                             }
                         }
                     }
 
-
-                    // Outgoing offers.
-                    if (outgoingOffers[i].Amount > 0)
+                    // Loop through incoming for this material
+                    for (int priority = 7; priority >= 0; --priority)
                     {
-                        if (outgoingOffers[i].Building == buildingId)
+                        offer_offset = material_offset + priority;
+                        for (int offerIndex = 0; offerIndex < incomingCount[offer_offset]; offerIndex++)
                         {
-                            offers.Add(new OfferData(material, false, outgoingOffers[i], priority));
-                        }
-                        else if (outgoingOffers[i].Citizen != 0)
-                        {
-                            Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[outgoingOffers[i].Citizen];
-                            if (oCitizen.GetBuildingByLocation() == buildingId)
+                            TransferOffer offer = incomingOffers[offer_offset * 256 + offerIndex];
+                            if (GetOfferBuilding(ref offer) == buildingId)
                             {
-                                offers.Add(new OfferData(material, false, outgoingOffers[i], priority));
+                                offers.Add(new OfferData((TransferReason)material, true, offer));
                             }
                         }
                     }
@@ -110,6 +107,95 @@ namespace TransferManagerCE
             }
 
             return offers;
+        }
+
+        public static string DebugOffer(TransferOffer offer)
+        {
+            string sMessage = "";
+            sMessage += "Priority:" + offer.Priority;
+            sMessage += "Active:" + offer.Active;
+            sMessage += "Exclude:" + offer.Exclude;
+            sMessage += " Amount: " + offer.Amount;
+            if (offer.Building > 0 && offer.Building < BuildingManager.instance.m_buildings.m_size)
+            {
+                var instB = default(InstanceID);
+                instB.Building = offer.Building;
+                sMessage += " (" + offer.Building + ")" + BuildingManager.instance.m_buildings.m_buffer[offer.Building].Info?.name + "(" + InstanceManager.instance.GetName(instB) + ")";
+            }
+            if (offer.Vehicle > 0 && offer.Vehicle < VehicleManager.instance.m_vehicles.m_size)
+            {
+                sMessage += " (" + offer.Vehicle + ")" + VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle].Info?.name;
+            }
+            if (offer.Citizen > 0)
+            {
+                sMessage += $" Citizen:{offer.Citizen}";
+                Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
+                sMessage += $" Building:{oCitizen.GetBuildingByLocation()}";
+            }
+            if (offer.NetSegment > 0)
+            {
+                sMessage += $" NetSegment={offer.NetSegment}";
+            }
+            if (offer.TransportLine > 0)
+            {
+                sMessage += $" TransportLine={offer.TransportLine}";
+            }
+            if (sMessage.Length == 0)
+            {
+                sMessage = " unknown";
+            }
+            return sMessage;
+        }
+
+        public static bool IsOfferForBuilding(ushort buildingId, ref TransferOffer offer)
+        {
+            if (offer.m_object.Type == InstanceType.Building)
+            {
+                return offer.Building == buildingId;
+            }
+            else if (offer.m_object.Type == InstanceType.Vehicle)
+            {
+                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle];
+                return vehicle.m_sourceBuilding == buildingId;
+            }
+            else if (offer.m_object.Type == InstanceType.Citizen)
+            {
+                Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
+                if (citizen.m_homeBuilding == buildingId)
+                {
+                    return true;
+                }
+                else if (citizen.m_workBuilding == buildingId)
+                {
+                    return true;
+                }
+                else if(citizen.m_visitBuilding == buildingId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static ushort GetOfferBuilding(ref TransferOffer offer)
+        {
+            if (offer.m_object.Type == InstanceType.Building)
+            {
+                return offer.Building;
+            }
+            else if (offer.m_object.Type == InstanceType.Vehicle)
+            {
+                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle];
+                return vehicle.m_sourceBuilding;
+            }
+            else if (offer.m_object.Type == InstanceType.Citizen)
+            {
+                Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
+                return citizen.GetBuildingByLocation();
+            }
+
+            return 0;
         }
     }
 }

@@ -33,13 +33,6 @@ namespace TransferManagerCE.Settings
         [XmlIgnore]
         private static readonly string SettingsFile = Path.Combine(UserSettingsDir, SettingsFileName);
 
-        [XmlElement("optionPathfindChirper")]
-        public bool optionPathfindChirper
-        {
-            get;
-            set;
-        } = true;
-
         [XmlElement("optionEnableNewTransferManager")]
         public bool optionEnableNewTransferManager
         {
@@ -75,13 +68,6 @@ namespace TransferManagerCE.Settings
             set;
         } = false;
 
-        [XmlElement("optionWarehouseNewBalanced")]
-        public bool optionWarehouseNewBalanced
-        {
-            get;
-            set;
-        } = false;
-
         public bool TransferIssueLocationSaved
         {
             get;
@@ -100,6 +86,12 @@ namespace TransferManagerCE.Settings
             set;
         } = false;
 
+        public int TransferIssueDeleteResolvedDelay
+        {
+            get;
+            set;
+        } = 10;
+
         public bool TransferBuildingLocationSaved
         {
             get;
@@ -111,42 +103,6 @@ namespace TransferManagerCE.Settings
             get;
             set;
         }
-
-        public bool CallAgainEnabled
-        {
-            get;
-            set;
-        } = true;
-
-        public int CallAgainUpdateRate
-        {
-            get;
-            set;
-        } = 5;
-
-        public int HealthcareThreshold
-        {
-            get;
-            set;
-        } = 60;
-
-        public int HealthcareRate
-        {
-            get;
-            set;
-        } = 5;
-
-        public int DeathcareThreshold
-        {
-            get;
-            set;
-        } = 60;
-
-        public int DeathcareRate
-        {
-            get;
-            set;
-        } = 5;
 
         public bool TransferPanelDeleteResolved
         {
@@ -164,11 +120,21 @@ namespace TransferManagerCE.Settings
         {
             get;
             set;
-        } = true;
+        } = false;
+
+        public string PreferredLanguage
+        {
+            get;
+            set;
+        } = "System Default";
 
         public static SavedInputKey TransferIssueHotkey = new SavedInputKey(
             "TransferManager_TransferIssue_Hotkey", SETTINGS_FILE_NAME,
             key: KeyCode.Alpha3, control: true, shift: false, alt: false, true);
+
+        public static SavedInputKey SelectionToolHotkey = new SavedInputKey(
+            "TransferManager_SelectionTool_Hotkey", SETTINGS_FILE_NAME,
+            key: KeyCode.Alpha4, control: true, shift: false, alt: false, true);
 
         public static SavedInputKey StatsPanelHotkey = new SavedInputKey(
             "TransferManager_Stats_Hotkey", SETTINGS_FILE_NAME,

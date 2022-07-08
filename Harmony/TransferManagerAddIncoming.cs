@@ -15,10 +15,9 @@ namespace TransferManagerCE.Patch
             if (material == TransferReason.Dead && offer.Building != 0 && ModSettings.GetSettings().TransferManagerExperimentalDeathcare)
             {
                 Building building = BuildingManager.instance.m_buildings.m_buffer[offer.Building];
-                if (building.Info?.m_buildingAI is CemeteryAI)
-                { 
-                    CemeteryAI cemeteryAI = (CemeteryAI)building.Info.m_buildingAI;
-
+                CemeteryAI? cemeteryAI = building.Info.m_buildingAI as CemeteryAI;
+                if (cemeteryAI != null)
+                {
                     // Determine free spots in cemetery / Crematorium
                     int iAmount;
                     int iMax;
@@ -28,10 +27,10 @@ namespace TransferManagerCE.Patch
                     // Determine how many free vehicles it has
                     int iHearseCount = GetActiveVehicleCount(building);
                     int iTotalHearses = cemeteryAI.m_hearseCount;
-                    int iHearsesFree = iTotalHearses - iHearseCount;
+                    int iHearsesFree = Math.Max(0, iTotalHearses - iHearseCount - 3); // Reserve 3 hearses so there is reserve capacity
 
                     // Set offer amount to be the number of free vehicles available.
-                    if (iHearsesFree > 0 && building.m_flags != Building.Flags.Downgrading)
+                    if (iHearsesFree > 0 && iCemeteryFree > 0 && building.m_flags != Building.Flags.Downgrading)
                     {
                         offer.Amount = Math.Min(iHearsesFree, iCemeteryFree);
                     }
@@ -41,13 +40,20 @@ namespace TransferManagerCE.Patch
             // Update the stats for the specific material
             if (ModSettings.GetSettings().StatisticsEnabled && TransferManagerStats.s_Stats != null)
             {
-                TransferManagerStats.s_Stats[(int)material].m_stats.TotalIncomingCount++;
-                TransferManagerStats.s_Stats[(int)material].m_stats.TotalIncomingAmount += offer.Amount;
+                if ((int)material < TransferManagerStats.s_Stats.Length)
+                {
+                    TransferManagerStats.s_Stats[(int)material].TotalIncomingCount++;
+                    TransferManagerStats.s_Stats[(int)material].TotalIncomingAmount += offer.Amount;
+                }
 
                 // Update the stats
-                TransferManagerStats.s_Stats[255].m_stats.TotalIncomingCount++;
-                TransferManagerStats.s_Stats[255].m_stats.TotalIncomingAmount += offer.Amount;
+                if (TransferManagerStats.iMATERIAL_TOTAL_LOCATION < TransferManagerStats.s_Stats.Length)
+                {
+                    TransferManagerStats.s_Stats[TransferManagerStats.iMATERIAL_TOTAL_LOCATION].TotalIncomingCount++;
+                    TransferManagerStats.s_Stats[TransferManagerStats.iMATERIAL_TOTAL_LOCATION].TotalIncomingAmount += offer.Amount;
+                }
             }
+
             return true; // Handle normally
         }
 

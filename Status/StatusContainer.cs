@@ -28,14 +28,7 @@ namespace TransferManagerCE
 
         public string GetMaterialDescription()
         {
-            if (m_status.m_material == TransferReason.None)
-            {
-                return "Total";
-            }
-            else
-            {
-                return m_status.m_material.ToString();
-            }
+            return m_status.GetMaterialDescription();
         }
 
         public override void Update()
@@ -45,46 +38,55 @@ namespace TransferManagerCE
 
         public override string GetText(ListViewRowComparer.Columns eColumn)
         {
-            switch (eColumn)
+            if (m_status != null)
             {
-                case ListViewRowComparer.Columns.COLUMN_MATERIAL: return GetMaterialDescription();
-                case ListViewRowComparer.Columns.COLUMN_VALUE: return m_status.GetValue().ToString();
-                case ListViewRowComparer.Columns.COLUMN_OWNER: return m_status.GetResponder().ToString();
-                case ListViewRowComparer.Columns.COLUMN_TARGET: return m_status.GetTarget().ToString();
-                case ListViewRowComparer.Columns.COLUMN_DESCRIPTION: return m_status.GetDescription();
+                switch (eColumn)
+                {
+                    case ListViewRowComparer.Columns.COLUMN_MATERIAL: return GetMaterialDescription();
+                    case ListViewRowComparer.Columns.COLUMN_VALUE: return m_status.GetValue();
+                    case ListViewRowComparer.Columns.COLUMN_OWNER: return m_status.GetResponder();
+                    case ListViewRowComparer.Columns.COLUMN_TARGET: return m_status.GetTarget();
+                    case ListViewRowComparer.Columns.COLUMN_TIMER: return m_status.GetTimer();
+                }
+            } 
+            else
+            {
+                Debug.Log("m_status is null");
             }
-            return "TBD";
+            
+            return "";
         }
 
         public override void CreateColumns(ListViewRow oRow, List<ListViewRowColumn> m_columns)
         {
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, GetText(ListViewRowComparer.Columns.COLUMN_MATERIAL), "", TransferBuildingPanel.iCOLUMN_WIDTH, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft);
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, GetText(ListViewRowComparer.Columns.COLUMN_VALUE), "", TransferBuildingPanel.iCOLUMN_WIDTH, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight);
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, GetText(ListViewRowComparer.Columns.COLUMN_OWNER), "", TransferBuildingPanel.iCOLUMN_VEHICLE_WIDTH, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight);
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, GetText(ListViewRowComparer.Columns.COLUMN_TARGET), "", TransferBuildingPanel.iCOLUMN_VEHICLE_WIDTH, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft);
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, GetText(ListViewRowComparer.Columns.COLUMN_DESCRIPTION), "", TransferBuildingPanel.iCOLUMN_WIDTH, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, GetText(ListViewRowComparer.Columns.COLUMN_MATERIAL), "", TransferBuildingPanel.iCOLUMN_WIDTH_NORMAL, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, GetText(ListViewRowComparer.Columns.COLUMN_VALUE), "", TransferBuildingPanel.iCOLUMN_WIDTH_SMALL, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_TIMER, GetText(ListViewRowComparer.Columns.COLUMN_TIMER), "", TransferBuildingPanel.iCOLUMN_WIDTH_SMALL, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, GetText(ListViewRowComparer.Columns.COLUMN_OWNER), "", TransferBuildingPanel.iCOLUMN_WIDTH_250, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, GetText(ListViewRowComparer.Columns.COLUMN_TARGET), "", TransferBuildingPanel.iCOLUMN_WIDTH_250, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft);
         }
+
         public override void OnClick(ListViewRowColumn column)
         {
             if (column.GetColumn() == ListViewRowComparer.Columns.COLUMN_OWNER)
             {
-                if (m_status.m_responder != 0)
+                if (m_status.m_responderBuilding != 0)
                 {
-                    Building building = BuildingManager.instance.m_buildings.m_buffer[m_status.m_responder];
+                    Building building = BuildingManager.instance.m_buildings.m_buffer[m_status.m_responderBuilding];
                     Vector3 oPosition = building.m_position;
                     InstanceID buildingInstance = new InstanceID();
-                    buildingInstance.Building = m_status.m_responder;
+                    buildingInstance.Building = m_status.m_responderBuilding;
                     ToolsModifierControl.cameraController.SetTarget(buildingInstance, oPosition, false);
                 }
             }
             else if (column.GetColumn() == ListViewRowComparer.Columns.COLUMN_TARGET)
             {
-                if (m_status.m_target != 0)
+                if (m_status.m_targetVehicle != 0)
                 {
-                    Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[m_status.m_target];
+                    Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[m_status.m_targetVehicle];
                     Vector3 oPosition = CitiesUtils.GetVehiclePosition(vehicle);
                     InstanceID vehicleInstance = new InstanceID();
-                    vehicleInstance.Vehicle = m_status.m_target;
+                    vehicleInstance.Vehicle = m_status.m_targetVehicle;
                     ToolsModifierControl.cameraController.SetTarget(vehicleInstance, oPosition, false);
                 }
             }

@@ -33,7 +33,7 @@ namespace TransferManagerCE.CustomManager
         public static Thread _transferThread = null;
 
         // TransferResults ring buffer:
-        private TransferResult[] m_transferResultRingBuffer;
+        private TransferResult[]? m_transferResultRingBuffer;
         private const int RINGBUF_SIZE = 256 * 8;
         private volatile int _ringbufReadPosition;
         private volatile int _ringbufWritePosition;
@@ -44,7 +44,7 @@ namespace TransferManagerCE.CustomManager
         #endregion
 
         // References to game functionalities:
-        private static TransferManager _TransferManager = null;
+        private static TransferManager? _TransferManager = null;
 
         // Vanilla TransferManager internal fields and arrays
         private TransferManager.TransferOffer[] m_outgoingOffers;
@@ -271,6 +271,9 @@ namespace TransferManagerCE.CustomManager
                 }
             }
 
+            job.m_outgoingCountRemaining = job.m_outgoingCount; 
+            job.m_incomingCountRemaining = job.m_incomingCount;
+
             // DEBUG mode: print job summary
             DebugJobSummarize(job);
 
@@ -305,8 +308,6 @@ namespace TransferManagerCE.CustomManager
                 if (oResult.material != TransferManager.TransferReason.None)
                 {
                     CustomTransferManager.TransferManagerStartTransferDG(_TransferManager, oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
-                    TransferManagerCEThreading.StartTransfer(oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
-
                 }
 
                 newReadPos = _ringbufReadPosition + 1;
@@ -318,7 +319,10 @@ namespace TransferManagerCE.CustomManager
             }
 
             _ringBufMaxUsageCount = num_transfers_initiated > _ringBufMaxUsageCount ? num_transfers_initiated : _ringBufMaxUsageCount;
-            DebugLog.LogOnly($"StartTransfers: initiated {num_transfers_initiated} transfers.");
+            if (num_transfers_initiated > 0)
+            {
+                DebugLog.LogOnly($"StartTransfers: initiated {num_transfers_initiated} transfers.");
+            }
         }
 
         /// <summary>

@@ -12,13 +12,15 @@ namespace TransferManagerCE
         public TransferOffer m_offer;
         public bool m_bIncoming;
         public int m_iPrioirty;
+        public bool m_bActive;
 
-        public OfferData(TransferReason material, bool bIncoming, TransferOffer offer, int iPriority)
+        public OfferData(TransferReason material, bool bIncoming, TransferOffer offer)
         {
             m_material = material;
             m_bIncoming = bIncoming;
             m_offer = offer;
-            m_iPrioirty = iPriority;
+            m_iPrioirty = offer.Priority;
+            m_bActive = offer.Active;
         }
 
         public static int CompareTo(OfferData first, OfferData second)
@@ -44,6 +46,7 @@ namespace TransferManagerCE
                 case ListViewRowComparer.Columns.COLUMN_MATERIAL: return m_material.ToString();
                 case ListViewRowComparer.Columns.COLUMN_AMOUNT: return m_offer.Amount.ToString();
                 case ListViewRowComparer.Columns.COLUMN_PRIORITY: return m_iPrioirty.ToString();
+                case ListViewRowComparer.Columns.COLUMN_ACTIVE: return m_bActive ? "Active" : "Passive";
                 case ListViewRowComparer.Columns.COLUMN_DESCRIPTION: return DisplayOffer();
             }
             return "";
@@ -51,11 +54,12 @@ namespace TransferManagerCE
 
         public override void CreateColumns(ListViewRow oRow, List<ListViewRowColumn> m_columns)
         {
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_INOUT, GetText(ListViewRowComparer.Columns.COLUMN_INOUT), "", TransferBuildingPanel.iCOLUMN_WIDTH, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft);
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, GetText(ListViewRowComparer.Columns.COLUMN_MATERIAL), "", TransferBuildingPanel.iCOLUMN_MATERIAL_WIDTH, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft);
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, GetText(ListViewRowComparer.Columns.COLUMN_PRIORITY), "", TransferBuildingPanel.iCOLUMN_WIDTH, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight);
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, GetText(ListViewRowComparer.Columns.COLUMN_AMOUNT), "", TransferBuildingPanel.iCOLUMN_WIDTH, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight);
-            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, GetText(ListViewRowComparer.Columns.COLUMN_DESCRIPTION), "", TransferBuildingPanel.iCOLUMN_DESCRIPTION_WIDTH, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_INOUT, GetText(ListViewRowComparer.Columns.COLUMN_INOUT), "", TransferBuildingPanel.iCOLUMN_WIDTH_NORMAL, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, GetText(ListViewRowComparer.Columns.COLUMN_MATERIAL), "", TransferBuildingPanel.iCOLUMN_WIDTH_LARGE, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, GetText(ListViewRowComparer.Columns.COLUMN_PRIORITY), "", TransferBuildingPanel.iCOLUMN_WIDTH_NORMAL, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_ACTIVE, GetText(ListViewRowComparer.Columns.COLUMN_ACTIVE), "", TransferBuildingPanel.iCOLUMN_WIDTH_NORMAL, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, GetText(ListViewRowComparer.Columns.COLUMN_AMOUNT), "", TransferBuildingPanel.iCOLUMN_WIDTH_NORMAL, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight);
+            oRow.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, GetText(ListViewRowComparer.Columns.COLUMN_DESCRIPTION), "", TransferBuildingPanel.iCOLUMN_WIDTH_XLARGE, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight);
         }
 
         public string DisplayOffer()
