@@ -29,14 +29,14 @@ namespace TransferManagerCE.Util
     public sealed class PathFindFailure
     {
         // building-to-building
-        static Dictionary<PATHFINDPAIR, long> _pathfindFails = new Dictionary<PATHFINDPAIR, long>(512);
+        static Dictionary<PATHFINDPAIR, long>? s_pathfindFails = null;
 
         // building-to-outsideconnection
-        static Dictionary<PATHFINDPAIR, long> _outsideConnectionFails = new Dictionary<PATHFINDPAIR, long>(512);
+        static Dictionary<PATHFINDPAIR, long>? s_outsideConnectionFails = null;
         static readonly object _dictionaryLock = new object();
 
         // Transfer Issue building fail counters
-        static Dictionary<InstanceID, int> _totalPathfindBuildingsCounter = new Dictionary<InstanceID, int>();
+        static Dictionary<InstanceID, int>? s_totalPathfindBuildingsCounter = null;
         static readonly object s_pathCounterLock = new object();
 
         public const long PATH_TIMEOUT_INTERNAL = TimeSpan.TicksPerMinute * 5; // Increased to 5 mintutes
@@ -45,110 +45,157 @@ namespace TransferManagerCE.Util
         public const long PATH_TIMEOUT_OUTSIDE = TimeSpan.TicksPerMinute; // 1 minute
         static long lru_lastCleanedOutside;
 
-        public static Dictionary<PATHFINDPAIR, long> GetPathFailsCopy()
+        public static void Init()
         {
-            Dictionary<PATHFINDPAIR, long> copy;
+            if (s_pathfindFails == null)
+            {
+                s_pathfindFails = new Dictionary<PATHFINDPAIR, long>(512);
+            }
+            if (s_outsideConnectionFails == null)
+            {
+                s_outsideConnectionFails = new Dictionary<PATHFINDPAIR, long>(512);
+            }
+            if (s_totalPathfindBuildingsCounter == null)
+            {
+                s_totalPathfindBuildingsCounter = new Dictionary<InstanceID, int>();
+            }
+        }
+
+        public static void Delete()
+        {
+            s_pathfindFails = null;
+            s_outsideConnectionFails = null;
+            s_totalPathfindBuildingsCounter = null;
+        }
+
+        public static Dictionary<PATHFINDPAIR, long>? GetPathFailsCopy()
+        {
+            Dictionary<PATHFINDPAIR, long>? copy = null;
             lock (_dictionaryLock)
             {
-                copy = new Dictionary<PATHFINDPAIR, long>(_pathfindFails);
+                copy = new Dictionary<PATHFINDPAIR, long>(s_pathfindFails);
             }
+            
             return copy;
         }
 
-        public static Dictionary<PATHFINDPAIR, long> GetOutsideFailsCopy()
+        public static Dictionary<PATHFINDPAIR, long>? GetOutsideFailsCopy()
         {
-            Dictionary<PATHFINDPAIR, long> copy;
+            Dictionary<PATHFINDPAIR, long> copy = null;
             lock (_dictionaryLock)
             {
-                copy = new Dictionary<PATHFINDPAIR, long>(_outsideConnectionFails);
+                copy = new Dictionary<PATHFINDPAIR, long>(s_outsideConnectionFails);
             }
             return copy;
         }
 
         public static int GetPathFailureCount()
         {
-            return _pathfindFails.Count;
+            if (s_pathfindFails != null)
+            {
+                return s_pathfindFails.Count;
+            }
+            return 0;
         }
 
         public static int GetOutsidePathFailureCount()
         {
-            return _outsideConnectionFails.Count;
+            if (s_outsideConnectionFails != null)
+            {
+                return s_outsideConnectionFails.Count;
+            }
+            return 0;
         }
 
         public static int GetTotalPathFailures(InstanceID instance)
         {
-            lock (s_pathCounterLock)
+            if (s_totalPathfindBuildingsCounter != null)
             {
-                int iValue;
-                if (_totalPathfindBuildingsCounter.TryGetValue(instance, out iValue))
+                lock (s_pathCounterLock)
                 {
-                    return iValue;
-                }
-                else
-                {
-                    return 0;
+                    int iValue;
+                    if (s_totalPathfindBuildingsCounter.TryGetValue(instance, out iValue))
+                    {
+                        return iValue;
+                    }
                 }
             }
+
+            return 0;
         }
 
-        public static void ResetPathingStatistics()
+        public static void Reset()
         {
-            lock (s_pathCounterLock)
+            if (s_totalPathfindBuildingsCounter != null)
             {
-                _totalPathfindBuildingsCounter.Clear();
-            }
-            lock (_dictionaryLock)
-            {
-                if (_pathfindFails != null)
+                lock (s_pathCounterLock)
                 {
-                    _pathfindFails.Clear();
-                }
-                if (_outsideConnectionFails != null)
-                {
-                    _outsideConnectionFails.Clear();
+                    s_totalPathfindBuildingsCounter.Clear();
                 }
             }
+            if (s_pathfindFails != null && s_outsideConnectionFails != null)
+            {
+                lock (_dictionaryLock)
+                {
+                    if (s_pathfindFails != null)
+                    {
+                        s_pathfindFails.Clear();
+                    }
+                    if (s_outsideConnectionFails != null)
+                    {
+                        s_outsideConnectionFails.Clear();
+                    }
+                }
+            }
+            
         }
 
         public static void ResetPathingStatistics(ushort buildingId)
         {
             InstanceID instance = new InstanceID { Building = buildingId };
-            lock (s_pathCounterLock)
+
+            if (s_totalPathfindBuildingsCounter != null)
             {
-                _totalPathfindBuildingsCounter[instance] = 0;
+                lock (s_pathCounterLock)
+                {
+                    s_totalPathfindBuildingsCounter[instance] = 0;
+                }
             }
 
-            lock (_dictionaryLock)
+            if (s_pathfindFails != null && s_outsideConnectionFails != null)
             {
-                if (_pathfindFails != null)
+                lock (_dictionaryLock)
                 {
-                    Dictionary<PATHFINDPAIR, long> newpathfindFails = new Dictionary<PATHFINDPAIR, long>();
-                    foreach (KeyValuePair<PATHFINDPAIR, long> pair in _pathfindFails)
+                    if (s_pathfindFails != null)
                     {
-                        bool bBuildingInPair = pair.Key.m_source == instance || pair.Key.m_target == instance;
-                        if (!bBuildingInPair)
+                        Dictionary<PATHFINDPAIR, long> newpathfindFails = new Dictionary<PATHFINDPAIR, long>();
+                        foreach (KeyValuePair<PATHFINDPAIR, long> pair in s_pathfindFails)
                         {
-                            newpathfindFails.Add(pair.Key, pair.Value);
+                            bool bBuildingInPair = pair.Key.m_source == instance || pair.Key.m_target == instance;
+                            if (!bBuildingInPair)
+                            {
+                                newpathfindFails.Add(pair.Key, pair.Value);
+                            }
                         }
-                    }
 
-                    // Replace array
-                    _pathfindFails = newpathfindFails;
-                }
-                if (_outsideConnectionFails != null)
-                {
-                    Dictionary<PATHFINDPAIR, long> newpathfindFails = new Dictionary<PATHFINDPAIR, long>();
-                    foreach (KeyValuePair<PATHFINDPAIR, long> pair in _outsideConnectionFails)
+                        // Replace array
+                        s_pathfindFails = newpathfindFails;
+                    }
+                    if (s_outsideConnectionFails != null)
                     {
-                        bool bBuildingInPair = pair.Key.m_source == instance || pair.Key.m_target == instance;
-                        if (!bBuildingInPair)
+                        Dictionary<PATHFINDPAIR, long> newpathfindFails = new Dictionary<PATHFINDPAIR, long>();
+                        foreach (KeyValuePair<PATHFINDPAIR, long> pair in s_outsideConnectionFails)
                         {
-                            newpathfindFails.Add(pair.Key, pair.Value);
+                            bool bBuildingInPair = pair.Key.m_source == instance || pair.Key.m_target == instance;
+                            if (!bBuildingInPair)
+                            {
+                                newpathfindFails.Add(pair.Key, pair.Value);
+                            }
                         }
-                    }
 
-                    // Replace array
-                    _outsideConnectionFails = newpathfindFails;
+                        // Replace array
+                        s_outsideConnectionFails = newpathfindFails;
+                    }
                 }
             }
         }
@@ -158,20 +205,24 @@ namespace TransferManagerCE.Util
         /// </summary>
         private static void UpdateBuildingFailCount(InstanceID instance)
         {
-            lock (s_pathCounterLock)
+            if (s_totalPathfindBuildingsCounter != null)
             {
-                int failcount;
+                lock (s_pathCounterLock)
+                {
+                    int failcount;
 
-                // Total count, doesn't reset
-                if (_totalPathfindBuildingsCounter.TryGetValue(instance, out failcount))
-                {
-                    _totalPathfindBuildingsCounter[instance] = failcount + 1;
-                }
-                else
-                {
-                    _totalPathfindBuildingsCounter.Add(instance, 1);
+                    // Total count, doesn't reset
+                    if (s_totalPathfindBuildingsCounter.TryGetValue(instance, out failcount))
+                    {
+                        s_totalPathfindBuildingsCounter[instance] = failcount + 1;
+                    }
+                    else
+                    {
+                        s_totalPathfindBuildingsCounter.Add(instance, 1);
+                    }
                 }
             }
+            
         }
 
         /// <summary>
@@ -182,14 +233,17 @@ namespace TransferManagerCE.Util
             long _info;
             PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
             
-            if (_pathfindFails.TryGetValue(_pair, out _info))
+            if (s_pathfindFails != null)
             {
-                _info = DateTime.Now.Ticks;
-                _pathfindFails[_pair] = _info;
-            }
-            else
-            {
-                _pathfindFails.Add(_pair, DateTime.Now.Ticks);
+                if (s_pathfindFails.TryGetValue(_pair, out _info))
+                {
+                    _info = DateTime.Now.Ticks;
+                    s_pathfindFails[_pair] = _info;
+                }
+                else
+                {
+                    s_pathfindFails.Add(_pair, DateTime.Now.Ticks);
+                }
             }
                 
             UpdateBuildingFailCount(source);
@@ -205,14 +259,17 @@ namespace TransferManagerCE.Util
             long _info;
             PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
 
-            if (_outsideConnectionFails.TryGetValue(_pair, out _info))
+            if (s_outsideConnectionFails != null)
             {
-                _info = DateTime.Now.Ticks;
-                _outsideConnectionFails[_pair] = _info;
-            }
-            else
-            {
-                _outsideConnectionFails.Add(_pair, DateTime.Now.Ticks);
+                if (s_outsideConnectionFails.TryGetValue(_pair, out _info))
+                {
+                    _info = DateTime.Now.Ticks;
+                    s_outsideConnectionFails[_pair] = _info;
+                }
+                else
+                {
+                    s_outsideConnectionFails.Add(_pair, DateTime.Now.Ticks);
+                }
             }
 
             UpdateBuildingFailCount(source);
@@ -227,15 +284,16 @@ namespace TransferManagerCE.Util
             int failpair_remove_count = 0;
             int failoutside_remove_count = 0;
 
+            if (s_pathfindFails != null)
             {
                 long diffTimeInternal = DateTime.Now.Ticks - lru_lastCleanedInternal;
                 if (diffTimeInternal > PATH_TIMEOUT_INTERNAL)
                 {
                     lock (_dictionaryLock)
                     {
-                        foreach (var item in _pathfindFails.Where(kvp => kvp.Value < (DateTime.Now.Ticks - PATH_TIMEOUT_INTERNAL)).ToList())
+                        foreach (var item in s_pathfindFails.Where(kvp => kvp.Value < (DateTime.Now.Ticks - PATH_TIMEOUT_INTERNAL)).ToList())
                         {
-                            _pathfindFails.Remove(item.Key);
+                            s_pathfindFails.Remove(item.Key);
                             failpair_remove_count++;
                         }
                     }
@@ -244,15 +302,16 @@ namespace TransferManagerCE.Util
                 }
             }
 
+            if (s_outsideConnectionFails != null)
             {
                 long diffTimeOutside = DateTime.Now.Ticks - lru_lastCleanedOutside;
                 if (diffTimeOutside > PATH_TIMEOUT_OUTSIDE)
                 {
                     lock (_dictionaryLock)
                     {
-                        foreach (var item in _outsideConnectionFails.Where(kvp => kvp.Value < (DateTime.Now.Ticks - PATH_TIMEOUT_OUTSIDE)).ToList())
+                        foreach (var item in s_outsideConnectionFails.Where(kvp => kvp.Value < (DateTime.Now.Ticks - PATH_TIMEOUT_OUTSIDE)).ToList())
                         {
-                            _outsideConnectionFails.Remove(item.Key);
+                            s_outsideConnectionFails.Remove(item.Key);
                             failoutside_remove_count++;
                         }
                     }
@@ -268,11 +327,14 @@ namespace TransferManagerCE.Util
         /// </summary>
         public static bool FindPathPair(InstanceID source, InstanceID target)
         {
-            long _info;
-            PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
-            if (_pathfindFails.TryGetValue(_pair, out _info))
+            if (s_pathfindFails != null)
             {
-                return true;
+                long _info;
+                PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
+                if (s_pathfindFails.TryGetValue(_pair, out _info))
+                {
+                    return true;
+                }
             }
 
             return false;
@@ -284,13 +346,15 @@ namespace TransferManagerCE.Util
         /// </summary>
         public static bool FindOutsideConnectionPair(InstanceID source, InstanceID target)
         {
-            long _info;
-            PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
-            if (_outsideConnectionFails.TryGetValue(_pair, out _info))
+            if (s_outsideConnectionFails != null)
             {
-                return true;
+                long _info;
+                PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
+                if (s_outsideConnectionFails.TryGetValue(_pair, out _info))
+                {
+                    return true;
+                }
             }
-
             return false;
         }
 

@@ -13,13 +13,20 @@ namespace TransferManagerCE
         public const int iSTATS_ARRAY_SIZE = TRANSFER_REASON_COUNT + 1;
         public const int iMATERIAL_TOTAL_LOCATION = TRANSFER_REASON_COUNT;
 
-        public static StatsContainer[] s_Stats = new StatsContainer[iSTATS_ARRAY_SIZE];
+        public static StatsContainer[]? s_Stats = null;
 
         public static int s_lastMatchCount = 0;
         public static long s_lastUpdateTicks = DateTime.Now.Ticks;
 
         public static void Init()
         {
+            if (s_Stats == null)
+            {
+                s_Stats = new StatsContainer[iSTATS_ARRAY_SIZE];
+                s_lastMatchCount = 0;
+                s_lastUpdateTicks = DateTime.Now.Ticks;
+            }
+
             if (s_Stats != null)
             {
                 for (int i = 0; i < s_Stats.Length; i++)
@@ -29,6 +36,11 @@ namespace TransferManagerCE
 
                 CountExistingTransfers();
             }
+        }
+
+        public static void Destroy()
+        {
+            s_Stats = null;
         }
 
         private static void CountExistingTransfers()
@@ -115,12 +127,16 @@ namespace TransferManagerCE
 
         public static int GetTotalMatches()
         {
-            return s_Stats[iMATERIAL_TOTAL_LOCATION].TotalMatches;
+            if (s_Stats != null)
+            {
+                return s_Stats[iMATERIAL_TOTAL_LOCATION].TotalMatches;
+            }
+            return 0;
         }
 
         public static string GetAverageDistance()
         {
-            if (GetTotalMatches() == 0)
+            if (s_Stats == null || GetTotalMatches() == 0)
             {
                 return "0";
             }

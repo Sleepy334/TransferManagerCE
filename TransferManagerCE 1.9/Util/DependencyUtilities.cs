@@ -66,6 +66,13 @@ namespace TransferManagerCE
             return bRunning;
         }
 
+        public static bool IsHarmonyRunning()
+        {
+            // We look for either Harmony 2.2-0 steam ID or CitiesHarmony assembly name
+            const string sPLUGIN_ID = "2040656402";
+            return IsPluginRunning(sPLUGIN_ID, "CitiesHarmony");
+        }
+
         public static bool IsSmarterFireFightersRunning()
         {
             const string sSMARTER_FIREFIGHTERS_ID = "2346565561";

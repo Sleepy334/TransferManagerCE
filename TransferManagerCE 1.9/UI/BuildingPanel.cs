@@ -671,6 +671,11 @@ namespace TransferManagerCE
                 m_settingsTab.Destroy();
                 m_settingsTab = null;
             }
+            if (Instance != null)
+            {
+                Destroy(Instance.gameObject);
+                Instance = null;
+            }
         }
     }
 }

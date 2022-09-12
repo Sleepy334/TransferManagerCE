@@ -12,7 +12,6 @@ namespace TransferManagerCE
         private bool _processed = false;
         private long m_LastElapsedTime = 0;
         private Stopwatch? m_watch = null;
-        private static StatsPanel s_statPanel = null;
 
         public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)
         {
@@ -34,12 +33,14 @@ namespace TransferManagerCE
                 }
                 _processed = true;
 
-                if (s_statPanel == null)
+                // Create panel if needed
+                if (StatsPanel.Instance == null)
                 {
-                    CreateStatsPanel();
+                    StatsPanel.Init();
                 }
-                else
-                {
+
+                if (StatsPanel.Instance != null)
+                { 
                     ToggleStatsPanel();
                 }
             }
@@ -71,9 +72,9 @@ namespace TransferManagerCE
 #if DEBUG
                     long lStartTime = m_watch.ElapsedMilliseconds;
 #endif
-                    if (s_statPanel != null && s_statPanel.isVisible)
+                    if (StatsPanel.Instance != null && StatsPanel.Instance.isVisible)
                     {
-                        s_statPanel.UpdatePanel();
+                        StatsPanel.Instance.UpdatePanel();
                     }
 
                     m_LastElapsedTime = m_watch.ElapsedMilliseconds;
@@ -87,40 +88,31 @@ namespace TransferManagerCE
 
         public static bool HandleEscape()
         {
-            if (s_statPanel != null && s_statPanel.isVisible)
+            if (StatsPanel.Instance != null && StatsPanel.Instance.isVisible)
             {
-                s_statPanel.Hide();
+                StatsPanel.Instance.Hide();
                 return true;
             }
             return false;
         }
 
-        public static void CreateStatsPanel()
-        {
-            if (s_statPanel == null)
-            {
-                s_statPanel = UIView.GetAView().AddUIComponent(typeof(StatsPanel)) as StatsPanel;
-                if (s_statPanel == null)
-                {
-                    Prompt.Info("Transfer Manager CE", "Error creating Stats Panel.");
-                }
-            }
-        }
-
         public static void ToggleStatsPanel()
         {
-            CreateStatsPanel();
-
-            if (s_statPanel != null)
+            if (StatsPanel.Instance == null)
             {
-                if (s_statPanel.isVisible)
+                StatsPanel.Init();
+            }
+
+            if (StatsPanel.Instance != null)
+            {
+                if (StatsPanel.Instance.isVisible)
                 {
-                    s_statPanel.Hide();
+                    StatsPanel.Instance.Hide();
                 }
                 else
                 {
-                    s_statPanel.Show();
-                    s_statPanel.BringToFront();
+                    StatsPanel.Instance.Show();
+                    StatsPanel.Instance.BringToFront();
                 }
             }
             else

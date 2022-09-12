@@ -1,7 +1,7 @@
-﻿using CitiesHarmony.API;
-using ColossalFramework.UI;
+﻿using ColossalFramework.UI;
 using ICities;
 using TransferManagerCE.CustomManager;
+using TransferManagerCE.Util;
 using UnityEngine;
 
 namespace TransferManagerCE
@@ -13,38 +13,34 @@ namespace TransferManagerCE
 
         public static bool IsLoaded() { return s_loaded; }
 
+        private static bool ActiveInMode(LoadMode mode)
+        {
+            switch (mode)
+            {
+                case LoadMode.NewGame:
+                case LoadMode.NewGameFromScenario:
+                case LoadMode.LoadGame:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
         public override void OnLevelLoaded(LoadMode mode)
         {
-            Debug.Log("OnLevelLoaded");
-            if (TransferManagerMain.IsEnabled && (mode == LoadMode.LoadGame || mode == LoadMode.NewGame))
+            if (TransferManagerMain.IsEnabled && ActiveInMode(mode))
             {
                 s_loaded = true;
 
+                // Check for mod conflicts
                 if (ConflictingMods.ConflictingModsFound()) 
                 {
+                    s_loaded = false;
                     return;
                 }
 
-                // Harmony
-                if (HarmonyHelper.IsHarmonyInstalled)
-                {
-                    Patcher.PatchAll();
-                }
-                if (!IsHarmonyValid())
-                {
-                    s_loaded = false;
-                    if (HarmonyHelper.IsHarmonyInstalled)
-                    {
-                        Patcher.UnpatchAll();
-                    }
-                    string strMessage = "Harmony patching failed\r\n";
-                    strMessage += "\r\n";
-                    strMessage += "If you could send TransferManagerCE.log to the author that would be great\r\n";
-                    strMessage += "\r\n";
-                    strMessage += "You could try Compatibility Report to check for mod compatibility or use Load Order Mod to ensure your mods are loaded in the correct order.";
-                    Prompt.Info("Transfer Manager CE", strMessage);
-                    return;
-                }
+                PathFindFailure.Init();
 
                 // Create TransferJobPool and initialize
                 TransferJobPool.Instance.Initialize();
@@ -63,30 +59,33 @@ namespace TransferManagerCE
                 }
                 else
                 {
-                    s_loaded = false;
-                    if (HarmonyHelper.IsHarmonyInstalled)
-                    {
-                        Patcher.UnpatchAll();
-                    }
-
                     string strMessage = "CustomTransferDispatcher Initialization failed\r\n";
                     strMessage += "\r\n";
                     strMessage += "If you could send TransferManagerCE.log to the author that would be great\r\n";
                     strMessage += "\r\n";
                     strMessage += strError;
-                    Prompt.Info("Transfer Manager CE", strMessage);
+                    Prompt.ErrorFormat("Transfer Manager CE", strMessage);
                     return;
                 }
 
-                // Display warning about fire fighting patches
-                if (DependencyUtilities.IsSmarterFireFightersRunning())
+                // Patch game using Harmony
+                if (ApplyHarmonyPatches())
                 {
-                    string strMessage = "Smarter Firefighters: Improved AI mod detected\r\n";
-                    strMessage += "\r\n";
-                    strMessage += "The following harmony patches have not been applied due to mod conflict:\r\n";
-                    strMessage += "FireTruckAI\r\n";
-                    strMessage += "FireCopterAI\r\n";
-                    Prompt.Info("Transfer Manager CE", strMessage);
+                    // Display warning about fire fighting patches
+                    if (DependencyUtilities.IsSmarterFireFightersRunning())
+                    {
+                        string strMessage = "Smarter Firefighters: Improved AI mod detected\r\n";
+                        strMessage += "\r\n";
+                        strMessage += "The following harmony patches have not been applied due to mod conflict:\r\n";
+                        strMessage += "FireTruckAI\r\n";
+                        strMessage += "FireCopterAI\r\n";
+                        Prompt.Info("Transfer Manager CE", strMessage);
+                    }
+                } 
+                else
+                {
+                    s_loaded = false;
+                    return;
                 }
 
                 InfoPanelButtons.AddInfoPanelButtons();
@@ -98,23 +97,94 @@ namespace TransferManagerCE
         {
             base.OnLevelUnloading();
 
-            TransferManagerThread.StopThreads();
+            // Remove patches first so object aren't called after being destroyed
+            RemoveHarmonyPathes();
 
-            if (s_loaded)
-            {
-                // Unload
-                Patcher.UnpatchAll();
-            }
+            // Delete mod objects
+            TransferManagerThread.StopThreads();
+            TransferJobPool.Instance.Delete();
+            PathFindFailure.Delete();
+            MatchStats.Destroy();
+            PathFindFailure.Reset();
 
             if (BuildingPanel.Instance != null)
             {
                 BuildingPanel.Instance.OnDestroy();
+                BuildingPanel.Instance = null;
+            }
+
+            if (DistrictPanel.Instance != null)
+            {
+                DistrictPanel.Instance.OnDestroy();
+                DistrictPanel.Instance = null;
+            }
+
+            if (OutsideConnectionPanel.Instance != null)
+            {
+                OutsideConnectionPanel.Instance.OnDestroy();
+                OutsideConnectionPanel.Instance = null;
+            }
+
+            if (TransferIssuePanel.Instance != null)
+            {
+                TransferIssuePanel.Instance.OnDestroy();
+                TransferIssuePanel.Instance = null;
+            }
+
+            if (StatsPanel.Instance != null)
+            {
+                StatsPanel.Instance.OnDestroy();
+                StatsPanel.Instance = null;
+            }
+
+            s_loaded = false;
+        }
+
+        public bool ApplyHarmonyPatches()
+        {
+            // Harmony
+            if (DependencyUtilities.IsHarmonyRunning())
+            {
+                Patcher.PatchAll();
+            }
+            else
+            {
+                string sMessage = "Mod Dependency Error:\r\n";
+                sMessage += "\r\n";
+                sMessage += "Harmony not found.\r\n";
+                sMessage += "\r\n";
+                sMessage += "Mod disabled until dependencies resolved, please subscribe to Harmony.";
+                Prompt.ErrorFormat("Transfer Manager CE", sMessage);
+                return false;
+            }
+
+            if (!IsHarmonyValid())
+            {
+                RemoveHarmonyPathes();
+
+                string strMessage = "Harmony patching failed\r\n";
+                strMessage += "\r\n";
+                strMessage += "If you could send TransferManagerCE.log to the author that would be great\r\n";
+                strMessage += "\r\n";
+                strMessage += "You could try Compatibility Report to check for mod compatibility or use Load Order Mod to ensure your mods are loaded in the correct order.";
+                Prompt.ErrorFormat("Transfer Manager CE", strMessage);
+                return false;
+            }
+
+            return true;
+        }
+
+        public void RemoveHarmonyPathes()
+        {
+            if (s_loaded && DependencyUtilities.IsHarmonyRunning())
+            {
+                Patcher.UnpatchAll();
             }
         }
 
         public bool IsHarmonyValid()
         {
-            if (HarmonyHelper.IsHarmonyInstalled)
+            if (DependencyUtilities.IsHarmonyRunning())
             {
                 int iHarmonyPatches = Patcher.GetPatchCount();
                 Debug.Log("Harmony patches: " + iHarmonyPatches);

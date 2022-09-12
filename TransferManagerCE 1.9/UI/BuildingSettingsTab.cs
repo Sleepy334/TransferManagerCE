@@ -561,7 +561,7 @@ namespace TransferManagerCE.UI
 
         public void OnSelectIncomingDistrictClicked()
         {
-            DistrictPanel.Init(m_tabStrip);
+            DistrictPanel.Init();
             if (DistrictPanel.Instance != null)
             {
                 DistrictPanel.Instance.ShowPanel(m_buildingId, true);
@@ -570,7 +570,7 @@ namespace TransferManagerCE.UI
 
         public void OnSelectOutgoingDistrictClicked()
         {
-            DistrictPanel.Init(m_tabStrip);
+            DistrictPanel.Init();
             if (DistrictPanel.Instance != null)
             {
                 DistrictPanel.Instance.ShowPanel(m_buildingId, false);

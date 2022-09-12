@@ -25,6 +25,8 @@ namespace TransferManagerCE
         public const int iCOLUMN_BIGGER_WIDTH = 95;
         public const int iCOLUMN_LARGE_WIDTH = 400;
 
+        public static StatsPanel? Instance = null;
+
         private UITitleBar? m_title = null;
 
         private UITabStrip? m_tabStrip = null;
@@ -34,6 +36,18 @@ namespace TransferManagerCE
 
         public StatsPanel() : base()
         {
+        }
+
+        public static void Init()
+        {
+            if (Instance == null)
+            {
+                Instance = UIView.GetAView().AddUIComponent(typeof(StatsPanel)) as StatsPanel;
+                if (Instance == null)
+                {
+                    Prompt.Info("Transfer Manager CE", "Error creating Statistics Panel.");
+                }
+            }
         }
 
         public override void Start()
@@ -220,6 +234,30 @@ namespace TransferManagerCE
                         }
                 }
             }        
+        }
+
+        public override void OnDestroy()
+        {
+            if (m_listStats != null)
+            {
+                Destroy(m_listStats.gameObject);
+                m_listStats = null;
+            }
+            if (m_generalStats != null)
+            {
+                Destroy(m_generalStats.gameObject);
+                m_generalStats = null;
+            }
+            if (m_tabStrip != null)
+            {
+                Destroy(m_tabStrip.gameObject);
+                m_tabStrip = null;
+            }
+            if (Instance != null)
+            {
+                Destroy(Instance.gameObject);
+                Instance = null;
+            }
         }
     }
 }

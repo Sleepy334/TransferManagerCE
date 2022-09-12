@@ -10,7 +10,6 @@ namespace TransferManagerCE
         const int iPANEL_UPDATE_RATE = 4000;
 
         private bool _processed = false;
-
         private long m_LastPanelElapsedTime = 0;
         private Stopwatch? m_watch = null;
 

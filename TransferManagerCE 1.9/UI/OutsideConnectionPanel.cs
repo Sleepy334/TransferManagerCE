@@ -148,5 +148,19 @@ namespace TransferManagerCE
                 };
             }
         }
+
+        public override void OnDestroy()
+        {
+            if (m_listConnections != null)
+            {
+                Destroy(m_listConnections.gameObject);
+                m_listConnections = null;
+            }
+            if (Instance != null)
+            {
+                Destroy(Instance.gameObject);
+                Instance = null;
+            }
+        }
     }
 }

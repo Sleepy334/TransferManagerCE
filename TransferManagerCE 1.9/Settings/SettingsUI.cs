@@ -402,7 +402,7 @@ namespace TransferManagerCE
 
         public void OnResetPathingStatisticsClicked()
         {
-            PathFindFailure.ResetPathingStatistics();
+            PathFindFailure.Reset();
         }
 
         public void OnVehiclesOnRouteChanged(bool value)

@@ -7,7 +7,7 @@ namespace TransferManagerCE.CustomManager
 {
     public class TransferManagerThread
     {
-        public static volatile bool s_runThread = true;
+        public static volatile bool s_runThreads = true;
         public static int ThreadCount = 8;
         public static Thread[]? s_transferThreads = null;
         public static EventWaitHandle s_waitHandle = new AutoResetEvent(false); // AutoResetEvent releases 1 thread only each time Set() is called.
@@ -30,6 +30,10 @@ namespace TransferManagerCE.CustomManager
         {
             if (s_transferThreads == null)
             {
+                // Reset run flag
+                s_runThreads = true;
+
+                // Create new threads
                 ThreadCount = Math.Max(2, Environment.ProcessorCount - 1);
                 s_transferThreads = new Thread[ThreadCount];
 
@@ -45,7 +49,14 @@ namespace TransferManagerCE.CustomManager
 
         public static void StopThreads()
         {
-            s_runThread = false;
+            s_runThreads = false;
+
+            // Release all threads so they can finish gracefully.
+            for (int i = 0; i < ThreadCount; i++)
+            {
+                s_waitHandle.Set();
+            }
+
             s_transferThreads = null;
         }
 
@@ -59,10 +70,10 @@ namespace TransferManagerCE.CustomManager
         public void MatchOfferThread()
         {
 #if DEBUG
-            DebugLog.LogInfo($"MatchOffersThread: Thread started.");
+            Debug.Log($"MatchOffersThread: Thread started.");
 #endif
             CustomTransferManager manager = new CustomTransferManager();
-            while (s_runThread)
+            while (s_runThreads)
             {
                 // Block threads till a job arrives
                 s_waitHandle.WaitOne();
@@ -86,7 +97,7 @@ namespace TransferManagerCE.CustomManager
                 Interlocked.Decrement(ref s_runningThreads);
             }
 #if DEBUG
-            DebugLog.LogInfo($"MatchOffersThread: Thread ended.");
+            Debug.Log($"MatchOffersThread: Thread ended.");
 #endif
         }
     }

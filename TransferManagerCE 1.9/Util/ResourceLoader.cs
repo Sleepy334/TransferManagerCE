@@ -13,7 +13,6 @@ namespace TransferManagerCE
     {
         public static UITextureAtlas? CreateTextureAtlas(string atlasName, string[] spriteNames, string assemblyPath)
         {
-            Debug.Log("CreateTextureAtlas");
             try
             {
                 int maxSize = 1024;

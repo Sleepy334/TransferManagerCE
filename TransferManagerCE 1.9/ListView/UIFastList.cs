@@ -421,13 +421,23 @@ namespace SleepyCommon
         {
             base.OnMouseWheel(p);
 
-            if (m_stepSize > 0 && m_rowHeight > 0)
-                listPosition = m_pos - p.wheelDelta * m_stepSize / m_rowHeight;
-            else
-                listPosition = m_pos - p.wheelDelta;
+            if (rowsData != null && rowsData.m_size > 0)
+            {
+                if (m_stepSize > 0 && m_rowHeight > 0)
+                {
+                    listPosition = m_pos - p.wheelDelta * m_stepSize / m_rowHeight;
+                }
+                else
+                {
+                    listPosition = m_pos - p.wheelDelta;
+                }
+                    
 
-            if (selectOnMouseEnter)
-                OnRowClicked(m_lastMouseEnter, p);
+                if (selectOnMouseEnter)
+                {
+                    OnRowClicked(m_lastMouseEnter, p);
+                }
+            }
         }
         #endregion
 

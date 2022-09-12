@@ -34,7 +34,7 @@ namespace TransferManagerCE
         {
         }
 
-        public static void Init(UIPanel parent)
+        public static void Init()
         {
             if (Instance == null)
             {
@@ -253,6 +253,30 @@ namespace TransferManagerCE
             {
                 m_chkListView.SetItems(GetDistricts().ToArray());
                 m_chkListView.isEnabled = !bDisable;
+            }
+        }
+
+        public override void OnDestroy()
+        {
+            if (m_lblSource != null)
+            {
+                Destroy(m_lblSource.gameObject);
+                m_lblSource = null;
+            }
+            if (m_chkListView != null)
+            {
+                Destroy(m_chkListView.gameObject);
+                m_chkListView = null;
+            }
+            if (m_lblAdditional != null)
+            {
+                Destroy(m_lblAdditional.gameObject);
+                m_lblAdditional = null;
+            }
+            if (Instance != null)
+            {
+                Destroy(Instance.gameObject);
+                Instance = null;
             }
         }
     }

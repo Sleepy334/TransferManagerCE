@@ -12,7 +12,6 @@ namespace TransferManagerCE
         private bool _processed = false;
         private long m_LastElapsedTime = 0;
         private Stopwatch? m_watch = null;
-        private static TransferIssuePanel? s_TransferIssuePanel = null;
 
         public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)
         {
@@ -34,11 +33,12 @@ namespace TransferManagerCE
                 }
                 _processed = true;
 
-                if (s_TransferIssuePanel == null)
+                if (TransferIssuePanel.Instance == null)
                 {
-                    CreateTransferIssuePanel();
+                    TransferIssuePanel.Init();
                 }
-                else
+
+                if (TransferIssuePanel.Instance != null)
                 {
                     ToggleTransferIssuePanel();
                 }
@@ -71,9 +71,9 @@ namespace TransferManagerCE
 #if DEBUG
                     long lStartTime = m_watch.ElapsedMilliseconds;
 #endif
-                    if (s_TransferIssuePanel != null && s_TransferIssuePanel.isVisible)
+                    if (TransferIssuePanel.Instance != null && TransferIssuePanel.Instance.isVisible)
                     {
-                        s_TransferIssuePanel.UpdatePanel();
+                        TransferIssuePanel.Instance.UpdatePanel();
                     }
 
                     m_LastElapsedTime = m_watch.ElapsedMilliseconds;
@@ -87,37 +87,30 @@ namespace TransferManagerCE
 
         public static bool HandleEscape()
         {
-            if (s_TransferIssuePanel != null && s_TransferIssuePanel.isVisible)
+            if (TransferIssuePanel.Instance != null && TransferIssuePanel.Instance.isVisible)
             {
-                s_TransferIssuePanel.Hide();
+                TransferIssuePanel.Instance.Hide();
                 return true;
             }
             return false;
         }
 
-        public static void CreateTransferIssuePanel()
-        {
-            if (s_TransferIssuePanel == null)
-            {
-                s_TransferIssuePanel = UIView.GetAView().AddUIComponent(typeof(TransferIssuePanel)) as TransferIssuePanel;
-                if (s_TransferIssuePanel == null)
-                {
-                    Prompt.Info("Transfer Manager CE", "Error creating Transfer Issue Panel.");
-                }
-            }
-        }
-
         public static void ToggleTransferIssuePanel()
         {
-            if (s_TransferIssuePanel != null)
+            if (TransferIssuePanel.Instance == null)
             {
-                if (s_TransferIssuePanel.isVisible)
+                TransferIssuePanel.Init();
+            }
+
+            if (TransferIssuePanel.Instance != null)
+            {
+                if (TransferIssuePanel.Instance.isVisible)
                 {
-                    s_TransferIssuePanel.Hide();
+                    TransferIssuePanel.Instance.Hide();
                 }
                 else
                 {
-                    s_TransferIssuePanel.Show();
+                    TransferIssuePanel.Instance.Show();
                 }
             } 
             else
@@ -128,24 +121,28 @@ namespace TransferManagerCE
 
         public static void ShowTransferIssuePanel()
         {
-            CreateTransferIssuePanel();
-            if (s_TransferIssuePanel != null)
+            if (TransferIssuePanel.Instance == null)
             {
-                if (!s_TransferIssuePanel.isVisible)
+                TransferIssuePanel.Init();
+            }
+            
+            if (TransferIssuePanel.Instance != null)
+            {
+                if (!TransferIssuePanel.Instance.isVisible)
                 {
-                    s_TransferIssuePanel.Show();
-                    s_TransferIssuePanel.BringToFront();
+                    TransferIssuePanel.Instance.Show();
+                    TransferIssuePanel.Instance.BringToFront();
                 }
             }
         }
 
         public static void HideTransferIssuePanel()
         {
-            if (s_TransferIssuePanel != null)
+            if (TransferIssuePanel.Instance != null)
             {
-                if (s_TransferIssuePanel.isVisible)
+                if (TransferIssuePanel.Instance.isVisible)
                 {
-                    s_TransferIssuePanel.Hide();
+                    TransferIssuePanel.Instance.Hide();
                 }
             }
         }

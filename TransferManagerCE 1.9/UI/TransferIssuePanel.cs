@@ -33,6 +33,8 @@ namespace TransferManagerCE
         public const int iCOLUMN_WIDTH_PATHING_BUILDING = 240;
         public const int iCOLUMN_DESCRIPTION_WIDTH = 300;
 
+        public static TransferIssuePanel? Instance = null;
+
         private UITitleBar? m_title = null;
         private ListView? m_listPathing = null;
         private ListView? m_listOutside = null;
@@ -46,6 +48,18 @@ namespace TransferManagerCE
         public TransferIssuePanel() : base()
         {
             m_issueHelper = new TransferIssueHelper();
+        }
+
+        public static void Init()
+        {
+            if (Instance == null)
+            {
+                Instance = UIView.GetAView().AddUIComponent(typeof(TransferIssuePanel)) as TransferIssuePanel;
+                if (Instance == null)
+                {
+                    Prompt.Info("Transfer Manager CE", "Error creating Issue Panel.");
+                }
+            }
         }
 
         public override void Start()
@@ -195,7 +209,7 @@ namespace TransferManagerCE
 
         private void OnReset(UIComponent component, UIMouseEventParameter eventParam)
         {
-            PathFindFailure.ResetPathingStatistics();
+            PathFindFailure.Reset();
             UpdatePanel();
         }
 
@@ -409,6 +423,11 @@ namespace TransferManagerCE
             if (m_title != null)
             {
                 Destroy(m_title.gameObject);
+            }
+            if (Instance != null)
+            {
+                Destroy(Instance.gameObject);
+                Instance = null;
             }
         }
     }
