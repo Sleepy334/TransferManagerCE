@@ -54,7 +54,6 @@ namespace TransferManagerCE.CustomManager
                 if (s_instance == null)
                 {
                     s_instance = new CustomTransferDispatcher();
-                    //s_instance.Initialize();
                 }
                 return s_instance;
             }

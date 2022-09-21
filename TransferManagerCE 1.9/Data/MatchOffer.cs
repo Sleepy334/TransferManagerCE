@@ -1,4 +1,5 @@
 ﻿using ColossalFramework;
+using System.Collections.Generic;
 using UnityEngine;
 using static TransferManager;
 
@@ -12,6 +13,7 @@ namespace TransferManagerCE.CustomManager
         public bool Active;
         public bool Exclude;
         public Vector3 Position;
+        public byte m_byLocalPark;
 
         public MatchOffer(MatchOffer offer)
         {
@@ -22,6 +24,7 @@ namespace TransferManagerCE.CustomManager
             Active = offer.Active;
             Exclude = offer.Exclude;
             Position = new Vector3(offer.Position.x, offer.Position.y, offer.Position.z);
+            m_byLocalPark = offer.m_byLocalPark;
         }
 
         public MatchOffer(TransferOffer offer)
@@ -33,6 +36,7 @@ namespace TransferManagerCE.CustomManager
             Active = offer.Active;
             Exclude = offer.Exclude;
             Position = new Vector3(offer.Position.x, offer.Position.y, offer.Position.z);
+            m_byLocalPark = offer.m_isLocalPark;
         }
 
         public ushort Building
@@ -70,14 +74,14 @@ namespace TransferManagerCE.CustomManager
             return Exclude; // Only set by warehouses.
         }
 
-        public ushort GetBuilding()
+        public List<ushort> GetBuildings()
         {
             if (m_object != null)
             {
-                return InstanceHelper.GetBuilding(m_object);
+                return InstanceHelper.GetBuildings(m_object);
             }
 
-            return 0;
+            return new List<ushort>();
         }
 
         public string DisplayOffer()
@@ -94,16 +98,17 @@ namespace TransferManagerCE.CustomManager
             {
                 sMessage = "m_object is null";
             }
-            
-            ushort buildingId = GetBuilding();
-            if (buildingId > 0)
+
+            List<ushort> buildings = GetBuildings();
+            if (buildings.Count > 0)
             {
                 if (sMessage.Length > 0)
                 {
                     sMessage += "@";
                 }
-                sMessage += CitiesUtils.GetBuildingName(buildingId);
+                sMessage += CitiesUtils.GetBuildingName(buildings[0]);
             }
+
             return sMessage;
         }
 

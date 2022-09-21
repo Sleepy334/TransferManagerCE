@@ -36,12 +36,33 @@ namespace TransferManagerCE.Patch.Garbage
         }
 
         /// <summary>
+        /// Added for new P & P DLC. Don't pick up garbage from building in pedestrian zone.
+        /// </summary>
+        public static bool IsPedestrianZone(Building building)
+        {
+            if (building.m_accessSegment != 0)
+            {
+                NetSegment segment = NetManager.instance.m_segments.m_buffer[building.m_accessSegment];
+                if (segment.m_flags != 0)
+                {
+                    if (segment.Info != null && segment.Info.IsPedestrianZoneRoad())
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Find close by building with garbage
         /// </summary>
         public static ushort FindBuildingWithGarbage(Vector3 pos, float maxDistance)
         {
             BuildingManager instance = Singleton<BuildingManager>.instance;
-            uint numUnits = instance.m_buildings.m_size;    //get number of building units
+            Array16<Building>? Buildings = instance.m_buildings;
+            uint numUnits = Buildings.m_size;    //get number of building units
 
             // CHECK FORMULAS -> REFERENCE: SMARTERFIREFIGHTERSAI
             int minx = Mathf.Max((int)((pos.x - maxDistance) / 64f + 135f), 0);
@@ -65,8 +86,12 @@ namespace TransferManagerCE.Patch.Garbage
                     while (currentBuilding != 0)
                     {
                         // Check Building garbage buffer
-                        Building building = instance.m_buildings.m_buffer[currentBuilding];
-                        if (building.m_flags != 0 && building.m_garbageBuffer >= GARBAGE_BUFFER_MIN_LEVEL && building.Info != null && building.Info.GetService() != ItemClass.Service.Garbage)
+                        Building building = Buildings.m_buffer[currentBuilding];
+                        if (building.m_flags != 0 && 
+                            building.m_garbageBuffer >= GARBAGE_BUFFER_MIN_LEVEL && 
+                            building.Info != null && 
+                            building.Info.GetService() != ItemClass.Service.Garbage && 
+                            !IsPedestrianZone(building))
                         {
                             // check if not already dispatched to
                             long value;

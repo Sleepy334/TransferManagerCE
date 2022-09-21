@@ -75,6 +75,8 @@ namespace TransferManagerCE
             {
                 for (int material = 0; material < TRANSFER_REASON_COUNT; material++)
                 {
+                    TransferReason reason = (TransferReason)material;
+
                     // Loop through outgoing for this material
                     int material_offset = material * 8;
                     int offer_offset;
@@ -85,9 +87,9 @@ namespace TransferManagerCE
                         for (int offerIndex = 0; offerIndex < outgoingCount[offer_offset]; offerIndex++)
                         {
                             TransferOffer offer = outgoingOffers[offer_offset * 256 + offerIndex];
-                            if (GetOfferBuilding(offer) == buildingId)
+                            if (InstanceHelper.GetBuildings(offer.m_object).Contains(buildingId))
                             {
-                                offers.Add(new OfferData((TransferReason)material, false, offer));
+                                offers.Add(new OfferData(reason, false, offer));
                             }
                         }
                     }
@@ -99,9 +101,9 @@ namespace TransferManagerCE
                         for (int offerIndex = 0; offerIndex < incomingCount[offer_offset]; offerIndex++)
                         {
                             TransferOffer offer = incomingOffers[offer_offset * 256 + offerIndex];
-                            if (GetOfferBuilding(offer) == buildingId)
+                            if (InstanceHelper.GetBuildings(offer.m_object).Contains(buildingId))
                             {
-                                offers.Add(new OfferData((TransferReason)material, true, offer));
+                                offers.Add(new OfferData(reason, true, offer));
                             }
                         }
                     }
@@ -137,40 +139,7 @@ namespace TransferManagerCE
 
         public static string DebugOffer(TransferOffer offer)
         {
-            string sMessage = "";
-            if (offer.Building > 0 && offer.Building < BuildingManager.instance.m_buildings.m_size)
-            {
-                var instB = default(InstanceID);
-                instB.Building = offer.Building;
-                sMessage += " (" + offer.Building + ")" + BuildingManager.instance.m_buildings.m_buffer[offer.Building].Info?.name + "(" + InstanceManager.instance.GetName(instB) + ")";
-            }
-            if (offer.Vehicle > 0 && offer.Vehicle < VehicleManager.instance.m_vehicles.m_size)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle];
-                sMessage += " (" + offer.Vehicle + ")" + vehicle.Info?.name;
-
-                // Add building
-                if (vehicle.m_sourceBuilding != 0)
-                {
-                    var instB = new InstanceID { Building = vehicle.m_sourceBuilding };
-                    Building building = BuildingManager.instance.m_buildings.m_buffer[vehicle.m_sourceBuilding];
-                    sMessage += "@(" + vehicle.m_sourceBuilding + ")" + building.Info?.name + "(" + InstanceManager.instance.GetName(instB) + ")";
-                }
-            }
-            if (offer.Citizen > 0)
-            {
-                sMessage += $" Citizen:{offer.Citizen}";
-                Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
-                sMessage += $" Building:{oCitizen.GetBuildingByLocation()}";
-            }
-            if (offer.NetSegment > 0)
-            {
-                sMessage += $" NetSegment={offer.NetSegment}";
-            }
-            if (offer.TransportLine > 0)
-            {
-                sMessage += $" TransportLine={offer.TransportLine}";
-            }
+            string sMessage = InstanceHelper.DescribeInstance(offer.m_object);
             sMessage += " Priority:" + offer.Priority;
             if (offer.Active)
             {
@@ -183,60 +152,6 @@ namespace TransferManagerCE
             sMessage += " Exclude:" + offer.Exclude;
             sMessage += " Amount: " + offer.Amount;
             return sMessage;
-        }
-
-        public static bool IsOfferForBuilding(ushort buildingId, ref TransferOffer offer)
-        {
-            if (offer.m_object.Type == InstanceType.Building)
-            {
-                return offer.Building == buildingId;
-            }
-            else if (offer.m_object.Type == InstanceType.Vehicle)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle];
-                return vehicle.m_sourceBuilding == buildingId;
-            }
-            else if (offer.m_object.Type == InstanceType.Citizen)
-            {
-                Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
-                if (citizen.m_homeBuilding == buildingId)
-                {
-                    return true;
-                }
-                else if (citizen.m_workBuilding == buildingId)
-                {
-                    return true;
-                }
-                else if(citizen.m_visitBuilding == buildingId)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public static ushort GetOfferBuilding(TransferOffer offer)
-        {
-            switch (offer.m_object.Type)
-            {
-                case InstanceType.Building:
-                    {
-                        return offer.Building;
-                    }
-                case InstanceType.Vehicle:
-                    {
-                        Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[offer.Vehicle];
-                        return vehicle.m_sourceBuilding;
-                    }
-                case InstanceType.Citizen:
-                    {
-                        Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
-                        return citizen.GetBuildingByLocation();
-                    }
-            }   
-
-            return 0;
         }
     }
 }

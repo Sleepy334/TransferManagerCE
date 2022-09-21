@@ -33,6 +33,7 @@ namespace TransferManagerCE
         public const int iLISTVIEW_OFFERS_HEIGHT = 196;
 
         public const int iCOLUMN_WIDTH_XS = 20;
+        public const int iCOLUMN_WIDTH_TINY = 40;
         public const int iCOLUMN_WIDTH_SMALL = 60;
         public const int iCOLUMN_WIDTH_NORMAL = 80;
         public const int iCOLUMN_WIDTH_LARGE = 120;
@@ -92,7 +93,7 @@ namespace TransferManagerCE
         {
             base.Start();
             name = "BuildingPanel";
-            width = 700;
+            width = 740;
             height = 600;
             backgroundSprite = "UnlockingPanel2";
             opacity = 0.95f;
@@ -109,7 +110,7 @@ namespace TransferManagerCE
             m_title.SetStatsHandler(OnStatsClick);
             m_title.SetIssuesHandler(OnIssuesClick);
             m_title.SetOutsideHandler(OnOutsideClick);
-            m_title.title = "Transfer Manager CE";
+            m_title.title = TransferManagerMain.Title;
 
             UIPanel mainPanel = AddUIComponent<UIPanel>();
             mainPanel.width = width;
@@ -252,7 +253,8 @@ namespace TransferManagerCE
                     m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_INOUT, Localization.Get("listBuildingPanelOffersColumn1"), "Transfer Direction", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
                     m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listBuildingPanelOffersColumn3"), "Transfer offer priority", iCOLUMN_WIDTH_NORMAL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
                     m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_ACTIVE, Localization.Get("listBuildingPanelOffersColumn4"), "Transfer offer Active/Passive", iCOLUMN_WIDTH_NORMAL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, Localization.Get("listBuildingPanelOffersColumn5"), "Transfer Offer Amount", iCOLUMN_WIDTH_NORMAL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, Localization.Get("listBuildingPanelOffersColumn5"), "Transfer Offer Amount", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_PARK, Localization.Get("listBuildingPanelOffersPark"), "Offer Park #", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
                     m_listOffers.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("listBuildingPanelOffersColumn6"), "Offer description", iCOLUMN_WIDTH_250, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                     m_listOffers.HandleSort(ListViewRowComparer.Columns.COLUMN_PRIORITY);
                 }
@@ -275,7 +277,8 @@ namespace TransferManagerCE
                     m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_ACTIVE, Localization.Get("listBuildingPanelMatchesColumn3"), "Active or Passive for this match", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
                     m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_AMOUNT, Localization.Get("listBuildingPanelMatchesColumn4"), "Transfer match amount", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
                     m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_DISTANCE, "d", "Transfer distance", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, "P", "In priority / Out priority", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, "P", "In priority / Out priority", iCOLUMN_WIDTH_TINY, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_PARK, Localization.Get("listBuildingPanelOffersPark"), "Offer Park #", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
                     m_listMatches.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("listBuildingPanelMatchesColumn6"), "Match description", iCOLUMN_WIDTH_250, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                     m_listMatches.HandleSort(ListViewRowComparer.Columns.COLUMN_TIME);
                     m_listMatches.HandleSort(ListViewRowComparer.Columns.COLUMN_TIME);

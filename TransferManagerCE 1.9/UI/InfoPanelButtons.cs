@@ -66,29 +66,53 @@ namespace TransferManagerCE
                 m_button.name = "TransferManagerCEButton";
                 m_button.tooltip = "Open Transfer Manager CE";
                 m_button.atlas = TransferManagerLoader.LoadResources();
-         
+
                 // Buttons to avoid
                 // RICO = 5f
                 // Repainter = 42f
                 // Advanced building control = 62f
+                // RON = 62f
                 float fXOffset = -5f;
-                if (infoPanel is ZonedBuildingWorldInfoPanel || infoPanel is CityServiceWorldInfoPanel)
+                switch (infoPanel)
                 {
-                    if (DependencyUtilities.IsPloppableRICORunning())
-                    {
-                        fXOffset += -m_button.width;
-
-                        if (DependencyUtilities.IsRepainterRunning())
+                    case ZonedBuildingWorldInfoPanel:
                         {
-                            fXOffset += -m_button.width + 4f; // Button not as big move it back a bit
-
-                            if (infoPanel is ZonedBuildingWorldInfoPanel && DependencyUtilities.IsAdvancedBuildingLevelRunning())
+                            if (DependencyUtilities.IsPloppableRICORunning())
                             {
-                                // Need to shift past all 3 buttons
-                                fXOffset += -m_button.width + 10f; // Some of the other icons arent as big, pull it back a bit
+                                fXOffset += -m_button.width;
+
+                                if (DependencyUtilities.IsRepainterRunning())
+                                {
+                                    fXOffset += -m_button.width + 4f; // Button not as big move it back a bit
+
+                                    if (DependencyUtilities.IsAdvancedBuildingLevelRunning())
+                                    {
+                                        // Need to shift past all 3 buttons
+                                        fXOffset += -m_button.width + 10f; // Some of the other icons arent as big, pull it back a bit
+                                    }
+                                }
                             }
+                            break;
                         }
-                    }
+                    case CityServiceWorldInfoPanel:
+                        {
+                            if (DependencyUtilities.IsPloppableRICORunning())
+                            {
+                                fXOffset += -m_button.width;
+
+                                if (DependencyUtilities.IsRepainterRunning())
+                                {
+                                    fXOffset += -m_button.width + 4f; // Button not as big move it back a bit
+
+                                    if (DependencyUtilities.IsRONRunning())
+                                    {
+                                        // Need to shift past all 3 buttons
+                                        fXOffset += -m_button.width + 10f; // Some of the other icons arent as big, pull it back a bit
+                                    }
+                                }
+                            }
+                            break;
+                        }
                 }
 
                 m_button.AlignTo(infoPanel.component, UIAlignAnchor.TopRight);

@@ -60,7 +60,7 @@ namespace TransferManagerCE
             List<TransferIssueContainer> list = new List<TransferIssueContainer>();
 
             // Dead issues
-            if (building.m_deathProblemTimer > m_deadTimerValue || (building.m_problems & Notification.Problem.Death) == Notification.Problem.Death)
+            if (building.m_deathProblemTimer > m_deadTimerValue || (building.m_problems & Notification.Problem1.Death) == Notification.Problem1.Death)
             {                
                 List<uint> cimDead = CitiesUtils.GetDead(buildingId, building);
                 if (cimDead.Count > 0)

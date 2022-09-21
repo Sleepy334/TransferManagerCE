@@ -52,6 +52,7 @@ namespace TransferManagerCE
             TaxiDepot,
             TaxiStand, // Taxi's are actually on the guest vehicle side not the own vehicle side.
             SnowDump,
+            ServicePoint,
 
             // Industry DLC, Fish farms
             MainIndustryBuilding,
@@ -376,9 +377,13 @@ namespace TransferManagerCE
                             }
                             break;
                         }
+                    case ItemClass.Service.ServicePoint:
+                        {
+                            return BuildingType.ServicePoint;
+                        }
                 }
             }
-            
+            //ServicePointAI
             return BuildingType.None;
         }
 
@@ -423,7 +428,7 @@ namespace TransferManagerCE
                 }
                 
             }
-
+           
             return BuildingSubType.None;
         }
 

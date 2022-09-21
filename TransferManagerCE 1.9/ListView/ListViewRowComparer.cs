@@ -46,6 +46,7 @@ namespace SleepyCommon
 			COLUMN_LOAD,
 			COLUMN_SOURCE_FAIL_COUNT,
 			COLUMN_TARGET_FAIL_COUNT,
+			COLUMN_PARK,
 		}
         
         public Columns m_eSortColumn;

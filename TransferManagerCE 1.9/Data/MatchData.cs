@@ -86,6 +86,15 @@ namespace TransferManagerCE
             return m_incoming.Priority + "/" + m_outgoing.Priority;
         }
 
+        public string GetPark()
+        {
+            if (m_incoming.m_byLocalPark != m_outgoing.m_byLocalPark)
+            {
+                return $"{m_incoming.m_byLocalPark}/{m_outgoing.m_byLocalPark}";
+            }
+            return m_incoming.m_byLocalPark.ToString();
+        }
+
         public string DisplayMatch()
         {
             switch (m_eInOrOut)

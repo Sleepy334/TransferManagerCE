@@ -12,9 +12,10 @@ namespace TransferManagerCE
         private UILabel? m_lblInOut = null;
         private UILabel? m_lblPriority = null;
         private UILabel? m_lblActive = null;
-        private UILabel? m_lblAmount = null;       
+        private UILabel? m_lblAmount = null;
+        private UILabel? m_lblPark = null; 
         private UILabel? m_lblDescription = null;
-
+        
         private OfferData? m_data = null;
 
         public override void Start()
@@ -109,9 +110,25 @@ namespace TransferManagerCE
                 m_lblAmount.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblAmount.autoSize = false;
                 m_lblAmount.height = height;
-                m_lblAmount.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
+                m_lblAmount.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
                 m_lblAmount.eventClicked += new MouseEventHandler(OnItemClicked);
                 m_lblAmount.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
+            }
+
+            m_lblPark = AddUIComponent<UILabel>();
+            if (m_lblPriority != null)
+            {
+                m_lblPark.name = "m_lblPriority";
+                m_lblPark.text = "";
+                m_lblPark.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblPark.tooltip = "";
+                m_lblPark.textAlignment = UIHorizontalAlignment.Center;
+                m_lblPark.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblPark.autoSize = false;
+                m_lblPark.height = height;
+                m_lblPark.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
+                m_lblPark.eventClicked += new MouseEventHandler(OnItemClicked);
+                m_lblPark.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblDescription = AddUIComponent<UILabel>();
@@ -161,6 +178,10 @@ namespace TransferManagerCE
                 if (m_lblPriority != null)
                 {
                     m_lblPriority.text = rowData.m_iPrioirty.ToString();
+                }
+                if (m_lblPark != null)
+                {
+                    m_lblPark.text = rowData.m_byLocalPark.ToString();
                 }
                 if (m_lblDescription != null)
                 {

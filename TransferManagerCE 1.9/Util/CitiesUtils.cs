@@ -569,7 +569,7 @@ namespace TransferManagerCE
             return 0;
         }
 
-        public static string GetDistrictName(ushort buildingId)
+        public static string GetBuildingDistrictName(ushort buildingId)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
             byte district = DistrictManager.instance.GetDistrict(building.m_position);
@@ -581,7 +581,7 @@ namespace TransferManagerCE
             return "";
         }
 
-        public static string GetParkName(ushort buildingId)
+        public static string GetBuildingParkName(ushort buildingId)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
             byte park = DistrictManager.instance.GetPark(building.m_position);

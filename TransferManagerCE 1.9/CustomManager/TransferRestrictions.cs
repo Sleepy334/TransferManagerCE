@@ -21,6 +21,7 @@ namespace TransferManagerCE.CustomManager
             DistrictRestriction,
             SameObject,
             SameBuilding,
+            DifferentParks,
             WarehouseLowPriority,
             WarehouseMode,
             WarehouseStorageLevels,
@@ -75,6 +76,12 @@ namespace TransferManagerCE.CustomManager
             if (outgoingOffer.m_object == incomingOffer.m_object)
             {
                 return ExclusionReason.SameObject;
+            }
+
+            // New Parks and Plazas logic, don't match if local parks arent the same
+            if (outgoingOffer.m_offer.m_isLocalPark != incomingOffer.m_offer.m_isLocalPark)
+            {
+                return ExclusionReason.DifferentParks;
             }
 
             // Don't allow matching if same building

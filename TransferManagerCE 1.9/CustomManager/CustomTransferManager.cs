@@ -62,14 +62,14 @@ namespace TransferManagerCE.CustomManager
             {
                 ref CustomTransferOffer incomingOffer = ref job.m_incomingOffers[i];
                 String bname = TransferManagerUtils.DebugOffer(incomingOffer);
-                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   in #{i}: prio: {incomingOffer.Priority}, act {incomingOffer.Active}, excl {incomingOffer.Exclude}, amt {incomingOffer.Amount}, bvcnt {incomingOffer.Building}/{incomingOffer.Vehicle}/{incomingOffer.Citizen}/{incomingOffer.NetSegment}/{incomingOffer.TransportLine} name={bname}");
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   in #{i}: prio: {incomingOffer.Priority}, act {incomingOffer.Active}, excl:{incomingOffer.Exclude}, amt:{incomingOffer.Amount}, LocalPark:{incomingOffer.m_offer.m_isLocalPark} Type:{incomingOffer.m_object.Type} Index:{incomingOffer.m_object.Index} name={bname}");
             }
 
             for (int i = 0; i < offerCountOutgoing; i++)
             {
                 ref CustomTransferOffer outgoingOffer = ref job.m_outgoingOffers[i];
                 String bname = TransferManagerUtils.DebugOffer(outgoingOffer);
-                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   out #{i}: prio: {outgoingOffer.Priority}, act {outgoingOffer.Active}, excl {outgoingOffer.Exclude}, amt {outgoingOffer.Amount}, bvcnt {outgoingOffer.Building}/{outgoingOffer.Vehicle}/{outgoingOffer.Citizen}/{outgoingOffer.NetSegment}/{outgoingOffer.TransportLine} name={bname}");
+                DebugLog.LogOnly((DebugLog.LogReason)(job.material), $"   out #{i}: prio: {outgoingOffer.Priority}, act {outgoingOffer.Active}, excl {outgoingOffer.Exclude}, amt {outgoingOffer.Amount}, LocalPark:{outgoingOffer.m_offer.m_isLocalPark} Type:{outgoingOffer.m_object.Type} Index:{outgoingOffer.m_object.Index} name={bname}");
             }
         }
 #endif
@@ -960,35 +960,43 @@ namespace TransferManagerCE.CustomManager
 
         public static ushort GetOfferBuilding(CustomTransferOffer offer)
         {
-            if (offer.Building != 0)
+            switch (offer.m_object.Type)
             {
-                return offer.Building;
-            }
-            else if (offer.Vehicle != 0)
-            {
-                Vehicle vehicle;
-                if (s_VehicleManager == null)
-                {
-                    vehicle = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[offer.Vehicle];
-                }
-                else
-                {
-                    vehicle = s_VehicleManager.m_vehicles.m_buffer[offer.Vehicle];
-                }
-                return vehicle.m_sourceBuilding;
-            }
-            else if (offer.Citizen != 0)
-            {
-                Citizen citizen;
-                if (s_CitizenManager == null)
-                {
-                    citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen];
-                }
-                else
-                {
-                    citizen = s_CitizenManager.m_citizens.m_buffer[offer.Citizen];
-                }
-                return citizen.GetBuildingByLocation();
+                case InstanceType.Building:
+                    {
+                        return offer.Building;
+                    }
+                case InstanceType.Vehicle:
+                    {
+                        Vehicle vehicle;
+                        if (s_VehicleManager == null)
+                        {
+                            vehicle = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[offer.Vehicle];
+                        }
+                        else
+                        {
+                            vehicle = s_VehicleManager.m_vehicles.m_buffer[offer.Vehicle];
+                        }
+                        return vehicle.m_sourceBuilding;
+                    }
+                case InstanceType.Citizen:
+                    {
+                        Citizen citizen;
+                        if (s_CitizenManager == null)
+                        {
+                            citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen];
+                        }
+                        else
+                        {
+                            citizen = s_CitizenManager.m_citizens.m_buffer[offer.Citizen];
+                        }
+                        return citizen.GetBuildingByLocation();
+                    }
+                case InstanceType.Park:
+                    {
+                        // Currently don't support restrictions for ServicePoints
+                        break;
+                    }
             }
 
             return 0;

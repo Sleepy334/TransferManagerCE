@@ -117,7 +117,7 @@ namespace TransferManagerCE
             if (BuildingPanel.Instance != null && 
                 BuildingPanel.Instance.isVisible &&
                 BuildingPanel.Instance.IsTransferTabActive() && 
-                TransferManagerUtils.GetOfferBuilding(offer) == BuildingPanel.Instance.m_buildingId)
+                InstanceHelper.GetBuildings(offer.m_object).Contains(BuildingPanel.Instance.m_buildingId))
             {
                 s_bUpdatePanel = true;
             }

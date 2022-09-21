@@ -1,5 +1,7 @@
 using ColossalFramework;
+using System.Collections.Generic;
 using UnityEngine;
+using static TransferManager;
 
 namespace TransferManagerCE
 {
@@ -12,7 +14,7 @@ namespace TransferManagerCE
                 return "Empty";
             } 
             else 
-            { 
+            {
                 switch (instance.Type)
                 {
                     case InstanceType.Building:
@@ -53,6 +55,23 @@ namespace TransferManagerCE
                             else
                             {
                                 return sName;
+                            }
+                        }
+                    case InstanceType.Park:
+                        {
+
+                            string sName = DistrictManager.instance.GetParkName(instance.Park);
+                            if (string.IsNullOrEmpty(sName))
+                            {
+                                return "Park:" + instance.Park;
+                            }
+                            else
+                            {
+#if DEBUG
+                                return $"({instance.Park}) " + sName;
+#else
+                                 return sName;
+#endif
                             }
                         }
                     case InstanceType.NetNode:
@@ -139,22 +158,25 @@ namespace TransferManagerCE
             }
         }
 
-        public static ushort GetBuilding(InstanceID instance)
+        public static List<ushort> GetBuildings(InstanceID instance)
         {
+            List<ushort> buildings = new List<ushort>();
+
             if (!instance.IsEmpty)
             {
                 switch (instance.Type)
                 {
                     case InstanceType.Building:
                         {
-                            return instance.Building;
+                            buildings.Add(instance.Building);
+                            break;
                         }
                     case InstanceType.Vehicle:
                         {
                             Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[instance.Vehicle];
                             if (vehicle.m_flags != 0)
                             {
-                                return vehicle.m_sourceBuilding;
+                                buildings.Add(vehicle.m_sourceBuilding);
                             }
                             break;
                         }
@@ -163,21 +185,41 @@ namespace TransferManagerCE
                             Citizen citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[instance.Citizen];
                             if (citizen.m_flags != 0)
                             {
-                                return citizen.GetBuildingByLocation();
+                                buildings.Add(citizen.GetBuildingByLocation());
                             }
-                            else
-                            {
-                                return 0;
-                            }
+                            break;
                         }
                     case InstanceType.NetNode:
                         {
-                            return NetNode.FindOwnerBuilding(instance.NetNode, 64f);
+                            ushort buildingId = NetNode.FindOwnerBuilding(instance.NetNode, 64f);
+                            if (buildingId != 0)
+                            {
+                                buildings.Add(buildingId);
+                            }
+                            break;
+                        }
+                    case InstanceType.Park:
+                        {
+
+                            // We need to find a ServicePoint node instead
+                            DistrictPark park = DistrictManager.instance.m_parks.m_buffer[instance.Park];
+                            if (park.m_flags != 0)
+                            {
+                                foreach (ushort buildingId in park.m_finalServicePointList)
+                                {
+                                    if (buildingId != 0)
+                                    {
+                                        buildings.Add(buildingId);
+                                    }
+                                }
+                                break;
+                            }
+                            break;
                         }
                 }
             }
 
-            return 0;
+            return buildings;
         }
 
         public static Vector3 GetPosition(InstanceID instance)

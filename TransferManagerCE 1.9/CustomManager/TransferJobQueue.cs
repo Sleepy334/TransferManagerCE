@@ -56,8 +56,9 @@ namespace TransferManagerCE
                 {
                     m_workQueue.Enqueue(job);
                     m_iMaxJobCount = Math.Max(m_iMaxJobCount, m_workQueue.Count);
-                    TransferManagerThread.s_waitHandle.Set(); // Release one thread to handle this job.
                 }
+                // Release one thread to handle this job.
+                TransferManagerThread.ReleaseOneThread(); 
             }
         }
 
@@ -67,25 +68,28 @@ namespace TransferManagerCE
         /// <returns></returns>
         public TransferJob? DequeueWork()
         {
+            TransferJob? job = null;
+
             if (m_workQueue != null)
             {
+                int iCount = 0;
                 lock (m_workQueueLock)
                 {
-                    int iCount = m_workQueue.Count;
+                    iCount = m_workQueue.Count;
                     if (iCount > 0)
                     {
-                        TransferJob job = m_workQueue.Dequeue();
-                        if (iCount > 1)
-                        {
-                            // Release another thread as we still have jobs waiting
-                            TransferManagerThread.s_waitHandle.Set();
-                        }
-                        return job;
+                        job = m_workQueue.Dequeue();
                     }
+                }
+
+                if (iCount > 1)
+                {
+                    // Release another thread as we still have jobs waiting
+                    TransferManagerThread.ReleaseOneThread();
                 }
             }
             
-            return null;
+            return job;
         }
 
         public void Destroy()

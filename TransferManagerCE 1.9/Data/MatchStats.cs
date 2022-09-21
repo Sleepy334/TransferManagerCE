@@ -83,8 +83,8 @@ namespace TransferManagerCE
             if (ModSettings.GetSettings().StatisticsEnabled && s_Stats != null)
             {
                 double distance = Math.Sqrt(Vector3.SqrMagnitude(incomingOffer.Position - outgoingOffer.Position));
-                bool bOutside = BuildingTypeHelper.IsOutsideConnection(TransferManagerUtils.GetOfferBuilding(outgoingOffer)) || 
-                                BuildingTypeHelper.IsOutsideConnection(TransferManagerUtils.GetOfferBuilding(incomingOffer));
+                bool bOutside = BuildingTypeHelper.IsOutsideConnection(outgoingOffer.Building) || 
+                                BuildingTypeHelper.IsOutsideConnection(incomingOffer.Building);
                 s_Stats[(int)material].TotalMatches++;
                 s_Stats[(int)material].TotalMatchAmount += deltaamount;
                 s_Stats[(int)material].TotalDistance += distance;

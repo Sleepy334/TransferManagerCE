@@ -37,7 +37,7 @@ namespace TransferManagerCE
                 MatchData match = new MatchData(material, outgoingOffer, incomingOffer, deltaamount);
                 lock (s_MatchLock)
                 {
-                    if (match.m_incoming.GetBuilding() != 0 || match.m_outgoing.GetBuilding() != 0)
+                    if (match.m_incoming.GetBuildings().Count > 0 || match.m_outgoing.GetBuildings().Count > 0)
                     {
                         while (m_Matches.Count >= iMATCH_LOGGING_LIMIT - 1)
                         {
@@ -68,11 +68,11 @@ namespace TransferManagerCE
                         {
                             matches.Add(new MatchData(buildingId, false, matchData));
                         }
-                        else if (matchData.m_incoming.GetBuilding() == buildingId)
+                        else if (matchData.m_incoming.GetBuildings().Contains(buildingId))
                         {
                             matches.Add(new MatchData(buildingId, true, matchData));
                         }
-                        else if (matchData.m_outgoing.GetBuilding() == buildingId)
+                        else if (matchData.m_outgoing.GetBuildings().Contains(buildingId))
                         {
                             matches.Add(new MatchData(buildingId, false, matchData));
                         }

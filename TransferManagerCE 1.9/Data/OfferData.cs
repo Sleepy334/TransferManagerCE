@@ -1,5 +1,6 @@
 using ColossalFramework.UI;
 using System;
+using System.Collections.Generic;
 using static TransferManager;
 
 namespace TransferManagerCE
@@ -11,7 +12,7 @@ namespace TransferManagerCE
         public bool m_bIncoming;
         public int m_iPrioirty;
         public bool m_bActive;
-
+        public byte m_byLocalPark;
         public OfferData(TransferReason material, bool bIncoming, TransferOffer offer)
         {
             m_material = material;
@@ -19,6 +20,7 @@ namespace TransferManagerCE
             m_offer = offer;
             m_iPrioirty = offer.Priority;
             m_bActive = offer.Active;
+            m_byLocalPark = offer.m_isLocalPark;
         }
 
         public static int CompareTo(OfferData first, OfferData second)
@@ -38,45 +40,39 @@ namespace TransferManagerCE
 
         public string DisplayOffer()
         {
-            //string sMessage = "";
-            if (m_offer.Building > 0 && m_offer.Building < BuildingManager.instance.m_buildings.m_size)
+            string sMessage = "";
+            if (m_offer.m_object != null)
             {
-                return CitiesUtils.GetBuildingName(m_offer.Building);
-            }
-            if (m_offer.Vehicle > 0 && m_offer.Vehicle < VehicleManager.instance.m_vehicles.m_size)
-            {
-                return CitiesUtils.GetVehicleName(m_offer.Vehicle);
-            }
-            if (m_offer.Citizen > 0)
-            {
-                Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[m_offer.Citizen];
-                ushort usBuildingId = oCitizen.GetBuildingByLocation();
-                if (usBuildingId != 0)
+                if (m_offer.m_object.Type != InstanceType.Building)
                 {
-                    return CitiesUtils.GetCitizenName(m_offer.Citizen) + "@" + CitiesUtils.GetBuildingName(usBuildingId);
-                }
-                else
-                {
-                    return CitiesUtils.GetCitizenName(m_offer.Citizen);
+                    sMessage = InstanceHelper.DescribeInstance(m_offer.m_object);
                 }
             }
-            return "Unknown";
+            else
+            {
+                sMessage = "m_object is null";
+            }
+
+            // Don't add the building if it's a park as we just show all offers for the park at each ServicePoint
+            if (m_offer.m_object.Type != InstanceType.Park)
+            {
+                List<ushort> buildings = InstanceHelper.GetBuildings(m_offer.m_object);
+                if (buildings.Count > 0)
+                {
+                    if (sMessage.Length > 0)
+                    {
+                        sMessage += "@";
+                    }
+                    sMessage += CitiesUtils.GetBuildingName(buildings[0]);
+                }
+            }
+
+            return sMessage;
         }
 
         public void Show()
         {
-            if (m_offer.Building > 0 && m_offer.Building < BuildingManager.instance.m_buildings.m_size)
-            {
-                CitiesUtils.ShowBuilding(m_offer.Building);
-            }
-            else if (m_offer.Citizen > 0)
-            {
-                CitiesUtils.ShowCitizen(m_offer.Citizen);
-            }
-            else if (m_offer.Vehicle > 0)
-            {
-                CitiesUtils.ShowVehicle(m_offer.Vehicle);
-            }
+            InstanceHelper.ShowInstance(m_offer.m_object);
         }
     }
 }

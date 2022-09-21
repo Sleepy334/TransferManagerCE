@@ -225,7 +225,7 @@ namespace TransferManagerCE
 
             if (m_chkCurrentDistrict != null)
             {
-                m_chkCurrentDistrict.text = Localization.Get("txtCurrentDistrict") + ": " + CitiesUtils.GetDistrictName(m_buildingId);
+                m_chkCurrentDistrict.text = Localization.Get("txtCurrentDistrict") + ": " + CitiesUtils.GetBuildingDistrictName(m_buildingId);
                 if (m_bIncoming)
                 {
                     m_chkCurrentDistrict.isChecked = settings.m_bIncomingAllowLocalDistrict;
@@ -238,7 +238,7 @@ namespace TransferManagerCE
             }
             if (m_chkCurrentPark != null)
             {
-                m_chkCurrentPark.text = Localization.Get("txtCurrentPark") + ": " + CitiesUtils.GetParkName(m_buildingId);
+                m_chkCurrentPark.text = Localization.Get("txtCurrentPark") + ": " + CitiesUtils.GetBuildingParkName(m_buildingId);
                 if (m_bIncoming)
                 {
                     m_chkCurrentPark.isChecked = settings.m_bIncomingAllowLocalPark;
