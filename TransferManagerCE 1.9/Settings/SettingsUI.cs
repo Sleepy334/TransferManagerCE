@@ -53,11 +53,13 @@ namespace TransferManagerCE
             UIHelper tabGeneral = tabStrip.AddTabPage(Localization.Get("tabGeneral"), true);
             UIHelper tabTransferManager = tabStrip.AddTabPage(Localization.Get("tabTransferManager"), true);
             UIHelper tabVehicleAI = tabStrip.AddTabPage(Localization.Get("tabVehicleAI"), true);
+            UIHelper tabMaintenance = tabStrip.AddTabPage(Localization.Get("tabMaintenance"), true);
 
             // Setup tabs
             SetupGeneralTab(tabGeneral);
             SetupTransferManagerTab(tabTransferManager);
             SetupVehicleAITab(tabVehicleAI);
+            SetupMaintenance(tabMaintenance);
 
             UpdateTransferManagerEnabled();
         }
@@ -276,6 +278,21 @@ namespace TransferManagerCE
             m_chkGarbageTruckAI = (UICheckBox)group.AddCheckbox(Localization.Get("optionGarbageTruckAI"), oSettings.ExperimentalGarbage, OnGarbageTruckAI);
             m_chkPoliceCarAI = (UICheckBox)group.AddCheckbox(Localization.Get("optionPoliceCarAI"), oSettings.ExperimentalGarbage, OnPoliceCarAI);
             m_chkPoliceCopterAI = (UICheckBox)group.AddCheckbox(Localization.Get("optionPoliceCopterAI"), oSettings.ExperimentalGarbage, OnPoliceCopterAI);
+        }
+
+        public void SetupMaintenance(UIHelper helper)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+
+            // Experimental section
+            UIHelperBase group = helper.AddGroup(Localization.Get("GROUP_Maintenance"));
+            UIPanel panel = (group as UIHelper).self as UIPanel;
+
+            group.AddButton(Localization.Get("btnReleaseGhostVehicles"), () => StuckVehicles.ReleaseGhostVehicles());
+            AddDescription(panel, "txtReleaseGhostVehicles", panel, 1.0f, Localization.Get("txtReleaseGhostVehicles"));
+
+            group.AddButton(Localization.Get("btnReleaseBrokenPathing"), () => PathUnitMaintenance.ReleaseBrokenPathUnits());
+            AddDescription(panel, "txtBrokenPathUnits", panel, 1.0f, Localization.Get("txtBrokenPathUnits"));
         }
 
         public void OnTabVisibilityChanged(UIComponent component, bool bVisible)

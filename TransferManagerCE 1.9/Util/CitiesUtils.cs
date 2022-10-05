@@ -10,7 +10,32 @@ namespace TransferManagerCE
 {
     public class CitiesUtils
     {
-        
+        public static void CalculateGuestVehicles(ushort buildingID, ref Building data, TransferManager.TransferReason material, ref int count, ref int cargo, ref int capacity, ref int outside)
+        {
+            VehicleManager instance = Singleton<VehicleManager>.instance;
+            ushort vehicleID = data.m_guestVehicles;
+            int num = 0;
+            while (vehicleID != (ushort)0)
+            {
+                if ((TransferManager.TransferReason)instance.m_vehicles.m_buffer[(int)vehicleID].m_transferType == material)
+                {
+                    int size;
+                    int max;
+                    instance.m_vehicles.m_buffer[(int)vehicleID].Info.m_vehicleAI.GetSize(vehicleID, ref instance.m_vehicles.m_buffer[(int)vehicleID], out size, out max);
+                    cargo += Mathf.Min(size, max);
+                    capacity += max;
+                    ++count;
+                    if ((instance.m_vehicles.m_buffer[(int)vehicleID].m_flags & (Vehicle.Flags.Importing | Vehicle.Flags.Exporting)) != ~(Vehicle.Flags.Created | Vehicle.Flags.Deleted | Vehicle.Flags.Spawned | Vehicle.Flags.Inverted | Vehicle.Flags.TransferToTarget | Vehicle.Flags.TransferToSource | Vehicle.Flags.Emergency1 | Vehicle.Flags.Emergency2 | Vehicle.Flags.WaitingPath | Vehicle.Flags.Stopped | Vehicle.Flags.Leaving | Vehicle.Flags.Arriving | Vehicle.Flags.Reversed | Vehicle.Flags.TakingOff | Vehicle.Flags.Flying | Vehicle.Flags.Landing | Vehicle.Flags.WaitingSpace | Vehicle.Flags.WaitingCargo | Vehicle.Flags.GoingBack | Vehicle.Flags.WaitingTarget | Vehicle.Flags.Importing | Vehicle.Flags.Exporting | Vehicle.Flags.Parking | Vehicle.Flags.CustomName | Vehicle.Flags.OnGravel | Vehicle.Flags.WaitingLoading | Vehicle.Flags.Congestion | Vehicle.Flags.DummyTraffic | Vehicle.Flags.Underground | Vehicle.Flags.Transition | Vehicle.Flags.InsideBuilding | Vehicle.Flags.LeftHandDrive))
+                        ++outside;
+                }
+                vehicleID = instance.m_vehicles.m_buffer[(int)vehicleID].m_nextGuestVehicle;
+                if (++num > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
+        }
 
         private static void AddCitizenToList(uint cim, ushort usBuildingId, Citizen.Flags flag, List<uint> cimList)
         {
@@ -351,12 +376,13 @@ namespace TransferManagerCE
 
         public static string GetBuildingName(ushort buildingId)
         {
+            string sName = "";
             if (buildingId != 0 && buildingId < BuildingManager.instance.m_buildings.m_size)
             {
                 Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
                 if (building.m_flags != Building.Flags.None)
                 {
-                    string sName = Singleton<BuildingManager>.instance.GetBuildingName(buildingId, InstanceID.Empty);
+                    sName = Singleton<BuildingManager>.instance.GetBuildingName(buildingId, InstanceID.Empty);
                     if (string.IsNullOrEmpty(sName))
                     {
                         sName = "Building:" + buildingId;
@@ -368,10 +394,11 @@ namespace TransferManagerCE
                 }
                 else
                 {
-                    return building.Info.name + ":" + buildingId;
+                    sName = "Building:" + buildingId;
                 }
             }
-            return "";
+
+            return sName;
         }
 
         public static string GetVehicleName(ushort vehicleId)
@@ -442,6 +469,21 @@ namespace TransferManagerCE
                 Debug.Log("BuildingId out of range: " + buildingId);
             }
         }
+
+        public static void ShowPark(byte parkId, bool bZoom = false)
+        {
+            if (parkId > 0 && parkId < DistrictManager.instance.m_parks.m_size)
+            {
+                InstanceID instance = new InstanceID { Park = parkId };
+                Vector3 oPosition = InstanceHelper.GetPosition(new InstanceID {  Park = parkId});
+                ToolsModifierControl.cameraController.SetTarget(instance, oPosition, bZoom);
+            }
+            else
+            {
+                Debug.Log("ParkId out of range: " + parkId);
+            }
+        }
+        
 
         public static void ShowVehicle(ushort vehicleId)
         {

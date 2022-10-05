@@ -19,7 +19,6 @@ namespace TransferManagerCE
         private long m_LastPathFailureElapsedTime = 0;
 
         private Stopwatch? m_watch = null;
-        private bool s_bFirstTime = true;
 
         private static bool s_bShownPathUnitWarning = false;
         private static int s_iDistrictCount = 0;
@@ -58,13 +57,6 @@ namespace TransferManagerCE
                     m_LastCheckPathUnitsElapsedTime = m_watch.ElapsedMilliseconds;
                     m_LastCheckDistrictElapsedTime = m_watch.ElapsedMilliseconds;
                     m_LastPathFailureElapsedTime = m_watch.ElapsedMilliseconds;
-                }
-
-                // Release ghost vehicles the first time the game is unpaused
-                if (s_bFirstTime)
-                {
-                    StuckVehicles.ReleaseGhostVehicles();
-                    s_bFirstTime = false;
                 }
 #if DEBUG
                 long lStartTime = m_watch.ElapsedMilliseconds;

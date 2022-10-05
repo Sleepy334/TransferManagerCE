@@ -177,4 +177,9 @@
 "dropdownBalancedModePassiveFirst","Match Passive First"
 "txtBalancedMatch","Choose which offer to match first when incoming and outging offers have the same priority."
 "listBuildingPanelOffersPark","Park"
-
+"tabMaintenance","Maintenance"
+"GROUP_Maintenance","Maintenance"
+"btnReleaseGhostVehicles","Release Ghost Vehicles"
+"txtReleaseGhostVehicles","Look for vehicles that are stuck or without valid positions or status and release them."
+"btnReleaseBrokenPathing","Release Broken Pathing"
+"txtBrokenPathUnits","Find path units that have not been released correctly but are not used and release them properly."

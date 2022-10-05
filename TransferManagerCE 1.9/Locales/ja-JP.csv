@@ -176,5 +176,9 @@
 "dropdownBalancedModeLeastFirst","最少オファーを優先的に一致"
 "dropdownBalancedModePassiveFirst","受動的なものを優先的に一致"
 "txtBalancedMatch","発信と受信のオファー順位が同じ場合は、優先的に一致させるオファーを選択出来ます。"
-
+"GROUP_PATH_DISTANCE","一致距離のアルゴリズム"
+"optionPathDistance","経路距離を使用 (利用可能な場合)"
+"txtPathDistance","見通し距離の代わりに、経路距離を使用します。 (利用可能な場合) この処理は複雑なネットワークや経路では、効果的ですが処理速度が低下します。 オプション使用時は、PCが十分に高速であることを確認してください。\r\n現在は主要なサービスに限定されています。"
+"optionHighlightMatches","一致箇所をハイライト"
+"listBuildingPanelOffersPark","パーク"
 

@@ -34,6 +34,9 @@ namespace TransferManagerCE
                 patchList.Add(typeof(Patch.TransferManagerAddOutgoingPatch));
                 patchList.Add(typeof(Patch.TransferManagerStartTransferPatch));
 
+                // Patch offer bugs in main game
+                patchList.Add(typeof(Patch.AirportBuildingAIPatch));
+
                 // Path failures
                 patchList.Add(typeof(Patch.CarAIPathfindFailurePatch));
 

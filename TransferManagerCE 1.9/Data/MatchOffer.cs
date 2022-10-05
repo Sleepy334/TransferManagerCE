@@ -89,26 +89,31 @@ namespace TransferManagerCE.CustomManager
             string sMessage = "";
             if (m_object != null)
             {
-                if (m_object.Type != InstanceType.Building)
+                switch (m_object.Type)
                 {
-                    sMessage = InstanceHelper.DescribeInstance(m_object);
+                    case InstanceType.Park:
+                    case InstanceType.Building:
+                        {
+                            sMessage = InstanceHelper.DescribeInstance(m_object);
+                            break;
+                        }
+                    default:
+                        {
+                            sMessage = InstanceHelper.DescribeInstance(m_object);
+                            List<ushort> buildings = GetBuildings();
+                            if (buildings.Count > 0)
+                            {
+                                if (sMessage.Length > 0)
+                                {
+                                    sMessage += "@";
+                                }
+                                sMessage += CitiesUtils.GetBuildingName(buildings[0]);
+                            }
+
+                            return sMessage;
+                        }
                 }
             }
-            else
-            {
-                sMessage = "m_object is null";
-            }
-
-            List<ushort> buildings = GetBuildings();
-            if (buildings.Count > 0)
-            {
-                if (sMessage.Length > 0)
-                {
-                    sMessage += "@";
-                }
-                sMessage += CitiesUtils.GetBuildingName(buildings[0]);
-            }
-
             return sMessage;
         }
 

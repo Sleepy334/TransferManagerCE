@@ -176,5 +176,9 @@
 "dropdownBalancedModeLeastFirst","Match Least Offers First"
 "dropdownBalancedModePassiveFirst","Match Passive First"
 "txtBalancedMatch","Choose which offer to match first when incoming and outging offers have the same priority."
-
+"GROUP_PATH_DISTANCE","Match Distance Algorithm"
+"optionPathDistance","Use Path Distance (Where available)"
+"txtPathDistance","Use path distance instead of line of sight distance (where available). This will result in better matches where your network or geography is complex but is slower so please ensure your computer is fast enough for this option.\r\nCurrently restricted to main services."
+"optionHighlightMatches","Highlight Matches"
+"listBuildingPanelOffersPark","Park"
 

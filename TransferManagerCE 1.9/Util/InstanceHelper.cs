@@ -154,6 +154,11 @@ namespace TransferManagerCE
                             CitiesUtils.ShowTransportLine(instance.TransportLine);
                             break;
                         }
+                    case InstanceType.Park:
+                        {
+                            CitiesUtils.ShowPark(instance.Park);
+                            break;
+                        }
                 }
             }
         }
@@ -203,7 +208,7 @@ namespace TransferManagerCE
 
                             // We need to find a ServicePoint node instead
                             DistrictPark park = DistrictManager.instance.m_parks.m_buffer[instance.Park];
-                            if (park.m_flags != 0)
+                            if (park.m_flags != 0 && park.IsPedestrianZone)
                             {
                                 foreach (ushort buildingId in park.m_finalServicePointList)
                                 {
@@ -224,6 +229,8 @@ namespace TransferManagerCE
 
         public static Vector3 GetPosition(InstanceID instance)
         {
+            Vector3 position = Vector3.zero;
+
             if (!instance.IsEmpty)
             {
                 switch (instance.Type)
@@ -233,7 +240,7 @@ namespace TransferManagerCE
                             Building building = BuildingManager.instance.m_buildings.m_buffer[instance.Building];
                             if (building.m_flags != 0)
                             {
-                                return building.m_position;
+                                position = building.m_position;
                             }
                             break;
                         }
@@ -242,7 +249,7 @@ namespace TransferManagerCE
                             Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[instance.Vehicle];
                             if (vehicle.m_flags != 0)
                             {
-                                return vehicle.GetLastFramePosition();
+                                position = vehicle.GetLastFramePosition();
                             }
                             break;
                         }
@@ -253,7 +260,7 @@ namespace TransferManagerCE
                             {
                                 if (citizen.m_instance != 0)
                                 {
-                                    return CitiesUtils.GetCitizenInstancePosition(citizen.m_instance);
+                                    position = CitiesUtils.GetCitizenInstancePosition(citizen.m_instance);
                                 }
                                 else
                                 {
@@ -261,7 +268,7 @@ namespace TransferManagerCE
                                     if (buildingId != 0)
                                     {
                                         Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                                        return building.m_position;
+                                        position = building.m_position;
                                     }
                                 }
                             }
@@ -272,7 +279,7 @@ namespace TransferManagerCE
                             NetNode oNode = NetManager.instance.m_nodes.m_buffer[instance.NetNode];
                             if (oNode.m_flags != 0)
                             {
-                                return oNode.m_position;
+                                position = oNode.m_position;
                             }
                             break;
                         }
@@ -281,14 +288,24 @@ namespace TransferManagerCE
                             NetSegment oSegment = NetManager.instance.m_segments.m_buffer[instance.NetSegment];
                             if (oSegment.m_flags != 0)
                             {
-                                return oSegment.m_middlePosition;
+                                position = oSegment.m_middlePosition;
                             }
+                            break;
+                        }
+                    case InstanceType.Park:
+                        {
+                            int minX;
+                            int maxX;
+                            int minZ;
+                            int maxZ;
+                            DistrictManager.instance.GetParkArea(instance.Park, out minX, out minZ, out maxX, out maxZ);
+                            position = new Vector3((maxX - minX) * 0.5f, 0.0f, (maxZ - minZ) * 0.5f);
                             break;
                         }
                 }
             }
 
-            return Vector3.zero;
+            return position;
         }
 
         public static byte GetDistrict(InstanceID instance)
@@ -308,10 +325,17 @@ namespace TransferManagerCE
         {
             if (!instance.IsEmpty)
             {
-                Vector3 position = GetPosition(instance);
-                if (position != Vector3.zero)
+                if (instance.Park != 0)
                 {
-                    return DistrictManager.instance.GetPark(position);
+                    return instance.Park;
+                }
+                else
+                {
+                    Vector3 position = GetPosition(instance);
+                    if (position != Vector3.zero)
+                    {
+                        return DistrictManager.instance.GetPark(position);
+                    }
                 }
             }
             return 0;

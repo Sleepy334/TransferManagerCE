@@ -147,27 +147,21 @@ namespace TransferManagerCE.Patch.Garbage
                     return;
                 }
 
-                // check transfertype was not move transfer
-                if (vehicleData.m_transferType != (byte)TransferManager.TransferReason.Garbage)
-                    return;
-
-                if ((vehicleData.m_flags & (Vehicle.Flags.GoingBack | Vehicle.Flags.WaitingTarget)) != 0)
+                // Check transfer type is actually garbage
+                if (vehicleData.m_transferType == (byte)TransferManager.TransferReason.Garbage)
                 {
-                    ushort newTarget = GarbageAIPatch.FindBuildingWithGarbage(vehicleData.GetLastFramePosition(), GarbageAIPatch.GARBAGE_DISTANCE_SEARCH);
-                    if (newTarget != 0)
+                    if ((vehicleData.m_flags & (Vehicle.Flags.GoingBack | Vehicle.Flags.WaitingTarget)) != 0)
                     {
-                        // clear flag goingback and waiting target
-                        vehicleData.m_flags = vehicleData.m_flags & (~Vehicle.Flags.GoingBack) & (~Vehicle.Flags.WaitingTarget);
-                        // set new target
-                        vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, newTarget);
-                        GarbageAIPatch.setnewtarget_counter++;
+                        ushort newTarget = GarbageAIPatch.FindBuildingWithGarbage(vehicleData.GetLastFramePosition(), GarbageAIPatch.GARBAGE_DISTANCE_SEARCH);
+                        if (newTarget != 0)
+                        {
+                            // clear flag goingback and waiting target
+                            vehicleData.m_flags = vehicleData.m_flags & (~Vehicle.Flags.GoingBack) & (~Vehicle.Flags.WaitingTarget);
+                            // set new target
+                            vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, newTarget);
+                            GarbageAIPatch.setnewtarget_counter++;
+                        }
                     }
-                }
-                else if ((vehicleData.m_targetBuilding != 0) && (Singleton<BuildingManager>.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding].m_garbageBuffer <= GarbageAIPatch.GARBAGE_BUFFER_MIN_LEVEL / 2))
-                {
-                    //need to change target because problem already solved?
-                    vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, 0); //clear target
-                    GarbageAIPatch.dynamic_redispatch_counter++;
                 }
             }
         }
