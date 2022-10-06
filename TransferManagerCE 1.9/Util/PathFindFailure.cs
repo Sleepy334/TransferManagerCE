@@ -63,9 +63,16 @@ namespace TransferManagerCE.Util
 
         public static void Delete()
         {
-            s_pathfindFails = null;
-            s_outsideConnectionFails = null;
-            s_totalPathfindBuildingsCounter = null;
+            if (s_pathCounterLock != null)
+            {
+                lock (s_pathCounterLock)
+                {
+                    s_pathfindFails = null;
+                    s_outsideConnectionFails = null;
+                    s_totalPathfindBuildingsCounter = null;
+                }
+            }
+            
         }
 
         public static Dictionary<PATHFINDPAIR, long>? GetPathFailsCopy()
@@ -102,7 +109,10 @@ namespace TransferManagerCE.Util
         {
             if (s_outsideConnectionFails != null)
             {
-                return s_outsideConnectionFails.Count;
+                lock (_dictionaryLock)
+                {
+                    return s_outsideConnectionFails.Count;
+                }
             }
             return 0;
         }
@@ -228,7 +238,7 @@ namespace TransferManagerCE.Util
         /// <summary>
         /// Add or update failure pair
         /// </summary>
-        private static void AddFailPair(InstanceID source, InstanceID target)
+        public static void AddFailPair(InstanceID source, InstanceID target)
         {
             long _info;
             PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
@@ -254,21 +264,24 @@ namespace TransferManagerCE.Util
         /// <summary>
         /// Add or update outside connection fail
         /// </summary>
-        private static void AddOutsideConnectionFail(InstanceID source, InstanceID target)
+        public static void AddOutsideConnectionFail(InstanceID source, InstanceID target)
         {
-            long _info;
-            PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
-
             if (s_outsideConnectionFails != null)
             {
-                if (s_outsideConnectionFails.TryGetValue(_pair, out _info))
+                long _info;
+                PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
+
+                lock (_dictionaryLock)
                 {
-                    _info = DateTime.Now.Ticks;
-                    s_outsideConnectionFails[_pair] = _info;
-                }
-                else
-                {
-                    s_outsideConnectionFails.Add(_pair, DateTime.Now.Ticks);
+                    if (s_outsideConnectionFails.TryGetValue(_pair, out _info))
+                    {
+                        _info = DateTime.Now.Ticks;
+                        s_outsideConnectionFails[_pair] = _info;
+                    }
+                    else
+                    {
+                        s_outsideConnectionFails.Add(_pair, DateTime.Now.Ticks);
+                    }
                 }
             }
 
@@ -331,9 +344,13 @@ namespace TransferManagerCE.Util
             {
                 long _info;
                 PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
-                if (s_pathfindFails.TryGetValue(_pair, out _info))
+
+                lock (_dictionaryLock)
                 {
-                    return true;
+                    if (s_pathfindFails.TryGetValue(_pair, out _info))
+                    {
+                        return true;
+                    }
                 }
             }
 
@@ -350,9 +367,13 @@ namespace TransferManagerCE.Util
             {
                 long _info;
                 PATHFINDPAIR _pair = new PATHFINDPAIR(source, target);
-                if (s_outsideConnectionFails.TryGetValue(_pair, out _info))
+
+                lock (_dictionaryLock)
                 {
-                    return true;
+                    if (s_outsideConnectionFails.TryGetValue(_pair, out _info))
+                    {
+                        return true;
+                    }
                 }
             }
             return false;
