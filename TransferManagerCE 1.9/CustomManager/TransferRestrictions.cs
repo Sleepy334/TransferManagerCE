@@ -102,7 +102,9 @@ namespace TransferManagerCE.CustomManager
         [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private static bool DistrictCanTransfer(CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material)
         {
-            const int PRIORITY_THRESHOLD_LOCAL = 3;     //upper prios also get non-local fulfillment
+            // 4 is the maximum value for warehouse matching eg. 2/2.
+            // This allows warehouse transfer between districts but only when both really want it.
+            const int PREFER_LOCAL_DISTRICT_THRESHOLD = 4;
 
             // Check if it is an Import/Export
             if (offerIn.IsOutside() || offerOut.IsOutside())
@@ -125,9 +127,9 @@ namespace TransferManagerCE.CustomManager
                     }
                 case BuildingSettings.PreferLocal.PREFER_LOCAL_DISTRICT:
                     {
-                        // priority of passive side above threshold -> any service is OK!
-                        int priority = offerIn.Active ? offerOut.Priority : offerIn.Priority;
-                        if (priority >= PRIORITY_THRESHOLD_LOCAL)
+                        // Combined priority needs to be equal or greater than PREFER_LOCAL_DISTRICT_THRESHOLD
+                        int priority = offerIn.Priority + offerOut.Priority;
+                        if (priority >= PREFER_LOCAL_DISTRICT_THRESHOLD)
                         {
                             return true; // Priority is high enough to allow match
                         }
@@ -390,7 +392,7 @@ namespace TransferManagerCE.CustomManager
                 case TransferReason.LuxuryProducts:
                 case TransferReason.Fish:
                 case TransferReason.OutgoingMail:
-                case TransferReason.SortedMail:
+                case TransferReason.UnsortedMail:
                     return true;
 
                 default:
@@ -412,7 +414,7 @@ namespace TransferManagerCE.CustomManager
                 case TransferReason.Petrol:
                 case TransferReason.Lumber:
                 case TransferReason.IncomingMail:
-                case TransferReason.UnsortedMail:
+                case TransferReason.SortedMail:
                     return true;
 
                 default:
