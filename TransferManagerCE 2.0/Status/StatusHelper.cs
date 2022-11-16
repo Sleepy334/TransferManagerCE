@@ -215,14 +215,14 @@ namespace TransferManagerCE
                             {
                                 switch (eBuildingType)
                                 {
-                                    case BuildingTypeHelper.BuildingType.Commercial:
+                                    case BuildingType.Commercial:
                                         {
                                             m_listIncoming.Add(new StatusDataCommercial(eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                             m_setAddedReasons.Add(TransferReason.Goods);
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
                                         }
-                                    case BuildingTypeHelper.BuildingType.Warehouse:
+                                    case BuildingType.Warehouse:
                                         {
                                             WarehouseAI? warehouseAI = building.Info?.m_buildingAI as WarehouseAI;
                                             if (warehouseAI != null)
@@ -234,8 +234,8 @@ namespace TransferManagerCE
                                             }
                                             break;
                                         }
-                                    case BuildingTypeHelper.BuildingType.ProcessingFacility:
-                                    case BuildingTypeHelper.BuildingType.UniqueFactory:
+                                    case BuildingType.ProcessingFacility:
+                                    case BuildingType.UniqueFactory:
                                         {
                                             StatusDataProcessingFacility truck = new StatusDataProcessingFacility((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId);
                                             m_listIncoming.Add(truck);
@@ -243,28 +243,21 @@ namespace TransferManagerCE
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
                                         }
-                                    case BuildingTypeHelper.BuildingType.GenericExtractor:
+                                    case BuildingType.GenericExtractor:
                                         {
                                             m_listIncoming.Add(new StatusIndustrialExtractor((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                             m_setAddedReasons.Add((TransferReason)vehicle.m_transferType);
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
                                         }
-                                    case BuildingTypeHelper.BuildingType.GenericProcessing:
+                                    case BuildingType.GenericProcessing:
                                         {
                                             m_listIncoming.Add(new StatusIndustrialProcessing((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                             m_setAddedReasons.Add((TransferReason)vehicle.m_transferType);
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
                                         }
-                                    case BuildingTypeHelper.BuildingType.ExtractionFacility:
-                                        {
-                                            m_listIncoming.Add(new StatusDataExtractionFacility((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
-                                            m_setAddedReasons.Add((TransferReason)vehicle.m_transferType);
-                                            m_setAddedVehicles.Add(actualVehicleId);
-                                            break;
-                                        }
-                                    case BuildingTypeHelper.BuildingType.DisasterShelter:
+                                    case BuildingType.DisasterShelter:
                                         {
                                             // Add a generic vehicle
                                             m_listIncoming.Add(new StatusDataShelter(TransferReason.Food, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
@@ -272,7 +265,7 @@ namespace TransferManagerCE
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
                                         }
-                                    case BuildingTypeHelper.BuildingType.PowerPlant:
+                                    case BuildingType.PowerPlant:
                                         {
                                             // Add a generic vehicle
                                             m_listIncoming.Add(new StatusPowerPlant((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
@@ -280,7 +273,15 @@ namespace TransferManagerCE
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
                                         }
-                                    case BuildingTypeHelper.BuildingType.FishMarket:
+                                    case BuildingType.FishFactory:
+                                        {
+                                            // Add a generic vehicle
+                                            m_listIncoming.Add(new StatusDataFishFactory((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            m_setAddedReasons.Add((TransferReason)vehicle.m_transferType);
+                                            m_setAddedVehicles.Add(actualVehicleId);
+                                            break;
+                                        }
+                                    case BuildingType.FishMarket:
                                         {
                                             // Add a generic vehicle
                                             m_listIncoming.Add(new StatusDataMarket((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
@@ -461,6 +462,18 @@ namespace TransferManagerCE
                         }
                         break;
                     }
+                case BuildingType.FishFactory:
+                    {
+                        if (!m_setAddedReasons.Contains(TransferReason.Fish))
+                        {
+                            m_listIncoming.Add(new StatusDataFishFactory(TransferReason.Fish, eBuildingType, buildingId, 0, 0));
+                        }
+                        if (!m_setAddedReasons.Contains(TransferReason.Goods))
+                        {
+                            m_listOutgoing.Add(new StatusDataFishFactory(TransferReason.Goods, eBuildingType, buildingId, 0, 0));
+                        }
+                        break;
+                    }
                 case BuildingTypeHelper.BuildingType.Commercial:
                     {
                         if (!m_setAddedReasons.Contains(TransferReason.Goods) && !m_setAddedReasons.Contains(TransferReason.Food))
@@ -512,6 +525,15 @@ namespace TransferManagerCE
                         if (!m_setAddedReasons.Contains(TransferReason.ParkMaintenance))
                         {
                             m_listIncoming.Add(new StatusParkMaintenance(eBuildingType, buildingId, 0, 0));
+                        }
+                        break;
+                    }
+                case BuildingType.FishFarm:
+                case BuildingType.FishHarbor:
+                    {
+                        if (!m_setAddedReasons.Contains(TransferReason.Fish))
+                        {
+                            m_listOutgoing.Add(new StatusDataFishHarbor(eBuildingType, buildingId, 0, 0));
                         }
                         break;
                     }

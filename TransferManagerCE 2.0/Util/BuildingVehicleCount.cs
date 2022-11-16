@@ -104,10 +104,37 @@ namespace TransferManagerCE
                         }
                         break;
                     }
+                case BuildingType.FishFactory:
                 case BuildingType.ProcessingFacility:
                     {
                         Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
                         ProcessingFacilityAI? buildingAI = building.Info?.m_buildingAI as ProcessingFacilityAI;
+                        if (buildingAI != null && building.Info != null)
+                        {
+                            int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
+                            int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
+                            return (productionRate * buildingAI.m_outputVehicleCount + 99) / 100;
+                        }
+                        break;
+                    }
+                /* Tricky due to boats and trucks
+                case BuildingType.FishExtractor:
+                    {
+                        Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                        FishingHarborAI? buildingAI = building.Info?.m_buildingAI as FishingHarborAI;
+                        if (buildingAI != null && building.Info != null)
+                        {
+                            int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
+                            int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
+                            return (productionRate * buildingAI.m_outputVehicleCount + 99) / 100;
+                        }
+                        break;
+                    }
+                */
+                case BuildingType.FishFarm:
+                    {
+                        Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                        FishFarmAI? buildingAI = building.Info?.m_buildingAI as FishFarmAI;
                         if (buildingAI != null && building.Info != null)
                         {
                             int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);

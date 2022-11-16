@@ -13,42 +13,60 @@ namespace TransferManagerCE
         private readonly NetLane[] NetLanes;
 
         // Connected graph storage
-        public Dictionary<ushort, int> m_nodes;
+        private ConnectedStorage m_nodes;
         private int m_iColors;
         private Queue<ushort> m_connectedNodes;
+        private int m_iGameNodeCount;
+        private int m_iGameSegmentCount;
+        private int m_iGameLaneCount;
+
+        public UnconnectedGraph()
+        {
+            m_nodes = new ConnectedStorage();
+            m_connectedNodes = new Queue<ushort>();
+            m_iColors = 0;
+
+            // Use these to track updating connections
+            m_iGameNodeCount = 0;
+            m_iGameSegmentCount = 0;
+            m_iGameLaneCount = 0;
+
+            // Store local references to buffers for faster access
+            Nodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
+            NetSegments = Singleton<NetManager>.instance.m_segments.m_buffer;
+            NetLanes = Singleton<NetManager>.instance.m_lanes.m_buffer;
+        }
 
         public int Colors
         {
             get { return m_iColors; }
         }
 
-        public UnconnectedGraph()
+        public bool IsValid()
         {
-            m_nodes = new Dictionary<ushort, int>();
-            m_connectedNodes = new Queue<ushort>();
-            m_iColors = 0;
-
-            Nodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
-            NetSegments = Singleton<NetManager>.instance.m_segments.m_buffer;
-            NetLanes = Singleton<NetManager>.instance.m_lanes.m_buffer;
+            return m_iGameNodeCount > 0 && 
+                   m_iGameNodeCount == NetManager.instance.m_nodeCount &&
+                   m_iGameSegmentCount == NetManager.instance.m_segmentCount &&
+                   m_iGameLaneCount == NetManager.instance.m_laneCount;
         }
 
-        public bool IsConnected(ushort nodeId1, ushort nodeId2)
+        public bool IsConnected(ushort node1, ushort node2)
         {
-            if (HasVisited(nodeId1) && HasVisited(nodeId2))
-            {
-                return m_nodes[nodeId1] == m_nodes[nodeId2];
-            }
-            else
-            {
-                // It's a request from a new node so the graph has probably been changed
-                // return true here as we don't know any better.
-                return true;
-            }
+            return m_nodes.IsConnected(node1, node2);
+        }
+
+        public ConnectedStorage GetBuffer()
+        {
+            return m_nodes;
         }
 
         public void FloodFill(NetInfo.LaneType laneType)
         {
+            // Store the game graph counts when we made this connection graph so we can invalidate it when this changes
+            m_iGameNodeCount = NetManager.instance.m_nodeCount;
+            m_iGameSegmentCount = NetManager.instance.m_segmentCount;
+            m_iGameLaneCount = NetManager.instance.m_laneCount;
+
             NetNode[] Nodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
 
             m_iColors = 0;
@@ -82,7 +100,7 @@ namespace TransferManagerCE
 
         private bool HasVisited(ushort nodeId)
         {
-            return m_nodes.ContainsKey(nodeId);
+            return m_nodes.HasVisited(nodeId);
         }
 
         private void ProcessNode(ushort nodeId, NetInfo.LaneType laneTypes, int iColor, ref int iColorCount)
@@ -90,9 +108,9 @@ namespace TransferManagerCE
             if (HasVisited((ushort)nodeId))
             {
                 // Check the colors match
-                if (iColor != m_nodes[nodeId])
+                if (iColor != m_nodes.GetColor(nodeId))
                 {
-                    Debug.Log($"Found node {nodeId} with different color: {iColor} NodeColor: {m_nodes[nodeId]}");
+                    Debug.Log($"Found node {nodeId} with different color: {iColor} NodeColor: {m_nodes.GetColor(nodeId)}");
                 }
             }
             else
@@ -102,7 +120,7 @@ namespace TransferManagerCE
                 if ((node.Info.m_laneTypes & laneTypes) != 0)
                 {
                     // Add to graph
-                    m_nodes[nodeId] = iColor;
+                    m_nodes.SetColor(nodeId, iColor);
                     iColorCount++;
 
                     // Loop through segments to find neighboring nodes we can reach

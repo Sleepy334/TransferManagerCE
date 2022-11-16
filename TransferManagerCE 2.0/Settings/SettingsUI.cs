@@ -233,13 +233,19 @@ namespace TransferManagerCE
                     panelMaterialRestrictions.width = panelImportRestrictions.width;
                     panelMaterialRestrictions.height = 20;
 
-                    UICheckBox chkMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterial(material, index));
-                    chkMaterial.width = 300;
-                    m_chkImport.Add(material, chkMaterial);
+                    UICheckBox? chkMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, ((CustomTransferReason) material).ToString(), 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterial(material, index));
+                    if (chkMaterial != null)
+                    {
+                        chkMaterial.width = 300;
+                        m_chkImport.Add(material, chkMaterial);
+                    }
 
-                    UICheckBox chkWarehouseMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterialWarehouses(material, index));
-                    chkWarehouseMaterial.width = 300;
-                    m_chkImportWarehouses.Add(material, chkWarehouseMaterial);
+                    UICheckBox? chkWarehouseMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, ((CustomTransferReason)material).ToString(), 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterialWarehouses(material, index));
+                    if (chkWarehouseMaterial != null)
+                    {
+                        chkWarehouseMaterial.width = 300;
+                        m_chkImportWarehouses.Add(material, chkWarehouseMaterial);
+                    }
                 }
             }  
         }

@@ -23,7 +23,7 @@ namespace TransferManagerCE.Util
         public const LogReason REASON_ALL = (LogReason)255;
 
         public enum LogReason : int {
-            //ANALYSE1 = TransferManager.TransferReason.Garbage,
+            ANALYSE1 = TransferManager.TransferReason.Grain,
             //ANALYSE1 = TransferManager.TransferReason.Sick,
             //ANALYSE1 = TransferManager.TransferReason.Dead,
             //ANALYSE2 = TransferManager.TransferReason.Garbage,

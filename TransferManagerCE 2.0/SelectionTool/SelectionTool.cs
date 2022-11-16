@@ -327,7 +327,7 @@ namespace TransferManagerCE
             }
 
             NetNode[] Nodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
-            foreach (KeyValuePair<ushort, int> kvp in m_unconnectedGraph.m_nodes)
+            foreach (KeyValuePair<ushort, int> kvp in m_unconnectedGraph.GetBuffer())
             {
                 NetNode oNode = Nodes[kvp.Key];
                 if (kvp.Value < m_color.Length)

@@ -1,3 +1,4 @@
+using ColossalFramework;
 using TransferManagerCE.CustomManager;
 using static TransferManager;
 
@@ -5,26 +6,13 @@ namespace TransferManagerCE
 {
     public class UnconnectedGraphCache
     {
-        private static UnconnectedGraph? s_goodsGraph;
+        private static UnconnectedGraph? s_goodsGraph = null;
         static readonly object s_goodsLock = new object();
 
-        private static UnconnectedGraph? s_servicesGraph;
+        private static UnconnectedGraph? s_servicesGraph = null;
         static readonly object s_servicesLock = new object();
 
-        public static void Invalidate()
-        {
-            lock (s_servicesLock)
-            {
-                s_servicesGraph = null;
-            }
-
-            lock (s_goodsLock)
-            {
-                s_goodsGraph = null;
-            }
-        }
-
-        public static bool IsConnected(TransferReason material, ushort nodeId1, ushort nodeId2)
+        public static bool IsConnected(TransferReason material, ushort node1, ushort node2)
         {
             switch (material)
             {
@@ -48,64 +36,34 @@ namespace TransferManagerCE
                 case TransferReason.LuxuryProducts:
                 case TransferReason.Fish:
                     {
-                        return IsGoodsConnected(nodeId1, nodeId2);
+                        lock (s_goodsLock)
+                        {
+                            if (s_goodsGraph == null || !s_goodsGraph.IsValid())
+                            {
+                                s_goodsGraph = new UnconnectedGraph();
+                                NetInfo.LaneType laneType = PathDistanceTypes.GetLaneTypes(TransferReason.Goods);
+                                s_goodsGraph.FloodFill(laneType);
+                            }
+
+                            // Return a copy for use in the transfer manager
+                            return s_goodsGraph.IsConnected(node1, node2);
+                        }
                     }
                 default:
                     {
-                        return IsServicesConnected(nodeId1, nodeId2);
+                        lock (s_servicesLock)
+                        {
+                            if (s_servicesGraph == null || !s_servicesGraph.IsValid())
+                            {
+                                s_servicesGraph = new UnconnectedGraph();
+                                NetInfo.LaneType laneType = PathDistanceTypes.GetLaneTypes(TransferReason.Dead);
+                                s_servicesGraph.FloodFill(laneType);
+                            }
+
+                            // Return a copy for use in the transfer manager
+                            return s_servicesGraph.IsConnected(node1, node2);
+                        }
                     }
-            }
-        }
-
-        private static void InitServices()
-        {
-            lock (s_servicesLock)
-            {
-                if (s_servicesGraph == null)
-                {
-                    s_servicesGraph = new UnconnectedGraph();
-                    NetInfo.LaneType laneType = PathDistanceTypes.GetLaneTypes(TransferReason.Dead);
-                    s_servicesGraph.FloodFill(laneType);
-                }
-            }
-        }
-
-        private static void InitGoods()
-        {
-            lock (s_goodsLock)
-            {
-                if (s_goodsGraph == null)
-                {
-                    s_goodsGraph = new UnconnectedGraph();
-                    NetInfo.LaneType laneType = PathDistanceTypes.GetLaneTypes(TransferReason.Goods);
-                    s_goodsGraph.FloodFill(laneType);
-                }
-            }
-        }
-
-        private static bool IsServicesConnected(ushort nodeId1, ushort nodeId2)
-        {
-            lock (s_servicesLock)
-            {
-                if (s_servicesGraph == null)
-                {
-                    InitServices();
-                }
-                
-                return s_servicesGraph.IsConnected(nodeId1, nodeId2);
-            }
-        }
-
-        private static bool IsGoodsConnected(ushort nodeId1, ushort nodeId2)
-        {
-            lock (s_goodsLock)
-            {
-                if (s_goodsGraph == null)
-                {
-                    InitGoods();
-                }
-
-                return s_goodsGraph.IsConnected(nodeId1, nodeId2);
             }
         }
     }

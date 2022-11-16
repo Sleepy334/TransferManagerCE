@@ -47,8 +47,6 @@ namespace TransferManagerCE.CustomManager
         private TransferRestrictions m_transferRestrictions;
         private bool m_bWarehouseOnly;
         private bool m_bPathDistanceSupported;
-        private int m_iMatches = 0;
-
 
         private static void Init()
         {
@@ -105,11 +103,12 @@ namespace TransferManagerCE.CustomManager
             TransferManagerStats.UpdateLargestMatch(job);
 
             // Reset members as we re-use the match jobs.
-            m_iMatches = 0;
             m_bWarehouseOnly = false;
-            m_bPathDistanceSupported = PathDistanceTypes.IsPathDistanceSupported(job.material);
             m_transferRestrictions.SetMaterial(material);
 
+            // Pathing support
+            m_bPathDistanceSupported = PathDistanceTypes.IsPathDistanceSupported(job.material);  
+            
 #if (DEBUG)
             // DEBUG LOGGING
             DebugLog.LogOnly((DebugLog.LogReason)material, $"-- TRANSFER REASON: {material}, amt in {job.m_incomingAmount}, amt out {job.m_outgoingAmount}, count in {job.m_incomingCount}, count out {job.m_outgoingCount}");
@@ -847,7 +846,6 @@ namespace TransferManagerCE.CustomManager
                 int deltaamount = Math.Min(incomingOffer.Amount, outgoingOffer.Amount);
                 if (deltaamount > 0)
                 {
-                    m_iMatches++;
                     TransferResultQueue.Instance.EnqueueTransferResult(job.material, outgoingOffer.m_offer, incomingOffer.m_offer, deltaamount);
 
                     // reduce offer amount
@@ -901,7 +899,7 @@ namespace TransferManagerCE.CustomManager
                     m_pathDistance = new PathDistance();
                 }
 
-                ushort uiStartNode = offer.GetNearestNode(job.material);
+                ushort uiStartNode = offer.GetNearestNode(material);
                 if (uiStartNode != 0)
                 {
                     NetInfo.LaneType laneType = PathDistanceTypes.GetLaneTypes(material);
@@ -956,34 +954,6 @@ namespace TransferManagerCE.CustomManager
             }
 
             return 1.0f;
-        }
-
-        [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private float WarehouseFirst(CustomTransferOffer offer, TransferReason material, WAREHOUSE_OFFERTYPE whInOut)
-        {
-            const float WAREHOUSE_MODIFIER = 0.1f;   //modifier for distance for warehouse
-
-            //TransferOffer.Exclude is only ever set by WarehouseAI!
-            if (offer.Exclude && BuildingSettings.IsWarehouseFirst(offer.GetBuilding()))
-            {
-                Building.Flags flags = Buildings.m_buffer[offer.GetBuilding()].m_flags;
-                bool isFilling = (flags & Building.Flags.Filling) == Building.Flags.Filling;
-                bool isEmptying = (flags & Building.Flags.Downgrading) == Building.Flags.Downgrading;
-
-                // Filling Warehouses dont like to fulfill outgoing offers,
-                // emptying warehouses dont like to fulfill incoming offers
-                if ((whInOut == WAREHOUSE_OFFERTYPE.INCOMING && isEmptying) ||
-                    (whInOut == WAREHOUSE_OFFERTYPE.OUTGOING && isFilling))
-                {
-                    return WAREHOUSE_MODIFIER * 2;   //distance factorSqrt x2 further away
-                }
-                else
-                {
-                    return WAREHOUSE_MODIFIER;       //WarehouseDIstanceFactorSqr = 1 / 10
-                }
-            }
-
-            return 1f;
         }
 
         private float PriorityModifier(CustomTransferOffer offer, TransferReason material)

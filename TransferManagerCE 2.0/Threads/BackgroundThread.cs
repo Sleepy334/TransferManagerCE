@@ -12,13 +12,11 @@ namespace TransferManagerCE
         const int iDISTRICT_CHECK_UPDATE_RATE = 5000; // 5 seconds
         const int iPATH_FAILURE_UPDATE_RATE = 1000; // 1 seconds
         const int iPATH_NODE_CACHE_UPDATE_RATE = 300000; // 5 minutes
-        const int iUNCONNECTED_GRAPH_UPDATE_RATE = 120000; // 2 minutes
 
         private long m_LastCheckPathUnitsElapsedTime = 0;
         private long m_LastCheckDistrictElapsedTime = 0;
         private long m_LastPathFailureElapsedTime = 0;
         private long m_LastPathNodeCacheElapsedTime = 0;
-        private long m_LastUnconnectedGraphCacheElapsedTime = 0;
 
         private Stopwatch? m_watch = null;
 
@@ -48,10 +46,8 @@ namespace TransferManagerCE
                     m_LastCheckDistrictElapsedTime = 0;
                     m_LastPathFailureElapsedTime = 0;
                     m_LastPathNodeCacheElapsedTime = 0;
-                    m_LastUnconnectedGraphCacheElapsedTime = 0;
 
                     // Invalidate these when paused as the user is likely to modify the network during this time.
-                    UnconnectedGraphCache.Invalidate();
                     PathNodeCache.InvalidateOutsideConnections();
                 }
             }
@@ -64,7 +60,6 @@ namespace TransferManagerCE
                     m_LastCheckDistrictElapsedTime = m_watch.ElapsedMilliseconds;
                     m_LastPathFailureElapsedTime = m_watch.ElapsedMilliseconds;
                     m_LastPathNodeCacheElapsedTime = m_watch.ElapsedMilliseconds;
-                    m_LastUnconnectedGraphCacheElapsedTime = m_watch.ElapsedMilliseconds;
                 }
 #if DEBUG
                 long lStartTime = m_watch.ElapsedMilliseconds;
@@ -95,13 +90,6 @@ namespace TransferManagerCE
                 {
                     PathNodeCache.InvalidateOutsideConnections();
                     m_LastPathNodeCacheElapsedTime = m_watch.ElapsedMilliseconds;
-                }
-
-                // Clear unconnected  graph cache periodically in case they change
-                if ((m_watch.ElapsedMilliseconds - m_LastUnconnectedGraphCacheElapsedTime) > iUNCONNECTED_GRAPH_UPDATE_RATE)
-                {
-                    UnconnectedGraphCache.Invalidate();
-                    m_LastUnconnectedGraphCacheElapsedTime = m_watch.ElapsedMilliseconds;
                 }
 #if DEBUG
                 long lExecutionTime = m_watch.ElapsedMilliseconds - lStartTime;

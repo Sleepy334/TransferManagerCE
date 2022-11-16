@@ -70,6 +70,10 @@ namespace TransferManagerCE
             ExtractionFacility,
             ProcessingFacility,
             UniqueFactory,
+
+            FishHarbor,
+            FishFarm,
+            FishFactory,
             FishMarket,
 
             // Transport
@@ -396,15 +400,15 @@ namespace TransferManagerCE
                             {
                                 case FishingHarborAI:
                                     {
-                                        return BuildingType.ExtractionFacility;
+                                        return BuildingType.FishHarbor;
                                     }
                                 case FishFarmAI:
                                     {
-                                        return BuildingType.ExtractionFacility;
+                                        return BuildingType.FishFarm;
                                     }
                                 case ProcessingFacilityAI:
                                     {
-                                        return BuildingType.ProcessingFacility;
+                                        return BuildingType.FishFactory;
                                     }
                                 case MarketAI:
                                     {
@@ -655,6 +659,9 @@ namespace TransferManagerCE
                 case BuildingType.WasteProcessing:
                 case BuildingType.PostOffice:
                 case BuildingType.PostSortingFacility:
+                case BuildingType.FishFarm:
+                case BuildingType.FishHarbor:
+                case BuildingType.FishFactory:
                     return true;
 
                 case BuildingType.ProcessingFacility:
@@ -732,6 +739,9 @@ namespace TransferManagerCE
                     (eType == BuildingType.UniqueFactory && IsProcessingFacilityWithVehicles(buildingId)) ||
                     eType == BuildingType.GenericExtractor ||
                     eType == BuildingType.GenericProcessing ||
+                    eType == BuildingType.FishHarbor ||
+                    eType == BuildingType.FishFarm ||
+                    eType == BuildingType.FishFactory ||
                     eType == BuildingType.PoliceStation ||
                     eType == BuildingType.FireStation ||
                     eType == BuildingType.Cemetery ||

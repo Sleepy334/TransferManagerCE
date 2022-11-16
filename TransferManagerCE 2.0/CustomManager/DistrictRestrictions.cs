@@ -33,6 +33,10 @@ namespace TransferManagerCE.CustomManager
                     TransferReason.Logs,
                     TransferReason.Grain,
                 };
+                s_incomingRestrictions[BuildingType.FishFactory] = new HashSet<TransferReason>()
+                {
+                    TransferReason.Fish,
+                };
                 // Generic warehouse, raw warehouses handled separately
                 s_incomingRestrictions[BuildingType.Warehouse] = new HashSet<TransferReason>()
                 {
@@ -84,6 +88,10 @@ namespace TransferManagerCE.CustomManager
                     TransferReason.Goods,
                     TransferReason.LuxuryProducts,
                 };
+                s_incomingRestrictions[BuildingType.FishMarket] = new HashSet<TransferReason>()
+                {
+                    TransferReason.Fish,
+                }; 
                 s_incomingRestrictions[BuildingType.Landfill] = new HashSet<TransferReason>()
                 {
                     TransferReason.Garbage,
@@ -199,6 +207,7 @@ namespace TransferManagerCE.CustomManager
                     TransferReason.LuxuryProducts,
                     TransferReason.Fish,
                 };
+
                 s_outgoingRestrictions[BuildingType.ExtractionFacility] = new HashSet<TransferReason>()
                 {
                     TransferReason.Oil,
@@ -213,7 +222,21 @@ namespace TransferManagerCE.CustomManager
                     TransferReason.Logs,
                     TransferReason.Grain,
                 };
+                s_outgoingRestrictions[BuildingType.FishHarbor] = new HashSet<TransferReason>()
+                {
+                    TransferReason.Fish,
+                };
+                s_outgoingRestrictions[BuildingType.FishFarm] = new HashSet<TransferReason>()
+                {
+                    TransferReason.Fish,
+                };
+                
                 s_outgoingRestrictions[BuildingType.GenericProcessing] = new HashSet<TransferReason>()
+                {
+                    TransferReason.Goods,
+                };
+               
+                s_outgoingRestrictions[BuildingType.FishFactory] = new HashSet<TransferReason>()
                 {
                     TransferReason.Goods,
                 };
