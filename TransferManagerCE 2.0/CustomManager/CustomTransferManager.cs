@@ -171,6 +171,9 @@ namespace TransferManagerCE.CustomManager
                             MatchOffersOutgoingFirst();
                             break;
                         }
+                    case TransferReason.DeadMove:
+                    case TransferReason.GarbageMove:
+                    case TransferReason.GarbageTransfer:
                     case TransferReason.Taxi:
                     case TransferReason.RoadMaintenance: // RoadMaintenance is OUT from service depot. Match vehicles (7) first then closest depot to segment
                         {
@@ -282,26 +285,43 @@ namespace TransferManagerCE.CustomManager
 
         private void MatchIncomingOffers(int iPriorityLimit)
         {
-            // Now match OUTGOING offers by descending priority
+            // Now match INOMING offers by descending priority
             if (job != null)
             {
                 for (int offerIndex = 0; offerIndex < job.m_incomingCount; offerIndex++)
                 {
                     // Any matches remaining
-                    // If there is only 1 outgoing remaining then just match it below.
-                    if (job.m_incomingCountRemaining <= 0 || job.m_outgoingCountRemaining <= 1)
+                    if (job.m_incomingCountRemaining <= 0)
                     {
+#if DEBUG
+                        DebugLog.LogOnly((DebugLog.LogReason)job.material, "Break: No incoming counts remaining.");
+#endif
                         break;
                     }
+
+                    if (job.m_outgoingCountRemaining <= 0)
+                    {
+#if DEBUG
+                        DebugLog.LogOnly((DebugLog.LogReason)job.material, "Break: No outgoing counts remaining.");
+#endif
+                        break;
+                    }
+
                     // Any amount remaining
                     if (job.m_incomingAmount <= 0 || job.m_outgoingAmount <= 0)
                     {
+#if DEBUG
+                        DebugLog.LogOnly((DebugLog.LogReason)job.material, "Break: No amounts remaining.");
+#endif
                         break;
                     }
 
                     // Stop matching below priority limit if set
                     if (iPriorityLimit > 0 && job.m_incomingOffers[offerIndex].Priority < iPriorityLimit)
                     {
+#if DEBUG
+                        DebugLog.LogOnly((DebugLog.LogReason)job.material, "Break: iPriorityLimit reached.");
+#endif
                         break;
                     }
 

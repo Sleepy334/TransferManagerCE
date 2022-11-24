@@ -97,8 +97,7 @@ namespace TransferManagerCE
 
         public static bool IsRepainterRunning()
         {
-            const string sMOD_ID = "2101551127";
-            return IsPluginRunning(sMOD_ID, "");
+            return IsPluginRunning("2101551127", "Painter");
         }
 
         public static bool IsAdvancedBuildingLevelRunning()
