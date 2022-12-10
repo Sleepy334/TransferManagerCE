@@ -9,10 +9,7 @@ namespace TransferManagerCE.CustomManager
             switch (material)
             {
                 case TransferReason.Dead:
-                case TransferReason.DeadMove:
                 case TransferReason.Garbage:
-                case TransferReason.GarbageMove:
-                case TransferReason.GarbageTransfer:
                 case TransferReason.Sick:
                 case TransferReason.SickMove:
                 case TransferReason.Crime:

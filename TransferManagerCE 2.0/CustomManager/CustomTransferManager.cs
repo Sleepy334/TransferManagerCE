@@ -171,15 +171,15 @@ namespace TransferManagerCE.CustomManager
                             MatchOffersOutgoingFirst();
                             break;
                         }
-                    case TransferReason.DeadMove:
-                    case TransferReason.GarbageMove:
-                    case TransferReason.GarbageTransfer:
                     case TransferReason.Taxi:
                     case TransferReason.RoadMaintenance: // RoadMaintenance is OUT from service depot. Match vehicles (7) first then closest depot to segment
                         {
                             MatchOffersIncomingFirst();
                             break;
                         }
+                    case TransferReason.DeadMove:
+                    case TransferReason.GarbageMove:
+                    case TransferReason.GarbageTransfer:
                     default:
                         {
                             // If WarehouseFirst is set we now literally match warehouses first, then do another match run for other matches
@@ -1023,7 +1023,14 @@ namespace TransferManagerCE.CustomManager
                 case TransferReason.SortedMail:
                 case TransferReason.OutgoingMail:
                 case TransferReason.IncomingMail:
-                    return 1.0f / (offer.Priority + 1); // Scale by priority. Higher priorities will appear closer
+                case TransferReason.CriminalMove: // Need to scale the *Move functions by priority as well
+                case TransferReason.DeadMove:
+                case TransferReason.GarbageMove:
+                case TransferReason.GarbageTransfer:
+                    {
+                        // Scale by priority. Higher priorities will appear closer
+                        return 1.0f / (float)Math.Pow(2, offer.Priority);
+                    }
                 default:
                     {
                         return 1.0f; // No priority scaling

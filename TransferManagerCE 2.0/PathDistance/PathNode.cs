@@ -122,7 +122,7 @@ namespace TransferManagerCE
                     }
                 case InstanceType.Building:
                     {
-                        ushort segmentId = FindStartSegmentBuilding(offer.Building);
+                        ushort segmentId = FindStartSegmentBuilding(offer.Building, material);
                         if (segmentId != 0)
                         {
                             return segmentId;
@@ -138,7 +138,7 @@ namespace TransferManagerCE
                             ushort buildingId = citizen.GetBuildingByLocation();
                             if (buildingId != 0)
                             {
-                                ushort segmentId = FindStartSegmentBuilding(buildingId);
+                                ushort segmentId = FindStartSegmentBuilding(buildingId, material);
                                 if (segmentId != 0)
                                 {
                                     return segmentId;
@@ -198,27 +198,33 @@ namespace TransferManagerCE
             return 0;
         }
 
-        public static ushort FindStartSegmentBuilding(ushort buildingId)
+        public static ushort FindStartSegmentBuilding(ushort buildingId, TransferReason material)
         {
             Init();
             Building building = Buildings.m_buffer[buildingId];
             if (building.m_flags != 0)
             {
-                // Copied from TransferManager.AddIncoming.
-                if (building.m_accessSegment == 0 && (building.m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone)
+                switch (material)
                 {
-                    // See if we can update m_accessSegment.
-                    building.Info.m_buildingAI.CheckRoadAccess(buildingId, ref building);
-                    if (building.m_accessSegment == 0)
-                    {
-                        RoadAccessData.AddInstance(new InstanceID { Building = buildingId });
-                    }
+                    case TransferReason.Dead:
+                        {
+                            if (building.Info.GetAI() != null && building.Info.GetAI() is ParkBuildingAI)
+                            {
+                                // ParkBuildingAI.HandleDead2 doesn't use m_accessSegment but just calls FindRoadAccess.
+                                // Match that so we pick up the dead for them even if it looks bad :-(
+                                if (FindRoadAccess(buildingId, building, GetPosition(new InstanceID {  Building = buildingId }), out ushort segmentID))
+                                {
+                                    return segmentID;
+                                }
+                            }
+                            return building.m_accessSegment;
+                        }
+                    default:
+                        {
+                            return building.m_accessSegment;
+                        }
                 }
-
-                if (building.m_accessSegment != 0)
-                {
-                    return building.m_accessSegment;
-                }
+                
             }
 
             return 0;
@@ -261,171 +267,80 @@ namespace TransferManagerCE
             return position;
         }
 
-        
-            /*
-            private static ushort FindNearestServiceNode(TransferReason material, bool bAllowUnderground, TransferOffer offer)
+        private static bool FindRoadAccess(ushort buildingID, Building data, Vector3 position, out ushort segmentID, bool mostCloser = false, bool untouchable = true)
+        {
+            Bounds bounds = new Bounds(position, new Vector3(40f, 40f, 40f));
+            Vector3 min = bounds.min;
+            int num = Mathf.Max((int)((min.x - 64f) / 64f + 135f), 0);
+            Vector3 min2 = bounds.min;
+            int num2 = Mathf.Max((int)((min2.z - 64f) / 64f + 135f), 0);
+            Vector3 max = bounds.max;
+            int num3 = Mathf.Min((int)((max.x + 64f) / 64f + 135f), 269);
+            Vector3 max2 = bounds.max;
+            int num4 = Mathf.Min((int)((max2.z + 64f) / 64f + 135f), 269);
+            segmentID = 0;
+            float num5 = float.MaxValue;
+            NetManager instance = Singleton<NetManager>.instance;
+            for (int i = num2; i <= num4; i++)
             {
-                return FindNearestServiceNode(GetPosition(offer.m_object), false, TransferManagerModes.GetLaneTypes(material));
-            }
-
-            public static ushort FindNearestServiceNode(Vector3 pos, bool bAllowUnderground, NetInfo.LaneType laneTypes = NetInfo.LaneType.All)
-            {
-                Init();
-
-                int x = Mathf.Clamp((int)((pos.x / 64) + (TransferManager.REASON_CELL_SIZE_LARGE / 2)), 0, (int)TransferManager.REASON_CELL_SIZE_LARGE - 1);
-                int z = Mathf.Clamp((int)((pos.z / 64f) + (TransferManager.REASON_CELL_SIZE_LARGE / 2)), 0, (int)TransferManager.REASON_CELL_SIZE_LARGE - 1);
-
-                float nearestDistance = float.PositiveInfinity;
-                float distMetric;
-                ushort nearestClassNode = 0;
-
-                int iLoopCount = 0;
-                ushort nodeId = NetManager.instance.m_nodeGrid[(z * (int)TransferManager.REASON_CELL_SIZE_LARGE) + x];
-                while (nodeId != 0)
+                for (int j = num; j <= num3; j++)
                 {
-                    //                if (buildingID == 11691)
-                    //                {
-                    //                    Log._DebugFormat("Considering node #{0} of type {1} at dist=0", node, nets.m_nodes.m_buffer[node].Info.m_class.m_service);
-                    //                }
-                    NetNode node = NetNodes.m_buffer[nodeId];
-                    if ((node.Info.m_laneTypes & laneTypes) != 0 && (bAllowUnderground || !node.Info.m_netAI.IsUnderground()))
+                    int num6 = 0;
+                    for (ushort num7 = instance.m_segmentGrid[i * 270 + j]; num7 != 0; num7 = instance.m_segments.m_buffer[num7].m_nextGridSegment)
                     {
-                        distMetric = Vector3.SqrMagnitude(pos - node.m_position);
-                        if (distMetric < nearestDistance)
+                        if (num6++ >= 36864)
                         {
-                            nearestDistance = distMetric;
-                            nearestClassNode = nodeId;
-                        }
-                    }
-                    nodeId = node.m_nextGridNode;
-
-                    if (++iLoopCount >= NetManager.MAX_NODE_COUNT)
-                    {
-                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                        break;
-                    }
-                }
-
-                if (nearestClassNode == 0)
-                {
-                    // Didn't find a node, perform a grid search
-                    uint maxdist = 4;
-                    x = Math.Max(x, (int)maxdist);
-                    x = Math.Min(x, (int)TransferManager.REASON_CELL_SIZE_LARGE - 1 - (int)maxdist);
-                    z = Math.Max(z, (int)maxdist);
-                    z = Math.Min(z, (int)TransferManager.REASON_CELL_SIZE_LARGE - 1 - (int)maxdist);
-
-                    for (int dist = 1; dist <= maxdist; ++dist)
-                    {
-                        if (nearestClassNode != 0)
-                        {
-                            // Found a node stop looking
+                            CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
                             break;
                         }
 
-                        for (int n = -dist; n <= dist; ++n)
+                        NetInfo info = instance.m_segments.m_buffer[num7].Info;
+                        if (info.m_class.m_service == ItemClass.Service.Road && !info.m_netAI.IsUnderground() && !info.m_netAI.IsOverground() && info.m_netAI is RoadBaseAI && (untouchable || (instance.m_segments.m_buffer[num7].m_flags & NetSegment.Flags.Untouchable) == 0) && info.m_hasPedestrianLanes && (info.m_hasForwardVehicleLanes || info.m_hasBackwardVehicleLanes))
                         {
-                            iLoopCount = 0;
-                            nodeId = NetManager.instance.m_nodeGrid[((z + dist) * (int)TransferManager.REASON_CELL_SIZE_LARGE) + x + n];
-                            while (nodeId != 0)
+                            ushort startNode = instance.m_segments.m_buffer[num7].m_startNode;
+                            ushort endNode = instance.m_segments.m_buffer[num7].m_endNode;
+                            Vector3 position2 = instance.m_nodes.m_buffer[startNode].m_position;
+                            Vector3 position3 = instance.m_nodes.m_buffer[endNode].m_position;
+                            Vector3 min3 = bounds.min;
+                            float a = min3.x - 64f - position2.x;
+                            Vector3 min4 = bounds.min;
+                            float a2 = Mathf.Max(a, min4.z - 64f - position2.z);
+                            float x = position2.x;
+                            Vector3 max3 = bounds.max;
+                            float a3 = x - max3.x - 64f;
+                            float z = position2.z;
+                            Vector3 max4 = bounds.max;
+                            float num8 = Mathf.Max(a2, Mathf.Max(a3, z - max4.z - 64f));
+                            Vector3 min5 = bounds.min;
+                            float a4 = min5.x - 64f - position3.x;
+                            Vector3 min6 = bounds.min;
+                            float a5 = Mathf.Max(a4, min6.z - 64f - position3.z);
+                            float x2 = position3.x;
+                            Vector3 max5 = bounds.max;
+                            float a6 = x2 - max5.x - 64f;
+                            float z2 = position3.z;
+                            Vector3 max6 = bounds.max;
+                            float num9 = Mathf.Max(a5, Mathf.Max(a6, z2 - max6.z - 64f));
+                            if ((!(num8 >= 0f) || !(num9 >= 0f)) && instance.m_segments.m_buffer[num7].m_bounds.Intersects(bounds) && instance.m_segments.m_buffer[num7].GetClosestLanePosition(position, NetInfo.LaneType.Vehicle | NetInfo.LaneType.TransportVehicle, VehicleInfo.VehicleType.Car, VehicleInfo.VehicleCategory.RoadTransport, VehicleInfo.VehicleType.None, requireConnect: false, out Vector3 positionA, out int _, out float _, out Vector3 _, out int _, out float _))
                             {
-                                NetNode node = NetNodes.m_buffer[nodeId];
-                                if ((node.Info.m_laneTypes & laneTypes) != 0 && (bAllowUnderground || !node.Info.m_netAI.IsUnderground()))
+                                float num10 = Vector3.SqrMagnitude(position - positionA);
+                                if (!(num10 >= 400f) && !(num10 >= num5))
                                 {
-                                    distMetric = Vector3.SqrMagnitude(pos - NetNodes.m_buffer[nodeId].m_position);
-                                    if (distMetric < nearestDistance)
+                                    segmentID = num7;
+                                    if (!mostCloser)
                                     {
-                                        nearestDistance = distMetric;
-                                        nearestClassNode = nodeId;
+                                        return true;
                                     }
-                                }
 
-                                nodeId = node.m_nextGridNode;
-
-                                if (++iLoopCount >= NetManager.MAX_NODE_COUNT)
-                                {
-                                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                                    break;
-                                }
-                            }
-
-                            iLoopCount = 0;
-                            nodeId = NetManager.instance.m_nodeGrid[((z - dist) * (int)TransferManager.REASON_CELL_SIZE_LARGE) + x + n];
-                            while (nodeId != 0)
-                            {
-                                NetNode node = NetNodes.m_buffer[nodeId];
-                                if ((node.Info.m_laneTypes & laneTypes) != 0 && (bAllowUnderground || !node.Info.m_netAI.IsUnderground()))
-                                {
-                                    distMetric = Vector3.SqrMagnitude(pos - node.m_position);
-                                    if (distMetric < nearestDistance)
-                                    {
-                                        nearestDistance = distMetric;
-                                        nearestClassNode = nodeId;
-                                    }
-                                }
-
-                                nodeId = node.m_nextGridNode;
-
-                                if (++iLoopCount >= NetManager.MAX_NODE_COUNT)
-                                {
-                                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                                    break;
-                                }
-                            }
-
-                            iLoopCount = 0;
-                            nodeId = NetManager.instance.m_nodeGrid[((z + n) * (int)TransferManager.REASON_CELL_SIZE_LARGE) + x - dist];
-                            while (nodeId != 0)
-                            {
-                                NetNode node = NetNodes.m_buffer[nodeId];
-                                if ((node.Info.m_laneTypes & laneTypes) != 0 && (bAllowUnderground || !node.Info.m_netAI.IsUnderground()))
-                                {
-                                    distMetric = Vector3.SqrMagnitude(pos - node.m_position);
-                                    if (distMetric < nearestDistance)
-                                    {
-                                        nearestDistance = distMetric;
-                                        nearestClassNode = nodeId;
-                                    }
-                                }
-
-                                nodeId = node.m_nextGridNode;
-
-                                if (++iLoopCount >= NetManager.MAX_NODE_COUNT)
-                                {
-                                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                                    break;
-                                }
-                            }
-
-                            iLoopCount = 0;
-                            nodeId = NetManager.instance.m_nodeGrid[((z + n) * (int)TransferManager.REASON_CELL_SIZE_LARGE) + x + dist];
-                            while (nodeId != 0)
-                            {
-                                NetNode node = NetNodes.m_buffer[nodeId];
-                                if ((node.Info.m_laneTypes & laneTypes) != 0 && (bAllowUnderground || !node.Info.m_netAI.IsUnderground()))
-                                {
-                                    distMetric = Vector3.SqrMagnitude(pos - node.m_position);
-                                    if (distMetric < nearestDistance)
-                                    {
-                                        nearestDistance = distMetric;
-                                        nearestClassNode = nodeId;
-                                    }
-                                }
-
-                                nodeId = node.m_nextGridNode;
-
-                                if (++iLoopCount >= NetManager.MAX_NODE_COUNT)
-                                {
-                                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                                    break;
+                                    num5 = num10;
                                 }
                             }
                         }
                     }
                 }
-
-                return nearestClassNode;
             }
-            */
+
+            return segmentID != 0;
         }
+    }
 }

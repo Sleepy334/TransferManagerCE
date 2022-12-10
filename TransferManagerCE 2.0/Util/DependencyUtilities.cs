@@ -84,15 +84,12 @@ namespace TransferManagerCE
 
         public static bool IsUnifiedUIRunning()
         {
-            const string sUNIFIED_UI_ID = "2255219025";
-            return IsPluginRunning(sUNIFIED_UI_ID, "");
+            return IsPluginRunning("2255219025", "UnifiedUILib");
         }
 
         public static bool IsPloppableRICORunning()
         {
-            const string sMOD_ID = "2016920607";
-            const string sAssemblyName = "ploppablerico";
-            return IsPluginRunning(sMOD_ID, sAssemblyName);
+            return IsPluginRunning("2016920607", "ploppablerico");
         }
 
         public static bool IsRepainterRunning()
@@ -102,21 +99,17 @@ namespace TransferManagerCE
 
         public static bool IsAdvancedBuildingLevelRunning()
         {
-            const string sMOD_ID = "2133705267";
-            return IsPluginRunning(sMOD_ID, "");
+            return IsPluginRunning("2133705267", "AdvancedBuildingLevelControl");
         }
 
         public static bool IsRONRunning()
         {
-            const string sMOD_ID = "2405917899";
-            const string sAssemblyName = "RON";
-            return IsPluginRunning(sMOD_ID, sAssemblyName);
+            return IsPluginRunning("2405917899", "RON");
         }
 
         public static bool IsAdvancedOutsideConnectionsRunning()
         {
-            const string sMOD_ID = "2053500739";
-            return IsPluginRunning(sMOD_ID, "AdvancedOutsideConnection");
+            return IsPluginRunning("2053500739", "AdvancedOutsideConnection");
         }
 
         public static Assembly? GetCallAgainAssembly()
