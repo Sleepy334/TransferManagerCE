@@ -19,6 +19,7 @@ namespace TransferManagerCE
             Electricity,
             PowerPlant,
             SolarPowerPlant,
+            FusionPowerPlant,
             BoilerStation,
             PumpingService,
             Water,
@@ -94,7 +95,7 @@ namespace TransferManagerCE
             BusDepot,
             PassengerHelicopterDepot,
         }
-
+        
         public enum BuildingSubType
         {
             None,
@@ -149,19 +150,27 @@ namespace TransferManagerCE
                         }
                     case ItemClass.Service.Industrial:
                         {
-                            switch (building.Info.GetClassLevel())
+                            switch (building.Info.GetAI())
                             {
-                                case ItemClass.Level.Level1:
-                                    {
-                                        return BuildingType.GenericProcessing;
-                                    }
-                                case ItemClass.Level.Level2:
+                                case IndustrialExtractorAI:
                                     {
                                         return BuildingType.GenericExtractor;
                                     }
-                                case ItemClass.Level.Level3:
+                                case IndustrialBuildingAI:
                                     {
-                                        return BuildingType.GenericFactory;
+                                        switch (building.Info.GetClassLevel())
+                                        {
+                                            case ItemClass.Level.Level1:
+                                            case ItemClass.Level.Level2:
+                                                {
+                                                    return BuildingType.GenericProcessing;
+                                                }
+                                            case ItemClass.Level.Level3:
+                                                {
+                                                    return BuildingType.GenericFactory;
+                                                }
+                                        }
+                                        break;
                                     }
                             }
                             break;
@@ -172,16 +181,25 @@ namespace TransferManagerCE
                         }
                     case ItemClass.Service.Electricity:
                         {
-                            if (building.Info.GetAI() is SolarPowerPlantAI)
+                            switch (building.Info.GetAI())
                             {
-                                return BuildingType.SolarPowerPlant;
+                                case SolarPowerPlantAI:
+                                    {
+                                        return BuildingType.SolarPowerPlant;
+                                    }
+                                case FusionPowerPlantAI:
+                                    {
+                                        return BuildingType.FusionPowerPlant;
+                                    }
+                                case PowerPlantAI:
+                                    {
+                                        return BuildingType.PowerPlant;
+                                    }
+                                default:
+                                    {
+                                        return BuildingType.Electricity;
+                                    }
                             }
-                            else if (building.Info.GetAI() is PowerPlantAI)
-                            {
-                                return BuildingType.PowerPlant;
-                            }
-                            
-                            return BuildingType.Electricity;
                         }
                     case ItemClass.Service.Water:
                         {

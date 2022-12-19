@@ -253,6 +253,7 @@
 "reasonWarehouse","保管施設"
 "reasonGoods","商品"
 "reasonCash","Cash Collection"
+"reasonFloodWater","Flooding"
 "txtImprovedWarehouseMatching","バニラの倉庫オファーは、優先度「2」で指定されています。このオプションは、優先度「7」まで拡張が可能です。"
 "optionImprovedWarehouseMatching","倉庫の輸送を改善"
 "tooltipHighlightModeOff","ハイライトモード: オフ"

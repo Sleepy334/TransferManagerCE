@@ -253,6 +253,7 @@
 "reasonWarehouse","Opslag"
 "reasonGoods","Goederen"
 "reasonCash","Cash Collection"
+"reasonFloodWater","Flooding"
 "txtImprovedWarehouseMatching","Vanilla warehouse offers are limited to priority 2, this option will allow them to scale to priority 7."
 "optionImprovedWarehouseMatching","Verbeterd magazijntransport"
 "tooltipHighlightModeOff","Highlight Mode: Off"

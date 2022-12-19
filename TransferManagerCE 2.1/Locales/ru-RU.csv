@@ -253,6 +253,7 @@
 "reasonWarehouse","Склад"
 "reasonGoods","Товары"
 "reasonCash","Сбор наличных"
+"reasonFloodWater","Flooding"
 "txtImprovedWarehouseMatching","Предложения ванильного склада ограничены приоритетом 2, этот параметр позволит масштабировать их до приоритета 7."
 "optionImprovedWarehouseMatching","Улучшенные складские перемещения"
 "tooltipHighlightModeOff","Режим выделения: Выкл"
