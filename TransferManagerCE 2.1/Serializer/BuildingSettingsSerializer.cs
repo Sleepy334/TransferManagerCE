@@ -96,6 +96,9 @@ namespace TransferManagerCE
                                         break;
                                     }
                             }
+
+                            // We upgrade old settings for the new multiple rulesets
+                            UpgradeSettings((ushort)buildingId, ref settings);
                         }
 
                         // Check we finished reading on the end tuple correctly
@@ -111,6 +114,74 @@ namespace TransferManagerCE
                 else
                 {
                     Debug.Log($"New data version {iBuildingSettingsVersion}, unable to load!");
+                }
+            }
+        }
+
+        private static void UpgradeSettings(ushort buildingId, ref BuildingSettings? settings)
+        {
+            if (settings != null)
+            {
+                BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType(buildingId);
+                switch (eType)
+                {
+                    case BuildingTypeHelper.BuildingType.Warehouse:
+                    case BuildingTypeHelper.BuildingType.CargoFerryWarehouseHarbor:
+                        {
+                            // For warehouses we need to duplicate the settings to the second ruleset as well
+                            RestrictionSettings restrictions = settings.GetRestrictions(0);
+                            settings.SetRestrictionsDirect(1, new RestrictionSettings(restrictions));
+                            break;
+                        }
+                    case BuildingTypeHelper.BuildingType.GenericProcessing:
+                    case BuildingTypeHelper.BuildingType.ProcessingFacility:
+                    case BuildingTypeHelper.BuildingType.UniqueFactory:
+                    case BuildingTypeHelper.BuildingType.MedicalHelicopterDepot:
+                    case BuildingTypeHelper.BuildingType.PostOffice:
+                    case BuildingTypeHelper.BuildingType.PostSortingFacility:
+                    case BuildingTypeHelper.BuildingType.WasteProcessing:
+                    case BuildingTypeHelper.BuildingType.Recycling:
+                    case BuildingTypeHelper.BuildingType.FishFactory:
+                        {
+                            // Need to split into Incoming / Outgoing
+                            RestrictionSettings restrictionsIncoming = settings.GetRestrictions(0);
+                            RestrictionSettings restrictionsOutgoing = new RestrictionSettings(restrictionsIncoming);
+
+                            // Fix incoming
+                            restrictionsIncoming.ResetDistrictRestrictionsOutgoing();
+                            restrictionsIncoming.m_bAllowExport = true;
+                            restrictionsIncoming.m_iServiceDistance = 0;
+                            settings.SetRestrictionsDirect(0, restrictionsIncoming);
+
+                            // Fix outgoing
+                            restrictionsOutgoing.ResetDistrictRestrictionsIncoming();
+                            restrictionsOutgoing.m_bAllowImport = true;
+                            settings.SetRestrictionsDirect(1, restrictionsOutgoing);
+
+                            break;
+                        }
+                    case BuildingTypeHelper.BuildingType.GenericFactory:
+                        {
+                            // Need to split into Incoming 1 / Incoming 2 / Outgoing
+                            RestrictionSettings restrictionsIncoming = settings.GetRestrictions(0);
+                            RestrictionSettings restrictionsOutgoing = new RestrictionSettings(restrictionsIncoming);
+
+                            // Fix incoming 1
+                            restrictionsIncoming.ResetDistrictRestrictionsOutgoing();
+                            restrictionsIncoming.m_bAllowExport = true;
+                            restrictionsIncoming.m_iServiceDistance = 0;
+                            settings.SetRestrictions(0, restrictionsIncoming);
+
+                            // Insert a copy for Incoming 2
+                            settings.SetRestrictions(2, restrictionsIncoming);
+
+                            // Fix outgoing
+                            restrictionsOutgoing.ResetDistrictRestrictionsIncoming();
+                            restrictionsOutgoing.m_bAllowImport = true;
+                            settings.SetRestrictionsDirect(1, restrictionsOutgoing);
+
+                            break;
+                        }
                 }
             }
         }
@@ -138,7 +209,7 @@ namespace TransferManagerCE
             restrictions.m_incomingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
             restrictions.m_outgoingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
 
-            settings.AddRestriction(0, restrictions);
+            settings.SetRestrictionsDirect(0, restrictions);
 
             return settings;
         }
@@ -166,7 +237,7 @@ namespace TransferManagerCE
             restrictions.m_incomingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
             restrictions.m_outgoingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
 
-            settings.AddRestriction(0, restrictions);
+            settings.SetRestrictionsDirect(0, restrictions);
 
             return settings;
         }
@@ -226,7 +297,7 @@ namespace TransferManagerCE
             settings.m_bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
 
-            settings.AddRestriction(0, restrictions);
+            settings.SetRestrictionsDirect(0, restrictions);
 
             return settings;
         }
@@ -253,7 +324,7 @@ namespace TransferManagerCE
             restrictions.m_iPreferLocalDistrictsIncoming = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             restrictions.m_iPreferLocalDistrictsOutgoing = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
 
-            settings.AddRestriction(0, restrictions);
+            settings.SetRestrictionsDirect(0, restrictions);
 
             return settings;
         }
@@ -273,7 +344,7 @@ namespace TransferManagerCE
             restrictions.m_iPreferLocalDistrictsIncoming = ePreferLocal;
             restrictions.m_iPreferLocalDistrictsOutgoing = ePreferLocal;
 
-            settings.AddRestriction(0, restrictions);
+            settings.SetRestrictionsDirect(0, restrictions);
 
             return settings;
         }

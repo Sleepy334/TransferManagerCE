@@ -34,6 +34,8 @@ namespace TransferManagerCE
 
         // Warehouse
         private UICheckBox? m_chkFactoryFirst = null;
+        private UICheckBox? m_chkOverrideGenericIndustriesHandler = null;
+
         private UICheckBox? m_chkWarehouseFirst = null;
         private SettingsSlider? m_sliderWarehouseReservePercent = null;
         private UICheckBox? m_chkImprovedWarehouseMatching = null;
@@ -201,6 +203,11 @@ namespace TransferManagerCE
             // Factory First
             AddDescription(panelFactory, "optionFactoryFirstText", panelFactory, 1.0f, Localization.Get("optionFactoryFirstText"));
             m_chkFactoryFirst = (UICheckBox)groupFactory.AddCheckbox(Localization.Get("optionFactoryFirst"), oSettings.FactoryFirst, (index) => setOptionFactoryFirst(index));
+            AddDescription(panelFactory, "txtSpacer", panelFactory, 1.0f, "");
+
+            // Override generic industries handler
+            AddDescription(panelFactory, "txtOverrideGenericIndustriesHandler", panelFactory, 1.0f, Localization.Get("txtOverrideGenericIndustriesHandler"));
+            m_chkOverrideGenericIndustriesHandler = (UICheckBox)groupFactory.AddCheckbox(Localization.Get("optionOverrideGenericIndustriesHandler"), oSettings.OverrideGenericIndustriesHandler, OnOverrideGenericIndustriesHandlerChanged);
 
             // WAREHOUSE GROUP
             UIHelper groupWarehouse = (UIHelper) helper.AddGroup(Localization.Get("GROUP_WAREHOUSE_OPTIONS"));
@@ -224,6 +231,7 @@ namespace TransferManagerCE
             // New warehouse matching
             AddDescription(panelGroupWarehouse, "txtNewInterWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtNewInterWarehouseMatching"));
             m_chkNewInterWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionNewWarehouseTransfer"), oSettings.NewInterWarehouseTransfer, OnNewWarehouseTransferChanged);
+            AddDescription(panelGroupWarehouse, "txtSpacer", panelGroupWarehouse, 1.0f, "");
         }
 
         public void SetupImportExportTab(UIHelper helper)
@@ -432,6 +440,7 @@ namespace TransferManagerCE
         {
             ModSettings oSettings = ModSettings.GetSettings();
             oSettings.ShowConnectionGraph = mode;
+            oSettings.Save();
         }
 
         public void OnPathDistanceServices(bool bChecked)
@@ -468,6 +477,12 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.DisableDummyTraffic = bChecked;
+        }
+        
+        public void OnOverrideGenericIndustriesHandlerChanged(bool bChecked)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.OverrideGenericIndustriesHandler = bChecked;
         }
 
         public void OnWarehouseFirstPercentChanged(float fValue)
@@ -706,6 +721,8 @@ namespace TransferManagerCE
 
                 // Goods delivery
                 m_chkFactoryFirst.isChecked = oSettings.FactoryFirst;
+                m_chkOverrideGenericIndustriesHandler.isChecked = oSettings.OverrideGenericIndustriesHandler;
+
                 m_chkImprovedWarehouseMatching.isChecked = oSettings.ImprovedWarehouseMatching;
                 m_chkNewInterWarehouseMatching.isChecked = oSettings.NewInterWarehouseTransfer;
                 m_chkWarehouseFirst.isChecked = oSettings.WarehouseFirst;
@@ -784,6 +801,7 @@ namespace TransferManagerCE
 
             // Goods Delivery
             EnableCheckbox(m_chkFactoryFirst, bLoaded && oSettings.EnableNewTransferManager);
+            EnableCheckbox(m_chkOverrideGenericIndustriesHandler, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkImprovedWarehouseMatching, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkNewInterWarehouseMatching, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkWarehouseFirst, bLoaded && oSettings.EnableNewTransferManager);

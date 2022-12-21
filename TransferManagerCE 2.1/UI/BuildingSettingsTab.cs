@@ -25,9 +25,11 @@ namespace TransferManagerCE.UI
         private UIPanel? m_panelIncomingDistrict = null;
         private UIMyDropDown? m_dropPreferLocalIncoming = null;
         private UIButton? m_btnIncomingSelectDistrict = null;
+        private UIButton? m_btnDistrictRestrictionsIncomingClear = null;
         private UIPanel? m_panelOutgoingDistrict = null;
         private UIMyDropDown? m_dropPreferLocalOutgoing = null;
         private UIButton? m_btnOutgoingSelectDistrict = null;
+        private UIButton? m_btnDistrictRestrictionsOutgoingClear = null;
 
         private UIGroup? m_panelServiceDistance = null;
         private SettingsSlider? m_sliderServiceDistance = null;
@@ -154,40 +156,57 @@ namespace TransferManagerCE.UI
                         Localization.Get("dropdownBuildingPanelPreferLocal4"),
                     };
 
+                    const int iDropDownWidth = 300;
+                    const int iDropDownWidthOffset = 226;
+
                     // Incoming restrictions
                     m_panelIncomingDistrict = m_grpDistrictRestrictions.m_content.AddUIComponent<UIPanel>();
                     m_panelIncomingDistrict.width = m_grpDistrictRestrictions.width;
                     m_panelIncomingDistrict.height = 35;
-                    m_dropPreferLocalIncoming = UIMyDropDown.Create(m_panelIncomingDistrict, Localization.Get("dropdownBuildingPanelIncomingPreferLocalLabel"), fTEXT_SCALE, itemsPreferLocal, OnIncomingPreferLocalServices, 0);
+                    m_dropPreferLocalIncoming = UIMyDropDown.Create(m_panelIncomingDistrict, Localization.Get("dropdownBuildingPanelIncomingPreferLocalLabel"), fTEXT_SCALE, itemsPreferLocal, OnIncomingPreferLocalServices, 0, iDropDownWidth);
                     if (m_dropPreferLocalIncoming != null)
                     {
                         m_dropPreferLocalIncoming.m_panel.relativePosition = new Vector3(0, 0);
-                        m_dropPreferLocalIncoming.SetPanelWidth(m_panelIncomingDistrict.width - 200);
+                        m_dropPreferLocalIncoming.SetPanelWidth(m_panelIncomingDistrict.width - iDropDownWidthOffset);
                         m_dropPreferLocalIncoming.m_dropdown.textScale = 0.9f;
                     }
                     m_btnIncomingSelectDistrict = UIUtils.AddButton(m_panelIncomingDistrict, Localization.Get("btnDistricts") + "...", 120, m_dropPreferLocalIncoming.m_dropdown.height, (c, e) => OnSelectIncomingDistrictClicked());
                     if (m_btnIncomingSelectDistrict != null)
                     {
-                        m_btnIncomingSelectDistrict.relativePosition = new Vector3(m_dropPreferLocalIncoming.m_panel.width + 20, 2);
+                        m_btnIncomingSelectDistrict.relativePosition = new Vector3(m_dropPreferLocalIncoming.m_panel.width + 6, 2);
                         m_btnIncomingSelectDistrict.eventTooltipEnter += (c, e) => UpdateDistrictButtonTooltips();
+                    }
+
+                    m_btnDistrictRestrictionsIncomingClear = UIUtils.AddSpriteButton(m_panelIncomingDistrict, "Niet", m_dropPreferLocalIncoming.m_dropdown.height, m_dropPreferLocalIncoming.m_dropdown.height, OnDistrictRestrictionsIncomingClearClicked);
+                    if (m_btnDistrictRestrictionsIncomingClear != null)
+                    {
+                        m_btnDistrictRestrictionsIncomingClear.relativePosition = new Vector3(m_dropPreferLocalIncoming.m_panel.width + m_btnIncomingSelectDistrict.width + 12, 2);
+                        m_btnDistrictRestrictionsIncomingClear.tooltip = Localization.Get("btnClear");
                     }
 
                     // Outgoing restrictions
                     m_panelOutgoingDistrict = m_grpDistrictRestrictions.m_content.AddUIComponent<UIPanel>();
                     m_panelOutgoingDistrict.width = m_grpDistrictRestrictions.width;
                     m_panelOutgoingDistrict.height = 35;
-                    m_dropPreferLocalOutgoing = UIMyDropDown.Create(m_panelOutgoingDistrict, Localization.Get("dropdownBuildingPanelOutgoingPreferLocalLabel"), fTEXT_SCALE, itemsPreferLocal, OnOutgoingPreferLocalServices, 0);
+                    m_dropPreferLocalOutgoing = UIMyDropDown.Create(m_panelOutgoingDistrict, Localization.Get("dropdownBuildingPanelOutgoingPreferLocalLabel"), fTEXT_SCALE, itemsPreferLocal, OnOutgoingPreferLocalServices, 0, iDropDownWidth);
                     if (m_dropPreferLocalOutgoing != null)
                     {
                         m_dropPreferLocalOutgoing.m_panel.relativePosition = new Vector3(0, 0);
-                        m_dropPreferLocalOutgoing.SetPanelWidth(m_panelOutgoingDistrict.width - 200);
+                        m_dropPreferLocalOutgoing.SetPanelWidth(m_panelOutgoingDistrict.width - iDropDownWidthOffset);
                         m_dropPreferLocalOutgoing.m_dropdown.textScale = 0.9f;
                     }
                     m_btnOutgoingSelectDistrict = UIUtils.AddButton(m_panelOutgoingDistrict, Localization.Get("btnDistricts") + "...", 120, m_dropPreferLocalOutgoing.m_dropdown.height, (c, e) => OnSelectOutgoingDistrictClicked());
                     if (m_btnOutgoingSelectDistrict != null)
                     {
-                        m_btnOutgoingSelectDistrict.relativePosition = new Vector3(m_dropPreferLocalOutgoing.m_panel.width + 20, 2);
+                        m_btnOutgoingSelectDistrict.relativePosition = new Vector3(m_dropPreferLocalOutgoing.m_panel.width + 6, 2);
                         m_btnOutgoingSelectDistrict.eventTooltipEnter += (c, e) => UpdateDistrictButtonTooltips();
+                    }
+
+                    m_btnDistrictRestrictionsOutgoingClear = UIUtils.AddSpriteButton(m_panelOutgoingDistrict, "Niet", m_dropPreferLocalOutgoing.m_dropdown.height, m_dropPreferLocalOutgoing.m_dropdown.height, OnDistrictRestrictionsOutgoingClearClicked);
+                    if (m_btnDistrictRestrictionsOutgoingClear != null)
+                    {
+                        m_btnDistrictRestrictionsOutgoingClear.relativePosition = new Vector3(m_dropPreferLocalOutgoing.m_panel.width + m_btnOutgoingSelectDistrict.width + 12, 2);
+                        m_btnDistrictRestrictionsOutgoingClear.tooltip = Localization.Get("btnClear");
                     }
                 }
 
@@ -195,6 +214,8 @@ namespace TransferManagerCE.UI
                 m_buildingRestrictionGroup = UIGroup.AddGroup(m_panelTabPanel, Localization.Get("GROUP_BUILDINGPANEL_BUILDING_RESTRICTIONS"), fTEXT_SCALE, m_panelTabPanel.width - 20, 100);
                 if (m_buildingRestrictionGroup != null)
                 {
+                    const int iButtonHeight = 28;
+
                     // Incoming
                     m_pnlBuildingRestrictionsIncoming = m_buildingRestrictionGroup.m_content.AddUIComponent<UIPanel>();
                     m_pnlBuildingRestrictionsIncoming.width = m_buildingRestrictionGroup.width;
@@ -203,6 +224,7 @@ namespace TransferManagerCE.UI
                     m_pnlBuildingRestrictionsIncoming.autoLayoutDirection = LayoutDirection.Horizontal;
                     m_pnlBuildingRestrictionsIncoming.autoLayoutPadding = new RectOffset(4, 4, 4, 4);
 
+                    // Label
                     m_lblBuildingRestrictionsIncoming = m_pnlBuildingRestrictionsIncoming.AddUIComponent<UILabel>();
                     m_lblBuildingRestrictionsIncoming.text = Localization.Get("txtBuildingRestrictionsIncoming");
                     m_lblBuildingRestrictionsIncoming.textScale = fTEXT_SCALE;
@@ -210,8 +232,10 @@ namespace TransferManagerCE.UI
                     m_lblBuildingRestrictionsIncoming.height = 30;
                     m_lblBuildingRestrictionsIncoming.width = 370;
                     m_lblBuildingRestrictionsIncoming.verticalAlignment = UIVerticalAlignment.Middle;
-                    m_btnBuildingRestrictionsIncoming = UIUtils.AddButton(m_pnlBuildingRestrictionsIncoming, Localization.Get("btnBuildingRestrictions"), 200, 30, OnBuildingRestrictionsIncomingClicked);
-                    m_btnBuildingRestrictionsIncomingClear = UIUtils.AddSpriteButton(m_pnlBuildingRestrictionsIncoming, "Niet", 30, 30, OnBuildingRestrictionsIncomingClearClicked);
+
+                    // Buttons
+                    m_btnBuildingRestrictionsIncoming = UIUtils.AddButton(m_pnlBuildingRestrictionsIncoming, Localization.Get("btnBuildingRestrictions"), 200, iButtonHeight, OnBuildingRestrictionsIncomingClicked);
+                    m_btnBuildingRestrictionsIncomingClear = UIUtils.AddSpriteButton(m_pnlBuildingRestrictionsIncoming, "Niet", iButtonHeight, iButtonHeight, OnBuildingRestrictionsIncomingClearClicked);
                     m_btnBuildingRestrictionsIncomingClear.tooltip = Localization.Get("btnClear");
 
                     // Outgoing
@@ -232,8 +256,8 @@ namespace TransferManagerCE.UI
                     m_lblBuildingRestrictionsOutgoing.verticalAlignment = UIVerticalAlignment.Middle;
 
                     // Buttons
-                    m_btnBuildingRestrictionsOutgoing = UIUtils.AddButton(m_pnlBuildingRestrictionsOutgoing, Localization.Get("btnBuildingRestrictions"), 200, 30, OnBuildingRestrictionsOutgoingClicked);
-                    m_btnBuildingRestrictionsOutgoingClear = UIUtils.AddSpriteButton(m_pnlBuildingRestrictionsOutgoing, "Niet", 30, 30, OnBuildingRestrictionsOutgoingClearClicked);
+                    m_btnBuildingRestrictionsOutgoing = UIUtils.AddButton(m_pnlBuildingRestrictionsOutgoing, Localization.Get("btnBuildingRestrictions"), 200, iButtonHeight, OnBuildingRestrictionsOutgoingClicked);
+                    m_btnBuildingRestrictionsOutgoingClear = UIUtils.AddSpriteButton(m_pnlBuildingRestrictionsOutgoing, "Niet", iButtonHeight, iButtonHeight, OnBuildingRestrictionsOutgoingClearClicked);
                     m_btnBuildingRestrictionsOutgoingClear.tooltip = Localization.Get("btnClear");
                 }
 
@@ -388,6 +412,10 @@ namespace TransferManagerCE.UI
                                 m_btnIncomingSelectDistrict.isVisible = currentRule.m_incomingDistrict;
                                 m_btnIncomingSelectDistrict.isEnabled = (restrictionSettings.m_iPreferLocalDistrictsIncoming != RestrictionSettings.PreferLocal.ALL_DISTRICTS);
                             }
+                            if (m_btnDistrictRestrictionsIncomingClear != null)
+                            {
+                                m_btnDistrictRestrictionsIncomingClear.isEnabled = restrictionSettings.IsDistrictRestrictionsIncomingSet();
+                            }
                         }
 
                         // Outgoing
@@ -404,6 +432,10 @@ namespace TransferManagerCE.UI
                             {
                                 m_btnOutgoingSelectDistrict.isVisible = currentRule.m_outgoingDistrict;
                                 m_btnOutgoingSelectDistrict.isEnabled = (restrictionSettings.m_iPreferLocalDistrictsOutgoing != RestrictionSettings.PreferLocal.ALL_DISTRICTS);             
+                            }
+                            if (m_btnDistrictRestrictionsOutgoingClear != null)
+                            {
+                                m_btnDistrictRestrictionsOutgoingClear.isEnabled = restrictionSettings.IsDistrictRestrictionsOutgoingSet();
                             }
                         }
 
@@ -889,7 +921,36 @@ namespace TransferManagerCE.UI
 
             UpdateSettingsTab();
         }
+        public void OnDistrictRestrictionsIncomingClearClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            if (m_bInSetup) { return; }
 
+            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+
+            // Clear district settings
+            restrictions.ResetDistrictRestrictionsIncoming();
+
+            settings.SetRestrictions(GetRestrictionId(), restrictions);
+            BuildingSettingsStorage.SetSettings(m_buildingId, settings);
+
+            UpdateSettingsTab();
+        }
+        public void OnDistrictRestrictionsOutgoingClearClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            if (m_bInSetup) { return; }
+
+            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+
+            // Clear district settings
+            restrictions.ResetDistrictRestrictionsOutgoing();
+
+            settings.SetRestrictions(GetRestrictionId(), restrictions);
+            BuildingSettingsStorage.SetSettings(m_buildingId, settings);
+
+            UpdateSettingsTab();
+        }
         public void OnBuildingRestrictionsIncomingClicked(UIComponent component, UIMouseEventParameter eventParam)
         {
             if (SelectionTool.Instance != null)

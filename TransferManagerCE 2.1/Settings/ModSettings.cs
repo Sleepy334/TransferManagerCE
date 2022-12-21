@@ -40,11 +40,11 @@ namespace TransferManagerCE.Settings
         [XmlIgnore]
         private static readonly string SettingsFile = Path.Combine(UserSettingsDir, SettingsFileName);
 
-        public HighlightMode HighlightMatches
+        public int HighlightMatches
         {
             get;
             set;
-        } = HighlightMode.Matches;
+        } = (int) HighlightMode.Matches;
 
         public bool EnablePanelTransparency
         {

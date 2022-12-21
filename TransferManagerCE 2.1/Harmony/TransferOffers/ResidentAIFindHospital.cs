@@ -2,7 +2,7 @@ using ColossalFramework;
 using HarmonyLib;
 using UnityEngine;
 
-namespace TransferManagerCE.Patch
+namespace TransferManagerCE
 {
     [HarmonyPatch]
     public static class ResidentAIFindHospital
@@ -12,7 +12,7 @@ namespace TransferManagerCE.Patch
         [HarmonyPrefix]
 
         // We need to patch this function before the Nursing Home mod gets at it otherwise it will break our code.
-        [HarmonyBefore(new string[] {"t1a2l.SeniorCitizenCenterMod"})]
+        [HarmonyBefore(new string[] {"t1a2l.SeniorCitizenCenterMod", "t1a2l.CimCareMod" })]
         public static bool Prefix(uint citizenID, ushort sourceBuilding, TransferManager.TransferReason reason, ref bool __result)
         {
             if (IsInNursingHomeAndNotTooSick(citizenID, sourceBuilding))
@@ -47,6 +47,7 @@ namespace TransferManagerCE.Patch
         private static bool IsInNursingHomeAndNotTooSick(uint citizenID, ushort sourceBuilding)
         {
             if (DependencyUtilities.IsSeniorCitizenCenterModRunning() &&
+                Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.HealthCare) &&
                 Singleton<CitizenManager>.exists && 
                 Singleton<CitizenManager>.instance != null &&
                 IsSenior(citizenID))

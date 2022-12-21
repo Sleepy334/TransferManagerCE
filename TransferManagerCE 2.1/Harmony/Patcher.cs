@@ -28,24 +28,24 @@ namespace TransferManagerCE
                 List<Type> patchList = new List<Type>();
 
                 // Transfer Manager harmony patches
-                patchList.Add(typeof(Patch.TransferManagerMatchOfferPatch));
-                patchList.Add(typeof(Patch.TransferManagerAddIncomingPatch));
-                patchList.Add(typeof(Patch.TransferManagerAddOutgoingPatch));
-                patchList.Add(typeof(Patch.TransferManagerStartTransferPatch));
+                patchList.Add(typeof(TransferManagerMatchOfferPatch));
+                patchList.Add(typeof(TransferManagerAddIncomingPatch));
+                patchList.Add(typeof(TransferManagerAddOutgoingPatch));
+                patchList.Add(typeof(TransferManagerStartTransferPatch));
 
                 // Patch offer bugs in main game
-                patchList.Add(typeof(Patch.AirportBuildingAIPatch)); // Crime TransferOffer
-                patchList.Add(typeof(Patch.HospitalAIProduceGoods)); // Dead bug
-                patchList.Add(typeof(Patch.AuxiliaryBuildingAIProduceGoods)); // Dead bug
-                patchList.Add(typeof(Patch.ResidentAIFindHospital)); // ResidentAI.FindHospital bug 
-                patchList.Add(typeof(Patch.IndustrialBuildingAISimulationStepActivePatch)); 
+                patchList.Add(typeof(AirportBuildingAIPatch)); // Crime TransferOffer
+                patchList.Add(typeof(HospitalAIProduceGoods)); // Dead bug
+                patchList.Add(typeof(AuxiliaryBuildingAIProduceGoods)); // Dead bug
+                patchList.Add(typeof(ResidentAIFindHospital)); // ResidentAI.FindHospital bug 
+                patchList.Add(typeof(IndustrialBuildingAISimulationStepActivePatch)); 
 
                 // Improved Sick Collection
-                patchList.Add(typeof(Patch.PrivateBuildingAISimulationStepPatch)); 
-                patchList.Add(typeof(Patch.PlayerBuildingAISimulationStepActivePatch));
+                patchList.Add(typeof(PrivateBuildingAISimulationStepPatch)); 
+                patchList.Add(typeof(PlayerBuildingAISimulationStepActivePatch));
                 
                 // Path failures
-                patchList.Add(typeof(Patch.CarAIPathfindFailurePatch));
+                patchList.Add(typeof(CarAIPathfindFailurePatch));
 
                 // Outside connection patches
                 if (DependencyUtilities.IsAdvancedOutsideConnectionsRunning())

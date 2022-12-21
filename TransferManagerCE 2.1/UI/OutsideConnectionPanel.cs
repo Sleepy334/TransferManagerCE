@@ -45,7 +45,7 @@ namespace TransferManagerCE
             base.Start();
             name = "OutsideConnectionPanel";
             width = 600;
-            height = 500;
+            height = 540;
             if (ModSettings.GetSettings().EnablePanelTransparency)
             {
                 opacity = 0.95f;

@@ -8,12 +8,54 @@ namespace TransferManagerCE.TransferRules
     public class BuildingRuleSets
     {
         private static Dictionary<BuildingType, List<ReasonRule>> BuildingRules = new Dictionary<BuildingType, List<ReasonRule>>();
-        private static readonly object m_dictionaryLock = new object();
+        private static readonly object s_dictionaryLock = new object();
         private static bool s_initNeeded = true;
+
+        private static HashSet<TransferReason> s_districtReasons = new HashSet<TransferReason>();
+        private static HashSet<TransferReason> s_buildingReasons = new HashSet<TransferReason>();
+        private static HashSet<TransferReason> s_distanceReasons = new HashSet<TransferReason>();
+
+        public static bool IsDistrictRestrictionsSupported(TransferReason material)
+        {
+            if (s_initNeeded)
+            {
+                lock (s_dictionaryLock)
+                {
+                    Init();
+                }
+            }
+
+            return s_districtReasons.Contains(material);
+        }
+
+        public static bool IsBuildingRestrictionsSupported(TransferReason material)
+        {
+            if (s_initNeeded)
+            {
+                lock (s_dictionaryLock)
+                {
+                    Init();
+                }
+            }
+
+            return s_buildingReasons.Contains(material);
+        }
+        public static bool IsDistanceRestrictionsSupported(TransferReason material)
+        {
+            if (s_initNeeded)
+            {
+                lock (s_dictionaryLock)
+                {
+                    Init();
+                }
+            }
+
+            return s_distanceReasons.Contains(material);
+        }
 
         public static int GetRestrictionId(BuildingType eBuildingType, TransferReason material)
         {
-            lock (m_dictionaryLock)
+            lock (s_dictionaryLock)
             {
                 Init();
 
@@ -35,7 +77,7 @@ namespace TransferManagerCE.TransferRules
 
         public static bool HasIncomingDistrictRules(BuildingType eBuildingType, TransferReason material)
         {
-            lock (m_dictionaryLock)
+            lock (s_dictionaryLock)
             {
                 Init();
 
@@ -57,7 +99,7 @@ namespace TransferManagerCE.TransferRules
 
         public static bool HasOutgoingDistrictRules(BuildingType eBuildingType, TransferReason material)
         {
-            lock (m_dictionaryLock)
+            lock (s_dictionaryLock)
             {
                 Init();
 
@@ -79,7 +121,7 @@ namespace TransferManagerCE.TransferRules
 
         public static bool HasDistanceRules(BuildingType eBuildingType, TransferReason material)
         {
-            lock (m_dictionaryLock)
+            lock (s_dictionaryLock)
             {
                 Init();
 
@@ -101,7 +143,7 @@ namespace TransferManagerCE.TransferRules
 
         public static List<ReasonRule> GetRules(BuildingType eBuildingType)
         {
-            lock (m_dictionaryLock)
+            lock (s_dictionaryLock)
             {
                 Init();
                 if (BuildingRules.ContainsKey(eBuildingType))
@@ -117,7 +159,7 @@ namespace TransferManagerCE.TransferRules
         
         public static List<ReasonRule> GetRules(BuildingType eBuildingType, ushort buildingId)
         {
-            lock (m_dictionaryLock)
+            lock (s_dictionaryLock)
             {
                 Init();
 
@@ -217,6 +259,7 @@ namespace TransferManagerCE.TransferRules
                 TaxiDepot();
                 TaxiStand();
                 DisasterResponseUnit();
+                SnowDump();
 
                 // Garbage
                 LandFill();
@@ -247,10 +290,45 @@ namespace TransferManagerCE.TransferRules
                 Warehouse();
                 OutsideConnection();
 
-                PowerPlant();
+                CoalPowerPlant();
+                PetrolPowerPlant();
                 BoilerPlant();
                 DisasterShelter();
                 PumpingService();
+
+                // Load transfer reasons into HashSet so we can check if supported
+                foreach (KeyValuePair<BuildingType, List<ReasonRule>> kvp in BuildingRules)
+                {
+                    foreach (ReasonRule rule in kvp.Value)
+                    {
+                        // Districts
+                        if (rule.m_incomingDistrict || rule.m_outgoingDistrict)
+                        {
+                            foreach (TransferReason material in rule.m_reasons)
+                            {
+                                s_districtReasons.Add(material);
+                            }
+                        }
+
+                        // Buildings
+                        if (rule.m_incomingBuilding || rule.m_outgoingBuilding)
+                        {
+                            foreach (TransferReason material in rule.m_reasons)
+                            {
+                                s_buildingReasons.Add(material);
+                            }
+                        }
+
+                        // Distance
+                        if (rule.m_distance)
+                        {
+                            foreach (TransferReason material in rule.m_reasons)
+                            {
+                                s_distanceReasons.Add(material);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -535,7 +613,7 @@ namespace TransferManagerCE.TransferRules
 
             {
                 ReasonRule rule = new ReasonRule();
-                rule.m_id = 1;
+                rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonFire"); //"Fire";
                 rule.AddReason(TransferReason.Fire);
                 rule.m_incomingDistrict = true;
@@ -895,7 +973,39 @@ namespace TransferManagerCE.TransferRules
 
             BuildingRules[BuildingType.DisasterResponseUnit] = list;
         }
-        private static void PowerPlant()
+        private static void SnowDump()
+        {
+            List<ReasonRule> list = new List<ReasonRule>();
+
+            {
+                // Raw products
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 0;
+                rule.m_name = Localization.Get("reasonSnow");
+                rule.AddReason(TransferReason.Snow);
+                rule.m_incomingDistrict = true;
+                rule.m_distance = true;
+                list.Add(rule);
+            }
+            {
+                // Outgoing product
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 1;
+                rule.m_name = Localization.Get("reasonSnowMove");
+                rule.AddReason(TransferReason.SnowMove);
+                rule.m_incomingDistrict = true;
+                rule.m_outgoingDistrict = true;
+                rule.m_incomingBuilding = true;
+                rule.m_outgoingBuilding = true;
+                rule.m_distance = true;
+                list.Add(rule);
+            }
+
+            BuildingRules[BuildingType.SnowDump] = list;
+        }
+        
+
+        private static void CoalPowerPlant()
         {
             List<ReasonRule> list = new List<ReasonRule>();
             {
@@ -909,7 +1019,23 @@ namespace TransferManagerCE.TransferRules
                 list.Add(rule);
             }
 
-            BuildingRules[BuildingType.PowerPlant] = list;
+            BuildingRules[BuildingType.CoalPowerPlant] = list;
+        }
+        private static void PetrolPowerPlant()
+        {
+            List<ReasonRule> list = new List<ReasonRule>();
+            {
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 0;
+                rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
+                rule.AddReason(TransferReason.Petrol);
+                rule.m_incomingDistrict = true;
+                rule.m_incomingBuilding = true;
+                rule.m_import = true;
+                list.Add(rule);
+            }
+
+            BuildingRules[BuildingType.PetrolPowerPlant] = list;
         }
         private static void BoilerPlant()
         {

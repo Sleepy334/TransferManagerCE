@@ -15,6 +15,7 @@ namespace TransferManagerCE.CustomManager
             {
                 case TransferReason.Garbage:
                 case TransferReason.Crime:
+                case TransferReason.Cash:
                 case TransferReason.Fire:
                 case TransferReason.Fire2:
                 case TransferReason.ForestFire:
@@ -30,71 +31,6 @@ namespace TransferManagerCE.CustomManager
 
                 // Goods subject to prefer local:
                 // -none- it is too powerful, city will fall apart
-
-                default:
-                    return false;  //guard: dont apply district logic to other materials
-            }
-        }
-
-        public static bool IsBuildingDistrictRestrictionsSupported(TransferReason material)
-        {
-            if (IsGlobalDistrictRestrictionsSupported(material))
-            {
-                return true;
-            }
-
-            switch (material)
-            {
-                case TransferReason.Garbage:
-                case TransferReason.Crime:
-                case TransferReason.Cash:
-                case TransferReason.Fire:
-                case TransferReason.Fire2:
-                case TransferReason.ForestFire:
-                case TransferReason.Sick:
-                case TransferReason.Sick2:
-                case TransferReason.Collapsed:
-                case TransferReason.Collapsed2:
-                case TransferReason.Taxi:
-                case TransferReason.Dead:
-                case TransferReason.Student1:
-                case TransferReason.Student2:
-                case TransferReason.Student3:
-                case TransferReason.Oil:
-                case TransferReason.Ore:
-                case TransferReason.Logs:
-                case TransferReason.Grain:
-                case TransferReason.Goods:
-                case TransferReason.Coal:
-                case TransferReason.Petrol:
-                case TransferReason.Food:
-                case TransferReason.Lumber:
-                case TransferReason.GarbageMove:
-                case TransferReason.DeadMove:
-                case TransferReason.CriminalMove:
-                case TransferReason.Snow:
-                case TransferReason.SnowMove:
-                case TransferReason.RoadMaintenance:
-                case TransferReason.SickMove:
-                case TransferReason.ParkMaintenance:
-                case TransferReason.Mail:
-                case TransferReason.UnsortedMail:
-                case TransferReason.SortedMail:
-                //case TransferReason.OutgoingMail:
-                //case TransferReason.IncomingMail:
-                case TransferReason.AnimalProducts:
-                case TransferReason.Flours:
-                case TransferReason.Paper:
-                case TransferReason.PlanedTimber:
-                case TransferReason.Petroleum:
-                case TransferReason.Plastics:
-                case TransferReason.Glass:
-                case TransferReason.Metals:
-                case TransferReason.LuxuryProducts:
-                case TransferReason.GarbageTransfer:
-                case TransferReason.Fish:
-                case TransferReason.FloodWater:
-                    return true;
 
                 default:
                     return false;  //guard: dont apply district logic to other materials

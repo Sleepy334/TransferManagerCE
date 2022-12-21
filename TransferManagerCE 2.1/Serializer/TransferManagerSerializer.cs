@@ -12,7 +12,7 @@ namespace TransferManagerCE
         private const uint uiTUPLE_END = 0xFAFAFAFA;
 
         public const string DataID = "TransferManagerCE";
-        public const ushort DataVersion = 30;
+        public const ushort DataVersion = 31;
 
         public static Serializer? instance = null;
         private ISerializableData? m_serializableData = null;

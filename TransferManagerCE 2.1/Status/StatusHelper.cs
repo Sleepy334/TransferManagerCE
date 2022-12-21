@@ -291,7 +291,8 @@ namespace TransferManagerCE
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
                                         }
-                                    case BuildingType.PowerPlant:
+                                    case BuildingType.PetrolPowerPlant:
+                                    case BuildingType.CoalPowerPlant:
                                         {
                                             // Add a generic vehicle
                                             m_listIncoming.Add(new StatusPowerPlant((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
@@ -599,7 +600,8 @@ namespace TransferManagerCE
                         }
                         break;
                     }
-                case BuildingTypeHelper.BuildingType.PowerPlant:
+                case BuildingTypeHelper.BuildingType.PetrolPowerPlant:
+                case BuildingTypeHelper.BuildingType.CoalPowerPlant:
                     {
                         TransferReason material = StatusPowerPlant.GetInputResource(buildingId);
                         if (material != TransferReason.None && !m_setAddedReasons.Contains(material))

@@ -478,5 +478,37 @@ namespace TransferManagerCE
 
             return bChanged;
         }
+
+        public bool IsDistrictRestrictionsIncomingSet()
+        {
+            return m_iPreferLocalDistrictsIncoming != PreferLocal.ALL_DISTRICTS ||
+                    m_incomingDistrictAllowed.Count > 0 ||
+                    !m_bIncomingAllowLocalDistrict ||
+                    !m_bIncomingAllowLocalPark;
+        }
+
+        public void ResetDistrictRestrictionsIncoming()
+        {
+            m_iPreferLocalDistrictsIncoming = PreferLocal.ALL_DISTRICTS;
+            m_incomingDistrictAllowed.Clear();
+            m_bIncomingAllowLocalDistrict = true;
+            m_bIncomingAllowLocalPark = true;
+        }
+
+        public bool IsDistrictRestrictionsOutgoingSet()
+        {
+            return m_iPreferLocalDistrictsOutgoing != PreferLocal.ALL_DISTRICTS ||
+                    m_outgoingDistrictAllowed.Count > 0 ||
+                    !m_bOutgoingAllowLocalDistrict ||
+                    !m_bOutgoingAllowLocalPark;
+        }
+
+        public void ResetDistrictRestrictionsOutgoing()
+        {
+            m_iPreferLocalDistrictsOutgoing = PreferLocal.ALL_DISTRICTS;
+            m_outgoingDistrictAllowed.Clear();
+            m_bOutgoingAllowLocalDistrict = true;
+            m_bOutgoingAllowLocalPark = true;
+        }
     }
 }

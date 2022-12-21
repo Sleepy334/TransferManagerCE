@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
@@ -29,8 +30,18 @@ namespace TransferManagerCE.Data
                         }
                         else
                         {
-                            int incomingBuffer = building.m_customBuffer1 * 1000 + building.m_garbageBuffer;
-                            return incomingBuffer.ToString();
+                            LandfillSiteAI? buildingAI = building.Info.GetAI() as LandfillSiteAI;
+                            if (buildingAI != null)
+                            {
+                                float fCurrent = buildingAI.GetGarbageAmount(m_buildingId, ref building);
+                                float fCapacity = buildingAI.m_garbageCapacity;
+                                return $"{Math.Round((fCurrent / fCapacity * 100.0), 0)}%";
+                            }
+                            else
+                            {
+                                int incomingBuffer = building.m_customBuffer1 * 1000 + building.m_garbageBuffer;
+                                return incomingBuffer.ToString();
+                            }
                         }
                     }
                 case BuildingType.ServicePoint:

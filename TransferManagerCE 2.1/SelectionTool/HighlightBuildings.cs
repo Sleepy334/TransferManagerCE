@@ -22,7 +22,7 @@ namespace TransferManagerCE
 
         public void LoadMatches()
         {
-            switch (ModSettings.GetSettings().HighlightMatches)
+            switch ((ModSettings.HighlightMode) ModSettings.GetSettings().HighlightMatches)
             {
                 case ModSettings.HighlightMode.None:
                     {
@@ -99,7 +99,7 @@ namespace TransferManagerCE
         {
             m_highlightBuildings.Clear();
 
-            if (ModSettings.GetSettings().HighlightMatches == ModSettings.HighlightMode.Matches && 
+            if ((ModSettings.HighlightMode)ModSettings.GetSettings().HighlightMatches == ModSettings.HighlightMode.Matches && 
                 BuildingPanel.Instance != null)
             {
                 // Limit the number of buildings to highlight

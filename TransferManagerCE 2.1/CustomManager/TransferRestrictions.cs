@@ -43,9 +43,9 @@ namespace TransferManagerCE.CustomManager
 
         public void SetMaterial(TransferReason material)
         {
-            m_bDistrictRestrictionsSupported = DistrictRestrictions.IsGlobalDistrictRestrictionsSupported(material) || DistrictRestrictions.IsBuildingDistrictRestrictionsSupported(material);
-            m_bBuildingRestrictionsSupported = DistrictRestrictions.IsBuildingDistrictRestrictionsSupported(material);
-            m_bDistanceRestrictionsSupported = DistrictRestrictions.IsBuildingDistrictRestrictionsSupported(material);
+            m_bDistrictRestrictionsSupported = DistrictRestrictions.IsGlobalDistrictRestrictionsSupported(material) || BuildingRuleSets.IsDistrictRestrictionsSupported(material);
+            m_bBuildingRestrictionsSupported = BuildingRuleSets.IsBuildingRestrictionsSupported(material);
+            m_bDistanceRestrictionsSupported = BuildingRuleSets.IsDistanceRestrictionsSupported(material);
         }
 
         public ExclusionReason CanTransfer(TransferReason material, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer, bool bCloseByOnly)

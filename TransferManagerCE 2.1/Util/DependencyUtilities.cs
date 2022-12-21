@@ -112,6 +112,12 @@ namespace TransferManagerCE
             return IsPluginRunning("2053500739", "AdvancedOutsideConnection");
         }
 
+        public static bool IsSeniorCitizenCenterModRunning()
+        {
+            return IsPluginRunning("2559105223", "SeniorCitizenCenterMod");
+        }
+        
+
         public static Assembly? GetCallAgainAssembly()
         {
             // Iterate through each loaded plugin assembly.

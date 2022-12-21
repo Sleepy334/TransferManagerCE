@@ -84,14 +84,14 @@ namespace TransferManagerCE
             m_title.SetOnclickHandler(OnCloseClick);
             m_title.title = Localization.Get("titleTransferStatsPanel"); ;
 
-            m_tabStrip = UITabStrip.Create(this, width - 20f, height - m_title.height - 10 - 20, OnTabChanged);
+            m_tabStrip = UITabStrip.Create(this, width - 20f, height - m_title.height - 10, OnTabChanged);
             
             // General
             UIPanel? tabGeneral = m_tabStrip.AddTab(Localization.Get("tabGeneral"));
             if (tabGeneral != null)
             {
                 // Offer list
-                m_generalStats = ListView.Create<UIGeneralStatsRow>(tabGeneral, "ScrollbarTrack", 0.7f, width - 20f, height - m_title.height - 12);
+                m_generalStats = ListView.Create<UIGeneralStatsRow>(tabGeneral, "ScrollbarTrack", 0.7f, width - 20f, tabGeneral.height);
                 if (m_generalStats != null)
                 {
                     m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", iCOLUMN_LARGE_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
@@ -104,7 +104,7 @@ namespace TransferManagerCE
             if (tabGame != null)
             {
                 // Offer list
-                m_gameStats = ListView.Create<UIGeneralStatsRow>(tabGame, "ScrollbarTrack", 0.7f, width - 20f, height - m_title.height - 12);
+                m_gameStats = ListView.Create<UIGeneralStatsRow>(tabGame, "ScrollbarTrack", 0.7f, width - 20f, tabGame.height);
                 if (m_gameStats != null)
                 {
                     m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", iCOLUMN_LARGE_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
@@ -117,7 +117,7 @@ namespace TransferManagerCE
             if (tabMatchStats != null)
             {
                 // Offer list
-                m_listStats = ListView.Create<UIMatchStatsRow>(tabMatchStats, "ScrollbarTrack", 0.7f, width - 20f, height - m_title.height - 12);
+                m_listStats = ListView.Create<UIMatchStatsRow>(tabMatchStats, "ScrollbarTrack", 0.7f, width - 20f, tabMatchStats.height);
                 if (m_listStats != null)
                 {
                     m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, "Material", "Material", iCOLUMN_MATERIAL_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);

@@ -111,11 +111,6 @@ namespace TransferManagerCE
             }
         }
 
-        public void AddRestriction(int index, RestrictionSettings restrictions)
-        {
-            m_restrictions[index] = restrictions;
-        }
-
         public bool Contains(int iRestrictionId)
         {
             return m_restrictions.ContainsKey(iRestrictionId);
@@ -136,7 +131,13 @@ namespace TransferManagerCE
         public void SetRestrictions(int iRestrictionId, RestrictionSettings settings)
         {
             // Save a copy so we don't end up duplicating settings
-            m_restrictions[iRestrictionId] = new RestrictionSettings(settings);
+            SetRestrictionsDirect(iRestrictionId, new RestrictionSettings(settings));
+        }
+
+        public void SetRestrictionsDirect(int iRestrictionId, RestrictionSettings settings)
+        {
+            // Directly save settings object, we assume it's already a stand alone copy.
+            m_restrictions[iRestrictionId] = settings;
         }
 
         public bool IsWarehouseFirst()

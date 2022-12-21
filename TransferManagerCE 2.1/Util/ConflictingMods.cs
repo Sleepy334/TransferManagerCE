@@ -11,28 +11,12 @@ namespace TransferManagerCE
         public static bool ConflictingModsFound()
         {
             string sConflictingMods = "";
+            int iTransferManagerCount = 0;
+
             foreach (PluginManager.PluginInfo plugin in PluginManager.instance.GetPluginsInfo())
             {
                 if (plugin != null && plugin.isEnabled)
                 {
-                    switch (plugin.name)
-                    {
-                        case sTransferManagerStable:
-                            {
-#if TEST_RELEASE || TEST_DEBUG
-                                sConflictingMods += "Transfer Manager Community Edition [STABLE]\r\n";
-#endif
-                                break;
-                            }
-                        case sTransferManagerTest:
-                            {
-#if !(TEST_RELEASE || TEST_DEBUG)
-                                sConflictingMods += "Transfer Manager Community Edition [TEST]\r\n";
-#endif
-                                break;
-                            }
-                    }
-                    
                     foreach (Assembly assembly in plugin.GetAssemblies())
                     {
                         switch (assembly.GetName().Name)
@@ -57,6 +41,17 @@ namespace TransferManagerCE
                                     sConflictingMods += "Configure Outside Connections' Limits\r\n";
                                     break;
                                 }
+                            case "TransferManagerCE":
+                                {
+                                    iTransferManagerCount++;
+                                    if (iTransferManagerCount > 1)
+                                    {
+                                        sConflictingMods += "Multiple Transfer Manager CE mods running\r\n";
+                                    }
+
+                                    break;
+                                }
+                                
                             default:
                                 {
                                     //Debug.Log("Assembly: " + assembly.GetName().Name);

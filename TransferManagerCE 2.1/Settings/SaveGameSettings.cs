@@ -8,7 +8,7 @@ namespace TransferManagerCE
 {
     public class SaveGameSettings
     {
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 18;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 19;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
@@ -43,6 +43,9 @@ namespace TransferManagerCE
         // Sick Collection
         public bool OverrideResidentialSickHandler = true;
         public bool CollectSickFromOtherBuildings = false;
+
+        // Generic Industries
+        public bool OverrideGenericIndustriesHandler = true;
 
         // VehicleAI
         public bool FireTruckAI = true;
@@ -212,6 +215,7 @@ namespace TransferManagerCE
 
             StorageData.WriteInt32(ExportVehicleLimit, Data); // New in 17
             StorageData.WriteBool(NewInterWarehouseTransfer, Data); // Re-introduced in 18
+            StorageData.WriteBool(OverrideGenericIndustriesHandler, Data); // Introduced in 19
         }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
@@ -244,6 +248,7 @@ namespace TransferManagerCE
                         case 16: s_SaveGameSettings.LoadDataVersion16(Data, ref iIndex); break;
                         case 17: s_SaveGameSettings.LoadDataVersion17(Data, ref iIndex); break;
                         case 18: s_SaveGameSettings.LoadDataVersion18(Data, ref iIndex); break;
+                        case 19: s_SaveGameSettings.LoadDataVersion19(Data, ref iIndex); break;
                         default:
                             {
                                 Debug.Log("New data version, unable to load!");
@@ -256,7 +261,14 @@ namespace TransferManagerCE
                 }
             }
         }
+        private void LoadDataVersion19(byte[] Data, ref int iIndex)
+        {
+            // Load all previous versions settings
+            LoadDataVersion18(Data, ref iIndex);
 
+            // Override industrial handler added in 19
+            OverrideGenericIndustriesHandler = StorageData.ReadBool(Data, ref iIndex);
+        }
         private void LoadDataVersion18(byte[] Data, ref int iIndex)
         {
             // Load all previous versions settings
