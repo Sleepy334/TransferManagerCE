@@ -25,7 +25,30 @@ namespace TransferManagerCE
         public static string DebugOffer(CustomTransferOffer offer)
         {
             string sMessage = DebugOffer(offer.m_offer);
-            sMessage += " Building: " + offer.GetBuilding();
+            if (offer.GetBuilding() != 0)
+            {
+                sMessage += " Building: " + offer.GetBuilding();
+                Building building = BuildingManager.instance.m_buildings.m_buffer[offer.GetBuilding()];
+                if (building.m_flags != 0)
+                {
+                    if (building.m_outgoingProblemTimer > 0)
+                    {
+                        sMessage += " OT: " + building.m_outgoingProblemTimer;
+                    }
+                    if (building.m_incomingProblemTimer > 0)
+                    {
+                        sMessage += " IT: " + building.m_incomingProblemTimer;
+                    }
+                    if (building.m_healthProblemTimer > 0)
+                    {
+                        sMessage += " ST: " + building.m_healthProblemTimer;
+                    }
+                    if (building.m_deathProblemTimer > 0)
+                    {
+                        sMessage += " DT: " + building.m_deathProblemTimer;
+                    }
+                }
+            }
             sMessage += " IsOutside: " + offer.IsOutside();
             sMessage += " IsWarehouse: " + offer.IsWarehouse();
             if (offer.IsWarehouse())

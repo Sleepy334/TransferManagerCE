@@ -40,7 +40,7 @@ namespace TransferManagerCE.Settings
         [XmlIgnore]
         private static readonly string SettingsFile = Path.Combine(UserSettingsDir, SettingsFileName);
 
-        public int HighlightMatches
+        public int HighlightMatchesState
         {
             get;
             set;

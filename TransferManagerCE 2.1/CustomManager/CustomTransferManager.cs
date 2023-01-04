@@ -125,7 +125,7 @@ namespace TransferManagerCE.CustomManager
 
 #if (DEBUG)
             // DEBUG LOGGING
-            DebugLog.LogOnly((DebugLog.LogReason)job.material, $"------ TRANSFER JOB: {job.material.ToString()}, amount in/out: {job.m_incomingAmount}/{job.m_outgoingAmount}; total offer count in/out: {job.m_incomingCount}/{job.m_outgoingCount} ------");
+            DebugLog.LogOnly((DebugLog.LogReason)job.material, $"------ TRANSFER JOB: {job.material.ToString()}, IN: {job.m_incomingAmount}({job.m_incomingCount}) OUT: {job.m_outgoingAmount}({job.m_outgoingCount}) ------");
             DebugPrintAllOffers(material, job.m_incomingCount, job.m_outgoingCount);
 #endif
             if (TransferJobQueue.Instance.Count() > 100)

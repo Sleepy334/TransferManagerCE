@@ -1,4 +1,5 @@
 ﻿using ColossalFramework;
+using ColossalFramework.Math;
 using System.Collections.Generic;
 using TransferManagerCE.Util;
 using static TransferManager;
@@ -15,6 +16,9 @@ namespace TransferManagerCE.CustomManager
         // A set of all running job reasons
         private static HashSet<TransferReason> s_dispatchedReasons = new HashSet<TransferReason>();
         private static readonly object s_reasonsLock = new object();
+
+        // We randomize the loading of offers a bit to help with matching
+        private Randomizer m_randomizer = new Randomizer();
 
         public static CustomTransferDispatcher Instance
         {
@@ -142,16 +146,44 @@ namespace TransferManagerCE.CustomManager
                 job.m_incomingCount += incomingCount[offer_offset];
                 job.m_outgoingCount += outgoingCount[offer_offset];
 
-                // linear copy to job's offer arrays
-                //** TODO: evaluate speedup via unsafe pointer memcpy **
-                for (int offerIndex = 0; offerIndex < incomingCount[offer_offset]; offerIndex++)
+                // Randomly alternate loading forwards or backwards so we don't always process the same end of the list
+                // as the offers are added in the same order.
+                bool bInForwards = (m_randomizer.UInt32(2U) == 0);
+                if (bInForwards)
                 {
-                    job.m_incomingOffers[jobInIdx++] = new CustomTransferOffer(incomingOffers[offer_offset * 256 + offerIndex]);
+                    // Load them into the array forwards
+                    for (int offerIndex = 0; offerIndex < incomingCount[offer_offset]; offerIndex++)
+                    {
+                        job.m_incomingOffers[jobInIdx++] = new CustomTransferOffer(incomingOffers[offer_offset * 256 + offerIndex]);
+                    }
                 }
-                    
-                for (int offerIndex = 0; offerIndex < outgoingCount[offer_offset]; offerIndex++)
+                else
                 {
-                    job.m_outgoingOffers[jobOutIdx++] = new CustomTransferOffer(outgoingOffers[offer_offset * 256 + offerIndex]);
+                    // Load them into the array backwards
+                    for (int offerIndex = incomingCount[offer_offset] - 1; offerIndex >= 0; offerIndex--)
+                    {
+                        job.m_incomingOffers[jobInIdx++] = new CustomTransferOffer(incomingOffers[offer_offset * 256 + offerIndex]);
+                    }
+                }
+
+                // Randomly alternate loading forwards or backwards so we don't always process the same end of the list
+                // as the offers are added in the same order.
+                bool bOutForwards = (m_randomizer.UInt32(2U) == 0);
+                if (bOutForwards)
+                {
+                    // Load them into the array forwards
+                    for (int offerIndex = 0; offerIndex < outgoingCount[offer_offset]; offerIndex++)
+                    {
+                        job.m_outgoingOffers[jobOutIdx++] = new CustomTransferOffer(outgoingOffers[offer_offset * 256 + offerIndex]);
+                    }
+                }
+                else
+                {
+                    // Load them into the array backwards
+                    for (int offerIndex = outgoingCount[offer_offset] - 1; offerIndex >= 0; offerIndex--)
+                    {
+                        job.m_outgoingOffers[jobOutIdx++] = new CustomTransferOffer(outgoingOffers[offer_offset * 256 + offerIndex]);
+                    }
                 }
             }
 

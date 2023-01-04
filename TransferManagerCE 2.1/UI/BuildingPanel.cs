@@ -515,8 +515,8 @@ namespace TransferManagerCE
 
         public void OnHighlightClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            int iHighlightMode = (int)ModSettings.GetSettings().HighlightMatches;
-            ModSettings.GetSettings().HighlightMatches = ((iHighlightMode + 1) % 3);
+            int iHighlightMode = (int)ModSettings.GetSettings().HighlightMatchesState;
+            ModSettings.GetSettings().HighlightMatchesState = ((iHighlightMode + 1) % 3);
             ModSettings.GetSettings().Save();
             UpdateHighlightButtonIcon();
         }
@@ -527,7 +527,7 @@ namespace TransferManagerCE
             {
                 string sIcon = "";
                 string sTooltip = "";
-                switch ((ModSettings.HighlightMode)ModSettings.GetSettings().HighlightMatches)
+                switch ((ModSettings.HighlightMode)ModSettings.GetSettings().HighlightMatchesState)
                 {
                     case ModSettings.HighlightMode.None:
                         {

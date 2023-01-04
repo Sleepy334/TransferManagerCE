@@ -12,14 +12,31 @@ namespace TransferManagerCE
     [HarmonyPatch]
     public static class IndustrialBuildingAISimulationStepActivePatch
     {
+        public static bool s_bRejectOffers = false;
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
+        public static void SimulationStepActivePrefix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
+        {
+            // We flag rejecting these offers so we don't have to call RemoveIncomingOffer which can be slow
+            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
+                SaveGameSettings.GetSettings().OverrideGenericIndustriesHandler)
+            {
+                s_bRejectOffers = true;
+            }
+        }
+
         // Generic processing buildings behave badly, they ask twice in one round and with really high priority due to a bug in IndustrialBuildingAI.SimulationStepActive
         // where it uses the max load capacity (8) instead of storage capacity (up to 16) so priority is often twice what it should be.
         // This patch is an attempt to solve this
         [HarmonyPostfix]
         [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
-        public static void SimulationStepActive(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
+        public static void SimulationStepActivePostfix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager && 
+            // Turn reject flag off again
+            s_bRejectOffers = false;
+
+            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
                 SaveGameSettings.GetSettings().OverrideGenericIndustriesHandler)
             {
                 Randomizer random = Singleton<SimulationManager>.instance.m_randomizer;
@@ -48,14 +65,6 @@ namespace TransferManagerCE
                         offer.Amount = 1;
                         offer.Active = false;
 
-                        // remove previous offers whether we add new ones or not as they are buggy
-                        Singleton<TransferManager>.instance.RemoveIncomingOffer(incomingTransferReason, offer);
-                        if (secondaryIncomingTransferReason != TransferManager.TransferReason.None)
-                        {
-                            // remove previous secondary offers
-                            Singleton<TransferManager>.instance.RemoveIncomingOffer(secondaryIncomingTransferReason, offer);
-                        }
-
                         // We don't request every time so it gives time for a vehicle to be matched and
                         // dispatched before we request again.
                         if (iPriority >= 3 && random.UInt32(3U) == 0)
@@ -77,6 +86,31 @@ namespace TransferManagerCE
                             {
                                 Singleton<TransferManager>.instance.AddIncomingOffer(incomingTransferReason, offer);
                             }
+                        }
+                    }
+                }
+
+                // We override the default outgoing offer so we can factor in the problem timer value into priority
+                // to ensure buildings with the flashing icon get processed first
+                TransferManager.TransferReason outgoingReason = GetOutgoingTransferReason(buildingData.Info);
+                if (buildingData.m_fireIntensity == 0 && outgoingReason != TransferManager.TransferReason.None)
+                {
+                    TransferManager.TransferOffer offer = default;
+                    offer.Priority = Mathf.Clamp(buildingData.m_outgoingProblemTimer * 8 / 128, 0, 7); // 128 is when the problem icon appears
+                    offer.Building = buildingID;
+                    offer.Position = buildingData.m_position;
+                    offer.Amount = buildingData.m_customBuffer2 / 8000;
+                    offer.Active = true;
+
+                    if (offer.Amount > 0)
+                    {
+                        // Check we have vehicles available before adding offer
+                        int iVehicles = CitiesUtils.GetActiveVehicleCount(buildingData, outgoingReason);
+                        int iMaxVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.GenericFactory, buildingID);
+                        if (iVehicles < iMaxVehicles)
+                        {
+                            // Add our version
+                            Singleton<TransferManager>.instance.AddOutgoingOffer(outgoingReason, offer);
                         }
                     }
                 }
@@ -128,6 +162,18 @@ namespace TransferManagerCE
             }
 
             return TransferManager.TransferReason.None;
+        }
+
+        private static TransferManager.TransferReason GetOutgoingTransferReason(BuildingInfo info)
+        {
+            return info.m_class.m_subService switch
+            {
+                ItemClass.SubService.IndustrialForestry => TransferManager.TransferReason.Lumber,
+                ItemClass.SubService.IndustrialFarming => TransferManager.TransferReason.Food,
+                ItemClass.SubService.IndustrialOil => TransferManager.TransferReason.Petrol,
+                ItemClass.SubService.IndustrialOre => TransferManager.TransferReason.Coal,
+                _ => TransferManager.TransferReason.Goods,
+            };
         }
     }
 }

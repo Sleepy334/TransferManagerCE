@@ -262,7 +262,7 @@ namespace TransferManagerCE
                                         }
                                     case BuildingType.GenericExtractor:
                                         {
-                                            m_listIncoming.Add(new StatusIndustrialExtractor((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            m_listIncoming.Add(new StatusGenericExtractor((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                             m_setAddedReasons.Add((TransferReason)vehicle.m_transferType);
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
@@ -270,7 +270,7 @@ namespace TransferManagerCE
                                     case BuildingType.GenericProcessing:
                                     case BuildingType.GenericFactory:
                                         {
-                                            m_listIncoming.Add(new StatusIndustrialProcessing((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            m_listIncoming.Add(new StatusGenericProcessing((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                             m_setAddedReasons.Add((TransferReason)vehicle.m_transferType);
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
@@ -537,30 +537,30 @@ namespace TransferManagerCE
                     }
                 case BuildingTypeHelper.BuildingType.GenericExtractor:
                     {
-                        TransferReason material = StatusIndustrialExtractor.GetOutgoingTransferReason(building);
+                        TransferReason material = StatusGenericExtractor.GetOutgoingTransferReason(building);
                         if (material != TransferReason.None && !m_setAddedReasons.Contains(material))
                         {
-                            m_listOutgoing.Add(new StatusIndustrialExtractor(material, eBuildingType, buildingId, 0, 0));
+                            m_listOutgoing.Add(new StatusGenericExtractor(material, eBuildingType, buildingId, 0, 0));
                         }
                         break;
                     }
                 case BuildingTypeHelper.BuildingType.GenericProcessing:
                 case BuildingTypeHelper.BuildingType.GenericFactory:
                     {
-                        TransferReason material = StatusIndustrialProcessing.GetIncomingTransferReason(buildingId);
+                        TransferReason material = StatusGenericProcessing.GetIncomingTransferReason(buildingId);
                         if (material != TransferReason.None && !m_setAddedReasons.Contains(material))
                         {
-                            m_listIncoming.Add(new StatusIndustrialProcessing(material, eBuildingType, buildingId, 0, 0));
+                            m_listIncoming.Add(new StatusGenericProcessing(material, eBuildingType, buildingId, 0, 0));
                         }
-                        TransferReason material2 = StatusIndustrialProcessing.GetSecondaryIncomingTransferReason(buildingId);
+                        TransferReason material2 = StatusGenericProcessing.GetSecondaryIncomingTransferReason(buildingId);
                         if (material2 != TransferReason.None && !m_setAddedReasons.Contains(material2))
                         {
-                            m_listIncoming.Add(new StatusIndustrialProcessing(material2, eBuildingType, buildingId, 0, 0));
+                            m_listIncoming.Add(new StatusGenericProcessing(material2, eBuildingType, buildingId, 0, 0));
                         }
-                        TransferReason outMaterial = StatusIndustrialProcessing.GetOutgoingTransferReason(building);
+                        TransferReason outMaterial = StatusGenericProcessing.GetOutgoingTransferReason(building);
                         if (outMaterial != TransferReason.None && !m_setAddedReasons.Contains(outMaterial))
                         {
-                            m_listOutgoing.Add(new StatusIndustrialProcessing(outMaterial, eBuildingType, buildingId, 0, 0));
+                            m_listOutgoing.Add(new StatusGenericProcessing(outMaterial, eBuildingType, buildingId, 0, 0));
                         }
                         break;
                     }

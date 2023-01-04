@@ -21,6 +21,7 @@ namespace TransferManagerCE.CustomManager
                 case TransferReason.Fire:
                 case TransferReason.Mail:
                 case TransferReason.Taxi:
+                case TransferReason.Cash:
                     return SaveGameSettings.GetSettings().UsePathDistanceServices;
 
                 case TransferReason.Oil:

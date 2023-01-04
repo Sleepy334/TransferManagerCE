@@ -31,6 +31,7 @@ namespace TransferManagerCE.CustomManager
         private bool? m_IsValid = null;
         private BuildingTypeHelper.BuildingType m_buildingType = BuildingTypeHelper.BuildingType.None;
         public ushort m_nearestNode = ushort.MaxValue; // public so we can debug it without forcing it to be calculated.
+        private Vector3? m_position = null;
 
         // Outside connection
         private OutsideConnection m_eOutside = OutsideConnection.Unknown;
@@ -173,8 +174,22 @@ namespace TransferManagerCE.CustomManager
 
         public Vector3 Position
         {
-            get { return m_offer.Position; }
-            set { m_offer.Position = value; }
+            get 
+            { 
+                if (m_position == null)
+                {
+                    // Try to extract position from object first as offer position can be buggy
+                    m_position = InstanceHelper.GetPosition(m_object);
+
+                    // If we got back zero then we failed to load position
+                    if (m_position == Vector3.zero)
+                    {
+                        m_position = m_offer.Position;
+                    }
+                }
+
+                return m_position.Value; 
+            }
         }
 
         public bool IsOutside()
@@ -404,7 +419,7 @@ namespace TransferManagerCE.CustomManager
                 if (park != 0)
                 {
                     m_actualDistricts.Add(new DistrictData(DistrictData.DistrictType.Park, park));
-                }     
+                }
             }
 
             return m_actualDistricts;

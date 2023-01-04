@@ -56,7 +56,6 @@ namespace TransferManagerCE.CustomManager
                 case TransferReason.Cash:           // New Financial District service
                 case TransferReason.Mail:           // Matches building to PostOffice
                 case TransferReason.Collapsed:      // Matches building to nearby service depot.
-                case TransferReason.Collapsed2:     // Matches building to nearby service depot.
                 case TransferReason.Fire:           // We always want the closest fire station to respond
                 case TransferReason.Fire2:          // We always want the closest fire station to respond
                 case TransferReason.ForestFire:     // We always want the closest fire station to respond
@@ -81,6 +80,7 @@ namespace TransferManagerCE.CustomManager
                 case TransferReason.CriminalMove:    // Match Priority and Distance
                 case TransferReason.GarbageTransfer: // Match Priority and Distance so Landfill transfers to Recycling Center etc...
                 case TransferReason.GarbageMove:     // Match Priority and Distance so Landfill transfers to Recycling Center etc...
+                case TransferReason.Collapsed2:      // Collapsed2 only ever gets Priority 1 unless there is no road access so we use balanced match mode to ensure a match.
                 default:
                     {
                         return TransferMode.Balanced;

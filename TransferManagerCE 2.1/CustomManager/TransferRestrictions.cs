@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using static TransferManagerCE.BuildingTypeHelper;
 using TransferManagerCE.TransferRules;
 using static TransferManagerCE.CustomManager.CustomTransferOffer;
+using static PathUnit;
+using static RenderManager;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -144,6 +146,17 @@ namespace TransferManagerCE.CustomManager
         [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private bool PathfindExclusion(TransferReason material, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer)
         {
+            // Exclude helicopter transfer reasons from path finding exclusions
+            switch (material)
+            {
+                case TransferReason.Sick2:
+                case TransferReason.SickMove:
+                case TransferReason.Collapsed2:
+                case TransferReason.Fire2:
+                case TransferReason.ForestFire:
+                    return false;
+            }
+
             bool result = false;
 
             //check failed outside connection pair

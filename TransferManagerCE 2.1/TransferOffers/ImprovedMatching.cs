@@ -218,13 +218,13 @@ namespace TransferManagerCE
                                     iMinPriority = 2;
                                 }
 
-                                float fStorage = building.m_customBuffer1 * 0.1f;
-                                float fCapacity = warehouse.m_storageCapacity * 0.001f;
-                                if (fCapacity > 0.0f)
+                                int iStorage = (int)(building.m_customBuffer1 * 0.1f);
+                                int iCapacity = (int)(warehouse.m_storageCapacity * 0.001f);
+                                if (iCapacity > 0)
                                 {
                                     // We want priority 0 for the bottom 20%
-                                    float fInPercent = (fStorage - fCapacity * 0.2f) / (fCapacity * 0.8f);
-
+                                    float fInPercent = ((float)iStorage - (float)iCapacity * 0.2f) / ((float)iCapacity * 0.8f);
+                                    
                                     // This will set priority to 0 when empty and 7 when completely full.
                                     offer.Priority = Mathf.Clamp((int)(fInPercent * 7.0f), iMinPriority, 7);
                                 }

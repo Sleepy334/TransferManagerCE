@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using System;
+using TransferManagerCE.CustomManager;
 using static TransferManager;
 
 namespace TransferManagerCE
@@ -10,6 +11,15 @@ namespace TransferManagerCE
         [HarmonyPrefix]
         public static bool Prefix(TransferReason material, ref TransferOffer offer)
         {
+            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
+                SaveGameSettings.GetSettings().OverrideGenericIndustriesHandler &&
+                IndustrialBuildingAISimulationStepActivePatch.s_bRejectOffers &&
+                TransferManagerModes.IsWarehouseMaterial(material))
+            {
+                // Reject this offer as we are going to add our own instead
+                return false;
+            }
+
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {
                 Building[] Buildings = BuildingManager.instance.m_buildings.m_buffer;

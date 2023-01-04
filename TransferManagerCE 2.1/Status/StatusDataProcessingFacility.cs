@@ -50,6 +50,44 @@ namespace TransferManagerCE.Data
             return 0.ToString();
         }
 
+        public override string GetTimer()
+        {
+            string sTimer = base.GetTimer();
+
+            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
+            if (building.m_flags != 0)
+            {
+                ProcessingFacilityAI? buildingAI = building.Info?.m_buildingAI as ProcessingFacilityAI;
+                if (buildingAI != null)
+                {
+                    if (m_material == buildingAI.m_outputResource)
+                    {
+                        if (building.m_outgoingProblemTimer > 0)
+                        {
+                            if (string.IsNullOrEmpty(sTimer))
+                            {
+                                sTimer += " ";
+                            }
+                            sTimer += "O:" + building.m_outgoingProblemTimer;
+                        }
+                    }
+                    else
+                    {
+                        if (building.m_incomingProblemTimer > 0)
+                        {
+                            if (string.IsNullOrEmpty(sTimer))
+                            {
+                                sTimer += " ";
+                            }
+                            sTimer += "I:" + building.m_incomingProblemTimer;
+                        }
+                    }
+                }
+            } 
+
+            return sTimer;
+        }
+
         public override string GetTarget()
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];

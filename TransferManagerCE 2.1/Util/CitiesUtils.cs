@@ -814,6 +814,7 @@ namespace TransferManagerCE
                     VehicleType eType = VehicleTypeHelper.GetVehicleType(vehicle);
                     switch (eType)
                     {
+                        case VehicleType.BankVan:
                         case VehicleType.GarbageTruck:
                         case VehicleType.PostVan:
                         case VehicleType.CargoTruck:

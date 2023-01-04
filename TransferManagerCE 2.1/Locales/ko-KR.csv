@@ -269,3 +269,8 @@
 "optionEnablePanelTransparency","투명한 패널 활성화 (재시작 필요)"
 "optionOverrideGenericIndustriesHandler","Override Generic Industries Handler"
 "txtOverrideGenericIndustriesHandler","The generic industries handler tends to request a lot of material very urgently which can generate a lot of truck traffic and hog the available material. This handler attempts to correct these issues."
+"GROUP_MAINTENANCE_LOGGING","Match Set Logging"
+"dropdownLoggingReason","Log Reason"
+"txtMatchLogging","This option will write out log files for each match set for the chosen reason. Warning: This produces a significant performance penalty, please only enable for trouble shooting purposes."
+"txtMatchLoggingPath","Log File Path:\r\n"
+"optionShowBuildingId","Show Building ID In Title"
