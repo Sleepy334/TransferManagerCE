@@ -4,13 +4,11 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-using TransferManagerCE.Settings;
 using System.Collections.Generic;
-using static TransferManagerCE.CustomManager.TransferRestrictions;
-using System.Threading;
 using TransferManagerCE.Data;
-using static TransferManagerCE.CustomManager.TransferManagerModes;
 using ColossalFramework.Math;
+using static TransferManagerCE.CustomManager.TransferRestrictions;
+using static TransferManagerCE.CustomManager.TransferManagerModes;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -35,8 +33,6 @@ namespace TransferManagerCE.CustomManager
             public float m_fTravelTime = float.MaxValue;
         }
 
-        private static Stopwatch s_watch = new Stopwatch();
-
         // References to game managers:
         private static bool s_bInitNeeded = true;
         private static Array16<Building>? Buildings = null;
@@ -49,6 +45,7 @@ namespace TransferManagerCE.CustomManager
         private TransferRestrictions m_transferRestrictions;
         private bool m_bPathDistanceSupported;
         private Randomizer m_randomizer = new Randomizer();
+        private Stopwatch m_watch = Stopwatch.StartNew();
 
         private static void Init()
         {
@@ -97,11 +94,7 @@ namespace TransferManagerCE.CustomManager
                 return;
             }
 
-            if (!s_watch.IsRunning)
-            {
-                s_watch.Start();
-            }
-            long startTime = s_watch.ElapsedMilliseconds;
+            long startTime = m_watch.ElapsedMilliseconds;
             TransferManagerStats.UpdateLargestMatch(job);
 
             // Reset members as we re-use the match jobs.
@@ -178,7 +171,7 @@ namespace TransferManagerCE.CustomManager
             }
 
             // Record longest match time for stats.
-            long jobMatchTime = s_watch.ElapsedMilliseconds - startTime;
+            long jobMatchTime = m_watch.ElapsedMilliseconds - startTime;
             if (jobMatchTime > TransferManagerStats.s_longestMatch)
             {
                 TransferManagerStats.s_longestMatch = jobMatchTime;

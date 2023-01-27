@@ -7,6 +7,7 @@ namespace TransferManagerCE
     public static class DependencyUtilities
     {
         private static Dictionary<string, bool> s_pluginRunning = new Dictionary<string, bool>();
+        private static bool? s_bNaturalDisastersDlcOwned = null;
 
         public static void SearchPlugins()
         {
@@ -158,7 +159,12 @@ namespace TransferManagerCE
 
         public static bool IsNaturalDisastersDLC()
         {
-            return SteamHelper.IsDLCOwned(SteamHelper.DLC.NaturalDisastersDLC);
+            if (s_bNaturalDisastersDlcOwned == null)
+            {
+                s_bNaturalDisastersDlcOwned = SteamHelper.IsDLCOwned(SteamHelper.DLC.NaturalDisastersDLC);
+            }
+
+            return s_bNaturalDisastersDlcOwned.Value;
         }
     }
 }

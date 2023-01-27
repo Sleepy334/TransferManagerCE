@@ -207,7 +207,7 @@ namespace TransferManagerCE
                 list.Add(new GeneralContainer("Current Transfer Result Queue Depth", TransferResultQueue.Instance.GetCount().ToString()));
                 list.Add(new GeneralContainer("Max Job Queue Depth", $"{TransferJobQueue.Instance.GetMaxUsageCount()}"));
                 list.Add(new GeneralContainer("Max Job Pool Usage", TransferJobPool.Instance.GetMaxUsageCount().ToString()));
-                list.Add(new GeneralContainer("Max Transfer Result Queue Depth", TransferResultQueue.GetMaxUsageCount().ToString()));
+                list.Add(new GeneralContainer("Max Transfer Result Queue Depth", TransferResultQueue.Instance.GetMaxUsageCount().ToString()));
 
                 // Pathing
                 list.Add(new GeneralContainer("Path Fail Count", PathFindFailure.GetPathFailureCount().ToString()));

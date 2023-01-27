@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using TransferManagerCE.Common;
 using TransferManagerCE.CustomManager;
 using static TransferManager;
+using static TransferManagerCE.TransferResultQueue;
 
 namespace TransferManagerCE
 {
@@ -25,15 +26,15 @@ namespace TransferManagerCE
 
         // Vanilla TransferManager.StartTransfer internal fields and arrays
         public delegate void TransferManagerStartTransfer(TransferManager TransferManager, TransferReason material, TransferOffer offerOut, TransferOffer offerIn, int delta);
-        public static TransferManagerStartTransfer? TransferManagerStartTransferDG = null;
 
         // Static members
+        private static TransferManagerStartTransfer? TransferManagerStartTransferDG = null;
         private static TransferResultQueue? s_instance = null;
-        static readonly object s_MatchLock = new object();
-        public static int s_iMaxQueueDepth = 0;
 
-        // instance members
-        private Queue<TransferResult>? m_Matches = null;
+        // Members
+        private readonly object m_MatchLock = new object();
+        private int m_iMaxQueueDepth = 0;
+        private Queue<TransferResult>? m_Matches = new Queue<TransferResult>(iINITIAL_QUEUE_SIZE);
 
         public static TransferResultQueue Instance
         {
@@ -47,9 +48,24 @@ namespace TransferManagerCE
             }
         }
 
-        public static int GetMaxUsageCount()
+        public TransferResultQueue()
         {
-            return s_iMaxQueueDepth;
+            // Load TransferManager.StartTransfer delegate
+            if (TransferManagerStartTransferDG == null)
+            {
+                TransferManagerStartTransferDG = FastDelegateFactory.Create<TransferManagerStartTransfer>(typeof(TransferManager), "StartTransfer", instanceMethod: true);
+            }
+        }
+
+        public void Delete()
+        {
+            TransferManagerStartTransferDG = null;
+            s_instance = null;
+        }
+
+        public int GetMaxUsageCount()
+        {
+            return m_iMaxQueueDepth;
         }
 
         public int GetCount()
@@ -59,17 +75,6 @@ namespace TransferManagerCE
                 return m_Matches.Count;
             }
             return 0;
-        }
-
-        public TransferResultQueue()
-        {
-            m_Matches = new Queue<TransferResult>(iINITIAL_QUEUE_SIZE);
-
-            // Load TransferManager.StartTransfer delegate
-            if (TransferManagerStartTransferDG == null)
-            {
-                TransferManagerStartTransferDG = FastDelegateFactory.Create<TransferManagerStartTransfer>(typeof(TransferManager), "StartTransfer", instanceMethod: true);
-            }
         }
 
         public void EnqueueTransferResult(TransferReason material, TransferOffer outgoingOffer, TransferOffer incomingOffer, int deltaamount)
@@ -82,12 +87,12 @@ namespace TransferManagerCE
                 result.incomingOffer = incomingOffer;
                 result.deltaamount = deltaamount;
 
-                lock (s_MatchLock)
+                lock (m_MatchLock)
                 {
                     m_Matches.Enqueue(result);
 
                     // Update max queue depth stat.
-                    s_iMaxQueueDepth = Math.Max(m_Matches.Count, s_iMaxQueueDepth);
+                    m_iMaxQueueDepth = Math.Max(m_Matches.Count, m_iMaxQueueDepth);
                 }
             }
         }
@@ -99,7 +104,7 @@ namespace TransferManagerCE
                 while (m_Matches.Count > 0)
                 {
                     TransferResult oResult;
-                    lock (s_MatchLock)
+                    lock (m_MatchLock)
                     {
                         oResult = m_Matches.Dequeue();
                     }

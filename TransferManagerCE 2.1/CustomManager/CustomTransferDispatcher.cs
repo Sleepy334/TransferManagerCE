@@ -1,7 +1,5 @@
-﻿using ColossalFramework;
-using ColossalFramework.Math;
+﻿using ColossalFramework.Math;
 using System.Collections.Generic;
-using TransferManagerCE.Util;
 using static TransferManager;
 
 namespace TransferManagerCE.CustomManager
@@ -11,12 +9,13 @@ namespace TransferManagerCE.CustomManager
     /// </summary>
     public sealed class CustomTransferDispatcher
     {
+        // Static members
         private static CustomTransferDispatcher? s_instance = null;
 
+        // Members
         // A set of all running job reasons
-        private static HashSet<TransferReason> s_dispatchedReasons = new HashSet<TransferReason>();
-        private static readonly object s_reasonsLock = new object();
-
+        private HashSet<TransferReason> m_dispatchedReasons = new HashSet<TransferReason>();
+        private readonly object m_reasonsLock = new object();
         // We randomize the loading of offers a bit to help with matching
         private Randomizer m_randomizer = new Randomizer();
 
@@ -31,42 +30,38 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsDispatchedReason(TransferReason material)
-        {
-            lock (s_reasonsLock)
-            {
-                return s_dispatchedReasons.Contains(material);
-            }
-        }
-
-        private static void AddDispatchedReason(TransferReason material)
-        {
-            lock (s_reasonsLock)
-            {
-                s_dispatchedReasons.Add(material);
-            }
-        }
-
-        public static void RemoveDispatchedReason(TransferReason material)
-        {
-            lock (s_reasonsLock)
-            {
-                if (s_dispatchedReasons.Contains(material))
-                {
-                    s_dispatchedReasons.Remove(material);
-                }
-            }
-        }
-
-        public static void ClearDispatchedReasons()
-        {
-            s_dispatchedReasons.Clear();
-        }
-
         public void Delete()
         {
             TransferJobQueue.Instance.Destroy();
+            m_dispatchedReasons.Clear();
             s_instance = null;
+        }
+
+        public bool IsDispatchedReason(TransferReason material)
+        {
+            lock (m_reasonsLock)
+            {
+                return m_dispatchedReasons.Contains(material);
+            }
+        }
+
+        private void AddDispatchedReason(TransferReason material)
+        {
+            lock (m_reasonsLock)
+            {
+                m_dispatchedReasons.Add(material);
+            }
+        }
+
+        public void RemoveDispatchedReason(TransferReason material)
+        {
+            lock (m_reasonsLock)
+            {
+                if (m_dispatchedReasons.Contains(material))
+                {
+                    m_dispatchedReasons.Remove(material);
+                }
+            }
         }
 
         /// <summary>

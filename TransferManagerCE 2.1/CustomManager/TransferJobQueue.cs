@@ -7,7 +7,11 @@ namespace TransferManagerCE
     public class TransferJobQueue
     {
         const int iINITIAL_QUEUE_SIZE = 32;
+
+        // Static mambers
         private static TransferJobQueue? s_instance = null;
+
+        // Members
         private Queue<TransferJob>? m_workQueue = null;
         private readonly object m_workQueueLock = new object();
         private int m_iMaxJobCount = 0;
@@ -28,6 +32,18 @@ namespace TransferManagerCE
         {
             m_workQueue = new Queue<TransferJob>(iINITIAL_QUEUE_SIZE);
             m_iMaxJobCount = 0;
+        }
+
+        public void Destroy()
+        {
+            if (m_workQueue != null)
+            {
+                m_workQueue.Clear();
+                m_workQueue = null;
+                m_iMaxJobCount = 0;
+            }
+
+            s_instance = null;
         }
 
         public int Count()
@@ -90,16 +106,6 @@ namespace TransferManagerCE
             }
             
             return job;
-        }
-
-        public void Destroy()
-        {
-            if (m_workQueue != null)
-            {
-                m_workQueue.Clear();
-                m_workQueue = null;
-                m_iMaxJobCount = 0;
-            }
         }
     }
 }

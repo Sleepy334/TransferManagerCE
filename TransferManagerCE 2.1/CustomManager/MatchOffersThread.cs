@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using static TransferManager;
 
@@ -106,7 +105,7 @@ namespace TransferManagerCE.CustomManager
                     TransferJobPool.Instance.Return(manager.job);
                     manager.job = null;
 
-                    CustomTransferDispatcher.RemoveDispatchedReason(material);
+                    CustomTransferDispatcher.Instance.RemoveDispatchedReason(material);
                 }
 
                 // Thread will now block again

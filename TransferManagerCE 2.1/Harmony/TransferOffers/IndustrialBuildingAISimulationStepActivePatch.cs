@@ -1,11 +1,7 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
-using Epic.OnlineServices.Presence;
 using HarmonyLib;
-using ICities;
-using System;
 using UnityEngine;
-using static RenderManager;
 
 namespace TransferManagerCE
 {
@@ -18,7 +14,7 @@ namespace TransferManagerCE
         [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
         public static void SimulationStepActivePrefix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
         {
-            // We flag rejecting these offers so we don't have to call RemoveIncomingOffer which can be slow
+            // We flag rejecting these offers
             if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
                 SaveGameSettings.GetSettings().OverrideGenericIndustriesHandler)
             {
@@ -92,27 +88,46 @@ namespace TransferManagerCE
 
                 // We override the default outgoing offer so we can factor in the problem timer value into priority
                 // to ensure buildings with the flashing icon get processed first
+                // We don't request every time so it gives time for a vehicle to be matched and
+                // dispatched before we request again.
                 TransferManager.TransferReason outgoingReason = GetOutgoingTransferReason(buildingData.Info);
-                if (buildingData.m_fireIntensity == 0 && outgoingReason != TransferManager.TransferReason.None)
+                if (buildingData.m_fireIntensity == 0 && outgoingReason != TransferManager.TransferReason.None && random.UInt32(2U) == 0)
                 {
-                    TransferManager.TransferOffer offer = default;
-                    offer.Priority = Mathf.Clamp(buildingData.m_outgoingProblemTimer * 8 / 128, 0, 7); // 128 is when the problem icon appears
-                    offer.Building = buildingID;
-                    offer.Position = buildingData.m_position;
-                    offer.Amount = buildingData.m_customBuffer2 / 8000;
-                    offer.Active = true;
+                    const int iMAX_VEHICLE_LOAD = 8000;
 
-                    if (offer.Amount > 0)
+                    // Check we have vehicles available before adding offer
+                    int iVehicles = CitiesUtils.GetActiveVehicleCount(buildingData, outgoingReason);
+                    int iMaxVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.GenericFactory, buildingID);
+                    if (iVehicles < iMaxVehicles)
                     {
-                        // Check we have vehicles available before adding offer
-                        int iVehicles = CitiesUtils.GetActiveVehicleCount(buildingData, outgoingReason);
-                        int iMaxVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.GenericFactory, buildingID);
-                        if (iVehicles < iMaxVehicles)
+                        TransferManager.TransferOffer offer = default;
+
+                        // P:0 at storage 8
+                        // P:2 at Storage 12
+                        // Then scale with Outgoing timer after that
+                        if (buildingData.m_customBuffer2 > 12000)
+                        {
+                            offer.Priority = Mathf.Clamp(2 + buildingData.m_outgoingProblemTimer * 6 / 128, 2, 7); // 128 is when the problem icon appears
+                        }
+                        else if (buildingData.m_customBuffer2 > iMAX_VEHICLE_LOAD)
+                        {
+                            offer.Priority = Mathf.Clamp(buildingData.m_outgoingProblemTimer * 8 / 128, 0, 7); // 128 is when the problem icon appears
+                        }
+                        else
+                        {
+                            offer.Priority = 0;
+                        }
+                        offer.Building = buildingID;
+                        offer.Position = buildingData.m_position;
+                        offer.Amount = Mathf.Min(buildingData.m_customBuffer2 / iMAX_VEHICLE_LOAD, iMaxVehicles - iVehicles);
+                        offer.Active = true;
+
+                        if (offer.Amount > 0)
                         {
                             // Add our version
                             Singleton<TransferManager>.instance.AddOutgoingOffer(outgoingReason, offer);
                         }
-                    }
+                    } 
                 }
             }
         }

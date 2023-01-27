@@ -49,8 +49,6 @@ namespace TransferManagerCE
                 // Create TransferJobPool and initialize
                 TransferJobPool.Instance.Initialize();
 
-                CustomTransferDispatcher.ClearDispatchedReasons();
-
                 // Initialise stats
                 MatchStats.Init();
 
@@ -95,6 +93,7 @@ namespace TransferManagerCE
             // Delete mod objects
             TransferManagerThread.StopThreads();
             TransferJobPool.Instance.Delete();
+            TransferResultQueue.Instance.Delete();
             PathFindFailure.Delete();
             MatchStats.Destroy();
             PathFindFailure.Reset();
