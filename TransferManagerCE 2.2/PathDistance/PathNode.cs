@@ -40,7 +40,7 @@ namespace TransferManagerCE
             ushort uiNearestNodeId = 0;
 
             // If it is a park request (m_isLocalPark > 0) then the material magically transports so don't use pathing
-            if (offer.m_offer.m_isLocalPark == 0)
+            if (offer.LocalPark == 0)
             {
                 Init();
                 if (offer.Building != 0 && offer.IsOutside())
@@ -49,15 +49,14 @@ namespace TransferManagerCE
                 }
                 if (uiNearestNodeId == 0)
                 {
+                    
                     ushort segmentId = FindStartSegment(material, offer);
                     if (segmentId != 0)
                     {
                         NetSegment segment = NetSegments.m_buffer[segmentId];
-                        if (segment.m_flags != 0)
-                        {
-                            // TODO: Return closest node of the 2.
-                            uiNearestNodeId = segment.m_startNode;
-                        }
+
+                        // Get starting node based on segment direction and active status
+                        uiNearestNodeId = GetStartNode(segmentId, segment, offer.Active);
                     }
                 }
             }
@@ -65,11 +64,81 @@ namespace TransferManagerCE
             return uiNearestNodeId;
         }
 
+        public static ushort GetStartNode(ushort segmentId, NetSegment segment, bool bActive)
+        {
+            ushort usNode = 0;
+
+            if (segment.m_flags != 0)
+            {
+                if (bActive)
+                {
+                    usNode = GetHeadNode(segmentId, segment);
+                }
+                else
+                {
+                    usNode = GetTailNode(segmentId, segment);
+                }
+            }
+
+            return usNode;
+        }
+
+        private static ushort GetHeadNode(ushort segmentId, NetSegment segment)
+        {
+            ushort usNode = 0;
+            if (segment.m_flags != 0)
+            {
+                if ((segment.m_flags & NetSegment.Flags.Invert) != 0)
+                {
+                    usNode = segment.m_startNode;
+                }
+                else
+                {
+                    usNode = segment.m_endNode; 
+                }
+            }
+
+            return usNode;
+        }
+
+        private static ushort GetTailNode(ushort segmentId, NetSegment segment)
+        {
+            ushort usNode = 0;
+            if (segment.m_flags != 0)
+            {
+                if ((segment.m_flags & NetSegment.Flags.Invert) != 0)
+                {
+                    usNode = segment.m_endNode;
+                }
+                else
+                {
+                    usNode = segment.m_startNode; 
+                }
+            }
+
+            return usNode;
+        }
+
         private static ushort FindStartSegment(TransferReason material, CustomTransferOffer offer)
         {
             Init();
             switch (offer.m_object.Type)
             {
+                case InstanceType.Building:
+                    {
+                        // We have a specialized function for buildings as they have the m_accessSegemtn field that we can use.
+                        return FindStartSegmentBuilding(offer.Building, material);
+                    }
+                case InstanceType.Citizen:
+                    {
+                        // Can we get a building for this citizen
+                        if (offer.GetBuilding() != 0)
+                        {
+                            // We have a specialized function for buildings as they have the m_accessSegment field that we can use.
+                            return FindStartSegmentBuilding(offer.GetBuilding(), material);
+                        }
+                        break;
+                    }
                 case InstanceType.Park:
                     {
                         // We need to find a ServicePoint node instead
@@ -114,27 +183,12 @@ namespace TransferManagerCE
                         // Don't fall through as we can't get a path to a park if we cant find a service point as there is no node.
                         return 0;
                     }
-                case InstanceType.Building:
-                    {
-                        // We have a specialized function for buildings as they have the m_accessSegemtn field that we can use.
-                        return FindStartSegmentBuilding(offer.Building, material);
-                    }
-                case InstanceType.Citizen:
-                    {
-                        // Can we get a building for this citizen
-                        if (offer.GetBuilding() != 0)
-                        {
-                            // We have a specialized function for buildings as they have the m_accessSegment field that we can use.
-                            return FindStartSegmentBuilding(offer.GetBuilding(), material);
-                        }
-                        break;
-                    }
             }
 
             return FindPathPosition(material, offer.m_object);
         }
 
-        private static ushort FindStartSegmentBuilding(ushort buildingId, TransferReason material)
+        public static ushort FindStartSegmentBuilding(ushort buildingId, TransferReason material)
         {
             Init();
             Building building = Buildings.m_buffer[buildingId];
@@ -272,14 +326,11 @@ namespace TransferManagerCE
         private static bool FindRoadAccess(ushort buildingID, Building data, Vector3 position, out ushort segmentID, bool mostCloser = false, bool untouchable = true)
         {
             Bounds bounds = new Bounds(position, new Vector3(40f, 40f, 40f));
-            Vector3 min = bounds.min;
-            int num = Mathf.Max((int)((min.x - 64f) / 64f + 135f), 0);
-            Vector3 min2 = bounds.min;
-            int num2 = Mathf.Max((int)((min2.z - 64f) / 64f + 135f), 0);
-            Vector3 max = bounds.max;
-            int num3 = Mathf.Min((int)((max.x + 64f) / 64f + 135f), 269);
-            Vector3 max2 = bounds.max;
-            int num4 = Mathf.Min((int)((max2.z + 64f) / 64f + 135f), 269);
+            int num = Mathf.Max((int)((bounds.min.x - 64f) / 64f + 135f), 0);
+            int num2 = Mathf.Max((int)((bounds.min.z - 64f) / 64f + 135f), 0);
+            int num3 = Mathf.Min((int)((bounds.max.x + 64f) / 64f + 135f), 269);
+            int num4 = Mathf.Min((int)((bounds.max.z + 64f) / 64f + 135f), 269);
+
             segmentID = 0;
             float num5 = float.MaxValue;
             NetManager instance = Singleton<NetManager>.instance;

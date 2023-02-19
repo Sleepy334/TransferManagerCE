@@ -2,10 +2,12 @@ namespace TransferManagerCE
 {
     public class PathUnitMaintenance
     {
-        public static void ReleaseBrokenPathUnits()
+        public static int ReleaseBrokenPathUnits()
         {
             PathManager.instance.WaitForAllPaths();
 
+            int iPathUnitCount = PathManager.instance.m_pathUnitCount;
+            
             // Look for PathUnit's that have m_simulationFlags set but no references any more.
             for (int i = 0; i < PathManager.instance.m_pathUnits.m_size; ++i)
             {
@@ -15,6 +17,8 @@ namespace TransferManagerCE
                     PathManager.instance.ReleasePath((uint)i);
                 }
             }
+
+            return iPathUnitCount - PathManager.instance.m_pathUnitCount;
         }
     }
 }

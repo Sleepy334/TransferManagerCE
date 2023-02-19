@@ -132,7 +132,7 @@ namespace TransferManagerCE
                     case BuildingTypeHelper.BuildingType.CargoFerryWarehouseHarbor:
                         {
                             // For warehouses we need to duplicate the settings to the second ruleset as well
-                            RestrictionSettings restrictions = settings.GetRestrictions(0);
+                            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(0);
                             settings.SetRestrictionsDirect(1, new RestrictionSettings(restrictions));
                             break;
                         }
@@ -147,7 +147,7 @@ namespace TransferManagerCE
                     case BuildingTypeHelper.BuildingType.FishFactory:
                         {
                             // Need to split into Incoming / Outgoing
-                            RestrictionSettings restrictionsIncoming = settings.GetRestrictions(0);
+                            RestrictionSettings restrictionsIncoming = settings.GetRestrictionsOrDefault(0);
                             RestrictionSettings restrictionsOutgoing = new RestrictionSettings(restrictionsIncoming);
 
                             // Fix incoming
@@ -166,7 +166,7 @@ namespace TransferManagerCE
                     case BuildingTypeHelper.BuildingType.GenericFactory:
                         {
                             // Need to split into Incoming 1 / Incoming 2 / Outgoing
-                            RestrictionSettings restrictionsIncoming = settings.GetRestrictions(0);
+                            RestrictionSettings restrictionsIncoming = settings.GetRestrictionsOrDefault(0);
                             RestrictionSettings restrictionsOutgoing = new RestrictionSettings(restrictionsIncoming);
 
                             // Fix incoming 1
@@ -200,7 +200,7 @@ namespace TransferManagerCE
             restrictions.m_iPreferLocalDistrictsOutgoing = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             restrictions.m_iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
-            settings.m_bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
+            bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex); // No longer used
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
             settings.m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
             restrictions.m_bIncomingAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
@@ -229,7 +229,7 @@ namespace TransferManagerCE
             bool bDistrictAllowServicesNotUsed = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
-            settings.m_bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
+            bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
             settings.m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
             restrictions.m_bIncomingAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
@@ -297,7 +297,7 @@ namespace TransferManagerCE
             restrictions.m_iPreferLocalDistrictsOutgoing = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             bool bDistrictAllowServicesNotUsed = StorageData.ReadBool(Data, ref iIndex);
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
-            settings.m_bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
+            bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
 
             settings.SetRestrictionsDirect(0, restrictions);
@@ -311,7 +311,7 @@ namespace TransferManagerCE
             if (settings != null)
             {
                 bool bDistrictAllowServicesNotUsed = StorageData.ReadBool(Data, ref iIndex);
-                settings.m_bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
+                bool bWarehouseFirstNotUsed = StorageData.ReadBool(Data, ref iIndex);
             }
             return settings;
         }

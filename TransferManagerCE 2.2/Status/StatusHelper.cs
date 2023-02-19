@@ -38,7 +38,7 @@ namespace TransferManagerCE
                 m_setAddedVehicles.Clear();
 
                 Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                BuildingType eBuildingType = GetBuildingType(buildingId);
+                BuildingType eBuildingType = GetBuildingType(building);
 
                 // Add status entries for each guest vehicle
                 AddVehicles(eBuildingType, buildingId, building);
@@ -79,10 +79,8 @@ namespace TransferManagerCE
 
         private void AddVehicles(BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId, Building building)
         {
-            List<ushort> vehicles = CitiesUtils.GetGuestVehiclesForBuilding(buildingId);
-            foreach (ushort vehicleId in vehicles)
+            BuildingUtils.EnumerateGuestVehicles(building, (vehicleId, vehicle) =>
             {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
                 if (vehicle.m_flags != 0 && vehicle.Info != null)
                 {
                     ushort actualVehicleId = vehicleId;
@@ -177,7 +175,7 @@ namespace TransferManagerCE
                                         m_listServices.Add(new StatusDataCrime((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                         break;
                                 }
-                                m_setAddedReasons.Add((TransferReason) vehicle.m_transferType);
+                                m_setAddedReasons.Add((TransferReason)vehicle.m_transferType);
                                 m_setAddedVehicles.Add(actualVehicleId);
                                 break;
                             }
@@ -349,7 +347,7 @@ namespace TransferManagerCE
                             }
                     }
                 }
-            }
+            });
         }
 
         private void AddCommonServices(BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId)

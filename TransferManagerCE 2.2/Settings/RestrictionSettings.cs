@@ -202,7 +202,7 @@ namespace TransferManagerCE
             return list;
         }
 
-        public HashSet<DistrictData> GetAllowedDistrictsIncoming(ushort buildingId)
+        public HashSet<DistrictData> GetAllowedDistrictsIncoming(ushort buildingId, byte? district, byte? park)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
 
@@ -211,10 +211,13 @@ namespace TransferManagerCE
             // Add current district if allowed
             if (m_bIncomingAllowLocalDistrict)
             {
-                byte district = DistrictManager.instance.GetDistrict(building.m_position);
+                if (district == null)
+                {
+                    district = DistrictManager.instance.GetDistrict(building.m_position);
+                }
                 if (district != 0)
                 {
-                    DistrictData data = new DistrictData(DistrictData.DistrictType.District, district);
+                    DistrictData data = new DistrictData(DistrictData.DistrictType.District, district.Value);
                     if (!list.Contains(data))
                     {
                         list.Add(data);
@@ -225,10 +228,13 @@ namespace TransferManagerCE
             // Add current park if allowed
             if (m_bIncomingAllowLocalPark)
             {
-                byte park = DistrictManager.instance.GetPark(building.m_position);
+                if (park == null)
+                {
+                    park = DistrictManager.instance.GetPark(building.m_position);
+                }
                 if (park != 0)
                 {
-                    DistrictData data = new DistrictData(DistrictData.DistrictType.Park, park);
+                    DistrictData data = new DistrictData(DistrictData.DistrictType.Park, park.Value);
                     if (!list.Contains(data))
                     {
                         list.Add(data);
@@ -239,7 +245,7 @@ namespace TransferManagerCE
             return list;
         }
 
-        public HashSet<DistrictData> GetAllowedDistrictsOutgoing(ushort buildingId)
+        public HashSet<DistrictData> GetAllowedDistrictsOutgoing(ushort buildingId, byte? district, byte? park)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
 
@@ -248,20 +254,26 @@ namespace TransferManagerCE
             // Add current district if allowed
             if (m_bOutgoingAllowLocalDistrict)
             {
-                byte district = DistrictManager.instance.GetDistrict(building.m_position);
+                if (district == null)
+                {
+                    district = DistrictManager.instance.GetDistrict(building.m_position);
+                }
                 if (district != 0)
                 {
-                    list.Add(new DistrictData(DistrictData.DistrictType.District, district));
+                    list.Add(new DistrictData(DistrictData.DistrictType.District, district.Value));
                 }
             }
 
             // Add current park if allowed
             if (m_bOutgoingAllowLocalPark)
             {
-                byte park = DistrictManager.instance.GetPark(building.m_position);
+                if (park == null)
+                {
+                    park = DistrictManager.instance.GetPark(building.m_position);
+                }
                 if (park != 0)
                 {
-                    list.Add(new DistrictData(DistrictData.DistrictType.Park, park));
+                    list.Add(new DistrictData(DistrictData.DistrictType.Park, park.Value));
                 }
             }
 
@@ -341,7 +353,7 @@ namespace TransferManagerCE
             }
 
             // Add allowed districts to message
-            HashSet<DistrictData> list = GetAllowedDistrictsIncoming(buildingId);
+            HashSet<DistrictData> list = GetAllowedDistrictsIncoming(buildingId, null, null);
             foreach (DistrictData district in list)
             {
                 if (district.m_eType == DistrictData.DistrictType.District)
@@ -382,7 +394,7 @@ namespace TransferManagerCE
             }
 
             // Add allowed districts to message
-            HashSet<DistrictData> list = GetAllowedDistrictsOutgoing(buildingId);
+            HashSet<DistrictData> list = GetAllowedDistrictsOutgoing(buildingId, null, null);
             foreach (DistrictData district in list)
             {
                 if (district.m_eType == DistrictData.DistrictType.District)

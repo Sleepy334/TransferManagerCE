@@ -39,66 +39,40 @@ namespace TransferManagerCE
         /// </summary>
         public static ushort FindBuildingWithCrime(Vector3 pos, float maxDistance)
         {
-            BuildingManager instance = Singleton<BuildingManager>.instance;
-            uint numUnits = instance.m_buildings.m_size;    //get number of building units
-
-            // CHECK FORMULAS -> REFERENCE: SMARTERFIREFIGHTERSAI
-            int minx = Mathf.Max((int)((pos.x - maxDistance) / 64f + 135f), 0);
-            int minz = Mathf.Max((int)((pos.z - maxDistance) / 64f + 135f), 0);
-            int maxx = Mathf.Min((int)((pos.x + maxDistance) / 64f + 135f), 269);
-            int maxz = Mathf.Min((int)((pos.z + maxDistance) / 64f + 135f), 269);
-
             // Initialize default result if no building is found and specify maximum distance
             ushort result = 0;
             float shortestSquaredDistance = maxDistance * maxDistance;
 
-            // Loop through every building grid within maximum distance
-            for (int i = minz; i <= maxz; i++)
+            BuildingUtils.EnumerateNearbyBuildings(pos, maxDistance, (buildingID, building) =>
             {
-                for (int j = minx; j <= maxx; j++)
+                // Check Building Crime buffer
+                if (building.m_flags != 0)
                 {
-                    ushort currentBuilding = instance.m_buildingGrid[i * 270 + j];
-                    int num7 = 0;
+                    byte citizencount = building.m_citizenCount;
+                    int min_crime_amount = Math.Max(200, CRIME_BUFFER_CITIZEN_MULT * citizencount);
 
-                    // Iterate through all buildings at this grid location
-                    while (currentBuilding != 0)
+                    if (building.m_crimeBuffer >= min_crime_amount && building.Info != null && building.Info.GetService() != ItemClass.Service.PoliceDepartment)
                     {
-                        Building building = instance.m_buildings.m_buffer[currentBuilding];
-
-                        // Check Building Crime buffer
-                        byte citizencount = building.m_citizenCount;
-                        int min_crime_amount = Math.Max(200, CRIME_BUFFER_CITIZEN_MULT * citizencount);
-
-                        if (building.m_crimeBuffer >= min_crime_amount && building.Info != null && building.Info.GetService() != ItemClass.Service.PoliceDepartment)
+                        // check if not already dispatched to
+                        long value;
+                        if (LRU_DISPATCH_LIST.TryGetValue(buildingID, out value))
                         {
-                            // check if not already dispatched to
-                            long value;
-                            if (LRU_DISPATCH_LIST.TryGetValue(currentBuilding, out value))
-                            {
-                                lru_hit_counter++;
-                                // dont consider building
-                            }
-                            else
-                            {
-                                // not found in LRU, may consider this building
-                                float distanceSqr = VectorUtils.LengthSqrXZ(pos - building.m_position);
-                                if (distanceSqr < shortestSquaredDistance)
-                                {
-                                    result = currentBuilding;
-                                    shortestSquaredDistance = distanceSqr;
-                                }
-                            }
+                            lru_hit_counter++;
+                            // dont consider building
                         }
-
-                        currentBuilding = building.m_nextGridBuilding;
-                        if (++num7 >= numUnits)
+                        else
                         {
-                            CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                            break;
+                            // not found in LRU, may consider this building
+                            float distanceSqr = VectorUtils.LengthSqrXZ(pos - building.m_position);
+                            if (distanceSqr < shortestSquaredDistance)
+                            {
+                                result = buildingID;
+                                shortestSquaredDistance = distanceSqr;
+                            }
                         }
                     }
                 }
-            }
+            });
 
             if (result != 0)
             {
@@ -143,7 +117,7 @@ namespace TransferManagerCE
                 {
                     // Check there is crime to go and get.
                     Building building = BuildingManager.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
-                    if (building.m_crimeBuffer < 50 && CitiesUtils.GetCriminals(vehicleData.m_targetBuilding, building).Count == 0)
+                    if (building.m_crimeBuffer < 50 && BuildingUtils.GetCriminalCount(vehicleData.m_targetBuilding, building) == 0)
                     {
                         //Debug.Log($"PoliceCarAI: vehicle {vehicleID} Clearing target");
                         //need to change target because problem already solved?
@@ -169,7 +143,7 @@ namespace TransferManagerCE
                     return;
 
                 // check transfertype was not move transfer
-                if (vehicleData.m_transferType != (byte)TransferManager.TransferReason.Crime)
+                if ((CustomTransferReason.Reason) vehicleData.m_transferType != CustomTransferReason.Reason.Crime2)
                     return;
 
                 if ((vehicleData.m_flags & (Vehicle.Flags.GoingBack | Vehicle.Flags.WaitingTarget)) != 0)

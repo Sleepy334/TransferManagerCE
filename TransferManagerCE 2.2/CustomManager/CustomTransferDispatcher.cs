@@ -1,4 +1,5 @@
 ﻿using System;
+using TransferManagerCE.Data;
 using static TransferManager;
 
 namespace TransferManagerCE.CustomManager
@@ -23,6 +24,10 @@ namespace TransferManagerCE.CustomManager
         // A queue of matches that we send back to the vanilla tranfer manager
         private TransferResultQueue m_resultQueue = new TransferResultQueue();
 
+        // Which match cycle are we on
+        private int m_cycle = 0;
+        private int m_droppedReasonCount = 0;
+
         public static CustomTransferDispatcher Instance
         {
             get {
@@ -44,6 +49,21 @@ namespace TransferManagerCE.CustomManager
             s_instance = null;
         }
 
+        public int Cycle
+        {
+            get { return m_cycle; }
+        }
+
+        public int DroppedReasons
+        {
+            get { return m_droppedReasonCount; }
+        }
+
+        public void ResetStatistics()
+        {
+            m_droppedReasonCount = 0;
+        }
+
         /// <summary>
         /// to be called from MatchOffers Prefix Patch:
         /// take requested material and submit all offers as TransferJob
@@ -60,6 +80,12 @@ namespace TransferManagerCE.CustomManager
             if (material == TransferReason.None)
             {
                 return;
+            }
+
+            // Snow is the first transfer reason in a cycle, see TransferManager.GetFrameReason
+            if (material == TransferReason.Snow)
+            {
+                m_cycle++;
             }
 
             // Don't submit with no amounts
@@ -89,8 +115,9 @@ namespace TransferManagerCE.CustomManager
             // Have we already got this match reason in the queue
             if (m_dispatchedReasons.IsDispatchedReason(material))
             {
-                Debug.Log($"Already in queue or running, discarding: {material}");
+                m_droppedReasonCount++;
                 ClearAllTransferOffers(material, ref incomingCount, ref outgoingCount, ref incomingAmount, ref outgoingAmount);
+                Debug.Log($"Already in queue or running, discarding: {material}");
                 return;
             }
 
@@ -107,6 +134,7 @@ namespace TransferManagerCE.CustomManager
             m_dispatchedReasons.AddDispatchedReason(material);
 
             // set job header info
+            job.m_cycle = m_cycle;
             job.material = material;
             job.m_incomingCount = 0;
             job.m_outgoingCount = 0;
@@ -128,15 +156,29 @@ namespace TransferManagerCE.CustomManager
                 // Load incoming
                 int[] inIndexes = GenerateShuffledList(inCount);
                 for (int i = 0; i < inCount; ++i)
-                {                   
-                    job.m_incomingOffers[jobInIdx++] = new CustomTransferOffer(true, incomingOffers[offer_offset * 256 + inIndexes[i]]);
+                {
+                    if (job.m_incomingOffers[jobInIdx] == null)
+                    {
+                        job.m_incomingOffers[jobInIdx++] = new CustomTransferOffer(true, incomingOffers[offer_offset * 256 + inIndexes[i]]);
+                    }
+                    else
+                    {
+                        job.m_incomingOffers[jobInIdx++].SetOffer(true, incomingOffers[offer_offset * 256 + inIndexes[i]]);
+                    }
                 }
 
                 // Load outgoing
                 int[] outIndexes = GenerateShuffledList(outCount);
                 for (int i = 0; i < outCount; ++i)
                 {
-                    job.m_outgoingOffers[jobOutIdx++] = new CustomTransferOffer(false, outgoingOffers[offer_offset * 256 + outIndexes[i]]);
+                    if (job.m_outgoingOffers[jobOutIdx] == null)
+                    {
+                        job.m_outgoingOffers[jobOutIdx++] = new CustomTransferOffer(false, outgoingOffers[offer_offset * 256 + outIndexes[i]]);
+                    }
+                    else
+                    {
+                        job.m_outgoingOffers[jobOutIdx++].SetOffer(false, outgoingOffers[offer_offset * 256 + outIndexes[i]]);
+                    }
                 }
             }
 

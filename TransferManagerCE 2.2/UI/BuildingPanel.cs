@@ -1,13 +1,16 @@
 using ColossalFramework;
 using ColossalFramework.UI;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using TransferManagerCE.Common;
 using TransferManagerCE.Data;
 using TransferManagerCE.Settings;
 using TransferManagerCE.UI;
 using TransferManagerCE.Util;
 using UnityEngine;
+using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
 namespace TransferManagerCE
@@ -69,31 +72,14 @@ namespace TransferManagerCE
         private UILabel? m_lblMatches = null;
         private ListView? m_listOffers = null;
         private ListView? m_listMatches = null;
+        
+        // Members
         private BuildingMatches m_matches;
         private BuildingOffers m_buildingOffers;
 
-        public BuildingPanel() : 
-            base()
-        {
-            m_settingsTab = new BuildingSettingsTab();
-            m_capacityTab = new OutsideCapacityTab();
-            m_buildingOffers = new BuildingOffers();
-            m_matches = new BuildingMatches();
-        }
-
-        public ushort GetBuildingId()
-        {
-            return m_buildingId;
-        }
-
-        public int GetRestrictionId()
-        {
-            if (m_settingsTab != null)
-            {
-                return m_settingsTab.GetRestrictionId();
-            }
-            return -1;
-        }
+        // Update panel
+        private bool m_bUpdatePanel = false;
+        private Coroutine? m_coroutine = null;
 
         public static bool IsVisible()
         {
@@ -112,6 +98,30 @@ namespace TransferManagerCE
             }
         }
 
+        public BuildingPanel() : 
+            base()
+        {
+            m_settingsTab = new BuildingSettingsTab();
+            m_capacityTab = new OutsideCapacityTab();
+            m_buildingOffers = new BuildingOffers();
+            m_matches = new BuildingMatches();
+            m_coroutine = StartCoroutine(UpdatePanelCoroutine(4));
+        }
+
+        public ushort GetBuildingId()
+        {
+            return m_buildingId;
+        }
+
+        public int GetRestrictionId()
+        {
+            if (m_settingsTab != null)
+            {
+                return m_settingsTab.GetRestrictionId();
+            }
+            return -1;
+        }
+
         public override void Start()
         {
             base.Start();
@@ -128,6 +138,7 @@ namespace TransferManagerCE
             isVisible = false;
             playAudioEvents = true;
             clipChildren = true;
+            eventVisibilityChanged += OnVisibilityChanged;
             CenterToParent();
             
             // Title Bar
@@ -332,6 +343,38 @@ namespace TransferManagerCE
             UpdatePanel();
         }
 
+        public bool HandleEscape()
+        {
+            if (isVisible)
+            {
+                Hide();
+                return true;
+            }
+            return false;
+        }
+
+        public void HandleOffer(TransferOffer offer)
+        {
+            if (isVisible && IsTransferTabActive() &&
+                InstanceHelper.GetBuildings(offer.m_object).Contains(GetBuildingId()))
+            {
+                InvalidatePanel();
+            }
+        }
+
+        public void InvalidatePanel()
+        {
+            m_bUpdatePanel = true;
+        }
+
+        public void OnVisibilityChanged(UIComponent component, bool bVisible)
+        {
+            if (bVisible)
+            {
+                UpdatePanel();
+            }
+        }
+
         public BuildingMatches GetBuildingMatches()
         {
             return m_matches;
@@ -493,12 +536,20 @@ namespace TransferManagerCE
 
         public void OnStatsClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            StatisticsThreadExtension.ToggleStatsPanel();
+            StatsPanel.Init();
+            if (StatsPanel.Instance != null)
+            {
+                StatsPanel.Instance.Show();
+            }
         }
 
         public void OnIssuesClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            TransferIssueThreadExtension.ShowTransferIssuePanel();
+            TransferIssuePanel.Init();
+            if (TransferIssuePanel.Instance != null)
+            {
+                TransferIssuePanel.Instance.Show();
+            }
         }
         
         public void OnOutsideClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -588,12 +639,8 @@ namespace TransferManagerCE
                 Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
                 if (building.m_flags != 0)
                 {
-                    uint uiSize = VehicleManager.instance.m_vehicles.m_size;
-                    int iLoopCount = 0;
-                    ushort vehicleId = building.m_ownVehicles;
-                    while (vehicleId != 0 && vehicleId < uiSize)
+                    BuildingUtils.EnumerateOwnVehicles(building, (vehicleId, vehicle) =>
                     {
-                        Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
                         if (vehicle.m_flags != 0)
                         {
                             if (vehicle.m_targetBuilding == 0)
@@ -638,16 +685,7 @@ namespace TransferManagerCE
                                 }
                             }
                         }
-
-                        vehicleId = vehicle.m_nextOwnVehicle;
-
-                        // Check for bad list
-                        if (++iLoopCount > 16384)
-                        {
-                            CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                            return new List<VehicleData>();
-                        }
-                    }
+                    });
                 }
 
                 // Now produce output list
@@ -804,8 +842,33 @@ namespace TransferManagerCE
             OnBuildingNameChanged(c, m_txtSource.text);
         }
 
+        public override void Update()
+        {
+            if (m_bUpdatePanel)
+            {
+                UpdatePanel();
+                m_bUpdatePanel = false;
+            }
+            base.Update();
+        }
+
+        IEnumerator UpdatePanelCoroutine(int seconds)
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(seconds);
+
+                UpdatePanel();
+            }
+        }
+
         public void UpdatePanel()
         {
+            if (!isVisible)
+            {
+                return;
+            }
+
             // Check the building is still valid
             Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[m_buildingId];
             if (building.m_flags == 0)
@@ -823,7 +886,7 @@ namespace TransferManagerCE
                     if (m_buildingId != 0)
                     {
                         // Add vehicle count if there are any guest vehicles
-                        int iCount = CitiesUtils.GetGuestParentVehiclesForBuilding(m_buildingId).Count;
+                        int iCount = BuildingUtils.GetGuestParentVehiclesForBuilding(building).Count;
                         if (iCount > 0)
                         {
                             sMessage += " (" + iCount + ")";
@@ -964,6 +1027,10 @@ namespace TransferManagerCE
 
         public override void OnDestroy()
         {
+            if (m_coroutine != null)
+            {
+                StopCoroutine(m_coroutine);
+            }
             if (m_listStatus != null)
             {
                 Destroy(m_listStatus.gameObject);

@@ -55,7 +55,7 @@ namespace TransferManagerCE
                             // Factor in trucks on the way but if timer is ticking up, ignore far away trucks
                             TransferReason secondary = GetSecondaryIncomingTransferReason(buildingID, buildingData.Info);
                             Rerequest.ProblemLevel level = Rerequest.GetLevelIncomingTimer(buildingData.m_incomingProblemTimer);
-                            int iTransferSize = Rerequest.GetNearbyGuestVehiclesTransferSize(buildingID, level, primary, secondary, out int iTotalTrucks);
+                            int iTransferSize = Rerequest.GetNearbyGuestVehiclesTransferSize(buildingData, level, primary, secondary, out int iTotalTrucks);
                             if (iTotalTrucks < 10)
                             {
                                 // Calculate a more realistic priority
@@ -104,7 +104,7 @@ namespace TransferManagerCE
                     const int iMAX_VEHICLE_LOAD = 8000;
 
                     // Check we have vehicles available before adding offer
-                    int iVehicles = CitiesUtils.GetActiveVehicleCount(buildingData, outgoingReason);
+                    int iVehicles = BuildingUtils.GetOwnVehicleCount(buildingData, outgoingReason);
                     int iMaxVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.GenericFactory, buildingID);
                     if (iVehicles < iMaxVehicles)
                     {

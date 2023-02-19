@@ -16,7 +16,6 @@ namespace TransferManagerCE
         // Only 1 setting per building
         public int m_iOutsideMultiplier = 0; 
         public bool m_bWarehouseOverride = false;
-        public bool m_bWarehouseFirst = SaveGameSettings.GetSettings().WarehouseFirst;
         public bool m_bImprovedWarehouseMatching = SaveGameSettings.GetSettings().ImprovedWarehouseMatching;
         public int m_iWarehouseReserveTrucksPercent = SaveGameSettings.GetSettings().WarehouseReserveTrucksPercent;
 
@@ -27,7 +26,6 @@ namespace TransferManagerCE
         public BuildingSettings(BuildingSettings oSecond)
         {
             m_bWarehouseOverride = oSecond.m_bWarehouseOverride;
-            m_bWarehouseFirst = oSecond.m_bWarehouseFirst;
             m_bImprovedWarehouseMatching = oSecond.m_bImprovedWarehouseMatching;
             m_iWarehouseReserveTrucksPercent = oSecond.m_iWarehouseReserveTrucksPercent;
             m_iOutsideMultiplier = oSecond.m_iOutsideMultiplier;
@@ -43,7 +41,6 @@ namespace TransferManagerCE
         {
             bool bResult =
                     m_bWarehouseOverride == oSecond.m_bWarehouseOverride &&
-                    m_bWarehouseFirst == oSecond.m_bWarehouseFirst &&
                     m_bImprovedWarehouseMatching == oSecond.m_bImprovedWarehouseMatching &&
                     m_iWarehouseReserveTrucksPercent == oSecond.m_iWarehouseReserveTrucksPercent &&
                     m_iOutsideMultiplier == oSecond.m_iOutsideMultiplier;
@@ -58,7 +55,7 @@ namespace TransferManagerCE
         {
             // Write variables
             StorageData.WriteBool(m_bWarehouseOverride, Data);
-            StorageData.WriteBool(m_bWarehouseFirst, Data);
+            StorageData.WriteBool(false, Data); // bWarehouseFirstNotUsed
             StorageData.WriteInt32(m_iWarehouseReserveTrucksPercent, Data);
             StorageData.WriteInt32(m_iOutsideMultiplier, Data);
 
@@ -85,7 +82,7 @@ namespace TransferManagerCE
 
             // Load variables
             m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
-            m_bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
+            bool bWarehouseFirstNotUsed = StorageData.ReadBool(Data, ref iIndex);
             m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
             m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
 
@@ -111,17 +108,17 @@ namespace TransferManagerCE
             }
         }
 
-        public bool Contains(int iRestrictionId)
+        public RestrictionSettings? GetRestrictions(int iRestrictionId)
         {
-            return m_restrictions.ContainsKey(iRestrictionId);
+            if (m_restrictions.ContainsKey(iRestrictionId))
+            {
+                return m_restrictions[iRestrictionId];
+            }
+
+            return null;
         }
 
-        public bool HasRestrictions(int iRestrictionId)
-        {
-            return m_restrictions.ContainsKey(iRestrictionId);
-        }
-
-        public RestrictionSettings GetRestrictions(int iRestrictionId)
+        public RestrictionSettings GetRestrictionsOrDefault(int iRestrictionId)
         {
             if (m_restrictions.ContainsKey(iRestrictionId))
             {
@@ -145,22 +142,13 @@ namespace TransferManagerCE
             m_restrictions[iRestrictionId] = settings;
         }
 
-        public bool IsWarehouseFirst()
-        {
-            if (m_bWarehouseOverride)
-            {
-                return m_bWarehouseFirst;
-            }
-            return SaveGameSettings.GetSettings().WarehouseFirst;
-        }
-
         public bool IsImprovedWarehouseMatching()
         {
             if (m_bWarehouseOverride)
             {
                 return m_bImprovedWarehouseMatching;
             }
-            return SaveGameSettings.GetSettings().WarehouseFirst;
+            return SaveGameSettings.GetSettings().ImprovedWarehouseMatching;
         }
         
         public int ReserveCargoTrucksPercent()

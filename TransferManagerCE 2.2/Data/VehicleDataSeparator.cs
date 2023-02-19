@@ -23,7 +23,7 @@ namespace TransferManagerCE.Data
             return "";
         }
 
-        public virtual string GetTimer()
+        public override string GetTimer()
         {
             return "";
         }

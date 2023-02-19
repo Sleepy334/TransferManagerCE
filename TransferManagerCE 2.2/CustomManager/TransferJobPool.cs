@@ -93,9 +93,10 @@ namespace TransferManagerCE.CustomManager
         {
             if (m_pooledJobs != null)
             {
+                job.Reset(); //flag as unused
+
                 lock (m_poolLock)
                 {
-                    job.material = TransferManager.TransferReason.None; //flag as unused
                     m_pooledJobs.Push(job);
 
                     // Update usage count

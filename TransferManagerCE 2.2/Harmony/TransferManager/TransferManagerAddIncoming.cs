@@ -36,7 +36,10 @@ namespace TransferManagerCE
             MatchStats.RecordAddIncoming(material, offer);
 
             // Let building panel know a new offer is available
-            BuildingPanelThreadExtension.HandleOffer(offer);
+            if (BuildingPanel.Instance != null)
+            {
+                BuildingPanel.Instance.HandleOffer(offer);
+            }
 
             return true; // Handle normally
         }

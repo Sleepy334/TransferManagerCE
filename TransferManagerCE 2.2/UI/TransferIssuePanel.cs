@@ -1,5 +1,7 @@
 ﻿using ColossalFramework.UI;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using TransferManagerCE.Common;
 using TransferManagerCE.Settings;
 using TransferManagerCE.Util;
@@ -19,7 +21,7 @@ namespace TransferManagerCE.UI
             TAB_GOODS_IN,
             TAB_GOODS_OUT,
         }
-        
+
         const int iMARGIN = 8;
 
         public const int iCOLUMN_WIDTH_VALUE = 40;
@@ -40,14 +42,17 @@ namespace TransferManagerCE.UI
         private ListView? m_listGoodsOut = null;
 
         private UITabStrip? m_tabStrip = null;
-        TransferIssueHelper? m_issueHelper = null;
+        
         private UICheckBox? m_chkShowIssuesWithVehicles = null;
         private UIButton? m_btnResetPathing = null;
         private UIButton? m_btnResetRoadAccess = null;
+        private Coroutine? m_coroutine = null;
+
+        private TransferIssueHelper m_issueHelper = new TransferIssueHelper();
 
         public TransferIssuePanel() : base()
         {
-            m_issueHelper = new TransferIssueHelper();
+            m_coroutine = StartCoroutine(UpdatePanelCoroutine(4));
         }
 
         public static void Init()
@@ -98,7 +103,7 @@ namespace TransferManagerCE.UI
             m_tabStrip = UITabStrip.Create(mainPanel, mainPanel.width - 2 * iMARGIN, mainPanel.height - 50, OnTabChanged);
             //m_tabStrip.backgroundSprite = "InfoviewPanel";
             //m_tabStrip.color = Color.red;
-            
+
             // Pathing
             UIPanel? tabPathing = m_tabStrip.AddTab(Localization.Get("tabTransferIssuesPathing"), 150f);
             if (tabPathing != null)
@@ -225,14 +230,12 @@ namespace TransferManagerCE.UI
                 tabGoodsOut.autoLayoutDirection = LayoutDirection.Vertical;
 
                 // Issue list
-                m_listGoodsOut = ListView.Create<UIIssueRow>(tabGoodsOut, "ScrollbarTrack", 0.7f, tabGoodsOut.width, tabGoodsOut.height);
+                m_listGoodsOut = ListView.Create<UIGoodsOutIssueRow>(tabGoodsOut, "ScrollbarTrack", 0.7f, tabGoodsOut.width, tabGoodsOut.height);
                 if (m_listGoodsOut != null)
                 {
                     m_listGoodsOut.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("tabTransferIssuesGoods"), "", iCOLUMN_WIDTH_VALUE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
                     m_listGoodsOut.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listDeadColumn2"), "", iCOLUMN_WIDTH_VALUE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listGoodsOut.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listDeadColumn3"), "", iCOLUMN_WIDTH_PATHING_BUILDING, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listGoodsOut.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listDeadColumn4"), "", iCOLUMN_VEHICLE_WIDTH, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listGoodsOut.AddColumn(ListViewRowComparer.Columns.COLUMN_VEHICLE, Localization.Get("listDeadColumn5"), "", iCOLUMN_VEHICLE_WIDTH, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listGoodsOut.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listDeadColumn3"), "", iCOLUMN_DESCRIPTION_WIDTH, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
                     m_listGoodsOut.HandleSort(ListViewRowComparer.Columns.COLUMN_TIME);
                     m_listGoodsOut.HandleSort(ListViewRowComparer.Columns.COLUMN_TIME);
                 }
@@ -249,10 +252,33 @@ namespace TransferManagerCE.UI
             UpdatePanel();
         }
 
+        public bool HandleEscape()
+        {
+            if (isVisible)
+            {
+                Hide();
+                return true;
+            }
+            return false;
+        }
+
+        public void TogglePanel()
+        {
+            if (isVisible)
+            {
+                Hide();
+            }
+            else
+            {
+                Show();
+            }
+        }
+
         private void OnShowIssuesClicked(bool bEnabled)
         {
             ModSettings.GetSettings().TransferIssueShowWithVehiclesOnRoute = bEnabled;
             ModSettings.GetSettings().Save();
+            UpdatePanel();
         }
 
         private void OnReset(UIComponent component, UIMouseEventParameter eventParam)
@@ -275,8 +301,9 @@ namespace TransferManagerCE.UI
 
         new public void Hide()
         {
-            base.Hide(); 
-            if (m_listPathing != null) 
+            base.Hide();
+
+            if (m_listPathing != null)
             {
                 m_listPathing.Clear();
             }
@@ -296,7 +323,7 @@ namespace TransferManagerCE.UI
 
         public void OnCloseClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            TransferIssueThreadExtension.HideTransferIssuePanel();
+            Hide();
         }
 
         public List<PathingContainer> GetPathingIssues()
@@ -330,9 +357,19 @@ namespace TransferManagerCE.UI
             UpdatePanel();
         }
 
+        IEnumerator UpdatePanelCoroutine(int seconds)
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(seconds);
+
+                UpdatePanel();
+            }
+        }
+
         public void UpdatePanel()
         {
-            if (Instance == null || !Instance.isVisible)
+            if (!isVisible)
             {
                 return;
             }
@@ -358,6 +395,13 @@ namespace TransferManagerCE.UI
                                 m_btnResetRoadAccess.isVisible = true;
                                 break;
                             }
+                        case TabOrder.TAB_GOODS_OUT:
+                            {
+                                m_chkShowIssuesWithVehicles.isVisible = false;
+                                m_btnResetPathing.isVisible = false;
+                                m_btnResetRoadAccess.isVisible = false;
+                                break;
+                            }
                         default:
                             {
                                 m_chkShowIssuesWithVehicles.isVisible = true;
@@ -375,7 +419,9 @@ namespace TransferManagerCE.UI
                 m_tabStrip.SetTabText((int)TabOrder.TAB_OUTSIDE, Localization.Get("tabTransferIssuesOutside") + " (" + listOutside.Count + ")");
 
                 // Road access only used when path distance is enabled.
-                bool bRoadAccessVisible = SaveGameSettings.GetSettings().UsePathDistanceServices || SaveGameSettings.GetSettings().UsePathDistanceGoods;
+                bool bRoadAccessVisible = SaveGameSettings.GetSettings().PathDistanceServices != (int)SaveGameSettings.PathDistanceAlgorithm.LineOfSight || 
+                                          SaveGameSettings.GetSettings().PathDistanceGoods != (int)SaveGameSettings.PathDistanceAlgorithm.LineOfSight;
+
                 m_tabStrip.SetTabVisible((int)TabOrder.TAB_ROAD_ACCESS, bRoadAccessVisible);
                 if (bRoadAccessVisible)
                 {
@@ -442,7 +488,6 @@ namespace TransferManagerCE.UI
                         {
                             if (m_issueHelper != null)
                             {
-                                m_issueHelper.UpdateIssues();
                                 List<TransferIssueContainer> list = m_issueHelper.GetIssues(TransferIssueHelper.IssueType.Dead);
                                 list.Sort();
                                 m_listDead.GetList().rowsData = new FastList<object>
@@ -459,7 +504,6 @@ namespace TransferManagerCE.UI
                         {
                             if (m_issueHelper != null)
                             {
-                                m_issueHelper.UpdateIssues();
                                 List<TransferIssueContainer> list = m_issueHelper.GetIssues(TransferIssueHelper.IssueType.Sick);
                                 list.Sort();
                                 m_listSick.GetList().rowsData = new FastList<object>
@@ -474,7 +518,6 @@ namespace TransferManagerCE.UI
                         {
                             if (m_issueHelper != null)
                             {
-                                m_issueHelper.UpdateIssues();
                                 List<TransferIssueContainer> list = m_issueHelper.GetIssues(TransferIssueHelper.IssueType.GoodsIn);
                                 list.Sort();
                                 m_listGoodsIn.GetList().rowsData = new FastList<object>
@@ -489,7 +532,6 @@ namespace TransferManagerCE.UI
                         {
                             if (m_issueHelper != null)
                             {
-                                m_issueHelper.UpdateIssues();
                                 List<TransferIssueContainer> list = m_issueHelper.GetIssues(TransferIssueHelper.IssueType.GoodsOut);
                                 list.Sort();
                                 m_listGoodsOut.GetList().rowsData = new FastList<object>
@@ -506,6 +548,10 @@ namespace TransferManagerCE.UI
 
         public override void OnDestroy()
         {
+            if (m_coroutine != null)
+            {
+                StopCoroutine(m_coroutine);
+            }
             if (m_listPathing != null)
             {
                 Destroy(m_listPathing.gameObject);

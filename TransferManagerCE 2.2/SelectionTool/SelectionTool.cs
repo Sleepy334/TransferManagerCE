@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ColossalFramework;
 using ColossalFramework.Math;
 using ColossalFramework.UI;
@@ -8,6 +9,7 @@ using TransferManagerCE.CustomManager;
 using TransferManagerCE.Settings;
 using UnifiedUI.Helpers;
 using UnityEngine;
+using static TransferManagerCE.PathQueue;
 
 namespace TransferManagerCE
 {
@@ -245,6 +247,9 @@ namespace TransferManagerCE
 
             HighlightSelectedBuildingAndMatches(toolManager, cameraInfo);
             HighlightNodes(cameraInfo);
+#if DEBUG
+            HighlightPathDistanceNodes(cameraInfo);
+#endif
         }
 
         private void HighlightSelectedBuildingAndMatches(ToolManager toolManager, RenderManager.CameraInfo cameraInfo)
@@ -272,30 +277,67 @@ namespace TransferManagerCE
                         int restrictionId = BuildingPanel.Instance.GetRestrictionId();
                         if (restrictionId != -1)
                         {
-                            BuildingSettings settings = BuildingSettingsStorage.GetSettings(usSourceBuildingId);
-                            RestrictionSettings restrictions = settings.GetRestrictions(restrictionId);
+                            BuildingSettings? settings = BuildingSettingsStorage.GetSettings(usSourceBuildingId);
+                            if (settings != null)
+                            {
+                                RestrictionSettings? restrictions = settings.GetRestrictions(restrictionId);
+                                if (restrictions != null)
+                                {
+                                    // Select appropriate building restrictions
+                                    HashSet<ushort> buildingRestrictions;
+                                    if (m_mode == SelectionToolMode.BuildingRestrictionIncoming)
+                                    {
+                                        buildingRestrictions = restrictions.GetIncomingBuildingRestrictionsCopy();
+                                    }
+                                    else
+                                    {
+                                        buildingRestrictions = restrictions.GetOutgoingBuildingRestrictionsCopy();
+                                    }
 
-                            // Seelct appropriate building restrictions
-                            HashSet<ushort> buildingRestrictions;
-                            if (m_mode == SelectionToolMode.BuildingRestrictionIncoming)
-                            {
-                                buildingRestrictions = restrictions.GetIncomingBuildingRestrictionsCopy();
-                            }
-                            else
-                            {
-                                buildingRestrictions = restrictions.GetOutgoingBuildingRestrictionsCopy();
-                            }
-
-                            // Now highlight buildings
-                            foreach (ushort buildingId in buildingRestrictions)
-                            {
-                                HighlightBuilding(toolManager, BuildingBuffer, buildingId, cameraInfo, Color.green);
+                                    // Now highlight buildings
+                                    foreach (ushort buildingId in buildingRestrictions)
+                                    {
+                                        HighlightBuilding(toolManager, BuildingBuffer, buildingId, cameraInfo, Color.green);
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
+#if DEBUG
+        private void HighlightPathDistanceNodes(RenderManager.CameraInfo cameraInfo)
+        {
+            if (PathDistanceTest.PATH_TESTING_ENABLED)
+            {
+                foreach (QueueData nodeData in PathDistanceTest.s_nodesExamined)
+                {
+                    NetNode oNode = NetManager.instance.m_nodes.m_buffer[nodeData.Node()];
+
+                    Color color;
+                    if (nodeData.Node() == PathDistanceTest.s_nodesExamined.Last<QueueData>().Node())
+                    {
+                        color = Color.blue;
+                    }
+                    else
+                    {
+                        color = Color.green;
+                    }
+                    RenderManager.instance.OverlayEffect.DrawCircle(
+                                cameraInfo,
+                                color,
+                                oNode.m_position,
+                                oNode.m_bounds.size.magnitude,
+                                oNode.m_position.y - 1f,
+                                oNode.m_position.y + 1f,
+                                true,
+                                true);
+                }
+            }
+        }
+#endif
 
         private void HighlightNodes(RenderManager.CameraInfo cameraInfo)
         {
@@ -350,6 +392,7 @@ namespace TransferManagerCE
                             }
                         }
                     }
+
                 }
             }
         }
@@ -417,8 +460,13 @@ namespace TransferManagerCE
         {
             if (m_mode != SelectionToolMode.Normal)
             {
-                DrawLabel();
-                //TODO m_cursor = 
+                DrawLabel();  
+            } 
+            else if (PathDistanceTest.PATH_TESTING_ENABLED)
+            {
+#if DEBUG
+                DisplayPathDistanceInformation();
+#endif
             }
 
             if (m_toolController.IsInsideUI)
@@ -441,6 +489,43 @@ namespace TransferManagerCE
                 m_processedClick = false;
             }
         }
+
+#if DEBUG
+        private void DisplayPathDistanceInformation()
+        {
+            if (m_hoverInstance.NetNode != 0)
+            {
+                bool bFound = false;
+                foreach (QueueData nodeData in PathDistanceTest.s_nodesExamined)
+                {
+                    if (nodeData.Node() == m_hoverInstance.NetNode)
+                    {
+                        NetNode oNode = NetManager.instance.m_nodes.m_buffer[nodeData.Node()];
+                        var text = $"Node {nodeData.Node()}\nTravelTime: {nodeData.TravelTime().ToString("F")}\nHeuristic:{nodeData.Heuristic().ToString("F")}\nPriority: {nodeData.Priority()}";
+                        var screenPoint = MousePosition;
+                        screenPoint.y = screenPoint.y - 40f;
+                        var color = GUI.color;
+                        GUI.color = Color.white;
+                        DeveloperUI.LabelOutline(new Rect(screenPoint.x, screenPoint.y, 500f, 500f), text, Color.black, Color.cyan, GUI.skin.label, 2f);
+                        GUI.color = color;
+                        bFound = true;
+                        break;
+                    }
+                }
+
+                if (!bFound)
+                {
+                    var text = $"Node {m_hoverInstance.NetNode} not found";
+                    var screenPoint = MousePosition;
+                    screenPoint.y = screenPoint.y - 40f;
+                    var color = GUI.color;
+                    GUI.color = Color.white;
+                    DeveloperUI.LabelOutline(new Rect(screenPoint.x, screenPoint.y, 500f, 500f), text, Color.black, Color.cyan, GUI.skin.label, 2f);
+                    GUI.color = color;
+                }
+            }  
+        }
+#endif
 
         private void HandleLeftClick()
         {
@@ -465,8 +550,8 @@ namespace TransferManagerCE
                                         int restrictionId = BuildingPanel.Instance.GetRestrictionId();
                                         if (restrictionId != -1)
                                         {
-                                            BuildingSettings settings = BuildingSettingsStorage.GetSettings(buildingId);
-                                            RestrictionSettings restrictions = settings.GetRestrictions(restrictionId);
+                                            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(buildingId);
+                                            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(restrictionId);
 
                                             // Get correct array
                                             HashSet<ushort> allowedBuildings;

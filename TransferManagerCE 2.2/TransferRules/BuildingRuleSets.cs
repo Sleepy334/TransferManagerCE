@@ -40,6 +40,7 @@ namespace TransferManagerCE.TransferRules
 
             return s_buildingReasons.Contains(material);
         }
+
         public static bool IsDistanceRestrictionsSupported(TransferReason material)
         {
             if (s_initNeeded)
@@ -61,10 +62,8 @@ namespace TransferManagerCE.TransferRules
 
                 if (BuildingRules.ContainsKey(eBuildingType))
                 {
-                    List<ReasonRule> reasonRules = BuildingRules[eBuildingType];
-                    for (int i = 0; i < reasonRules.Count; ++i)
+                    foreach (ReasonRule rule in BuildingRules[eBuildingType])
                     {
-                        ReasonRule rule = reasonRules[i];
                         if (rule.m_reasons.Contains(material))
                         {
                             return rule.m_id;
@@ -83,8 +82,7 @@ namespace TransferManagerCE.TransferRules
 
                 if (BuildingRules.ContainsKey(eBuildingType))
                 {
-                    List<ReasonRule> buildingRules = new List<ReasonRule>(BuildingRules[eBuildingType]);
-                    foreach (ReasonRule rule in buildingRules)
+                    foreach (ReasonRule rule in BuildingRules[eBuildingType])
                     {
                         if (rule.m_reasons.Contains(material))
                         {
@@ -105,8 +103,7 @@ namespace TransferManagerCE.TransferRules
 
                 if (BuildingRules.ContainsKey(eBuildingType))
                 {
-                    List<ReasonRule> buildingRules = new List<ReasonRule>(BuildingRules[eBuildingType]);
-                    foreach (ReasonRule rule in buildingRules)
+                    foreach (ReasonRule rule in BuildingRules[eBuildingType])
                     {
                         if (rule.m_reasons.Contains(material))
                         {
@@ -127,8 +124,7 @@ namespace TransferManagerCE.TransferRules
 
                 if (BuildingRules.ContainsKey(eBuildingType))
                 {
-                    List<ReasonRule> buildingRules = new List<ReasonRule>(BuildingRules[eBuildingType]);
-                    foreach (ReasonRule rule in buildingRules)
+                    foreach (ReasonRule rule in BuildingRules[eBuildingType])
                     {
                         if (rule.m_reasons.Contains(material))
                         {

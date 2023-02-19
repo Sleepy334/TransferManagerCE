@@ -1,7 +1,5 @@
-﻿using ColossalFramework;
-using HarmonyLib;
+﻿using HarmonyLib;
 using System;
-using TransferManagerCE.Util;
 
 namespace TransferManagerCE
 {

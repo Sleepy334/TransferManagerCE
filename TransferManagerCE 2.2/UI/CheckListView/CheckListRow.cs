@@ -55,8 +55,8 @@ namespace SleepyCommon
                 ushort buildingId = TransferManagerCE.DistrictPanel.Instance.m_buildingId;
                 int iRestrictionId = TransferManagerCE.DistrictPanel.Instance.m_iRestrictionId;
 
-                BuildingSettings settings = BuildingSettingsStorage.GetSettings(buildingId);
-                RestrictionSettings restrictions = settings.GetRestrictions(iRestrictionId);
+                BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(buildingId);
+                RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(iRestrictionId);
 
                 if (m_data.m_bIncoming)
                 {

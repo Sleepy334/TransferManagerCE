@@ -8,6 +8,7 @@ using static TransferManager;
 using TransferManagerCE.CustomManager;
 using TransferManagerCE.TransferRules;
 using TransferManagerCE.Common;
+using System.Linq;
 
 namespace TransferManagerCE.UI
 {
@@ -44,7 +45,6 @@ namespace TransferManagerCE.UI
         // Warehouse options
         private UIGroup? m_panelGoodsDelivery = null;
         private UICheckBox? m_chkWarehouseOverride = null;
-        private UICheckBox? m_chkWarehouseFirst = null;
         private UICheckBox? m_chkImprovedWarehouseMatching = null;
         private SettingsSlider? m_sliderReserveCargoTrucks = null;
 
@@ -282,7 +282,6 @@ namespace TransferManagerCE.UI
                 if (m_panelGoodsDelivery != null)
                 {
                     m_chkWarehouseOverride = UIUtils.AddCheckbox(m_panelGoodsDelivery.m_content, Localization.Get("optionWarehouseOverride"), fTEXT_SCALE, false, OnWarehouseOverrideChanged);
-                    m_chkWarehouseFirst = UIUtils.AddCheckbox(m_panelGoodsDelivery.m_content, Localization.Get("optionWarehouseFirst"), fTEXT_SCALE, false, OnWarehouseFirstChanged);
                     m_chkImprovedWarehouseMatching = UIUtils.AddCheckbox(m_panelGoodsDelivery.m_content, Localization.Get("optionImprovedWarehouseTransfer"), fTEXT_SCALE, false, OnImprovedWarehouseMatchingChanged);
                     UIHelper helperGoodsDelivery = new UIHelper(m_panelGoodsDelivery.m_content);
                     m_sliderReserveCargoTrucks = SettingsSlider.Create(helperGoodsDelivery, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercentLocal"), fTEXT_SCALE, 400, 280, 0f, 100f, 1f, 0f, OnReserveCargoTrucksChanged);
@@ -387,8 +386,8 @@ namespace TransferManagerCE.UI
 
                 // Update settings
                 ReasonRule currentRule = buildingRules[GetRestrictionTabIndex()];
-                BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-                RestrictionSettings restrictionSettings = settings.GetRestrictions(currentRule.m_id);
+                BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+                RestrictionSettings restrictionSettings = settings.GetRestrictionsOrDefault(currentRule.m_id);
 
                 // District restrictions
                 if (m_grpDistrictRestrictions != null)
@@ -599,12 +598,6 @@ namespace TransferManagerCE.UI
                             m_chkWarehouseOverride.isChecked = settings.m_bWarehouseOverride;
                         }
 
-                        if (m_chkWarehouseFirst != null)
-                        {
-                            m_chkWarehouseFirst.isChecked = settings.IsWarehouseFirst();
-                            m_chkWarehouseFirst.isEnabled = settings.m_bWarehouseOverride;
-                        }
-
                         if (m_chkImprovedWarehouseMatching != null)
                         {
                             m_chkImprovedWarehouseMatching.isChecked = settings.IsImprovedWarehouseMatching();
@@ -777,8 +770,8 @@ namespace TransferManagerCE.UI
 
         public void UpdateDistrictButtonTooltips()
         {
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
             if (m_btnIncomingSelectDistrict != null)
             {
                 m_btnIncomingSelectDistrict.tooltip = restrictions.GetIncomingDistrictTooltip(m_buildingId);
@@ -793,8 +786,8 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             restrictions.m_iServiceDistance = (int)Value;
 
@@ -806,9 +799,12 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             settings.m_iOutsideMultiplier = (int)Value;
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
+
+            // Invalidate outside connection path cache now we have updated a modifier
+            PathNodeCache.InvalidateOutsideConnections();
 
             // Update outside connection panel with this new value
             if (OutsideConnectionPanel.Instance != null && OutsideConnectionPanel.Instance.isVisible)
@@ -821,8 +817,8 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             restrictions.m_bAllowImport = bChecked;
 
@@ -840,8 +836,8 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
             
             restrictions.m_bAllowExport = bChecked;
 
@@ -859,8 +855,8 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             restrictions.m_iPreferLocalDistrictsIncoming = (RestrictionSettings.PreferLocal) Value;
 
@@ -874,8 +870,8 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             restrictions.m_iPreferLocalDistrictsOutgoing = (RestrictionSettings.PreferLocal)Value;
 
@@ -889,26 +885,17 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             settings.m_bWarehouseOverride = bChecked;
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
             UpdateSettingsTab();
-        }
-
-        public void OnWarehouseFirstChanged(bool bChecked)
-        {
-            if (m_bInSetup) { return; }
-
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            settings.m_bWarehouseFirst = bChecked;
-            BuildingSettingsStorage.SetSettings(m_buildingId, settings);
         }
 
         public void OnImprovedWarehouseMatchingChanged(bool bChecked)
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             settings.m_bImprovedWarehouseMatching = bChecked;
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
         }
@@ -917,7 +904,7 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             settings.m_iWarehouseReserveTrucksPercent = (int)fPercent;
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
 
@@ -927,8 +914,8 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             // Clear district settings
             restrictions.ResetDistrictRestrictionsIncoming();
@@ -942,8 +929,8 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             // Clear district settings
             restrictions.ResetDistrictRestrictionsOutgoing();
@@ -973,15 +960,25 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            if (PathDistanceTest.PATH_TESTING_ENABLED)
+            {
+                // DEBUGGING, Allows viewing path nodes visited
+                BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+                RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
+                PathDistanceTest.FindNearestNeighbour(TransferReason.Goods, m_buildingId, restrictions.GetIncomingBuildingRestrictionsCopy().ToArray());
+            }
+            else
+            {
+                BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+                RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
-            restrictions.ClearIncomingBuildingRestrictions();
+                restrictions.ClearIncomingBuildingRestrictions();
 
-            settings.SetRestrictions(GetRestrictionId(), restrictions);
-            BuildingSettingsStorage.SetSettings(m_buildingId, settings);
+                settings.SetRestrictions(GetRestrictionId(), restrictions);
+                BuildingSettingsStorage.SetSettings(m_buildingId, settings);
 
-            UpdateSettingsTab();
+                UpdateSettingsTab();
+            }
         }
 
         public void OnBuildingRestrictionsOutgoingClicked(UIComponent component, UIMouseEventParameter eventParam)
@@ -1004,8 +1001,8 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(GetRestrictionId());
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             restrictions.ClearOutgoingBuildingRestrictions();
 
@@ -1046,11 +1043,6 @@ namespace TransferManagerCE.UI
             {
                 UnityEngine.Object.Destroy(m_panelGoodsDelivery.gameObject);
                 m_panelGoodsDelivery = null;
-            }
-            if (m_chkWarehouseFirst != null)
-            {
-                UnityEngine.Object.Destroy(m_chkWarehouseFirst.gameObject);
-                m_chkWarehouseFirst = null;
             }
             if (m_sliderReserveCargoTrucks != null)
             {

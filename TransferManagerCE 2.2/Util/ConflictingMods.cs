@@ -5,9 +5,6 @@ namespace TransferManagerCE
 {
     public class ConflictingMods
     {
-        const string sTransferManagerStable = "2804719780";
-        const string sTransferManagerTest = "2810557345";
-
         public static bool ConflictingModsFound()
         {
             string sConflictingMods = "";

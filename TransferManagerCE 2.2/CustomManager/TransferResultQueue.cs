@@ -1,6 +1,8 @@
+using ColossalFramework;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using UnityEngine;
 using static TransferManager;
 
 namespace TransferManagerCE
@@ -69,6 +71,11 @@ namespace TransferManagerCE
         {
             if (m_Matches != null)
             {
+                Building[] Buildings = Singleton<BuildingManager>.instance.m_buildings.m_buffer;
+                Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
+                Citizen[] Citizens = Singleton<CitizenManager>.instance.m_citizens.m_buffer;
+                DistrictPark[] Parks = Singleton<DistrictManager>.instance.m_parks.m_buffer;
+
                 while (m_Matches.Count > 0)
                 {
                     TransferResult oResult;
@@ -79,8 +86,11 @@ namespace TransferManagerCE
 
                     if (oResult.material != TransferReason.None)
                     {
-                        // Call our reverse patch of the vanilla StartTransfer function
-                        TransferManagerStartTransferReversePatch.StartTransfer(oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
+                        // Handle this match
+                        MatchHandler.Match(oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
+
+                        // Start transfer
+                        TransferHandler.StartTransfer(Buildings, Vehicles, Citizens, Parks, oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
                     }
                 }
             }

@@ -21,16 +21,16 @@ namespace TransferManagerCE.Data
                         HospitalAI? hospital = building.Info.m_buildingAI as HospitalAI;
                         if (hospital != null)
                         {
-                            return CitiesUtils.GetSick(m_buildingId, building).Count + "/" + hospital.m_patientCapacity;
+                            return BuildingUtils.GetSickCount(m_buildingId, building) + "/" + hospital.m_patientCapacity;
                         }
                         else
                         {
-                            return CitiesUtils.GetSick(m_buildingId, building).Count.ToString();
+                            return BuildingUtils.GetSickCount(m_buildingId, building).ToString();
                         }
                     }
                 default:
                     {
-                        return CitiesUtils.GetSick(m_buildingId, building).Count.ToString();
+                        return BuildingUtils.GetSickCount(m_buildingId, building).ToString();
                     }
             }
         }

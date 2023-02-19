@@ -32,6 +32,7 @@ namespace TransferManagerCE
             ElementartySchool,
             HighSchool,
             University,
+            Library,
             Monument,
             CargoStation,
             CargoFerryWarehouseHarbor,
@@ -135,450 +136,460 @@ namespace TransferManagerCE
             if (buildingId != 0)
             {
                 Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                
-                // Check Info is valid
-                if (building.Info == null)
-                {
-                    return BuildingType.None;
-                }
+                return GetBuildingType(building);
+            }
 
-                switch (building.Info.GetService())
-                {
-                    case ItemClass.Service.Residential:
-                        {
-                            return BuildingType.Residential;
-                        }
-                    case ItemClass.Service.Commercial:
-                        {
-                            return BuildingType.Commercial;
-                        }
-                    case ItemClass.Service.Industrial:
-                        {
-                            switch (building.Info.GetAI())
-                            {
-                                case IndustrialExtractorAI:
-                                    {
-                                        return BuildingType.GenericExtractor;
-                                    }
-                                case IndustrialBuildingAI:
-                                    {
-                                        switch (building.Info.GetSubService())
-                                        {
-                                            case ItemClass.SubService.IndustrialFarming:
-                                            case ItemClass.SubService.IndustrialForestry:
-                                            case ItemClass.SubService.IndustrialOil:
-                                            case ItemClass.SubService.IndustrialOre:
-                                                {
-                                                    return BuildingType.GenericProcessing;
-                                                }
+            return BuildingType.None;
+        }
 
-                                            default:
-                                                {
-                                                    return BuildingType.GenericFactory;
-                                                }
-                                        }
-                                    }
-                            }
-                            break;
-                        }
-                    case ItemClass.Service.Office:
+        public static BuildingType GetBuildingType(Building building)
+        {
+            // Check Info is valid
+            if (building.m_flags == 0 || building.Info == null)
+            {
+                return BuildingType.None;
+            }
+
+            switch (building.Info.GetService())
+            {
+                case ItemClass.Service.Residential:
+                    {
+                        return BuildingType.Residential;
+                    }
+                case ItemClass.Service.Commercial:
+                    {
+                        return BuildingType.Commercial;
+                    }
+                case ItemClass.Service.Industrial:
+                    {
+                        switch (building.Info.GetAI())
                         {
-                            return BuildingType.Office;
-                        }
-                    case ItemClass.Service.Electricity:
-                        {
-                            switch (building.Info.GetAI())
-                            {
-                                case SolarPowerPlantAI:
+                            case IndustrialExtractorAI:
+                                {
+                                    return BuildingType.GenericExtractor;
+                                }
+                            case IndustrialBuildingAI:
+                                {
+                                    switch (building.Info.GetSubService())
                                     {
-                                        return BuildingType.SolarPowerPlant;
-                                    }
-                                case FusionPowerPlantAI:
-                                    {
-                                        return BuildingType.FusionPowerPlant;
-                                    }
-                                case PowerPlantAI powerPlantAI:
-                                    {
-                                        switch (powerPlantAI.m_resourceType)
-                                        {
-                                            case TransferReason.Coal:
-                                                {
-                                                    return BuildingType.CoalPowerPlant;
-                                                }
-                                            case TransferReason.Petrol:
-                                                {
-                                                    return BuildingType.PetrolPowerPlant;
-                                                }
-                                        }
-                                        break;
-                                    }
-                            }
-                            break;
-                        }
-                    case ItemClass.Service.Water:
-                        {
-                            if (building.Info?.GetAI() is HeatingPlantAI)
-                            {
-                                return BuildingType.BoilerStation;
-                            }
-                            else if (building.Info?.GetAI() is WaterFacilityAI)
-                            {
-                                return BuildingType.PumpingService;
-                            }
-                            else
-                            {
-                                return BuildingType.Water;
-                            }
-                        }
-                    case ItemClass.Service.Beautification:
-                        {
-                            if (building.Info?.m_buildingAI is MaintenanceDepotAI)
-                            {
-                                return BuildingType.ParkMaintenanceDepot;
-                            }
-                            else if (building.Info?.m_buildingAI is ParkBuildingAI)
-                            {
-                                return BuildingType.Park;
-                            }
-                            else if (building.Info?.m_buildingAI is ParkAI)
-                            {
-                                return BuildingType.Park;
-                            }
-                            else if (building.Info?.m_buildingAI is ParkGateAI)
-                            {
-                                return BuildingType.Park;
-                            }
-                            return BuildingType.None;
-                        }
-                    case ItemClass.Service.Garbage:
-                        {
-                            switch (building.Info.GetClassLevel())
-                            {
-                                case ItemClass.Level.Level1:
-                                    {
-                                        if (building.Info?.GetAI() is LandfillSiteAI landFill)
-                                        {
-                                            if (landFill.m_electricityProduction > 0)
+                                        case ItemClass.SubService.IndustrialFarming:
+                                        case ItemClass.SubService.IndustrialForestry:
+                                        case ItemClass.SubService.IndustrialOil:
+                                        case ItemClass.SubService.IndustrialOre:
                                             {
-                                                return BuildingType.IncinerationPlant;
+                                                return BuildingType.GenericProcessing;
                                             }
-                                        }
 
-                                        return BuildingType.Landfill;
+                                        default:
+                                            {
+                                                return BuildingType.GenericFactory;
+                                            }
                                     }
-                                case ItemClass.Level.Level2:
-                                    {
-                                        return BuildingType.Recycling;
-                                    }
-                                case ItemClass.Level.Level3:
-                                    {
-                                        return BuildingType.WasteTransfer;
-                                    }
-                                case ItemClass.Level.Level4:
-                                    {
-                                        return BuildingType.WasteProcessing;
-                                    }
-                            }
-                            break;
-                        }
-                    case ItemClass.Service.HealthCare:
-                        {
-                            if (building.Info?.GetAI() is HospitalAI)
-                            {
-                                return BuildingType.Hospital;
-                            }
-                            if (building.Info?.GetAI() is HelicopterDepotAI)
-                            {
-                                return BuildingType.MedicalHelicopterDepot;
-                            }
-                            else if (building.Info?.GetAI() is CemeteryAI cemetery)
-                            {
-                                return BuildingType.Cemetery;
-                            }
-                            return BuildingType.Healthcare;
-                        }
-                    case ItemClass.Service.PoliceDepartment:
-                        {
-                            switch (building.Info.GetSubService())
-                            {
-                                case ItemClass.SubService.PoliceDepartmentBank:
-                                    {
-                                        return BuildingType.Bank;
-                                    }
-                                default:
-                                    {
-                                        switch (building.Info.GetClassLevel())
-                                        {
-                                            case ItemClass.Level.Level1:
-                                                {
-                                                    return BuildingType.PoliceStation;
-                                                }
-                                            case ItemClass.Level.Level3:
-                                                {
-                                                    return BuildingType.PoliceHelicopterDepot;
-                                                }
-                                            case ItemClass.Level.Level4:
-                                                {
-                                                    if (building.Info.GetAI().name.Contains("PrisonCopterPoliceStationAI"))
-                                                    {
-                                                        return BuildingType.HelicopterPrison;
-                                                    }
-                                                    else
-                                                    {
-                                                        return BuildingType.Prison;
-                                                    }
-                                                }
-                                        }
-                                        break;
-                                    }
-                            }
-                            break;
-                        }
-                    case ItemClass.Service.Education:
-                        {
-                            switch (building.Info.GetClassLevel())
-                            {
-                                case ItemClass.Level.Level1:
-                                    {
-                                        return BuildingType.ElementartySchool;
-                                    }
-                                case ItemClass.Level.Level2:
-                                    {
-                                        return BuildingType.HighSchool;
-                                    }
-                                case ItemClass.Level.Level3:
-                                    {
-                                        return BuildingType.University;
-                                    }
-                            }
-                            break;
-                        }
-                    case ItemClass.Service.PlayerEducation:
-                        {
-                            switch (building.Info.GetSubService())
-                            {
-                                case ItemClass.SubService.PlayerEducationUniversity:
-                                case ItemClass.SubService.PlayerEducationTradeSchool:
-                                case ItemClass.SubService.PlayerEducationLiberalArts:
-                                    {
-                                        return BuildingType.CampusBuilding;
-                                    }
-                            }
-                            break;
-                        }
-                    case ItemClass.Service.Monument:
-                        {
-                            return BuildingType.Monument;
-                        }
-                    case ItemClass.Service.FireDepartment:
-                        {
-                            if (building.Info.GetAI() is HelicopterDepotAI)
-                            {
-                                return BuildingType.FireHelicopterDepot;
-                            }
-                            else 
-                            {
-                                return BuildingType.FireStation;
-                            }
-                        }
-                    case ItemClass.Service.PublicTransport:
-                        {
-                            switch (building.Info.GetAI())
-                            {
-                                case CargoStationAI cargoStation:
-                                    {
-                                        if (cargoStation.GetType().ToString().Contains("CargoFerryWarehouseHarborAI"))
-                                        {
-                                            return BuildingType.CargoFerryWarehouseHarbor;
-                                        }
-                                        else
-                                        {
-                                            return BuildingType.CargoStation;
-                                        }
-                                    }
-                                case OutsideConnectionAI:
-                                    {
-                                        return BuildingType.OutsideConnection;
-                                    }
-                                case SpaceElevatorAI:
-                                    {
-                                        return BuildingType.SpaceElevator;
-                                    }
-                                case TransportStationAI:
-                                    {
-                                        return BuildingType.TransportStation;
-                                    }
-                                case AirportAuxBuildingAI:
-                                    {
-                                        return BuildingType.AirportAuxBuilding;
-                                    }
-                                case AirportEntranceAI:
-                                    {
-                                        switch (building.Info.GetClassLevel())
-                                        {
-                                            case ItemClass.Level.Level1:
-                                                {
-                                                    return BuildingType.AirportMainTerminal;
-                                                }
-                                            case ItemClass.Level.Level4:
-                                                {
-                                                    return BuildingType.AirportCargoTerminal;
-                                                }
-                                        }
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        switch (building.Info.GetSubService())
-                                        {
-                                            case ItemClass.SubService.PublicTransportPost:
-                                                {
-                                                    switch (building.Info.GetClassLevel())
-                                                    {
-                                                        case ItemClass.Level.Level2:
-                                                            {
-                                                                return BuildingType.PostOffice;
-                                                            }
-                                                        case ItemClass.Level.Level5:
-                                                            {
-                                                                return BuildingType.PostSortingFacility;
-                                                            }
-                                                        default: break;
-                                                    }
-                                                    break;
-                                                }
-                                            case ItemClass.SubService.PublicTransportTaxi:
-                                                {
-                                                    if (building.Info.GetAI() is TaxiStandAI)
-                                                    {
-                                                        return BuildingType.TaxiStand;
-                                                    }
-                                                    else
-                                                    {
-                                                        return BuildingType.TaxiDepot;
-                                                    }
-                                                }
-                                            case ItemClass.SubService.PublicTransportTours:
-                                                {
-                                                    return BuildingType.TourDepot;
-                                                }
-                                            case ItemClass.SubService.PublicTransportBus:
-                                                {
-                                                    return BuildingType.BusDepot;
-                                                }
-                                            case ItemClass.SubService.PublicTransportPlane:
-                                                {
-                                                    if (building.Info.GetAI() is DepotAI)
-                                                    {
-                                                        return BuildingType.PassengerHelicopterDepot;
-                                                    }
-                                                    break;
-                                                }
-                                            case ItemClass.SubService.PublicTransportTram:
-                                                {
-                                                    if (building.Info.GetAI() is DepotAI)
-                                                    {
-                                                        return BuildingType.TramDepot;
-                                                    }
-                                                    break;
-                                                }
-                                            case ItemClass.SubService.PublicTransportShip:
-                                                {
-                                                    if (building.Info.GetAI() is DepotAI)
-                                                    {
-                                                        return BuildingType.FerryDepot;
-                                                    }
-                                                    break;
-                                                }
-                                            default:
-                                                {
-                                                    break;
-                                                }
-                                        }
-                                        break;
-                                    }
-                            }
-                            break;
-                        }
-                    case ItemClass.Service.Disaster:
-                        {
-                            switch (building.Info.GetClassLevel())
-                            {
-                                case ItemClass.Level.Level2:
-                                    {
-                                        return BuildingType.DisasterResponseUnit;
-                                    }
-                                case ItemClass.Level.Level4:
-                                    {
-                                        return BuildingType.DisasterShelter;
-                                    }
-                            }
-                            break;
-                        }
-                    case ItemClass.Service.PlayerIndustry:
-                        {
-                            if (building.Info != null)
-                            {
-                                switch (building.Info.m_buildingAI)
-                                {
-                                    case WarehouseAI: return BuildingType.Warehouse;
-                                    case ExtractingFacilityAI: return BuildingType.ExtractionFacility;
-                                    case UniqueFactoryAI: return BuildingType.UniqueFactory;
-                                    case ProcessingFacilityAI: return BuildingType.ProcessingFacility;
-                                    case MainIndustryBuildingAI: return BuildingType.MainIndustryBuilding;
                                 }
-                                if (building.Info.m_buildingAI.GetType().ToString().Contains("CargoFerryWarehouseHarborAI"))
+                        }
+                        break;
+                    }
+                case ItemClass.Service.Office:
+                    {
+                        return BuildingType.Office;
+                    }
+                case ItemClass.Service.Electricity:
+                    {
+                        switch (building.Info.GetAI())
+                        {
+                            case SolarPowerPlantAI:
                                 {
-                                    return BuildingType.Warehouse;
+                                    return BuildingType.SolarPowerPlant;
                                 }
-                            }
-                            break;
+                            case FusionPowerPlantAI:
+                                {
+                                    return BuildingType.FusionPowerPlant;
+                                }
+                            case PowerPlantAI powerPlantAI:
+                                {
+                                    switch (powerPlantAI.m_resourceType)
+                                    {
+                                        case TransferReason.Coal:
+                                            {
+                                                return BuildingType.CoalPowerPlant;
+                                            }
+                                        case TransferReason.Petrol:
+                                            {
+                                                return BuildingType.PetrolPowerPlant;
+                                            }
+                                    }
+                                    break;
+                                }
                         }
-                    case ItemClass.Service.Museums: break;
-                    case ItemClass.Service.VarsitySports: break;
-                    case ItemClass.Service.Fishing:
+                        break;
+                    }
+                case ItemClass.Service.Water:
+                    {
+                        if (building.Info?.GetAI() is HeatingPlantAI)
                         {
-                            switch (building.Info.GetAI())
+                            return BuildingType.BoilerStation;
+                        }
+                        else if (building.Info?.GetAI() is WaterFacilityAI)
+                        {
+                            return BuildingType.PumpingService;
+                        }
+                        else
+                        {
+                            return BuildingType.Water;
+                        }
+                    }
+                case ItemClass.Service.Beautification:
+                    {
+                        if (building.Info?.m_buildingAI is MaintenanceDepotAI)
+                        {
+                            return BuildingType.ParkMaintenanceDepot;
+                        }
+                        else if (building.Info?.m_buildingAI is ParkBuildingAI)
+                        {
+                            return BuildingType.Park;
+                        }
+                        else if (building.Info?.m_buildingAI is ParkAI)
+                        {
+                            return BuildingType.Park;
+                        }
+                        else if (building.Info?.m_buildingAI is ParkGateAI)
+                        {
+                            return BuildingType.Park;
+                        }
+                        return BuildingType.None;
+                    }
+                case ItemClass.Service.Garbage:
+                    {
+                        switch (building.Info.GetClassLevel())
+                        {
+                            case ItemClass.Level.Level1:
+                                {
+                                    if (building.Info?.GetAI() is LandfillSiteAI landFill)
+                                    {
+                                        if (landFill.m_electricityProduction > 0)
+                                        {
+                                            return BuildingType.IncinerationPlant;
+                                        }
+                                    }
+
+                                    return BuildingType.Landfill;
+                                }
+                            case ItemClass.Level.Level2:
+                                {
+                                    return BuildingType.Recycling;
+                                }
+                            case ItemClass.Level.Level3:
+                                {
+                                    return BuildingType.WasteTransfer;
+                                }
+                            case ItemClass.Level.Level4:
+                                {
+                                    return BuildingType.WasteProcessing;
+                                }
+                        }
+                        break;
+                    }
+                case ItemClass.Service.HealthCare:
+                    {
+                        if (building.Info?.GetAI() is HospitalAI)
+                        {
+                            return BuildingType.Hospital;
+                        }
+                        if (building.Info?.GetAI() is HelicopterDepotAI)
+                        {
+                            return BuildingType.MedicalHelicopterDepot;
+                        }
+                        else if (building.Info?.GetAI() is CemeteryAI cemetery)
+                        {
+                            return BuildingType.Cemetery;
+                        }
+                        return BuildingType.Healthcare;
+                    }
+                case ItemClass.Service.PoliceDepartment:
+                    {
+                        switch (building.Info.GetSubService())
+                        {
+                            case ItemClass.SubService.PoliceDepartmentBank:
+                                {
+                                    return BuildingType.Bank;
+                                }
+                            default:
+                                {
+                                    switch (building.Info.GetClassLevel())
+                                    {
+                                        case ItemClass.Level.Level1:
+                                            {
+                                                return BuildingType.PoliceStation;
+                                            }
+                                        case ItemClass.Level.Level3:
+                                            {
+                                                return BuildingType.PoliceHelicopterDepot;
+                                            }
+                                        case ItemClass.Level.Level4:
+                                            {
+                                                if (building.Info.GetAI().name.Contains("PrisonCopterPoliceStationAI"))
+                                                {
+                                                    return BuildingType.HelicopterPrison;
+                                                }
+                                                else
+                                                {
+                                                    return BuildingType.Prison;
+                                                }
+                                            }
+                                    }
+                                    break;
+                                }
+                        }
+                        break;
+                    }
+                case ItemClass.Service.Education:
+                    {
+                        switch (building.Info.GetClassLevel())
+                        {
+                            case ItemClass.Level.Level1:
+                                {
+                                    return BuildingType.ElementartySchool;
+                                }
+                            case ItemClass.Level.Level2:
+                                {
+                                    return BuildingType.HighSchool;
+                                }
+                            case ItemClass.Level.Level3:
+                                {
+                                    return BuildingType.University;
+                                }
+                            case ItemClass.Level.Level4:
+                                {
+                                    return BuildingType.Library;
+                                }
+                        }
+                        break;
+                    }
+                case ItemClass.Service.PlayerEducation:
+                    {
+                        switch (building.Info.GetSubService())
+                        {
+                            case ItemClass.SubService.PlayerEducationUniversity:
+                            case ItemClass.SubService.PlayerEducationTradeSchool:
+                            case ItemClass.SubService.PlayerEducationLiberalArts:
+                                {
+                                    return BuildingType.CampusBuilding;
+                                }
+                        }
+                        break;
+                    }
+                case ItemClass.Service.Monument:
+                    {
+                        return BuildingType.Monument;
+                    }
+                case ItemClass.Service.FireDepartment:
+                    {
+                        if (building.Info.GetAI() is HelicopterDepotAI)
+                        {
+                            return BuildingType.FireHelicopterDepot;
+                        }
+                        else 
+                        {
+                            return BuildingType.FireStation;
+                        }
+                    }
+                case ItemClass.Service.PublicTransport:
+                    {
+                        switch (building.Info.GetAI())
+                        {
+                            case CargoStationAI cargoStation:
+                                {
+                                    if (cargoStation.GetType().ToString().Contains("CargoFerryWarehouseHarborAI"))
+                                    {
+                                        return BuildingType.CargoFerryWarehouseHarbor;
+                                    }
+                                    else
+                                    {
+                                        return BuildingType.CargoStation;
+                                    }
+                                }
+                            case OutsideConnectionAI:
+                                {
+                                    return BuildingType.OutsideConnection;
+                                }
+                            case SpaceElevatorAI:
+                                {
+                                    return BuildingType.SpaceElevator;
+                                }
+                            case TransportStationAI:
+                                {
+                                    return BuildingType.TransportStation;
+                                }
+                            case AirportAuxBuildingAI:
+                                {
+                                    return BuildingType.AirportAuxBuilding;
+                                }
+                            case AirportEntranceAI:
+                                {
+                                    switch (building.Info.GetClassLevel())
+                                    {
+                                        case ItemClass.Level.Level1:
+                                            {
+                                                return BuildingType.AirportMainTerminal;
+                                            }
+                                        case ItemClass.Level.Level4:
+                                            {
+                                                return BuildingType.AirportCargoTerminal;
+                                            }
+                                    }
+                                    break;
+                                }
+                            default:
+                                {
+                                    switch (building.Info.GetSubService())
+                                    {
+                                        case ItemClass.SubService.PublicTransportPost:
+                                            {
+                                                switch (building.Info.GetClassLevel())
+                                                {
+                                                    case ItemClass.Level.Level2:
+                                                        {
+                                                            return BuildingType.PostOffice;
+                                                        }
+                                                    case ItemClass.Level.Level5:
+                                                        {
+                                                            return BuildingType.PostSortingFacility;
+                                                        }
+                                                    default: break;
+                                                }
+                                                break;
+                                            }
+                                        case ItemClass.SubService.PublicTransportTaxi:
+                                            {
+                                                if (building.Info.GetAI() is TaxiStandAI)
+                                                {
+                                                    return BuildingType.TaxiStand;
+                                                }
+                                                else
+                                                {
+                                                    return BuildingType.TaxiDepot;
+                                                }
+                                            }
+                                        case ItemClass.SubService.PublicTransportTours:
+                                            {
+                                                return BuildingType.TourDepot;
+                                            }
+                                        case ItemClass.SubService.PublicTransportBus:
+                                            {
+                                                return BuildingType.BusDepot;
+                                            }
+                                        case ItemClass.SubService.PublicTransportPlane:
+                                            {
+                                                if (building.Info.GetAI() is DepotAI)
+                                                {
+                                                    return BuildingType.PassengerHelicopterDepot;
+                                                }
+                                                break;
+                                            }
+                                        case ItemClass.SubService.PublicTransportTram:
+                                            {
+                                                if (building.Info.GetAI() is DepotAI)
+                                                {
+                                                    return BuildingType.TramDepot;
+                                                }
+                                                break;
+                                            }
+                                        case ItemClass.SubService.PublicTransportShip:
+                                            {
+                                                if (building.Info.GetAI() is DepotAI)
+                                                {
+                                                    return BuildingType.FerryDepot;
+                                                }
+                                                break;
+                                            }
+                                        default:
+                                            {
+                                                break;
+                                            }
+                                    }
+                                    break;
+                                }
+                        }
+                        break;
+                    }
+                case ItemClass.Service.Disaster:
+                    {
+                        switch (building.Info.GetClassLevel())
+                        {
+                            case ItemClass.Level.Level2:
+                                {
+                                    return BuildingType.DisasterResponseUnit;
+                                }
+                            case ItemClass.Level.Level4:
+                                {
+                                    return BuildingType.DisasterShelter;
+                                }
+                        }
+                        break;
+                    }
+                case ItemClass.Service.PlayerIndustry:
+                    {
+                        if (building.Info != null)
+                        {
+                            switch (building.Info.m_buildingAI)
                             {
-                                case FishingHarborAI:
-                                    {
-                                        return BuildingType.FishHarbor;
-                                    }
-                                case FishFarmAI:
-                                    {
-                                        return BuildingType.FishFarm;
-                                    }
-                                case ProcessingFacilityAI:
-                                    {
-                                        return BuildingType.FishFactory;
-                                    }
-                                case MarketAI:
-                                    {
-                                        return BuildingType.FishMarket;
-                                    }
+                                case WarehouseAI: return BuildingType.Warehouse;
+                                case ExtractingFacilityAI: return BuildingType.ExtractionFacility;
+                                case UniqueFactoryAI: return BuildingType.UniqueFactory;
+                                case ProcessingFacilityAI: return BuildingType.ProcessingFacility;
+                                case MainIndustryBuildingAI: return BuildingType.MainIndustryBuilding;
                             }
-                            break;
-                        }
-                    case ItemClass.Service.Road:
-                        {
-                            switch (building.Info.GetAI())
+                            if (building.Info.m_buildingAI.GetType().ToString().Contains("CargoFerryWarehouseHarborAI"))
                             {
-                                case OutsideConnectionAI: return BuildingType.OutsideConnection;
-                                case MaintenanceDepotAI: return BuildingType.RoadMaintenanceDepot;
-                                case SnowDumpAI: return BuildingType.SnowDump;
+                                return BuildingType.Warehouse;
                             }
-                            break;
                         }
-                    case ItemClass.Service.ServicePoint:
+                        break;
+                    }
+                case ItemClass.Service.Museums: break;
+                case ItemClass.Service.VarsitySports: break;
+                case ItemClass.Service.Fishing:
+                    {
+                        switch (building.Info.GetAI())
                         {
-                            return BuildingType.ServicePoint;
+                            case FishingHarborAI:
+                                {
+                                    return BuildingType.FishHarbor;
+                                }
+                            case FishFarmAI:
+                                {
+                                    return BuildingType.FishFarm;
+                                }
+                            case ProcessingFacilityAI:
+                                {
+                                    return BuildingType.FishFactory;
+                                }
+                            case MarketAI:
+                                {
+                                    return BuildingType.FishMarket;
+                                }
                         }
-                }
+                        break;
+                    }
+                case ItemClass.Service.Road:
+                    {
+                        switch (building.Info.GetAI())
+                        {
+                            case OutsideConnectionAI: return BuildingType.OutsideConnection;
+                            case MaintenanceDepotAI: return BuildingType.RoadMaintenanceDepot;
+                            case SnowDumpAI: return BuildingType.SnowDump;
+                        }
+                        break;
+                    }
+                case ItemClass.Service.ServicePoint:
+                    {
+                        return BuildingType.ServicePoint;
+                    }
+            }
 
 #if DEBUG
-                Debug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
+            Debug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
 #endif
-            }
 
             return BuildingType.None;
         }
@@ -643,7 +654,6 @@ namespace TransferManagerCE
                                         return BuildingSubType.None;
                                     }
                             }
-                            break;
                         }
                     case BuildingType.ProcessingFacility:
                         {
@@ -671,7 +681,6 @@ namespace TransferManagerCE
                                         return BuildingSubType.None;
                                     }
                             }
-                            break;
                         }
                     default:
                         {

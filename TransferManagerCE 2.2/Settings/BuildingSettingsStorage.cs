@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using TransferManagerCE.TransferRules;
-using TransferManagerCE.Util;
 using static TransferManager;
 
 namespace TransferManagerCE
@@ -11,7 +9,23 @@ namespace TransferManagerCE
         public static Dictionary<ushort, BuildingSettings> s_BuildingsSettings = new Dictionary<ushort, BuildingSettings>();
         static readonly object s_dictionaryLock = new object();
 
-        public static BuildingSettings GetSettings(ushort buildingId)
+        public static BuildingSettings? GetSettings(ushort buildingId)
+        {
+            if (s_BuildingsSettings != null)
+            {
+                lock (s_dictionaryLock)
+                {
+                    if (s_BuildingsSettings.ContainsKey(buildingId))
+                    {
+                        return s_BuildingsSettings[buildingId];
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public static BuildingSettings GetSettingsOrDefault(ushort buildingId)
         {
             if (s_BuildingsSettings != null)
             {
@@ -61,42 +75,35 @@ namespace TransferManagerCE
             }
         }
 
-        public static RestrictionSettings GetRestrictions(ushort buildingId, BuildingTypeHelper.BuildingType eType, TransferReason material)
+        public static RestrictionSettings? GetRestrictions(ushort buildingId, BuildingTypeHelper.BuildingType eType, TransferReason material)
         {
             int iRestrictionId = BuildingRuleSets.GetRestrictionId(eType, material);
             if (iRestrictionId != -1)
             {
-                BuildingSettings settings = GetSettings(buildingId);
-                return settings.GetRestrictions(iRestrictionId);
-            }
-            else
-            {
-                // Return default settings
-                return new RestrictionSettings();
-            }
-        }
-
-        public static int GetEffectiveOutsideMultiplier(ushort buildingId)
-        {
-            int multiplier = GetSettings(buildingId).m_iOutsideMultiplier;
-            if (multiplier > 0)
-            {
-                // Apply building multiplier
-                return multiplier;
-            }
-            else
-            {
-                // Apply global multiplier
-                BuildingTypeHelper.OutsideType eType = BuildingTypeHelper.GetOutsideConnectionType(buildingId);
-                switch (eType)
+                BuildingSettings? settings = GetSettings(buildingId);
+                if (settings != null)
                 {
-                    case BuildingTypeHelper.OutsideType.Ship: return SaveGameSettings.GetSettings().OutsideShipMultiplier;
-                    case BuildingTypeHelper.OutsideType.Plane: return SaveGameSettings.GetSettings().OutsidePlaneMultiplier;
-                    case BuildingTypeHelper.OutsideType.Train: return SaveGameSettings.GetSettings().OutsideTrainMultiplier;
-                    case BuildingTypeHelper.OutsideType.Road: return SaveGameSettings.GetSettings().OutsideRoadMultiplier;
-                    default: return 1;
+                    return settings.GetRestrictions(iRestrictionId);
                 }
             }
+
+            return null;
+        }
+
+        public static RestrictionSettings GetRestrictionsOrDefault(ushort buildingId, BuildingTypeHelper.BuildingType eType, TransferReason material)
+        {
+            int iRestrictionId = BuildingRuleSets.GetRestrictionId(eType, material);
+            if (iRestrictionId != -1)
+            {
+                BuildingSettings? settings = GetSettings(buildingId);
+                if (settings != null)
+                {
+                    return settings.GetRestrictionsOrDefault(iRestrictionId);
+                }
+            }
+
+            // Return default settings
+            return new RestrictionSettings();
         }
 
         // Hooks into BuildingManager do not change

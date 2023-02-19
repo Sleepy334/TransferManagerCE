@@ -13,8 +13,22 @@ namespace TransferManagerCE
 		private string m_sText = "";
 		private float m_fValue;
 		private ICities.OnValueChanged? m_eventCallback = null;
+		private bool m_bPercent = false;
 
-		public static SettingsSlider Create(UIHelper helper, LayoutDirection direction, string sText, float fTextScale, int iLabelWidth, int iSliderWidth, float fMin, float fMax, float fStep, float fDefault, ICities.OnValueChanged eventCallback)
+        public bool Percent
+		{
+			get 
+			{ 
+				return m_bPercent; 
+			}
+			set
+			{
+				m_bPercent = value;
+                UpdateLabel();
+			}
+		}
+
+        public static SettingsSlider Create(UIHelper helper, LayoutDirection direction, string sText, float fTextScale, int iLabelWidth, int iSliderWidth, float fMin, float fMax, float fStep, float fDefault, ICities.OnValueChanged eventCallback)
 		{
 			SettingsSlider oSlider = new SettingsSlider();
 			oSlider.m_fValue = fDefault;
@@ -47,7 +61,8 @@ namespace TransferManagerCE
 			// Slider
 			oSlider.m_slider = CreateSlider(oSlider.m_panel, (direction == LayoutDirection.Vertical) ? oSlider.m_panel.width : iSliderWidth, 30, fMin, fMax);
 			oSlider.m_slider.value = fDefault;
-			oSlider.m_slider.eventValueChanged += delegate (UIComponent c, float val)
+			oSlider.m_slider.stepSize = fStep;
+            oSlider.m_slider.eventValueChanged += delegate (UIComponent c, float val)
 			{
 				oSlider.OnSliderValueChanged(val);
 			};
@@ -60,7 +75,9 @@ namespace TransferManagerCE
 			thumb.spriteName = "InfoIconBaseHovered";
 			oSlider.m_slider.thumbObject = thumb;
 
-			return oSlider;
+            oSlider.UpdateLabel();
+
+            return oSlider;
 		}
 
 		public static UISlider CreateSlider(UIPanel parent, float width, float height, float min, float max)
@@ -95,12 +112,6 @@ namespace TransferManagerCE
 			return slider;
 		}
 
-		public string Text
-        {
-			get { return m_label.text; }
-			set { m_label.text = value; }
-        }
-
 		public void SetTooltip(string sTooltip)
 		{
 			if (m_slider != null)
@@ -112,15 +123,20 @@ namespace TransferManagerCE
 		public void OnSliderValueChanged(float fValue)
         {
 			m_fValue = fValue;
-			if (m_label != null)
-            {
-				m_label.text = m_sText + ": " + m_fValue;
-			}
+			UpdateLabel();
 			if (m_eventCallback != null)
             {
 				m_eventCallback(fValue);
 			}
 		}
+
+		private void UpdateLabel()
+		{
+            if (m_label != null)
+            {
+                m_label.text = $"{m_sText}: {m_fValue}{(Percent ? "%" : "")}";
+            }
+        }
 
 		public void Enable(bool bEnable)
 		{

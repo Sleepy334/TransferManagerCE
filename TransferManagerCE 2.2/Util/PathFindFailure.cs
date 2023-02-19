@@ -28,20 +28,17 @@ namespace TransferManagerCE.Util
 
     public sealed class PathFindFailure
     {
+        private const long PATH_TIMEOUT_INTERNAL = TimeSpan.TicksPerMinute * 5; // Increased to 5 mintutes
+        private const long PATH_TIMEOUT_OUTSIDE = TimeSpan.TicksPerMinute; // 1 minute
+
         // building-to-building
-        static Dictionary<PATHFINDPAIR, long>? s_pathfindFails = null;
-        static Dictionary<PATHFINDPAIR, long>? s_outsideConnectionFails = null;
-        static readonly object s_dictionaryLock = new object();
+        private static Dictionary<PATHFINDPAIR, long>? s_pathfindFails = null;
+        private static Dictionary<PATHFINDPAIR, long>? s_outsideConnectionFails = null;
+        private static readonly object s_dictionaryLock = new object();
 
         // Transfer Issue building fail counters
-        static Dictionary<InstanceID, int>? s_totalPathfindBuildingsCounter = null;
-        static readonly object s_pathCounterLock = new object();
-
-        public const long PATH_TIMEOUT_INTERNAL = TimeSpan.TicksPerMinute * 5; // Increased to 5 mintutes
-        static long lru_lastCleanedInternal;
-
-        public const long PATH_TIMEOUT_OUTSIDE = TimeSpan.TicksPerMinute; // 1 minute
-        static long lru_lastCleanedOutside;
+        private static Dictionary<InstanceID, int>? s_totalPathfindBuildingsCounter = null;
+        private static readonly object s_pathCounterLock = new object();
 
         public static void Init()
         {
@@ -70,7 +67,6 @@ namespace TransferManagerCE.Util
                     s_totalPathfindBuildingsCounter = null;
                 }
             }
-            
         }
 
         public static Dictionary<PATHFINDPAIR, long>? GetPathFailsCopy()
@@ -314,37 +310,25 @@ namespace TransferManagerCE.Util
 
             if (s_pathfindFails != null)
             {
-                long diffTimeInternal = DateTime.Now.Ticks - lru_lastCleanedInternal;
-                if (diffTimeInternal > PATH_TIMEOUT_INTERNAL)
+                lock (s_dictionaryLock)
                 {
-                    lock (s_dictionaryLock)
+                    foreach (var item in s_pathfindFails.Where(kvp => kvp.Value < (DateTime.Now.Ticks - PATH_TIMEOUT_INTERNAL)).ToList())
                     {
-                        foreach (var item in s_pathfindFails.Where(kvp => kvp.Value < (DateTime.Now.Ticks - PATH_TIMEOUT_INTERNAL)).ToList())
-                        {
-                            s_pathfindFails.Remove(item.Key);
-                            failpair_remove_count++;
-                        }
+                        s_pathfindFails.Remove(item.Key);
+                        failpair_remove_count++;
                     }
-
-                    lru_lastCleanedInternal = DateTime.Now.Ticks;
                 }
             }
 
             if (s_outsideConnectionFails != null)
             {
-                long diffTimeOutside = DateTime.Now.Ticks - lru_lastCleanedOutside;
-                if (diffTimeOutside > PATH_TIMEOUT_OUTSIDE)
+                lock (s_dictionaryLock)
                 {
-                    lock (s_dictionaryLock)
+                    foreach (var item in s_outsideConnectionFails.Where(kvp => kvp.Value < (DateTime.Now.Ticks - PATH_TIMEOUT_OUTSIDE)).ToList())
                     {
-                        foreach (var item in s_outsideConnectionFails.Where(kvp => kvp.Value < (DateTime.Now.Ticks - PATH_TIMEOUT_OUTSIDE)).ToList())
-                        {
-                            s_outsideConnectionFails.Remove(item.Key);
-                            failoutside_remove_count++;
-                        }
+                        s_outsideConnectionFails.Remove(item.Key);
+                        failoutside_remove_count++;
                     }
-
-                    lru_lastCleanedOutside = DateTime.Now.Ticks;
                 }
             }  
         }

@@ -2,6 +2,7 @@
 using System;
 using static TransferManager;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace TransferManagerCE.TransferOffers
 {
@@ -36,30 +37,24 @@ namespace TransferManagerCE.TransferOffers
         }
 
         // We ignore far away trucks based on the problem level
-        public static int GetNearbyGuestVehiclesTransferSize(ushort buildingId, ProblemLevel level, TransferReason material1, TransferReason material2, out int iTotalTrucks)
+        public static int GetNearbyGuestVehiclesTransferSize(Building building, ProblemLevel level, TransferReason material1, TransferReason material2, out int iTotalTrucks)
         {
             int iTransferSize = 0;
-            iTotalTrucks = 0;
+            int iTempTotalTrucks = 0;
 
-            VehicleManager vehicleInstance = Singleton<VehicleManager>.instance;
-            BuildingManager buildingInstance = Singleton<BuildingManager>.instance;
-
-            Building building = buildingInstance.m_buildings.m_buffer[buildingId];
-            if (building.m_flags != 0)
+            BuildingUtils.EnumerateGuestVehicles(building, (vehcileId, vehicle) =>
             {
-                int iLoopCount = 0;
-                ushort num = building.m_guestVehicles;
-                while (num != 0)
+                // We only include this material if the truck is close by depending on incoming timer value
+                if (vehicle.m_flags != 0 && ((TransferReason)vehicle.m_transferType == material1 || (material2 != TransferReason.None && (TransferReason)vehicle.m_transferType == material2)))
                 {
-                    Vehicle vehicle = vehicleInstance.m_vehicles.m_buffer[num];
-                    if (vehicle.m_flags != 0 && ((TransferReason)vehicle.m_transferType == material1 || (material2 != TransferReason.None && (TransferReason)vehicle.m_transferType == material2)))
-                    {
-                        iTotalTrucks++;
+                    iTempTotalTrucks++;
 
-                        // We only include this material if the truck is close by depending on incoming timer value
-                        switch (level)
-                        {
-                            case ProblemLevel.Level2:
+                    switch (level)
+                    {
+                        case ProblemLevel.Level2:
+                            {
+                                // We exclude vehicles who are loading or who's parent is loading
+                                if (!IsVehicleOrParentWaiting(vehicle))
                                 {
                                     // We need it to be really close, 2km as we are about to be abandoned
                                     double dDistanceSquared = Vector3.SqrMagnitude(vehicle.GetLastFramePosition() - building.m_position);
@@ -67,9 +62,13 @@ namespace TransferManagerCE.TransferOffers
                                     {
                                         iTransferSize += vehicle.m_transferSize;
                                     }
-                                    break;
                                 }
-                            case ProblemLevel.Level1:
+                                break;
+                            }
+                        case ProblemLevel.Level1:
+                            {
+                                // We exclude vehicles who are loading or who's parent is loading
+                                if (!IsVehicleOrParentWaiting(vehicle))
                                 {
                                     // Include truck if closer than 4km as we still have a little time for them to arrive
                                     double dDistanceSquared = Vector3.SqrMagnitude(vehicle.GetLastFramePosition() - building.m_position);
@@ -77,26 +76,21 @@ namespace TransferManagerCE.TransferOffers
                                     {
                                         iTransferSize += vehicle.m_transferSize;
                                     }
-                                    break;
                                 }
-                            case ProblemLevel.Level0:
-                                {
-                                    // Any distance is fine
-                                    iTransferSize += vehicle.m_transferSize;
-                                    break;
-                                }
-                        }
-                    }
-
-                    num = vehicle.m_nextGuestVehicle;
-                    if (++iLoopCount > 16384)
-                    {
-                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                        break;
+                                
+                                break;
+                            }
+                        case ProblemLevel.Level0:
+                            {
+                                // Any distance is fine
+                                iTransferSize += vehicle.m_transferSize;
+                                break;
+                            }
                     }
                 }
-            }
+            });
 
+            iTotalTrucks = iTempTotalTrucks;
             return iTransferSize;
         }
 
@@ -112,7 +106,7 @@ namespace TransferManagerCE.TransferOffers
                 if (level != ProblemLevel.Level0)
                 {
                     // We use the incoming timer value to determine how close a truck needs to be
-                    int iNearbyTransferSize = GetNearbyGuestVehiclesTransferSize(buildingID, level, primary, secondary, out int iTotalTrucks);
+                    int iNearbyTransferSize = GetNearbyGuestVehiclesTransferSize(buildingData, level, primary, secondary, out int iTotalTrucks);
                     if (iNearbyTransferSize == 0 && iTotalTrucks < iMAX_RETRIES)
                     {
                         TransferOffer offer = default;
@@ -124,6 +118,10 @@ namespace TransferManagerCE.TransferOffers
 
                         // Remove any vanilla offers in case there are any
                         Singleton<TransferManager>.instance.RemoveIncomingOffer(primary, offer);
+                        if (secondary != TransferReason.None)
+                        {
+                            Singleton<TransferManager>.instance.RemoveIncomingOffer(secondary, offer);
+                        }
 
                         // Add re-request offer
                         Singleton<TransferManager>.instance.AddIncomingOffer(primary, offer);
@@ -133,6 +131,21 @@ namespace TransferManagerCE.TransferOffers
                     }
                 }
             }
+        }
+
+        private static bool IsVehicleOrParentWaiting(Vehicle vehicle)
+        {
+            if (vehicle.m_waitCounter > 0)
+            {
+                return true;
+            }
+            else if (vehicle.m_cargoParent != 0)
+            {
+                Vehicle parent = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[vehicle.m_cargoParent];
+                return parent.m_waitCounter > 0;
+            }
+
+            return false;
         }
     }
 }

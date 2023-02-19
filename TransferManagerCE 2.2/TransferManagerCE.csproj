@@ -14,20 +14,24 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>False</Optimize>
+    <NoWarn>1701;1702;8600;8602;8604;8618;8625</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TEST Debug|AnyCPU'">
     <Optimize>False</Optimize>
     <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+    <NoWarn>1701;1702;8600;8602;8604;8618;8625</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>True</Optimize>
+    <NoWarn>1701;1702;8600;8602;8604;8618;8625</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TEST Release|AnyCPU'">
     <Optimize>True</Optimize>
     <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
+    <NoWarn>1701;1702;8600;8602;8604;8618;8625</NoWarn>
   </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

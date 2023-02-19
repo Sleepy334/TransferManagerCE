@@ -4,10 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using TransferManagerCE.CustomManager;
-using TransferManagerCE.Data;
 using TransferManagerCE.Settings;
-using UnityEngine;
-using static TransferManager;
 using static TransferManagerCE.CustomManager.TransferRestrictions;
 using static TransferManagerCE.Settings.ModSettings;
 
@@ -174,12 +171,12 @@ namespace TransferManagerCE.Util
         {
             if (m_candidateReasons.Count > 0)
             {
-                string sSummary = "       Candidate Exclusion Summary - |";
+                StringBuilder stringBuilder = new StringBuilder("       Candidate Exclusion Summary - |");
                 foreach (KeyValuePair<ExclusionReason, int> kvp in m_candidateReasons)
                 {
-                    sSummary += $" {kvp.Key}:{kvp.Value} |";
+                    stringBuilder.Append($" {kvp.Key}:{kvp.Value} |");
                 }
-                LogInfo(sSummary);
+                LogInfo(stringBuilder.ToString());
 
                 // Clear candidate reasons ready for next match
                 ClearCandidateReasons();
@@ -189,10 +186,9 @@ namespace TransferManagerCE.Util
         // -------------------------------------------------------------------------------------------
         public void LogMatch(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer)
         {
-            string sMessage = $"       ### Match Found ### Material:{m_material} Distance:{TransferManagerUtils.GetDistanceKm(incomingOffer, outgoingOffer)}km";
-            sMessage += "\r\n       - " + TransferManagerUtils.DebugOffer(m_material, incomingOffer, false, true, false);
-            sMessage += "\r\n       - " + TransferManagerUtils.DebugOffer(m_material, outgoingOffer, false, true, false);
-            LogInfo(sMessage);
+            LogInfo($"       ### Match Found ### Material:{m_material} Distance:{TransferManagerUtils.GetDistanceKm(incomingOffer, outgoingOffer)}km");
+            LogInfo("       - " + TransferManagerUtils.DebugOffer(m_material, incomingOffer, false, true, false));
+            LogInfo("       - " + TransferManagerUtils.DebugOffer(m_material, outgoingOffer, false, true, false));
         }
 
         // -------------------------------------------------------------------------------------------
@@ -229,6 +225,8 @@ namespace TransferManagerCE.Util
             LogInfo("ST = Sick Timer");
             LogInfo("DT = Death Timer");
             LogInfo("DistanceLOS = Distance Line Of Sight");
+            LogInfo("DistrictR = District Restrictions");
+            LogInfo("BuildingR = Building Restrictions");
         }
 
         // -------------------------------------------------------------------------------------------

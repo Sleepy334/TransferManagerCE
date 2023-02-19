@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using TransferManagerCE.TransferRules;
 using static TransferManagerCE.CustomManager.CustomTransferOffer;
+using TransferManagerCE.Settings;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -13,6 +14,7 @@ namespace TransferManagerCE.CustomManager
         public enum ExclusionReason
         {
             None,
+            NotValid,
             PathFinding,
             WarehouseReserveTrucks,
             Import,
@@ -29,6 +31,7 @@ namespace TransferManagerCE.CustomManager
             WarehouseStorageLevels,
             NotConnected,
             NoStartNode,
+            DuplicateNode,
             LowPriority,
             CloseByOnly,
             ExportVehicleLimit,
@@ -151,15 +154,9 @@ namespace TransferManagerCE.CustomManager
         private bool PathfindExclusion(CustomTransferReason material, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer)
         {
             // Exclude helicopter transfer reasons from path finding exclusions
-            switch (material.ToReason())
+            if (TransferManagerModes.IsHelicopterReason(material.ToReason()))
             {
-                case CustomTransferReason.Reason.Sick2:
-                case CustomTransferReason.Reason.SickMove:
-                case CustomTransferReason.Reason.Collapsed2:
-                case CustomTransferReason.Reason.Fire2:
-                case CustomTransferReason.Reason.ForestFire:
-                case CustomTransferReason.Reason.Crime2:
-                    return false;
+                return false;
             }
 
             bool result = false;
@@ -386,8 +383,8 @@ namespace TransferManagerCE.CustomManager
                 // We have to also use the new Inter-warehouse logic when ImprovedWarehouseMatching is ON as the
                 // vanilla logic only works when warehouse priorities are restricted to 0, 1 and 2
                 if (SaveGameSettings.GetSettings().NewInterWarehouseTransfer || 
-                    BuildingSettingsStorage.GetSettings(incomingOffer.GetBuilding()).IsImprovedWarehouseMatching() ||
-                    BuildingSettingsStorage.GetSettings(outgoingOffer.GetBuilding()).IsImprovedWarehouseMatching())
+                    BuildingSettingsFast.IsImprovedWarehouseMatching(incomingOffer.GetBuilding()) ||
+                    BuildingSettingsFast.IsImprovedWarehouseMatching(outgoingOffer.GetBuilding()))
                 {
                     // Add some logic based on warehouse mode
                     WarehouseMode inMode = CitiesUtils.GetWarehouseMode(incomingOffer.GetBuilding());

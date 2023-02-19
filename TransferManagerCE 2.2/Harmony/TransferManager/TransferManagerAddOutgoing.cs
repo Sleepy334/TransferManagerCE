@@ -10,9 +10,11 @@ namespace TransferManagerCE
         [HarmonyPrefix]
         public static bool Prefix(TransferReason material, ref TransferOffer offer)
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager)
+            SaveGameSettings settings = SaveGameSettings.GetSettings();
+
+            if (settings.EnableNewTransferManager)
             {
-                if (SaveGameSettings.GetSettings().OverrideGenericIndustriesHandler &&
+                if (settings.OverrideGenericIndustriesHandler &&
                     IndustrialBuildingAISimulationStepActive.s_bRejectOffers &&
                     TransferManagerModes.IsWarehouseMaterial(material))
                 {
@@ -20,8 +22,19 @@ namespace TransferManagerCE
                     return false;
                 }
 
-                // Adjust Priority of warehouse offers if ImprovedWarehouseMatching enabled
-                ImprovedTransfers.ImprovedWarehouseMatchingOutgoing(ref offer);
+                if (offer.Exclude)
+                {
+                    // Adjust Priority of warehouse offers if ImprovedWarehouseMatching enabled
+                    ImprovedTransfers.ImprovedWarehouseMatchingOutgoing(ref offer);
+                }
+                else if (offer.Building != 0 && // Check if import is completely disabled at the global level and don't add offer here
+                    TransferRestrictions.IsImportRestrictionsSupported(material) &&
+                    BuildingTypeHelper.IsOutsideConnection(offer.Building) &&
+                    settings.IsWarehouseImportRestricted(material) &&
+                    settings.IsImportRestricted(material))
+                {
+                    return false; // Don't add this offer as Import is completely restricted
+                }
 
                 // Update access segment if using path distance but do it in simulation thread so we don't break anything
                 CitiesUtils.CheckRoadAccess(material, offer);
@@ -30,8 +43,11 @@ namespace TransferManagerCE
             // Update the stats for the specific material
             MatchStats.RecordAddOutgoing(material, offer);
 
-            // Add offer to offer list and update transfers tab
-            BuildingPanelThreadExtension.HandleOffer(offer);
+            // Let building panel know a new offer is available
+            if (BuildingPanel.Instance != null)
+            {
+                BuildingPanel.Instance.HandleOffer(offer);
+            }
 
             return true; // Handle normally
         }

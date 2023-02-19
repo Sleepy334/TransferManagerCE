@@ -8,6 +8,7 @@ namespace TransferManagerCE.CustomManager
     [StructLayout(LayoutKind.Sequential)]
     public sealed class TransferJob
     {
+        public int m_cycle;
         public TransferManager.TransferReason material;
         public int m_outgoingCount; // Total number of OUT offers
         public int m_incomingCount; // Total number of IN offers
@@ -22,6 +23,21 @@ namespace TransferManagerCE.CustomManager
         {
             m_outgoingOffers = new CustomTransferOffer[TransferManager.TRANSFER_OFFER_COUNT * TransferManager.TRANSFER_PRIORITY_COUNT];
             m_incomingOffers = new CustomTransferOffer[TransferManager.TRANSFER_OFFER_COUNT * TransferManager.TRANSFER_PRIORITY_COUNT];
+        }
+
+        public void Reset()
+        {
+            material = TransferManager.TransferReason.None; //flag as unused
+
+            for (int i = 0; i < m_incomingCount; ++i)
+            {
+                m_incomingOffers[i].ResetCachedValues();
+            }
+
+            for (int i = 0; i < m_outgoingCount; ++i)
+            {
+                m_outgoingOffers[i].ResetCachedValues();
+            }
         }
     }
 }

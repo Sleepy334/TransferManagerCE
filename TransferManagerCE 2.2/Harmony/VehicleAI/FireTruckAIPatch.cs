@@ -31,7 +31,7 @@ namespace TransferManagerCE
                         // If the fire truck is stopped, the new target building is close enough that it will not move again so retarget deployed firefighting cims
                         if ((vehicleData.m_flags & Vehicle.Flags.Stopped) != 0)
                         {
-                            FireAIPatch.TargetCimsParentVehicleTarget(vehicleID, ref vehicleData);
+                            FireAIPatch.TargetCimsParentVehicleTarget(vehicleID, vehicleData);
                         }
                     }
                 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using TransferManagerCE.Data;
 
 namespace SleepyCommon
 {
@@ -192,6 +193,11 @@ namespace SleepyCommon
             }
 
             return result;
+        }
+
+        public static string DebugTicks(long ticks)
+        {
+            return ((double)ticks * 0.0001).ToString("F");
         }
     }
 }

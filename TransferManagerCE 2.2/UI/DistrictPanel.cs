@@ -152,31 +152,37 @@ namespace TransferManagerCE
 
         public void OnDistrictChanged(bool bChecked)
         {
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(m_iRestrictionId);
+            BuildingSettings? settings = BuildingSettingsStorage.GetSettings(m_buildingId);
+            if (settings != null)
+            {
+                RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(m_iRestrictionId);
 
-            if (m_bIncoming)
-            {
-                restrictions.m_bIncomingAllowLocalDistrict = bChecked;
-            }
-            else
-            {
-                restrictions.m_bOutgoingAllowLocalDistrict = bChecked;
+                if (m_bIncoming)
+                {
+                    restrictions.m_bIncomingAllowLocalDistrict = bChecked;
+                }
+                else
+                {
+                    restrictions.m_bOutgoingAllowLocalDistrict = bChecked;
+                }
             }
         }
 
         public void OnParkChanged(bool bChecked)
         {
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictions = settings.GetRestrictions(m_iRestrictionId);
+            BuildingSettings? settings = BuildingSettingsStorage.GetSettings(m_buildingId);
+            if (settings != null)
+            {
+                RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(m_iRestrictionId);
 
-            if (m_bIncoming)
-            {
-                restrictions.m_bIncomingAllowLocalPark = bChecked;
-            }
-            else
-            {
-                restrictions.m_bOutgoingAllowLocalPark = bChecked;
+                if (m_bIncoming)
+                {
+                    restrictions.m_bIncomingAllowLocalPark = bChecked;
+                }
+                else
+                {
+                    restrictions.m_bOutgoingAllowLocalPark = bChecked;
+                }
             }
         }
 
@@ -230,8 +236,8 @@ namespace TransferManagerCE
                 m_lblSource.text = sText;
             }
 
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(m_buildingId);
-            RestrictionSettings restrictionSettings = settings.GetRestrictions(m_iRestrictionId);
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictionSettings = settings.GetRestrictionsOrDefault(m_iRestrictionId);
 
             // Are settings allowed for this building/Direction
             bool bDisable = false;

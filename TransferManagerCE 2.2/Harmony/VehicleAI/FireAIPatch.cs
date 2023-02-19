@@ -6,6 +6,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using TransferManagerCE.Util;
+using static RenderManager;
 
 namespace TransferManagerCE
 {
@@ -39,104 +40,68 @@ namespace TransferManagerCE
         /// </summary>
         public static ushort FindBuildingWithFire(Vector3 pos, float maxDistance)
         {
-            BuildingManager instance = Singleton<BuildingManager>.instance;
-            uint numUnits = instance.m_buildings.m_size;    //get number of building units
-
-            // CHECK FORMULAS -> REFERENCE: SMARTERFIREFIGHTERSAI
-            int minx = Mathf.Max((int)((pos.x - maxDistance) / 64f + 135f), 0);
-            int minz = Mathf.Max((int)((pos.z - maxDistance) / 64f + 135f), 0);
-            int maxx = Mathf.Min((int)((pos.x + maxDistance) / 64f + 135f), 269);
-            int maxz = Mathf.Min((int)((pos.z + maxDistance) / 64f + 135f), 269);
-
             // Initialize default result if no building is found and specify maximum distance
             ushort result = 0;
             float shortestSquaredDistance = maxDistance * maxDistance;
 
-            // Loop through every building grid within maximum distance
-            for (int i = minz; i <= maxz; i++)
+            BuildingUtils.EnumerateNearbyBuildings(pos, maxDistance, (buildingID, building) =>
             {
-                for (int j = minx; j <= maxx; j++)
+                if (building.m_fireIntensity > 0)
                 {
-                    ushort currentBuilding = instance.m_buildingGrid[i * 270 + j];
-                    int num7 = 0;
-
-                    // Iterate through all buildings at this grid location
-                    while (currentBuilding != 0)
+                    // check if not already dispatched to
+                    long value;
+                    if (LRU_DISPATCH_LIST.TryGetValue(buildingID, out value))
                     {
-                        // Check Building Fire
-                        Building building = instance.m_buildings.m_buffer[currentBuilding];
-                        if (building.m_fireIntensity > 0)
+                        lru_hit_counter++;
+                        // dont consider building
+                    }
+                    else
+                    {
+                        // not found in LRU, may consider this building
+                        float distanceSqr = VectorUtils.LengthSqrXZ(pos - building.m_position);
+                        if (distanceSqr < shortestSquaredDistance)
                         {
-                            // check if not already dispatched to
-                            long value;
-                            if (LRU_DISPATCH_LIST.TryGetValue(currentBuilding, out value))
-                            {
-                                lru_hit_counter++;
-                                // dont consider building
-                            }
-                            else
-                            {
-                                // not found in LRU, may consider this building
-                                float distanceSqr = VectorUtils.LengthSqrXZ(pos - building.m_position);
-                                if (distanceSqr < shortestSquaredDistance)
-                                {
-                                    result = currentBuilding;
-                                    shortestSquaredDistance = distanceSqr;
-                                }
-                            }
-                        }
-
-                        currentBuilding = building.m_nextGridBuilding;
-                        if (++num7 >= numUnits)
-                        {
-                            CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                            break;
+                            result = buildingID;
+                            shortestSquaredDistance = distanceSqr;
                         }
                     }
                 }
-            }
+            });
 
             if (result != 0)
+            {
                 AddBuildingLRU(result);
+            }
 
             return result;
         }
 
-        public static void TargetCimsParentVehicleTarget(ushort vehicleID, ref Vehicle vehicleData)
+        public static void TargetCimsParentVehicleTarget(ushort vehicleID, Vehicle vehicleData)
         {
             //not close enough? return
             if (Vector3.SqrMagnitude(vehicleData.GetLastFramePosition() - Singleton<BuildingManager>.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding].m_position) > 50 * 50)
-                return;
-
-            CitizenManager instance = Singleton<CitizenManager>.instance;
-            uint numCitizenUnits = instance.m_units.m_size;
-            uint num = vehicleData.m_citizenUnits;
-            int num2 = 0;
-            while (num != 0)
             {
-                uint nextUnit = instance.m_units.m_buffer[num].m_nextUnit;
-                for (int i = 0; i < 5; i++)
-                {
-                    uint citizen = instance.m_units.m_buffer[num].GetCitizen(i);
-                    if (citizen == 0)
-                    {
-                        continue;
-                    }
-                    ushort instance2 = instance.m_citizens.m_buffer[citizen].m_instance;
-                    if (instance2 == 0)
-                    {
-                        continue;
-                    }
-                    CitizenInfo info = instance.m_instances.m_buffer[instance2].Info;
-                    info.m_citizenAI.SetTarget(instance2, ref instance.m_instances.m_buffer[instance2], vehicleData.m_targetBuilding);
-                }
-                num = nextUnit;
-                if (++num2 > numCitizenUnits)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    break;
-                }
+                return;
             }
+
+            CitizenInstance[] CitizenInstances = Singleton<CitizenManager>.instance.m_instances.m_buffer;
+
+            // Loop through fire fighters and set their target
+            ushort targetBuilding = vehicleData.m_targetBuilding;
+            CitizenUtils.EnumerateCitizens(vehicleData.m_citizenUnits, (citizenId, citizen) =>
+            {
+                ushort instance2 = citizen.m_instance;
+                if (instance2 != 0)
+                {
+                    ref CitizenInstance cimInstance = ref CitizenInstances[instance2];
+                    if (cimInstance.m_flags != 0)
+                    {
+                        CitizenInfo info = cimInstance.Info;
+                        info.m_citizenAI.SetTarget(instance2, ref cimInstance, targetBuilding);
+                    }
+                }
+                return true; // Continue loop
+            });
         }
     }
 }

@@ -18,7 +18,7 @@ namespace TransferManagerCE
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {
                 // Hospitals don't put out transfer offers to remove their dead, so they just hang around forever.
-                HandleServices.HandleDead(buildingID, ref buildingData, ref behaviour);
+                DeadHandler.HandleDead(buildingID, ref buildingData, ref behaviour);
             }
         }
     }

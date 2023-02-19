@@ -106,18 +106,10 @@ namespace TransferManagerCE
                 sMessage += " | Internal";
             }
 
-            // Only add if evaluated
-            if (bNode && 
-                (PathDistanceTypes.IsPathDistanceSupported(material) || PathDistanceTypes.IsConnectedLOSSupported(material)))
+            // Force calculation when requested
+            if (bNode)
             {
-                if (offer.m_nearestNode != ushort.MaxValue)
-                {
-                    sMessage += $" | Node:{offer.m_nearestNode.ToString("00000")}";
-                }
-                else if (bAlign)
-                {
-                    sMessage += $" | Node:     ";
-                }
+                sMessage += $" | Node:{offer.GetNearestNode(material).ToString("00000")}";
             }
 
             // Only add if requested
@@ -144,6 +136,11 @@ namespace TransferManagerCE
             {
                 sMessage += $" | WarehouseMode: {offer.GetWarehouseMode()}";
                 sMessage += $" | Storage: {Math.Round(offer.GetWarehouseStoragePercent() * 100.0f, 2)}%";
+            }
+
+            if (offer.IsOutside())
+            {
+                sMessage += $" | Multiplier: {offer.GetEffectiveOutsideModifier()}";
             }
 
             return sMessage;

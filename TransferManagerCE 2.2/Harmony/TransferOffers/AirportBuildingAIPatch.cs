@@ -1,5 +1,6 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
+using TransferManagerCE.TransferOffers;
 using UnityEngine;
 
 namespace TransferManagerCE
@@ -13,25 +14,7 @@ namespace TransferManagerCE
         {
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {
-                int crimeBuffer = (int)data.m_crimeBuffer;
-                if (citizenCount > 0 && crimeBuffer > citizenCount * 15 && 
-                    Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.PoliceDepartment) && 
-                    Singleton<SimulationManager>.instance.m_randomizer.Int32(2U) == 0)
-                {
-                    int count = 0;
-                    int cargo = 0;
-                    int capacity = 0;
-                    int outside = 0;
-                    CitiesUtils.CalculateGuestVehicles(buildingID, ref data, TransferManager.TransferReason.Crime, ref count, ref cargo, ref capacity, ref outside);
-                    if (count == 0)
-                        Singleton<TransferManager>.instance.AddOutgoingOffer(TransferManager.TransferReason.Crime, new TransferManager.TransferOffer()
-                        {
-                            Priority = crimeBuffer / Mathf.Max(1, citizenCount * 10),
-                            Building = buildingID,
-                            Position = data.m_position,
-                            Amount = 1
-                        });
-                }
+                CrimeHandler.AddCrimeOffer(buildingID, ref data, citizenCount);
             }
         }
     }

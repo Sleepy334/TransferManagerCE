@@ -26,19 +26,19 @@ namespace TransferManagerCE.Patch
                 DistrictPanel.Instance.Hide();
                 return false;
             }
-            else if (TransferIssueThreadExtension.HandleEscape())
+            else if (TransferIssuePanel.Instance != null && TransferIssuePanel.Instance.HandleEscape())
             {
                 return false;
             }
-            else if(StatisticsThreadExtension.HandleEscape())
+            else if(StatsPanel.Instance != null && StatsPanel.Instance.HandleEscape())
             {
                 return false;
             }
-            else if (BuildingPanelThreadExtension.HandleEscape())
+            else if (BuildingPanel.Instance != null && BuildingPanel.Instance.HandleEscape())
             {
                 return false;
             }
-            else if (OutsideConnectionPanelThreadExtension.HandleEscape())
+            else if (OutsideConnectionPanel.Instance != null && OutsideConnectionPanel.Instance.HandleEscape())
             {
                 return false;
             }

@@ -3,453 +3,17 @@ using ColossalFramework.Math;
 using ICities;
 using System;
 using System.Collections.Generic;
-using TransferManagerCE.CustomManager;
-using TransferManagerCE.Util;
 using UnityEngine;
+using TransferManagerCE.CustomManager;
 using static TransferManager;
 using static TransferManagerCE.CustomManager.CustomTransferOffer;
 using static TransferManagerCE.VehicleTypeHelper;
+using static InvestmentAI;
 
 namespace TransferManagerCE
 {
-    public class CitiesUtils
+    public static class CitiesUtils
     {
-        public static void CalculateGuestVehicles(ushort buildingID, ref Building data, TransferManager.TransferReason material, ref int count, ref int cargo, ref int capacity, ref int outside)
-        {
-            VehicleManager instance = Singleton<VehicleManager>.instance;
-            ushort vehicleID = data.m_guestVehicles;
-            int num = 0;
-            while (vehicleID != (ushort)0)
-            {
-                if ((TransferManager.TransferReason)instance.m_vehicles.m_buffer[(int)vehicleID].m_transferType == material)
-                {
-                    int size;
-                    int max;
-                    instance.m_vehicles.m_buffer[(int)vehicleID].Info.m_vehicleAI.GetSize(vehicleID, ref instance.m_vehicles.m_buffer[(int)vehicleID], out size, out max);
-                    cargo += Mathf.Min(size, max);
-                    capacity += max;
-                    ++count;
-                    if ((instance.m_vehicles.m_buffer[(int)vehicleID].m_flags & (Vehicle.Flags.Importing | Vehicle.Flags.Exporting)) != ~(Vehicle.Flags.Created | Vehicle.Flags.Deleted | Vehicle.Flags.Spawned | Vehicle.Flags.Inverted | Vehicle.Flags.TransferToTarget | Vehicle.Flags.TransferToSource | Vehicle.Flags.Emergency1 | Vehicle.Flags.Emergency2 | Vehicle.Flags.WaitingPath | Vehicle.Flags.Stopped | Vehicle.Flags.Leaving | Vehicle.Flags.Arriving | Vehicle.Flags.Reversed | Vehicle.Flags.TakingOff | Vehicle.Flags.Flying | Vehicle.Flags.Landing | Vehicle.Flags.WaitingSpace | Vehicle.Flags.WaitingCargo | Vehicle.Flags.GoingBack | Vehicle.Flags.WaitingTarget | Vehicle.Flags.Importing | Vehicle.Flags.Exporting | Vehicle.Flags.Parking | Vehicle.Flags.CustomName | Vehicle.Flags.OnGravel | Vehicle.Flags.WaitingLoading | Vehicle.Flags.Congestion | Vehicle.Flags.DummyTraffic | Vehicle.Flags.Underground | Vehicle.Flags.Transition | Vehicle.Flags.InsideBuilding | Vehicle.Flags.LeftHandDrive))
-                        ++outside;
-                }
-                vehicleID = instance.m_vehicles.m_buffer[(int)vehicleID].m_nextGuestVehicle;
-                if (++num > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
-                    break;
-                }
-            }
-        }
-
-        private static void AddCitizenToList(uint cim, ushort usBuildingId, Citizen.Flags flag, List<uint> cimList)
-        {
-            if (cim != 0)
-            {
-                Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[cim];
-                if ((citizen.m_flags & flag) == flag && 
-                    (citizen.GetBuildingByLocation() == usBuildingId))
-                {
-                    cimList.Add(cim);
-                }
-            }
-        }
-
-        public static List<uint> GetCitizens(ushort usBuildingId, Building building, Citizen.Flags flags)
-        {
-            List<uint> cimList = new List<uint>();
-
-            int iLoopCount = 0;
-            uint uintCitizenUnit = building.m_citizenUnits;
-            while (uintCitizenUnit != 0)
-            {
-                CitizenUnit citizenUnit = CitizenManager.instance.m_units.m_buffer[uintCitizenUnit];
-                for (int i = 0; i < 5; ++i)
-                {
-                    AddCitizenToList(citizenUnit.GetCitizen(i), usBuildingId, flags, cimList);
-                }
-                
-                uintCitizenUnit = citizenUnit.m_nextUnit;
-
-                // Check for bad list
-                if (++iLoopCount > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    return new List<uint>();
-                }
-            }
-
-            return cimList;
-        }
-
-        public static List<uint> GetDead(ushort usBuildingId, Building building)
-        {
-            return GetCitizens(usBuildingId, building, Citizen.Flags.Dead);
-        }
-
-        public static List<uint> GetSick(ushort usBuildingId, Building building)
-        {
-            return GetCitizens(usBuildingId, building, Citizen.Flags.Sick);
-        }
-
-        public static List<uint> GetCriminals(ushort usBuildingId, Building building)
-        {
-            return GetCitizens(usBuildingId, building, Citizen.Flags.Criminal);
-        }
-
-        public static List<uint> GetCitizens(Building building, CitizenUnit.Flags unitFlags)
-        {
-            List<uint> cimList = new List<uint>();
-
-            int iLoopCount = 0;
-            uint uintCitizenUnit = building.m_citizenUnits;
-            while (uintCitizenUnit != 0)
-            {
-                CitizenUnit citizenUnit = CitizenManager.instance.m_units.m_buffer[uintCitizenUnit];
-                if (unitFlags == CitizenUnit.Flags.None || (citizenUnit.m_flags & unitFlags) == unitFlags)
-                {
-                    for (int i = 0; i < 5; ++i)
-                    {
-                        uint citizen = citizenUnit.GetCitizen(i);
-                        if (citizen != 0)
-                        {
-                            cimList.Add(citizen);
-                        }
-                    }
-                }
-
-                uintCitizenUnit = citizenUnit.m_nextUnit;
-
-                // Check for bad list
-                if (++iLoopCount > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    return new List<uint>();
-                }
-            }
-
-            return cimList;
-        }
-
-        public static List<uint> GetCriminalsAtPoliceStation(Building building)
-        {
-            List<uint> criminals = new List<uint>(); 
-            
-            List<uint> cims = GetCitizens(building, CitizenUnit.Flags.Visit);
-            foreach (uint cim in cims)
-            {
-                Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[cim];
-                if (citizen.CurrentLocation == Citizen.Location.Visit)
-                {
-                    criminals.Add(cim);
-                }
-            }
-
-            return criminals;
-        }
-
-        public static List<ushort> GetHearsesOnRoute(ushort buidlingId)
-        {
-            List<ushort> list = new List<ushort>();
-
-            List<ushort> vehicles = GetGuestVehiclesForBuilding(buidlingId);
-            foreach (ushort vehicleId in vehicles)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                if ((vehicle.m_flags & Vehicle.Flags.TransferToSource) == Vehicle.Flags.TransferToSource &&
-                    (vehicle.Info != null && (vehicle.Info.m_vehicleAI is HearseAI)))
-                {
-                    list.Add(vehicleId);
-                }
-            }
-
-            return list;
-        }
-
-        public static List<ushort> GetAmbulancesOnRoute(ushort buidlingId)
-        {
-            List<ushort> list = new List<ushort>();
-
-            List<ushort> vehicles = GetGuestVehiclesForBuilding(buidlingId);
-            foreach (ushort vehicleId in vehicles)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                if ((vehicle.m_flags & Vehicle.Flags.TransferToSource) == Vehicle.Flags.TransferToSource &&
-                    (vehicle.Info != null && (vehicle.Info.m_vehicleAI is AmbulanceAI || vehicle.Info.m_vehicleAI is AmbulanceCopterAI)))
-                {
-                    list.Add(vehicleId);
-                }
-            }
-
-            return list;
-        }
-
-        public static List<ushort> GetGoodsTrucksOnRoute(ushort buidlingId)
-        {
-            List<ushort> list = new List<ushort>();
-
-            List<ushort> vehicles = GetGuestVehiclesForBuilding(buidlingId);
-            foreach (ushort vehicleId in vehicles)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                if ((vehicle.m_flags & Vehicle.Flags.TransferToTarget) == Vehicle.Flags.TransferToTarget &&
-                    (vehicle.Info != null && vehicle.Info.m_vehicleAI is CargoTruckAI) && 
-                    vehicle.m_sourceBuilding != 0) // Quite often importing vehicles have no target till they get to a cargo staion etc...
-                {
-                    list.Add(vehicleId);
-                }
-            }
-
-            return list;
-        }
-
-        public static List<ushort> GetPoliceOnRoute(ushort buidlingId)
-        {
-            List<ushort> list = new List<ushort>();
-
-            List<ushort> vehicles = GetGuestVehiclesForBuilding(buidlingId);
-            foreach (ushort vehicleId in vehicles)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                if ((vehicle.m_flags & Vehicle.Flags.TransferToSource) == Vehicle.Flags.TransferToSource &&
-                    (vehicle.Info != null && (vehicle.Info.m_vehicleAI is PoliceCarAI || vehicle.Info.m_vehicleAI is PoliceCopterAI)))
-                {
-                    list.Add(vehicleId);
-                }
-            }
-
-            return list;
-        }
-
-        public static List<ushort> GetGuestVehiclesForBuilding(ushort buidlingId)
-        {
-            List<ushort> list = new List<ushort>();
-
-            Building building = BuildingManager.instance.m_buildings.m_buffer[buidlingId];
-
-            int iLoopCount = 0;
-            ushort vehicleId = building.m_guestVehicles;
-            while (vehicleId != 0)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                if (vehicle.m_flags != 0)
-                {
-                    list.Add(vehicleId);
-                }
-                vehicleId = vehicle.m_nextGuestVehicle;
-
-                // Check for bad list
-                if (++iLoopCount > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    return new List<ushort>();
-                }
-            }
-
-            return list;
-        }
-
-        public static List<ushort> GetGuestParentVehiclesForBuilding(ushort buidlingId)
-        {
-            List<ushort> list = new List<ushort>();
-
-            Building building = BuildingManager.instance.m_buildings.m_buffer[buidlingId];
-
-            int iLoopCount = 0;
-            ushort vehicleId = building.m_guestVehicles;
-            while (vehicleId != 0)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                if (vehicle.m_flags != 0)
-                {
-                    if (vehicle.m_cargoParent == 0)
-                    {
-                        list.Add(vehicleId);
-                    }
-                    else if (!list.Contains(vehicle.m_cargoParent))
-                    {
-                        list.Add(vehicle.m_cargoParent);
-                    }
-                }
-                vehicleId = vehicle.m_nextGuestVehicle;
-
-                // Check for bad list
-                if (++iLoopCount > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    return new List<ushort>();
-                }
-            }
-
-            return list;
-        }
-
-        public static int GetActiveVehicleCount(Building building, TransferReason material)
-        {
-            int iVehicles = 0;
-            int iLoopCount = 0;
-            ushort usVehicleId = building.m_ownVehicles;
-            while (usVehicleId != 0)
-            {
-                // Check transfer type matches
-                Vehicle oVehicle = VehicleManager.instance.m_vehicles.m_buffer[usVehicleId];
-                if ((TransferReason)oVehicle.m_transferType == material)
-                {
-                    iVehicles++;
-                }
-
-                // Update for next car
-                usVehicleId = oVehicle.m_nextOwnVehicle;
-
-                // Check for bad list
-                if (++iLoopCount > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    break;
-                }
-            }
-            return iVehicles;
-        }
-
-        public static List<ushort> GetOwnVehiclesForBuilding(ushort buidlingId)
-        {
-            List<ushort> list = new List<ushort>();
-
-            Building building = BuildingManager.instance.m_buildings.m_buffer[buidlingId];
-            if (building.m_flags != 0)
-            {
-                uint uiSize = VehicleManager.instance.m_vehicles.m_size;
-                int iLoopCount = 0;
-                ushort vehicleId = building.m_ownVehicles;
-                while (vehicleId != 0 && vehicleId < uiSize)
-                {
-                    Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                    if (vehicle.m_flags != 0)
-                    {
-                        list.Add(vehicleId);
-                    }
-                    vehicleId = vehicle.m_nextOwnVehicle;
-
-                    // Check for bad list
-                    if (++iLoopCount > 16384)
-                    {
-                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                        return new List<ushort>();
-                    }
-                }
-            }
-
-            return list;
-        }
-
-        public static List<ushort> GetGuestParentVehiclesForBuilding(ushort buildingId, out int iStuck)
-        {
-            List<ushort> list = new List<ushort>();
-
-            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-
-            iStuck = 0;
-            int iLoopCount = 0;
-            ushort vehicleId = building.m_guestVehicles;
-            while (vehicleId != 0)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                if (vehicle.m_flags != 0)
-                {
-                    if (vehicle.m_cargoParent == 0)
-                    {
-                        list.Add(vehicleId);
-
-                        // Check if it is stuck
-                        if (vehicle.m_waitCounter >= 255)
-                        {
-                            iStuck++;
-                        }
-                    }
-                    else if (!list.Contains(vehicle.m_cargoParent))
-                    {
-                        list.Add(vehicle.m_cargoParent);
-
-                        // Check if it is stuck
-                        Vehicle cargoParent = VehicleManager.instance.m_vehicles.m_buffer[vehicle.m_cargoParent];
-                        if (cargoParent.m_flags == 0 || cargoParent.m_waitCounter >= 255)
-                        {
-                            iStuck++;
-                        }
-                    }
-                }
-                else
-                {
-                    iStuck++;
-                }
-                vehicleId = vehicle.m_nextGuestVehicle;
-
-                // Check for bad list
-                if (++iLoopCount > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    return new List<ushort>();
-                }
-            }
-
-            return list;
-        }
-
-        public static List<ushort> GetOwnParentVehiclesForBuilding(ushort buildingId, out int iStuck)
-        {
-            List<ushort> list = new List<ushort>();
-            iStuck = 0;
-
-            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-            if (building.m_flags != 0)
-            {
-                uint uiSize = VehicleManager.instance.m_vehicles.m_size;
-                int iLoopCount = 0;
-                ushort vehicleId = building.m_ownVehicles;
-                while (vehicleId != 0 && vehicleId < uiSize)
-                {
-                    Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                    if (vehicle.m_flags != 0)
-                    {
-                        if (vehicle.m_cargoParent == 0)
-                        {
-                            list.Add(vehicleId);
-
-                            // Check if it is stuck
-                            if (vehicle.m_waitCounter >= 255)
-                            {
-                                iStuck++;
-                            }
-                        }
-                        else if (!list.Contains(vehicle.m_cargoParent))
-                        {
-                            list.Add(vehicle.m_cargoParent);
-
-                            // Check if it is stuck
-                            Vehicle cargoParent = VehicleManager.instance.m_vehicles.m_buffer[vehicle.m_cargoParent];
-                            if (cargoParent.m_flags == 0 || cargoParent.m_waitCounter >= 255)
-                            {
-                                iStuck++;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        iStuck++;
-                    }
-                    vehicleId = vehicle.m_nextOwnVehicle;
-
-                    // Check for bad list
-                    if (++iLoopCount > 16384)
-                    {
-                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                        return new List<ushort>();
-                    }
-                }
-            }
-
-            return list;
-        }
-
         public static string GetBuildingName(ushort buildingId, bool bShowId = false)
         {
             string sName = "";
@@ -814,125 +378,61 @@ namespace TransferManagerCE
             return parkFirst == parkSecond && parkFirst != 0;
         }
 
-        public static int CountImportExportVehicles(ushort buildingId, TransferReason material)
-        {
-            int iOutside = 0;
-
-            VehicleManager vehicleInstance = Singleton<VehicleManager>.instance;
-            BuildingManager buildingInstance = Singleton<BuildingManager>.instance;
-
-            ref Building building = ref buildingInstance.m_buildings.m_buffer[buildingId];
-
-            ushort num = building.m_ownVehicles;
-            int iLoopCount = 0;
-            while (num != 0)
-            {
-                Vehicle vehicle = vehicleInstance.m_vehicles.m_buffer[num];
-                if ((TransferReason)vehicle.m_transferType == material)
-                {
-                    if ((vehicle.m_flags & (Vehicle.Flags.Importing | Vehicle.Flags.Exporting)) != 0)
-                    {
-                        iOutside++;
-                    }
-                }
-
-                num = vehicle.m_nextOwnVehicle;
-                if (++iLoopCount > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    break;
-                }
-            }
-
-            return iOutside;
-        }
-
-        public static int GetGuestVehiclesTransferSize(ushort buildingId, TransferReason material1, TransferReason material2 = TransferReason.None)
-        {
-            int iTransferSize = 0;
-
-            VehicleManager vehicleInstance = Singleton<VehicleManager>.instance;
-            BuildingManager buildingInstance = Singleton<BuildingManager>.instance;
-
-            Building building = buildingInstance.m_buildings.m_buffer[buildingId];
-            if (building.m_flags != 0)
-            {
-                ushort num = building.m_guestVehicles;
-                int iLoopCount = 0;
-                while (num != 0)
-                {
-                    Vehicle vehicle = vehicleInstance.m_vehicles.m_buffer[num];
-                    if ((TransferReason)vehicle.m_transferType == material1 ||
-                        (material2 != TransferReason.None && (TransferReason)vehicle.m_transferType == material2))
-                    {
-                        iTransferSize += vehicle.m_transferSize;
-                    }
-
-                    num = vehicle.m_nextGuestVehicle;
-                    if (++iLoopCount > 16384)
-                    {
-                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                        break;
-                    }
-                }
-            }
-
-            return iTransferSize;
-        }
-
         public static string GetVehicleTransferValue(ushort vehicleId)
         {
             if (vehicleId != 0)
             {
                 Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                
-                // Show values for cargo parent if any
-                if (vehicle.m_cargoParent != 0)
-                {
-                    vehicleId = vehicle.m_cargoParent;
-                    vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                }
-
                 if (vehicle.m_flags != 0)
                 {
-                    VehicleType eType = VehicleTypeHelper.GetVehicleType(vehicle);
-                    switch (eType)
+                    // Show values for cargo parent if any
+                    if (vehicle.m_cargoParent != 0)
                     {
-                        case VehicleType.PoliceCar:
-                        case VehicleType.PoliceCopter:
-                        case VehicleType.BankVan:
-                        case VehicleType.GarbageTruck:
-                        case VehicleType.PostVan:
-                        case VehicleType.CargoTruck:
-                        case VehicleType.CargoTrain:
-                        case VehicleType.CargoShip:
-                        case VehicleType.CargoPlane:
-                            {
-                                int iCapacity;
-                                int iCount = VehicleTypeHelper.GetBufferStatus(vehicleId, out iCapacity);
-                                if (iCapacity > 0)
+                        vehicleId = vehicle.m_cargoParent;
+                        vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
+                    }
+
+                    if (vehicle.m_flags != 0)
+                    {
+                        VehicleType eType = VehicleTypeHelper.GetVehicleType(vehicle);
+                        switch (eType)
+                        {
+                            case VehicleType.PoliceCar:
+                            case VehicleType.PoliceCopter:
+                            case VehicleType.BankVan:
+                            case VehicleType.GarbageTruck:
+                            case VehicleType.PostVan:
+                            case VehicleType.CargoTruck:
+                            case VehicleType.CargoTrain:
+                            case VehicleType.CargoShip:
+                            case VehicleType.CargoPlane:
                                 {
-                                    return $"{Math.Round(((float)iCount / (float)iCapacity * 100.0), 0)}%";
+                                    int iCapacity;
+                                    int iCount = VehicleTypeHelper.GetBufferStatus(vehicleId, out iCapacity);
+                                    if (iCapacity > 0)
+                                    {
+                                        return $"{Math.Round(((float)iCount / (float)iCapacity * 100.0), 0)}%";
+                                    }
+                                    else
+                                    {
+                                        return "0%";
+                                    }
                                 }
-                                else
+                            case VehicleType.CruiseShip:
+                            case VehicleType.PassengerPlane:
+                            case VehicleType.PassengerTrain:
+                            case VehicleType.MetroTrain:
+                            case VehicleType.Bus:
                                 {
-                                    return "0%";
+                                    int iCapacity;
+                                    int iCount = VehicleTypeHelper.GetVehiclePassengerCount(vehicleId, out iCapacity);
+                                    return iCount + "/" + iCapacity;
                                 }
-                            }
-                        case VehicleType.CruiseShip:
-                        case VehicleType.PassengerPlane:
-                        case VehicleType.PassengerTrain:
-                        case VehicleType.MetroTrain:
-                        case VehicleType.Bus:
-                            {
-                                int iCapacity;
-                                int iCount = VehicleTypeHelper.GetVehiclePassengerCount(vehicleId, out iCapacity);
-                                return iCount + "/" + iCapacity;
-                            }
-                        default:
-                            {
-                                return vehicle.m_transferSize.ToString();
-                            }
+                            default:
+                                {
+                                    return vehicle.m_transferSize.ToString();
+                                }
+                        }
                     }
                 }
             }
@@ -957,25 +457,15 @@ namespace TransferManagerCE
 
         public static int GetHomeCount(Building buildingData)
         {
-            CitizenManager instance = Singleton<CitizenManager>.instance;
-
             int homeCount = 0;
-            uint num = buildingData.m_citizenUnits;
-            int num2 = 0;
-            while (num != 0)
+
+            CitizenUtils.EnumerateCitizenUnits(buildingData.m_citizenUnits, (unitId, unit) =>
             {
-                if ((instance.m_units.m_buffer[num].m_flags & CitizenUnit.Flags.Home) != 0)
+                if ((unit.m_flags & CitizenUnit.Flags.Home) != 0)
                 {
                     homeCount++;
                 }
-
-                num = instance.m_units.m_buffer[num].m_nextUnit;
-                if (++num2 > 524288)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    break;
-                }
-            }
+            });
 
             return homeCount;
         }
@@ -1012,7 +502,7 @@ namespace TransferManagerCE
         {
             // Update access segment if using path distance but do it in simulation thread so we don't break anything
             if (offer.Building != 0 &&
-                (PathDistanceTypes.IsPathDistanceSupported(material) || PathDistanceTypes.IsConnectedLOSSupported(material)) &&
+                (PathDistanceTypes.GetDistanceAlgorithm(material) != PathDistanceTypes.PathDistanceAlgorithm.LineOfSight) &&
                 !BuildingTypeHelper.IsOutsideConnection(offer.Building))
             {
                 ref Building building = ref BuildingManager.instance.m_buildings.m_buffer[offer.Building];

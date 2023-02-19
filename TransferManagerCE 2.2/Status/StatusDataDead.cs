@@ -28,12 +28,12 @@ namespace TransferManagerCE.Data
                         }
                         else
                         {
-                            return CitiesUtils.GetDead(m_buildingId, building).Count.ToString();
+                            return BuildingUtils.GetDeadCount(m_buildingId, building).ToString();
                         }
                     }
                 default:
                     {
-                        return CitiesUtils.GetDead(m_buildingId, building).Count.ToString();
+                        return BuildingUtils.GetDeadCount(m_buildingId, building).ToString();
                     }
             }
         }

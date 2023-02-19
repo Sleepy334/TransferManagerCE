@@ -18,17 +18,17 @@ namespace TransferManagerCE.Data
                 if (building.Info.GetAI().name.Contains("PrisonCopterPoliceStationAI")) 
                 {
                     // Prison Helicopter Mod
-                    return CitiesUtils.GetCriminalsAtPoliceStation(building).Count.ToString();
+                    return BuildingUtils.GetCriminalsAtPoliceStation(m_buildingId, building).ToString();
                 }
                 switch (building.Info.GetAI())
                 {
                     case PoliceStationAI station:
                         {
-                            return CitiesUtils.GetCriminalsAtPoliceStation(building).Count + "/" + station.m_jailCapacity;
+                            return BuildingUtils.GetCriminalsAtPoliceStation(m_buildingId, building) + "/" + station.m_jailCapacity;
                         }
                     default:
                         {
-                            return building.m_crimeBuffer + " | " + CitiesUtils.GetCriminals(m_buildingId, building).Count;
+                            return building.m_crimeBuffer + " | " + BuildingUtils.GetCriminalCount(m_buildingId, building);
                         }
                 }
             }

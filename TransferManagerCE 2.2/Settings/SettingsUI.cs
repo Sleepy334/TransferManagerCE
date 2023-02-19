@@ -10,6 +10,8 @@ using TransferManagerCE.Settings;
 using TransferManagerCE.Util;
 using UnityEngine;
 using static TransferManager;
+using static TransferManagerCE.PathDistance;
+using static TransferManagerCE.PathQueue;
 
 namespace TransferManagerCE
 {
@@ -52,14 +54,17 @@ namespace TransferManagerCE
         private UICheckBox? m_chkPoliceCopterAI = null;
 
         // General tab
-        private UIDropDown? m_dropdownBalanced = null;
-        private UICheckBox? m_chkPathDistanceServices = null;
-        private UICheckBox? m_chkPathDistanceGoods = null;
         private UICheckBox? m_chkEnablePathFailExclusion = null;
+        private UIDropDown? m_dropdownPathDistanceServices = null;
+        private UIDropDown? m_dropdownPathDistanceGoods = null;
+        private SettingsSlider? m_sliderPathDistanceHeuristic = null;
+        private SettingsSlider? m_sliderPathDistanceShift = null;
+        private UIDropDown? m_dropdownBalanced = null;
         private UICheckBox? m_chkDisableDummyTraffic = null;
 
         // Maintenance tab
         private UILabel? m_lblGhostVehicleCount = null;
+        private UILabel? m_lblPathUnitCount = null;
         private UIDropDown? m_dropdownConnectionGraph = null;
         private UIDropDown? m_dropdownLogReason = null;
         private UIDropDown? m_dropdownCandidates = null;
@@ -115,7 +120,6 @@ namespace TransferManagerCE
             UIPanel panel = (UIPanel)groupTransferIssue.self;
             UIKeymappingsPanel keymappingsTransferIssue = panel.gameObject.AddComponent<UIKeymappingsPanel>();
             keymappingsTransferIssue.AddKeymapping(Localization.Get("keyOpenTransferIssuePanel"), ModSettings.TransferIssueHotkey); // Automatically saved
-            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueDeleteResolvedDelay"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.TransferIssueDeleteResolvedDelay, OnIsseuDeleteDelayValueChanged);
             SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueDeadTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.DeadTimerValue, OnDeadValueChanged);
             SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueSickTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.SickTimerValue, OnSickValueChanged);
             SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueGoodsTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.GoodsTimerValue, OnGoodsValueChanged);
@@ -185,9 +189,31 @@ namespace TransferManagerCE
             // Path distance
             UIHelper groupPathDistance = (UIHelper)helper.AddGroup(Localization.Get("GROUP_PATH_DISTANCE"));
             AddDescription(groupPathDistance, "txtPathDistance", 1.0f, Localization.Get("txtPathDistance"));
-            m_chkPathDistanceServices = (UICheckBox)groupPathDistance.AddCheckbox(Localization.Get("optionPathDistanceServices"), oSettings.UsePathDistanceServices, OnPathDistanceServices);
-            m_chkPathDistanceGoods = (UICheckBox)groupPathDistance.AddCheckbox(Localization.Get("optionPathDistanceGoods"), oSettings.UsePathDistanceGoods, OnPathDistanceGoods);
+            // Balanced match mode setting
+            string[] itemsPathDistance = {
+                Localization.Get("dropdownPathDistanceLOS"),
+                Localization.Get("dropdownPathDistanceConnectedLOS"),
+                Localization.Get("dropdownPathDistance"),
+            };
+            m_dropdownPathDistanceServices = (UIDropDown)groupPathDistance.AddDropdown(Localization.Get("dropdownPathDistanceAlgorithmServices"), itemsPathDistance, (int)oSettings.PathDistanceServices, OnPathDistanceServices);
+            m_dropdownPathDistanceServices.width = 400;
+            m_dropdownPathDistanceGoods = (UIDropDown)groupPathDistance.AddDropdown(Localization.Get("dropdownPathDistanceAlgorithmGoods"), itemsPathDistance, (int)oSettings.PathDistanceGoods, OnPathDistanceGoods);
+            m_dropdownPathDistanceGoods.width = 400;
+            
+            AddDescription(groupPathDistance, "txtSpacer", 1.0f, "");
 
+            // Accuracy slider
+            AddDescription(groupPathDistance, "txtPathDistanceHeuristic", 1.0f, Localization.Get("txtPathDistanceHeuristic"));
+            m_sliderPathDistanceHeuristic = SettingsSlider.Create(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceHeuristic"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.PathDistanceHeuristic, OnPathDistanceHeuristicChanged);
+            m_sliderPathDistanceHeuristic.Percent = true;
+            AddDescription(groupPathDistance, "txtPathDistanceHeuristicKey", 1.0f, Localization.Get("txtPathDistanceHeuristicKey"));
+
+            AddDescription(groupPathDistance, "txtSpacer", 1.0f, "");
+
+            // Travel Time shift
+            AddDescription(groupPathDistance, "txtPathDistanceShift", 1.0f, Localization.Get("txtPathDistanceShift"));
+            m_sliderPathDistanceShift = SettingsSlider.Create(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceShift"), 1.0f, 400, 200, 1000f, 20000f, 100f, (float)oSettings.PathDistanceTravelTimeBaseValue, OnPathDistanceShiftChanged);
+           
             // Balanced match mode setting
             string[] itemsBalancedMode = {
                 Localization.Get("dropdownBalancedModeIncomingFirst"),
@@ -235,6 +261,7 @@ namespace TransferManagerCE
             // Reserve trucks
             AddDescription(panelGroupWarehouse, "txtNewWarehouseReserveTrucks", panelGroupWarehouse, 1.0f, Localization.Get("txtNewWarehouseReserveTrucks"));
             m_sliderWarehouseReservePercent = SettingsSlider.Create(groupWarehouse, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercent"), 1.0f, 400, 200, 0f, 100f, 5f, (float)oSettings.WarehouseReserveTrucksPercent, OnWarehouseFirstPercentChanged);
+            m_sliderWarehouseReservePercent.Percent = true;
             AddDescription(panelGroupWarehouse, "txtSpacer", panelGroupWarehouse, 1.0f, "");
 
             // Improved Warehouse Matching
@@ -267,6 +294,7 @@ namespace TransferManagerCE
             UIHelper groupExportLimits = (UIHelper)helper.AddGroup(Localization.Get("GROUP_EXPORT_LIMITS"));
             UIPanel panelExportLimit = groupExportLimits.self as UIPanel;
             m_sliderExportVehicleLimitPercent = SettingsSlider.Create(groupExportLimits, LayoutDirection.Horizontal, Localization.Get("sliderExportVehicleLimit"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.ExportVehicleLimit, OnExportVehicleLimit);
+            m_sliderExportVehicleLimitPercent.Percent = true;
             AddDescription(panelExportLimit, "txtExportVehicleLimit", panelExportLimit, 1.0f, Localization.Get("txtExportVehicleLimit"));
 
             // Import restrictions
@@ -405,7 +433,16 @@ namespace TransferManagerCE
 
             // Release Broken pathing
             AddDescription(panelMaintenance, "txtBrokenPathUnits", panelMaintenance, 1.0f, Localization.Get("txtBrokenPathUnits"));
-            groupMaintenance.AddButton(Localization.Get("btnReleaseBrokenPathing"), () => PathUnitMaintenance.ReleaseBrokenPathUnits());
+            groupMaintenance.AddButton(Localization.Get("btnReleaseBrokenPathing"), () =>
+            {
+                int iReleased = PathUnitMaintenance.ReleaseBrokenPathUnits();
+                if (m_lblPathUnitCount != null)
+                {
+                    m_lblPathUnitCount.text = Localization.Get("txtPathUnitCount") + ": " + iReleased;
+                }
+            });
+            m_lblPathUnitCount = AddDescription(panelMaintenance, "txtPathUnitCount", panelMaintenance, 1.0f, Localization.Get("txtPathUnitCount") + ": 0");
+
             AddDescription(panelMaintenance, "txtSeparator", panelMaintenance, 1.0f, "");
 
             // Release Ghost vehicles
@@ -522,18 +559,33 @@ namespace TransferManagerCE
             oSettings.Save();
         }
 
-        public void OnPathDistanceServices(bool bChecked)
+        public void OnPathDistanceServices(int index)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.UsePathDistanceServices = bChecked;
+            oSettings.PathDistanceServices = index;
         }
 
-        public void OnPathDistanceGoods(bool bChecked)
+        public void OnPathDistanceGoods(int index)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.UsePathDistanceGoods = bChecked;
+            oSettings.PathDistanceGoods = index;
         }
+        public void OnPathDistanceHeuristicChanged(float value)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.PathDistanceHeuristic = (int) value;
 
+            // Update scale values for this new setting
+            QueueData.UpdateHeuristicScale();
+        }
+        public void OnPathDistanceShiftChanged(float value)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.PathDistanceTravelTimeBaseValue = (int)Math.Round(value);
+
+            // Update outside connection shift
+            PathNodeCache.InvalidateOutsideConnections();
+        }
         public void OnPathFailExclusion(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
@@ -631,14 +683,6 @@ namespace TransferManagerCE
             oSettings.PreferredLanguage = Localization.GetLoadedCodes()[value];
             oSettings.Save();
         }
-        
-
-        public void OnIsseuDeleteDelayValueChanged(float fValue)
-        {
-            ModSettings oSettings = ModSettings.GetSettings();
-            oSettings.TransferIssueDeleteResolvedDelay = (int)fValue;
-            oSettings.Save();
-        }
 
         public void OnDeadValueChanged(float fValue)
         {
@@ -664,7 +708,14 @@ namespace TransferManagerCE
         public void OnResetTransferStatisticsClicked()
         {
             MatchStats.Init();
+
             TransferManagerStats.Init();
+
+            // Invalid object count
+            TransferHandler.s_iInvalidObjects = 0;
+
+            // Reset dropped reason count
+            CustomTransferDispatcher.Instance.ResetStatistics();
         }
 
         public void OnResetTransferManagerSettingsClicked()
@@ -738,9 +789,6 @@ namespace TransferManagerCE
             // Reset the stats as we have changed Transfer Manager.
             MatchStats.Init();
             UpdateTransferManagerEnabled();
-
-            // Update start transfer harmony patch
-            Patcher.PatchStartTransfer();
         }
 
         public void setOptionPreferLocalService(bool index)
@@ -817,9 +865,11 @@ namespace TransferManagerCE
                 // General tab
                 m_chkDisableDummyTraffic.isChecked = oSettings.DisableDummyTraffic;
                 m_dropdownBalanced.selectedIndex = (int)oSettings.BalancedMatchMode;
-                m_chkPathDistanceServices.isChecked = oSettings.UsePathDistanceServices;
-                m_chkPathDistanceGoods.isChecked = oSettings.UsePathDistanceGoods;
+                m_dropdownPathDistanceServices.selectedIndex = oSettings.PathDistanceServices;
+                m_dropdownPathDistanceGoods.selectedIndex = oSettings.PathDistanceGoods;
                 m_chkEnablePathFailExclusion.isChecked = oSettings.EnablePathFailExclusion;
+                m_sliderPathDistanceHeuristic.SetValue(oSettings.PathDistanceHeuristic);
+                m_sliderPathDistanceShift.SetValue(oSettings.PathDistanceTravelTimeBaseValue);
 
                 // Goods delivery
                 m_chkFactoryFirst.isChecked = oSettings.FactoryFirst;
@@ -881,6 +931,10 @@ namespace TransferManagerCE
                 {
                     m_lblGhostVehicleCount.text = Localization.Get("txtGhostVehiclesCount") + ": 0";
                 }
+                if (m_lblPathUnitCount != null)
+                {
+                    m_lblPathUnitCount.text = Localization.Get("txtPathUnitCount") + ": 0";
+                }
 
                 UpdateTransferManagerEnabled();
             }
@@ -895,17 +949,21 @@ namespace TransferManagerCE
             EnableCheckbox(m_chkEnableTransferManager, bLoaded);
 
             // General
-            EnableCheckbox(m_chkPathDistanceServices, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkPathDistanceGoods, bLoaded && oSettings.EnableNewTransferManager);
+            m_sliderPathDistanceHeuristic.Enable(bLoaded && oSettings.EnableNewTransferManager);
+            m_sliderPathDistanceShift.Enable(bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkEnablePathFailExclusion, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkDisableDummyTraffic, bLoaded && oSettings.EnableNewTransferManager);
             if (bLoaded && oSettings.EnableNewTransferManager)
             {
                 m_dropdownBalanced.Enable();
+                m_dropdownPathDistanceServices.Enable();
+                m_dropdownPathDistanceGoods.Enable();
             }
             else
             {
                 m_dropdownBalanced.Disable();
+                m_dropdownPathDistanceServices.Disable();
+                m_dropdownPathDistanceGoods.Disable();
             }
 
             // Goods Delivery

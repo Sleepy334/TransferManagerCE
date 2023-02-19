@@ -73,16 +73,21 @@ namespace SleepyCommon
                 ushort buildingId = panel.m_buildingId;
                 int iRestrictionId = panel.m_iRestrictionId;
 
-                BuildingSettings settings = BuildingSettingsStorage.GetSettings(buildingId);       
-                RestrictionSettings restrictions = settings.GetRestrictions(iRestrictionId);
-
-                if (m_bIncoming)
+                BuildingSettings? settings = BuildingSettingsStorage.GetSettings(buildingId);       
+                if (settings != null)
                 {
-                    return restrictions.IsIncomingDistrictAllowed(m_eType, m_districtId);
-                }
-                else
-                {
-                    return restrictions.IsOutgoingDistrictAllowed(m_eType, m_districtId);
+                    RestrictionSettings? restrictions = settings.GetRestrictions(iRestrictionId);
+                    if (restrictions != null)
+                    {
+                        if (m_bIncoming)
+                        {
+                            return restrictions.IsIncomingDistrictAllowed(m_eType, m_districtId);
+                        }
+                        else
+                        {
+                            return restrictions.IsOutgoingDistrictAllowed(m_eType, m_districtId);
+                        }
+                    }
                 }
             }
 

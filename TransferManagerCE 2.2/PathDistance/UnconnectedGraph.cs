@@ -177,15 +177,14 @@ namespace TransferManagerCE
                     AddNode(segment.m_endNode);
 
                     // Loop through all sub nodes for this lane
-                    int iNodeLoopCount = 0;
                     int iLaneLoopCount = 0;
-
                     uint laneId = segment.m_lanes;
                     while (laneId != 0)
                     {
                         NetLane lane = NetLanes[laneId];
                         if (lane.m_flags != 0)
                         {
+                            int iNodeLoopCount = 0;
                             ushort nodeId = lane.m_nodes;
                             while (nodeId != 0)
                             {
@@ -210,7 +209,7 @@ namespace TransferManagerCE
                         laneId = lane.m_nextLane;
 
                         // Safety check in case we get caught in an infinite loop somehow
-                        if (iLaneLoopCount++ > NetManager.MAX_NODE_COUNT)
+                        if (iLaneLoopCount++ > NetManager.MAX_LANE_COUNT)
                         {
                             Debug.Log("Invalid lane loop detected");
                             break;
@@ -222,7 +221,7 @@ namespace TransferManagerCE
 
         private bool IsNetInfoValid(NetInfo info)
         {
-            return PathDistance.IsNetInfoValid(info, m_laneTypes, m_service1, m_service2, m_service3, m_bPedestrianZone);
+            return PathDistance.IsNetInfoValid(info, m_laneTypes, m_vehicleTypes, m_service1, m_service2, m_service3, m_bPedestrianZone);
         }
     }
 }

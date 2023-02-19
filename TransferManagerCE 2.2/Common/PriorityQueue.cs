@@ -150,6 +150,18 @@ namespace TransferManagerCE.Common
             }
         }
 
+        public void Clear()
+        {
+            // Clear references
+            for (int i = 0; i < _count; i++)
+            {
+                _heap[i] = default; 
+            }
+
+            // Reset count
+            _count = 0;
+        }
+
         #endregion
 
         #region private members

@@ -67,7 +67,10 @@ namespace TransferManagerCE
                     m_Matches.Insert(0, match);
 
                     // Request an update
-                    BuildingPanelThreadExtension.InvalidatePanel();
+                    if (BuildingPanel.Instance != null)
+                    {
+                        BuildingPanel.Instance.InvalidatePanel();
+                    }
                 }
             }
         }
@@ -83,7 +86,10 @@ namespace TransferManagerCE
                     m_Matches.Sort();
 
                     // Request an update
-                    BuildingPanelThreadExtension.InvalidatePanel();
+                    if (BuildingPanel.Instance != null)
+                    {
+                        BuildingPanel.Instance.InvalidatePanel();
+                    }
                 }
             }
         }

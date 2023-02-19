@@ -8,15 +8,25 @@ namespace TransferManagerCE
 {
     public class SaveGameSettings
     {
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 21;
+        public enum PathDistanceAlgorithm 
+        {
+            LineOfSight = 0,
+            ConnectedLineOfSight = 1,
+            PathDistance = 2
+        }
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 23;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
         public bool EnableNewTransferManager = true;
 
         // General tab
-        public bool UsePathDistanceServices = false;
-        public bool UsePathDistanceGoods = false;
+        //public bool UsePathDistanceServices = false;
+        //public bool UsePathDistanceGoods = false;
+        public int PathDistanceServices = (int) PathDistanceAlgorithm.LineOfSight;
+        public int PathDistanceGoods = (int)PathDistanceAlgorithm.LineOfSight;
+        public int PathDistanceHeuristic = 80; // 0 = Accurate, 100 = Fastest
+        public int PathDistanceTravelTimeBaseValue = 3000;
         public bool EnablePathFailExclusion = true;
         public CustomTransferManager.BalancedMatchModeOption BalancedMatchMode = CustomTransferManager.BalancedMatchModeOption.MatchModeIncomingFirst; // Vanilla
         public bool DisableDummyTraffic = false;
@@ -58,8 +68,8 @@ namespace TransferManagerCE
         
         // Arrays
         private Dictionary<TransferReason, int> m_ActiveDistanceRestrictions = new Dictionary<TransferReason, int>();
-        private List<TransferReason> m_ImportRestricted = new List<TransferReason>();
-        private List<TransferReason> m_WarehouseImportRestricted = new List<TransferReason>();
+        private HashSet<TransferReason> m_ImportRestricted = new HashSet<TransferReason>();
+        private HashSet<TransferReason> m_WarehouseImportRestricted = new HashSet<TransferReason>();
         
         public SaveGameSettings()
         {
@@ -113,17 +123,11 @@ namespace TransferManagerCE
         {
             if (bRestricted)
             {
-                if (!m_ImportRestricted.Contains(material))
-                {
-                    m_ImportRestricted.Add(material);
-                }
+                m_ImportRestricted.Add(material);
             }
-            else
+            else if (m_ImportRestricted.Contains(material))
             {
-                while (m_ImportRestricted.Contains(material))
-                {
-                    m_ImportRestricted.Remove(material);
-                }
+                m_ImportRestricted.Remove(material);
             }
         }
         public bool IsWarehouseImportRestricted(TransferReason material)
@@ -135,17 +139,11 @@ namespace TransferManagerCE
         {
             if (bRestricted)
             {
-                if (!m_WarehouseImportRestricted.Contains(material))
-                {
-                    m_WarehouseImportRestricted.Add(material);
-                }
+                m_WarehouseImportRestricted.Add(material);
             }
-            else
+            else if (m_WarehouseImportRestricted.Contains(material))
             {
-                while (m_WarehouseImportRestricted.Contains(material))
-                {
-                    m_WarehouseImportRestricted.Remove(material);
-                }
+                m_WarehouseImportRestricted.Remove(material);
             }
         }
 
@@ -162,8 +160,8 @@ namespace TransferManagerCE
 
             // General
             StorageData.WriteInt32((int)BalancedMatchMode, Data);
-            StorageData.WriteBool(UsePathDistanceServices, Data); // Version 11
-            StorageData.WriteBool(UsePathDistanceGoods, Data); // Version 12
+            StorageData.WriteBool(false, Data); // Old Path Distance Service setting no longer used
+            StorageData.WriteBool(false, Data); // Old Path Distance Goods setting no longer used
             StorageData.WriteBool(DisableDummyTraffic, Data); // New in version 5
 
             // Goods delivery
@@ -220,7 +218,11 @@ namespace TransferManagerCE
             StorageData.WriteBool(OverrideGenericIndustriesHandler, Data); // Introduced in 19
             StorageData.WriteBool(EnablePathFailExclusion, Data); // Introduced in 20
             StorageData.WriteBool(ImprovedMailTransfers, Data); // Introduced in 21
-        }
+            StorageData.WriteInt32(PathDistanceHeuristic, Data); // Version 22
+            StorageData.WriteInt32(PathDistanceServices, Data); // Version 23
+            StorageData.WriteInt32(PathDistanceGoods, Data); // Version 23
+            StorageData.WriteInt32(PathDistanceTravelTimeBaseValue, Data); // 23
+    }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
         {
@@ -259,6 +261,8 @@ namespace TransferManagerCE
                         case 19: s_SaveGameSettings.LoadDataVersion19(Data, ref iIndex); break;
                         case 20: s_SaveGameSettings.LoadDataVersion20(Data, ref iIndex); break;
                         case 21: s_SaveGameSettings.LoadDataVersion21(Data, ref iIndex); break;
+                        case 22: s_SaveGameSettings.LoadDataVersion22(Data, ref iIndex); break;
+                        case 23: s_SaveGameSettings.LoadDataVersion23(Data, ref iIndex); break;
                         default:
                             {
                                 Debug.Log("New data version, unable to load!");
@@ -271,7 +275,24 @@ namespace TransferManagerCE
                 }
             }
         }
+        private void LoadDataVersion23(byte[] Data, ref int iIndex)
+        {
+            // Load all previous versions settings
+            LoadDataVersion22(Data, ref iIndex);
 
+            // Added in version 23
+            PathDistanceTravelTimeBaseValue = StorageData.ReadInt32(Data, ref iIndex);
+        }
+        private void LoadDataVersion22(byte[] Data, ref int iIndex)
+        {
+            // Load all previous versions settings
+            LoadDataVersion21(Data, ref iIndex);
+
+            // Added in version 22
+            PathDistanceHeuristic = StorageData.ReadInt32(Data, ref iIndex);
+            PathDistanceServices = StorageData.ReadInt32(Data, ref iIndex);
+            PathDistanceGoods = StorageData.ReadInt32(Data, ref iIndex);
+        }
         private void LoadDataVersion21(byte[] Data, ref int iIndex)
         {
             // Load all previous versions settings
@@ -318,8 +339,16 @@ namespace TransferManagerCE
 
             // General
             BalancedMatchMode = (CustomTransferManager.BalancedMatchModeOption)StorageData.ReadInt32(Data, ref iIndex);
-            UsePathDistanceServices = StorageData.ReadBool(Data, ref iIndex);
-            UsePathDistanceGoods = StorageData.ReadBool(Data, ref iIndex);
+            bool bUsePathDistanceServices = StorageData.ReadBool(Data, ref iIndex);
+            if (bUsePathDistanceServices)
+            {
+                PathDistanceServices = (int)PathDistanceAlgorithm.PathDistance;
+            }
+            bool bUsePathDistanceGoods = StorageData.ReadBool(Data, ref iIndex);
+            if (bUsePathDistanceGoods)
+            {
+                PathDistanceGoods = (int)PathDistanceAlgorithm.PathDistance;
+            }
             DisableDummyTraffic = StorageData.ReadBool(Data, ref iIndex);
 
             // Goods delivery
@@ -379,13 +408,23 @@ namespace TransferManagerCE
         private void LoadDataVersion12(byte[] Data, ref int iIndex)
         {
             LoadDataVersion11(Data, ref iIndex);
-            UsePathDistanceGoods = StorageData.ReadBool(Data, ref iIndex); // New in version 12
+            bool bUsePathDistanceGoods = StorageData.ReadBool(Data, ref iIndex); // New in version 12
+            if (bUsePathDistanceGoods)
+            {
+                PathDistanceGoods = (int)PathDistanceAlgorithm.PathDistance;
+            }
         }
 
         private void LoadDataVersion11(byte[] Data, ref int iIndex)
         {
             LoadDataVersion10(Data, ref iIndex);
-            UsePathDistanceServices = StorageData.ReadBool(Data, ref iIndex); // New in version 11
+
+            // Upgrade UsePathDistanceServices -> PathDistanceServices enum.
+            bool bUsePathDistanceServices = StorageData.ReadBool(Data, ref iIndex); // New in version 11
+            if (bUsePathDistanceServices)
+            {
+                PathDistanceServices = (int)PathDistanceAlgorithm.PathDistance;
+            }
         }
 
         private void LoadDataVersion10(byte[] Data, ref int iIndex)

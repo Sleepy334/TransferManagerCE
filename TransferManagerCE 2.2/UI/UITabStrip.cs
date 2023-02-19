@@ -34,9 +34,9 @@ namespace TransferManagerCE
         public string buttonHoveredSprite { get; set; } = "GenericTabHovered";
         public string buttonPressedSprite { get; set; } = "GenericTabFocused";
 
-        public static UITabStrip Create(UIComponent parent, float width, float height, OnTabChanged eventTabChanged)
+        public static UITabStrip? Create(UIComponent parent, float width, float height, OnTabChanged eventTabChanged)
         {
-            UITabStrip tabStrip = parent.AddUIComponent<UITabStrip>();
+            UITabStrip? tabStrip = parent.AddUIComponent<UITabStrip>();
             if (tabStrip != null)
             {
                 tabStrip.name = "TransferManagerCE.tabStrip";

@@ -1,5 +1,7 @@
 using ColossalFramework;
 using System;
+using System.Collections.Generic;
+using System.Text;
 using TransferManagerCE.Common;
 
 namespace TransferManagerCE
@@ -226,35 +228,20 @@ namespace TransferManagerCE
 
         public static ushort GetPassengerInstance(ref Vehicle data)
         {
-            CitizenManager instance = Singleton<CitizenManager>.instance;
-            uint num = data.m_citizenUnits;
-            int num2 = 0;
-            while (num != 0)
+            ushort usPassengerInstanceId = 0;
+
+            CitizenUtils.EnumerateCitizens(data.m_citizenUnits, (uint citizenID, Citizen citizen) =>
             {
-                CitizenUnit unit = instance.m_units.m_buffer[num];
-                uint nextUnit = unit.m_nextUnit;
-                for (int i = 0; i < 5; i++)
+                if (citizen.m_flags != 0)
                 {
-                    uint citizen = unit.GetCitizen(i);
-                    if (citizen != 0)
-                    {
-                        ushort instance2 = instance.m_citizens.m_buffer[citizen].m_instance;
-                        if (instance2 != 0)
-                        {
-                            return instance2;
-                        }
-                    }
+                    usPassengerInstanceId = citizen.m_instance;
                 }
 
-                num = nextUnit;
-                if (++num2 > 524288)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    break;
-                }
-            }
+                // Exit loop (return false) if we found a passenger
+                return (usPassengerInstanceId == 0);
+            });
 
-            return 0;
+            return usPassengerInstanceId;
         }
 
         public static int GetBufferStatus(ushort usVehicleId, out int iCapacity)

@@ -57,71 +57,44 @@ namespace TransferManagerCE
         /// </summary>
         public static ushort FindBuildingWithGarbage(Vector3 pos, float maxDistance)
         {
-            BuildingManager instance = Singleton<BuildingManager>.instance;
-            Array16<Building>? Buildings = instance.m_buildings;
-            uint numUnits = Buildings.m_size;    //get number of building units
-
-            // CHECK FORMULAS -> REFERENCE: SMARTERFIREFIGHTERSAI
-            int minx = Mathf.Max((int)((pos.x - maxDistance) / 64f + 135f), 0);
-            int minz = Mathf.Max((int)((pos.z - maxDistance) / 64f + 135f), 0);
-            int maxx = Mathf.Min((int)((pos.x + maxDistance) / 64f + 135f), 269);
-            int maxz = Mathf.Min((int)((pos.z + maxDistance) / 64f + 135f), 269);
-
             // Initialize default result if no building is found and specify maximum distance
             ushort result = 0;
             float shortestSquaredDistance = maxDistance * maxDistance;
 
-            // Loop through every building grid within maximum distance
-            for (int i = minz; i <= maxz; i++)
+            BuildingUtils.EnumerateNearbyBuildings(pos, maxDistance, (buildingID, building) =>
             {
-                for (int j = minx; j <= maxx; j++)
+                // Check Building garbage buffer
+                if (building.m_flags != 0 &&
+                    building.m_garbageBuffer >= GARBAGE_BUFFER_MIN_LEVEL &&
+                    building.Info != null &&
+                    building.Info.GetService() != ItemClass.Service.Garbage &&
+                    !IsPedestrianZone(building))
                 {
-                    ushort currentBuilding = instance.m_buildingGrid[i * 270 + j];
-                    int num7 = 0;
-
-                    // Iterate through all buildings at this grid location
-                    while (currentBuilding != 0)
+                    // check if not already dispatched to
+                    long value;
+                    if (LRU_DISPATCH_LIST.TryGetValue(buildingID, out value))
                     {
-                        // Check Building garbage buffer
-                        Building building = Buildings.m_buffer[currentBuilding];
-                        if (building.m_flags != 0 &&
-                            building.m_garbageBuffer >= GARBAGE_BUFFER_MIN_LEVEL &&
-                            building.Info != null &&
-                            building.Info.GetService() != ItemClass.Service.Garbage &&
-                            !IsPedestrianZone(building))
+                        // dont consider building
+                        lru_hit_counter++;
+                    }
+                    else
+                    {
+                        // not found in LRU, may consider this building
+                        float distanceSqr = VectorUtils.LengthSqrXZ(pos - building.m_position);
+                        if (distanceSqr < shortestSquaredDistance)
                         {
-                            // check if not already dispatched to
-                            long value;
-                            if (LRU_DISPATCH_LIST.TryGetValue(currentBuilding, out value))
-                            {
-                                // dont consider building
-                                lru_hit_counter++;
-                            }
-                            else
-                            {
-                                // not found in LRU, may consider this building
-                                float distanceSqr = VectorUtils.LengthSqrXZ(pos - building.m_position);
-                                if (distanceSqr < shortestSquaredDistance)
-                                {
-                                    result = currentBuilding;
-                                    shortestSquaredDistance = distanceSqr;
-                                }
-                            }
-                        }
-
-                        currentBuilding = building.m_nextGridBuilding;
-                        if (++num7 >= numUnits)
-                        {
-                            CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                            break;
+                            result = buildingID;
+                            shortestSquaredDistance = distanceSqr;
                         }
                     }
                 }
-            }
+            });
 
             if (result != 0)
+            {
                 AddBuildingLRU(result);
-
+            }
+                
             return result;
         }
 

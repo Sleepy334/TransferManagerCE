@@ -32,6 +32,7 @@ namespace TransferManagerCE
                 patchList.Add(typeof(TransferManagerMatchOfferPatch));
                 patchList.Add(typeof(TransferManagerAddIncomingPatch));
                 patchList.Add(typeof(TransferManagerAddOutgoingPatch));
+                patchList.Add(typeof(TransferManagerStartTransferVanillaPatch));
 
                 // Crime2
                 patchList.Add(typeof(TransferManagerGetFrameReason));
@@ -93,29 +94,6 @@ namespace TransferManagerCE
 
                 // Perform the patching
                 PatchAll(patchList);
-
-                // Also patch the TransferManager.StartTransfer with appropriate function
-                PatchStartTransfer();
-            }
-        }
-
-        public static void PatchStartTransfer()
-        {
-            var harmony = new Harmony(HarmonyId);
-
-            // Unpatch current patch
-            Unpatch(harmony, typeof(TransferManager), "StartTransfer");
-
-            // Patch required StartTransfer patch
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager)
-            {
-                // We apply a reverse patch so we can directly call StartTransfer as it is a private function.
-                Patch(harmony, typeof(TransferManagerStartTransferReversePatch));
-            }
-            else
-            {
-                // We use a prefix patch when using the vanilla StartTransfer so we can update matches.
-                Patch(harmony, typeof(TransferManagerStartTransferVanillaPatch));
             }
         }
 
@@ -145,16 +123,7 @@ namespace TransferManagerCE
 
         public static int GetRequestedPatchCount()
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager)
-            {
-                // A reverse patch doesnt get counted
-                return s_iHarmonyPatches;
-            }
-            else
-            {
-                // Count the prefix patch patch doesnt get counted
-                return s_iHarmonyPatches + 1;
-            }    
+            return s_iHarmonyPatches;
         }
 
         public static int GetPatchCount()

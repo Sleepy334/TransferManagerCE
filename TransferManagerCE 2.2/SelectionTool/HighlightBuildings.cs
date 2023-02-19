@@ -181,9 +181,9 @@ namespace TransferManagerCE
                             }
                         default:
                             {
-                                if (CitiesUtils.GetSick((ushort)i, building).Count > 0)
+                                if (BuildingUtils.GetSickCount((ushort)i, building) > 0)
                                 {
-                                    int Priority = building.m_healthProblemTimer * 7 / 128;
+                                    int Priority = building.m_healthProblemTimer * 8 / 128;
                                     if (Priority >= 2)
                                     {
                                         m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.blue));
@@ -226,7 +226,7 @@ namespace TransferManagerCE
                             }
                         default:
                             {
-                                if (CitiesUtils.GetDead((ushort)i, building).Count > 0)
+                                if (BuildingUtils.GetDeadCount((ushort)i, building) > 0)
                                 {
                                     int Priority = building.m_deathProblemTimer * 7 / 128;
                                     if (Priority >= 2)
@@ -496,7 +496,7 @@ namespace TransferManagerCE
                 Building building = BuildingBuffer[i];
                 if (building.m_flags != 0)
                 {
-                    BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType((ushort)i);
+                    BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType(building);
                     switch (eType)
                     {
                         case BuildingTypeHelper.BuildingType.ProcessingFacility:
@@ -545,7 +545,7 @@ namespace TransferManagerCE
                 Building building = BuildingBuffer[i];
                 if (building.m_flags != 0)
                 {
-                    BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType((ushort)i);
+                    BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType(building);
                     switch (eType)
                     {
                         case BuildingTypeHelper.BuildingType.Commercial:
@@ -557,6 +557,14 @@ namespace TransferManagerCE
                                 else if (building.m_incomingProblemTimer > 0)
                                 {
                                     m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.cyan));
+                                }
+                                if (building.m_outgoingProblemTimer > 32)
+                                {
+                                    m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, orange));
+                                }
+                                else if (building.m_outgoingProblemTimer > 0)
+                                {
+                                    m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, gold));
                                 }
                                 break;
                             }

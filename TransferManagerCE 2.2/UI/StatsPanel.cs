@@ -1,4 +1,5 @@
 using ColossalFramework.UI;
+using System.Collections;
 using System.Collections.Generic;
 using TransferManagerCE.Common;
 using TransferManagerCE.CustomManager;
@@ -30,10 +31,11 @@ namespace TransferManagerCE
 
         private UITitleBar? m_title = null;
         private UITabStrip? m_tabStrip = null;
-        private ListView m_generalStats = null;
-        private ListView m_gameStats = null;
-        private ListView m_listStats = null;
-        
+        private ListView? m_generalStats = null;
+        private ListView? m_gameStats = null;
+        private ListView? m_listStats = null;
+        private Coroutine? m_coroutine = null;
+
         private enum Tabs
         {
             TAB_GENERAL = 0,
@@ -43,6 +45,7 @@ namespace TransferManagerCE
 
         public StatsPanel() : base()
         {
+            m_coroutine = StartCoroutine(UpdatePanelCoroutine(4));
         }
 
         public static void Init()
@@ -62,7 +65,7 @@ namespace TransferManagerCE
             base.Start();
             name = "StatsPanel";
             width = 900;
-            height = 640;
+            height = 700;
             if (ModSettings.GetSettings().EnablePanelTransparency)
             {
                 opacity = 0.95f;
@@ -138,6 +141,28 @@ namespace TransferManagerCE
             UpdatePanel();
         }
 
+        public bool HandleEscape()
+        {
+            if (isVisible)
+            {
+                Hide();
+                return true;
+            }
+            return false;
+        }
+
+        public void TogglePanel()
+        {
+            if (isVisible)
+            {
+                Hide();
+            }
+            else
+            {
+                Show();
+            }
+        }
+
         public void OnTabChanged(int index)
         {
             UpdatePanel();
@@ -170,31 +195,54 @@ namespace TransferManagerCE
 
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {
+                // Match time
+                bool bPathDistance = SaveGameSettings.GetSettings().PathDistanceServices == (int)SaveGameSettings.PathDistanceAlgorithm.PathDistance ||
+                                     SaveGameSettings.GetSettings().PathDistanceGoods == (int)SaveGameSettings.PathDistanceAlgorithm.PathDistance;
+
                 // Transfer manager match statistics
+                list.Add(new GeneralContainer("Match Cycle", $"{CustomTransferDispatcher.Instance.Cycle}"));
+                list.Add(new GeneralContainer("Total Match Jobs", $"{TransferManagerStats.s_TotalMatchJobs}"));
+                if (bPathDistance)
+                {
+                    list.Add(new GeneralContainer("Total Path Distance Match Jobs", $"{TransferManagerStats.s_TotalPathDistanceMatchJobs}"));
+                }
                 if (ModSettings.GetSettings().StatisticsEnabled)
                 {
                     list.Add(new GeneralContainer("Total Matches", MatchStats.GetTotalMatches().ToString()));
                     list.Add(new GeneralContainer("Matches / Second", MatchStats.GetMatchesPerSecond().ToString("N0")));
                     list.Add(new GeneralContainer("Average Distance", MatchStats.GetAverageDistance()));
                 }
-                else
+
+                // Add separator
+                list.Add(new GeneralContainer("", ""));
+
+                // Job stats
+                list.Add(new GeneralContainer("Average Match Job Time", $"{TransferManagerStats.GetAverageMatchTime().ToString("F")} ms"));       
+                if (bPathDistance)
                 {
-                    list.Add(new GeneralContainer("Match Statistics Disabled", "Please enable statistics in global settings."));
+                    list.Add(new GeneralContainer("Average Path Distance Match Job Time", $"{TransferManagerStats.GetAveragePathDistanceMatchTime().ToString("F")} ms"));
+                }
+                list.Add(new GeneralContainer($"Longest Cycle Match Job Time (Cycle {TransferManagerStats.CycleData.m_cycle})", $"{((double)TransferManagerStats.CycleData.m_ticks * 0.0001).ToString("F")}ms ({TransferManagerStats.CycleData.m_material})"));
+                list.Add(new GeneralContainer("Longest Match Job Time", $"{((double)TransferManagerStats.s_longestMatchTicks * 0.0001).ToString("F")}ms ({TransferManagerStats.s_longestMaterial})"));
+                list.Add(new GeneralContainer("Largest Match Job", $"IN: {TransferManagerStats.s_largestIncoming} OUT: {TransferManagerStats.s_largestOutgoing} ({TransferManagerStats.s_largestMaterial})"));
+
+                // Add separator
+                list.Add(new GeneralContainer("", ""));
+
+                // Dropped reasons indicate performance issues.
+                list.Add(new GeneralContainer("Dropped Reason Count", CustomTransferDispatcher.Instance.DroppedReasons.ToString()));
+                list.Add(new GeneralContainer("Invalid Transfer Objects", TransferHandler.s_iInvalidObjects.ToString()));
+                
+                // Pathing
+                list.Add(new GeneralContainer("Path Fail Count", PathFindFailure.GetPathFailureCount().ToString()));
+                list.Add(new GeneralContainer("Outside Path Fail Count", PathFindFailure.GetOutsidePathFailureCount().ToString()));
+                if (bPathDistance)
+                {
+                    list.Add(new GeneralContainer("No Road Access Fail Count", RoadAccessData.Count.ToString()));
                 }
 
-                // Match time
-                list.Add(new GeneralContainer("Total Match Jobs", $"{TransferManagerStats.s_TotalMatchJobs}"));
-                if (SaveGameSettings.GetSettings().UsePathDistanceServices || SaveGameSettings.GetSettings().UsePathDistanceGoods)
-                {
-                    list.Add(new GeneralContainer("Total Path Distance Match Jobs", $"{TransferManagerStats.s_TotalPathDistanceMatchJobs}"));
-                }
-                list.Add(new GeneralContainer("Average Match Job Time (ms)", $"{TransferManagerStats.GetAverageMatchTime().ToString("F")} ms"));       
-                if (SaveGameSettings.GetSettings().UsePathDistanceServices || SaveGameSettings.GetSettings().UsePathDistanceGoods)
-                {
-                    list.Add(new GeneralContainer("Average Path Distance Match Job Time (ms)", $"{TransferManagerStats.GetAveragePathDistanceMatchTime().ToString("F")} ms"));
-                }
-                list.Add(new GeneralContainer("Longest Match Job Time (ms)", $"{((double)TransferManagerStats.s_longestMatchTicks * 0.0001).ToString("F")}ms ({TransferManagerStats.s_longestMaterial})"));
-                list.Add(new GeneralContainer("Largest Match Job", $"IN: {TransferManagerStats.s_largestIncoming} OUT: {TransferManagerStats.s_largestOutgoing} ({TransferManagerStats.s_largestMaterial})"));
+                // Add separator
+                list.Add(new GeneralContainer("", ""));
 
                 // Threads
                 list.Add(new GeneralContainer("Thread Count", $"{TransferManagerThread.ThreadCount}"));
@@ -210,13 +258,7 @@ namespace TransferManagerCE
                 list.Add(new GeneralContainer("Current Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetCount().ToString()));
                 list.Add(new GeneralContainer("Max Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetMaxUsageCount().ToString()));
 
-                // Pathing
-                list.Add(new GeneralContainer("Path Fail Count", PathFindFailure.GetPathFailureCount().ToString()));
-                list.Add(new GeneralContainer("Outside Path Fail Count", PathFindFailure.GetOutsidePathFailureCount().ToString()));
-                if (SaveGameSettings.GetSettings().UsePathDistanceServices || SaveGameSettings.GetSettings().UsePathDistanceGoods)
-                {
-                    list.Add(new GeneralContainer("No Road Access Fail Count", RoadAccessData.Count.ToString()));
-                }
+                
             }
             else
             {
@@ -243,8 +285,22 @@ namespace TransferManagerCE
             return list;
         }
 
+        IEnumerator UpdatePanelCoroutine(int seconds)
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(seconds);
+                UpdatePanel();
+            }
+        }
+
         public void UpdatePanel()
         {
+            if (!isVisible)
+            {
+                return;
+            }
+
             if (m_tabStrip != null)
             {
                 switch ((Tabs)m_tabStrip.GetSelectTabIndex())
@@ -300,6 +356,10 @@ namespace TransferManagerCE
 
         public override void OnDestroy()
         {
+            if (m_coroutine != null)
+            {
+                StopCoroutine(m_coroutine);
+            }
             if (m_listStats != null)
             {
                 Destroy(m_listStats.gameObject);

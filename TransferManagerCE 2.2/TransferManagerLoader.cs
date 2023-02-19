@@ -1,6 +1,7 @@
 ﻿using ColossalFramework.UI;
 using HarmonyLib;
 using ICities;
+using System.Collections;
 using System.Reflection;
 using TransferManagerCE.Common;
 using TransferManagerCE.CustomManager;
@@ -15,6 +16,9 @@ namespace TransferManagerCE
     {
         private static bool s_loaded = false;
         private static UITextureAtlas? s_atlas = null;
+        
+        private GameObject? m_modManagerGameObject = null;
+        private GameObject? m_keyboardShortcutGameObject = null;
 
         public static bool IsLoaded() { return s_loaded; }
 
@@ -43,6 +47,18 @@ namespace TransferManagerCE
                 {
                     s_loaded = false;
                     return;
+                }
+
+                if (m_modManagerGameObject == null)
+                {
+                    m_modManagerGameObject = new GameObject("TransferManagerModManager");
+                    m_modManagerGameObject.AddComponent<ModManager>();
+                }
+
+                if (m_keyboardShortcutGameObject == null)
+                {
+                    m_keyboardShortcutGameObject = new GameObject("KeyboardShortcuts");
+                    m_keyboardShortcutGameObject.AddComponent<KeyboardShortcuts>();
                 }
 
                 PathFindFailure.Init();
@@ -93,6 +109,12 @@ namespace TransferManagerCE
 
             // Clear settings
             ClearSettings();
+
+            if (m_modManagerGameObject != null)
+            {
+                Object.Destroy(m_modManagerGameObject.gameObject);
+                m_modManagerGameObject = null;
+            }
 
             // Remove patches first so objects aren't called after being destroyed
             RemoveHarmonyPathes();

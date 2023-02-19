@@ -84,12 +84,6 @@ namespace TransferManagerCE.Settings
             set;
         } = false;
 
-        public int TransferIssueDeleteResolvedDelay
-        {
-            get;
-            set;
-        } = 10;
-
         public bool StatisticsEnabled
         {
             get;

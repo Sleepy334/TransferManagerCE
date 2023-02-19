@@ -1,4 +1,5 @@
 using ColossalFramework.UI;
+using TransferManagerCE.Settings;
 using UnityEngine;
 
 namespace TransferManagerCE.UI
@@ -151,14 +152,14 @@ namespace TransferManagerCE.UI
                 }
                 if (m_lblMultiplier != null)
                 {
-                    m_lblMultiplier.text = BuildingSettingsStorage.GetEffectiveOutsideMultiplier(rowData.m_buildingId).ToString();
+                    m_lblMultiplier.text = BuildingSettingsFast.GetEffectiveOutsideMultiplier(rowData.m_buildingId).ToString();
                 }
-                int iOwnCount = CitiesUtils.GetOwnParentVehiclesForBuilding(rowData.m_buildingId, out int iOwnStuck).Count;
+                int iOwnCount = BuildingUtils.GetOwnParentVehiclesForBuilding(rowData.m_buildingId, out int iOwnStuck).Count;
                 if (m_lblOwn != null)
                 {
                     m_lblOwn.text = iOwnCount.ToString();
                 }
-                int iGuestCount = CitiesUtils.GetGuestParentVehiclesForBuilding(rowData.m_buildingId, out int iGuestStuck).Count;
+                int iGuestCount = BuildingUtils.GetGuestParentVehiclesForBuilding(rowData.m_buildingId, out int iGuestStuck).Count;
                 if (m_lblGuest != null)
                 {
                     m_lblGuest.text = iGuestCount.ToString();

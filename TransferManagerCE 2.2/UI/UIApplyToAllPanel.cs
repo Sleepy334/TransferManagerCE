@@ -58,7 +58,7 @@ namespace TransferManagerCE.UI
         public void OnApplyToAllDistrictClicked(UIComponent component, UIMouseEventParameter eventParam)
         {
             ushort buildingId = GetBuildingId();
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(buildingId);
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(buildingId);
 
             for (int i = 0; i < BuildingManager.instance.m_buildings.m_buffer.Length; ++i)
             {
@@ -72,7 +72,7 @@ namespace TransferManagerCE.UI
         public void OnApplyToAllParkClicked(UIComponent component, UIMouseEventParameter eventParam)
         {
             ushort buildingId = GetBuildingId();
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(buildingId);
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(buildingId);
 
             for (int i = 0; i < BuildingManager.instance.m_buildings.m_buffer.Length; ++i)
             {
@@ -87,7 +87,7 @@ namespace TransferManagerCE.UI
         public void OnApplyToAllWholeMapClicked(UIComponent component, UIMouseEventParameter eventParam)
         {
             ushort buildingId = GetBuildingId();
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(buildingId);
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(buildingId);
 
             for (int i = 0; i < BuildingManager.instance.m_buildings.m_buffer.Length; ++i)
             {

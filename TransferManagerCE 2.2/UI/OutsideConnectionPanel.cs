@@ -1,4 +1,5 @@
 using ColossalFramework.UI;
+using System.Collections;
 using System.Collections.Generic;
 using TransferManagerCE.Common;
 using TransferManagerCE.Settings;
@@ -21,9 +22,11 @@ namespace TransferManagerCE.UI
 
         private UITitleBar? m_title = null;
         private ListView? m_listConnections = null;
+        private Coroutine? m_coroutine = null;
 
         public OutsideConnectionPanel() : base()
         {
+            m_coroutine = StartCoroutine(UpdatePanelCoroutine(4));
         }
 
         public static void Init()
@@ -56,7 +59,9 @@ namespace TransferManagerCE.UI
             isVisible = false;
             playAudioEvents = true;
             m_ClipChildren = true;
+            eventVisibilityChanged += OnVisibilityChanged;
             CenterToParent();
+
 
             // Title Bar
             m_title = AddUIComponent<UITitleBar>();
@@ -78,6 +83,24 @@ namespace TransferManagerCE.UI
 
             isVisible = true;
             UpdatePanel();
+        }
+
+        public bool HandleEscape()
+        {
+            if (isVisible)
+            {
+                Hide();
+                return true;
+            }
+            return false;
+        }
+
+        public void OnVisibilityChanged(UIComponent component, bool bVisible)
+        {
+            if (bVisible)
+            {
+                UpdatePanel();
+            }
         }
 
         public void OnCloseClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -110,8 +133,22 @@ namespace TransferManagerCE.UI
             return result;
         }
 
+        IEnumerator UpdatePanelCoroutine(int seconds)
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(seconds);
+                UpdatePanel();
+            }
+        }
+
         public void UpdatePanel()
         {
+            if (!isVisible)
+            {
+                return;
+            }
+
             if (m_listConnections != null)
             {
                 List<OutsideContainer> connections = GetOutsideConnections();
@@ -127,6 +164,10 @@ namespace TransferManagerCE.UI
 
         public override void OnDestroy()
         {
+            if (m_coroutine != null)
+            {
+                StopCoroutine(m_coroutine);
+            }
             if (m_listConnections != null)
             {
                 Destroy(m_listConnections.gameObject);
