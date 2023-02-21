@@ -122,11 +122,10 @@ namespace TransferManagerCE
             }
             else
             {
-                // Check node is valid type
                 NetNode node = Nodes[nodeId];
-                if (IsNetInfoValid(node.Info))
+                if (node.m_flags != 0)
                 {
-                    // Add to graph
+                    // We can reach this node, add to graph
                     m_nodes.SetColor(nodeId, iColor);
                     iColorCount++;
 
@@ -171,7 +170,9 @@ namespace TransferManagerCE
             if (segmentId != 0)
             {
                 NetSegment segment = NetSegments[segmentId];
-                if (segment.m_flags != 0)
+
+                // Check segment is valid for this service type
+                if (segment.m_flags != 0 && IsNetInfoValid(segment.Info))
                 {
                     AddNode(segment.m_startNode);
                     AddNode(segment.m_endNode);

@@ -6,19 +6,12 @@ using TransferManagerCE.TransferRules;
 using UnityEngine;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCE.WarehouseUtils;
 
 namespace TransferManagerCE.CustomManager
 {
     public class CustomTransferOffer
     {
-        public enum WarehouseMode
-        {
-            Unknown,
-            Empty,
-            Balanced,
-            Fill,
-        }
-
         // Actual TransferOffer object
         public TransferOffer m_offer;
         private bool m_bIncoming; // Offer direction
@@ -292,7 +285,7 @@ namespace TransferManagerCE.CustomManager
         {
             if (m_warehouseMode == WarehouseMode.Unknown)
             {
-                m_warehouseMode = CitiesUtils.GetWarehouseMode(GetBuilding());
+                m_warehouseMode = WarehouseUtils.GetWarehouseMode(GetBuilding());
             }
 
             return m_warehouseMode;

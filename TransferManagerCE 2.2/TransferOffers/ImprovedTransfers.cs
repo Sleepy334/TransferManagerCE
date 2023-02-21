@@ -3,82 +3,104 @@ using static TransferManager;
 using UnityEngine;
 using ColossalFramework;
 using TransferManagerCE.Settings;
+using static TransferManagerCE.CitiesUtils;
+using static TransferManagerCE.WarehouseUtils;
 
 namespace TransferManagerCE
 {
     internal class ImprovedTransfers
     {
+        // Return false to skip adding of offer.
         public static bool HandleIncomingOffer(TransferReason material, ref TransferOffer offer)
         {
-            Building[] Buildings = BuildingManager.instance.m_buildings.m_buffer;
-
-            switch (material)
+            if (offer.Exclude)
             {
-                case TransferReason.Dead:
-                    {
-                        ImprovedDeadMatchingIncoming(Buildings, ref offer);
-                        break;
-                    }
-                case TransferReason.Garbage:
-                    {
-                        ImprovedGarbageMatchingIncoming(Buildings, ref offer);
-                        break;
-                    }
-                case TransferReason.Crime:
-                    {
-                        ImprovedCrimeMatchingIncoming(Buildings, ref offer);
-                        break;
-                    }
-                case TransferReason.Sick:
-                    {
-                        ImprovedSickMatchingIncoming(Buildings, ref offer);
-                        break;
-                    }
-                case TransferReason.Mail:
-                    {
-                        ImprovedMailMatchingIncoming(Buildings, ref offer);
-                        break;
-                    }
-                case TransferReason.Taxi:
-                    {
-                        if (offer.Citizen != 0)
+                // Adjust Priority of warehouse offers if ImprovedWarehouseMatching enabled
+                ImprovedWarehouseMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+            }
+            else
+            {
+                switch (material)
+                {
+                    case TransferReason.Dead:
                         {
-                            Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
-                            if (citizen.m_flags != 0 && citizen.m_instance != 0)
+                            ImprovedDeadMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                            break;
+                        }
+                    case TransferReason.Garbage:
+                        {
+                            ImprovedGarbageMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                            break;
+                        }
+                    case TransferReason.Crime:
+                        {
+                            ImprovedCrimeMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                            break;
+                        }
+                    case TransferReason.Sick:
+                        {
+                            ImprovedSickMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                            break;
+                        }
+                    case TransferReason.Mail:
+                        {
+                            ImprovedMailMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                            break;
+                        }
+                    case TransferReason.Taxi:
+                        {
+                            if (offer.Citizen != 0)
                             {
-                                ref CitizenInstance instance = ref CitizenManager.instance.m_instances.m_buffer[citizen.m_instance];
-                                if (instance.m_flags != 0)
+                                Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
+                                if (citizen.m_flags != 0 && citizen.m_instance != 0)
                                 {
-                                    if (instance.m_sourceBuilding != 0 && BuildingTypeHelper.IsOutsideConnection(instance.m_sourceBuilding))
+                                    ref CitizenInstance instance = ref CitizenManager.instance.m_instances.m_buffer[citizen.m_instance];
+                                    if (instance.m_flags != 0)
                                     {
-                                        // Taxi's do not work when cims coming from outside connections
-                                        //Debug.Log($"Citizen: {offer.Citizen} Waiting for taxi at outside connection {instance.m_sourceBuilding} - SKIPPING");
-
-                                        // Speed up waiting
-                                        if (instance.m_waitCounter > 0)
+                                        if (instance.m_sourceBuilding != 0 && BuildingTypeHelper.IsOutsideConnection(instance.m_sourceBuilding))
                                         {
-                                            instance.m_waitCounter = (byte)Math.Max((int)instance.m_waitCounter, 254);
-                                        }
+                                            // Taxi's do not work when cims coming from outside connections
+                                            //Debug.Log($"Citizen: {offer.Citizen} Waiting for taxi at outside connection {instance.m_sourceBuilding} - SKIPPING");
 
-                                        // We return false so we don't add offer to match set
-                                        return false;
+                                            // Speed up waiting
+                                            if (instance.m_waitCounter > 0)
+                                            {
+                                                instance.m_waitCounter = (byte)Math.Max((int)instance.m_waitCounter, 254);
+                                            }
+
+                                            // We return false so we don't add offer to match set
+                                            return false;
+                                        }
                                     }
                                 }
                             }
+                            break;
                         }
-                        break;
-                    }
-                case TransferReason.Goods:
-                case TransferReason.LuxuryProducts:
-                    {
-                        HandleCommercialOffers(Buildings, ref offer); 
-                        break;
-                    }
+                    case TransferReason.Goods:
+                    case TransferReason.LuxuryProducts:
+                        {
+                            HandleCommercialOffers(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                            break;
+                        }
+                    case TransferReason.Worker0:
+                    case TransferReason.Worker1:
+                    case TransferReason.Worker2:
+                    case TransferReason.Worker3:
+                        {
+                            if (offer.Priority < 7 && offer.Building != 0)
+                            {
+                                Building building = BuildingManager.instance.m_buildings.m_buffer[offer.Building];
+                                if (building.m_flags != 0 && building.m_workerProblemTimer > 0)
+                                {
+                                    // Worker problem timer is running set priority to 7
+                                    offer.Priority = 7;
+                                }
+                            }
+                            break;
+                        }
+                }
             }
-
-            // Adjust Priority of warehouse offers if ImprovedWarehouseMatching enabled
-            ImprovedWarehouseMatchingIncoming(Buildings, ref offer);
-
+                
             // Add offer normally
             return true;
         }
@@ -264,8 +286,11 @@ namespace TransferManagerCE
                 // It's a warehouse, set the priority based on storage level
                 Building building = Buildings[offer.Building];
 
+                // Get warehouse mode.
+                WarehouseMode mode = WarehouseUtils.GetWarehouseMode(building);
+
                 // If warehouse mode is "Empty" then the Priority is already 0, we don't want to change this
-                if (building.m_flags != 0 && (building.m_flags & Building.Flags.Downgrading) == 0)
+                if (building.m_flags != 0 && mode != WarehouseMode.Empty)
                 {
                     if (building.Info != null)
                     {
@@ -282,7 +307,7 @@ namespace TransferManagerCE
                                 {
                                     // Check warehouse mode
                                     int iMinPriority = 0;
-                                    if ((building.m_flags & Building.Flags.Upgrading) != 0)
+                                    if (mode == WarehouseMode.Fill)
                                     {
                                         // Warehouse is set to Fill mode, minimum priority is 2 in this case
                                         iMinPriority = 2;
@@ -322,8 +347,11 @@ namespace TransferManagerCE
                 // It's a warehouse, set the priority based on storage level
                 Building building = BuildingManager.instance.m_buildings.m_buffer[offer.Building];
 
-                // If warehouse mode is Full then OUT priority will already be 0. We don't need to change this
-                if (building.m_flags != 0 && building.Info != null && (building.m_flags & Building.Flags.Upgrading) == 0)
+                // Get warehouse mode
+                WarehouseMode mode = WarehouseUtils.GetWarehouseMode(building);
+
+                // If warehouse mode is Fill then OUT priority will already be 0. We don't need to change this
+                if (building.m_flags != 0 && building.Info != null && mode != WarehouseMode.Fill)
                 {
                     WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
                     if (warehouse != null)
@@ -356,7 +384,7 @@ namespace TransferManagerCE
                         {
                             // Check warehouse mode
                             int iMinPriority = 0;
-                            if ((building.m_flags & Building.Flags.Downgrading) != 0)
+                            if (mode == WarehouseMode.Empty)
                             {
                                 // Warehouse is set to Empty mode, minimum priority is 2 in this case
                                 iMinPriority = 2;

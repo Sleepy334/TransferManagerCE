@@ -4,8 +4,9 @@ using static TransferManager;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using TransferManagerCE.TransferRules;
-using static TransferManagerCE.CustomManager.CustomTransferOffer;
 using TransferManagerCE.Settings;
+using static TransferManagerCE.CitiesUtils;
+using static TransferManagerCE.WarehouseUtils;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -387,8 +388,8 @@ namespace TransferManagerCE.CustomManager
                     BuildingSettingsFast.IsImprovedWarehouseMatching(outgoingOffer.GetBuilding()))
                 {
                     // Add some logic based on warehouse mode
-                    WarehouseMode inMode = CitiesUtils.GetWarehouseMode(incomingOffer.GetBuilding());
-                    WarehouseMode outMode = CitiesUtils.GetWarehouseMode(outgoingOffer.GetBuilding());
+                    WarehouseMode inMode = WarehouseUtils.GetWarehouseMode(incomingOffer.GetBuilding());
+                    WarehouseMode outMode = WarehouseUtils.GetWarehouseMode(outgoingOffer.GetBuilding());
 
                     if (inMode == WarehouseMode.Unknown || outMode == WarehouseMode.Unknown)
                     {

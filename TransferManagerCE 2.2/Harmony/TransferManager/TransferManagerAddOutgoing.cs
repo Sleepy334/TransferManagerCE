@@ -22,6 +22,13 @@ namespace TransferManagerCE
                     return false;
                 }
 
+                // Crime2 support
+                if (CommonBuildingAIHandleCrime.s_bRejectOffers && material == TransferReason.Crime)
+                {
+                    // Reject this offer as we are going to add our own instead
+                    return false;
+                }
+
                 if (offer.Exclude)
                 {
                     // Adjust Priority of warehouse offers if ImprovedWarehouseMatching enabled

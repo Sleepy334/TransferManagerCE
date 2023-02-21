@@ -187,7 +187,7 @@ namespace TransferManagerCE
         {
             // For each segment from this node mark distance
             NetNode node = NetNodes.m_buffer[nodeId];
-            if (node.m_flags != 0 && IsNetInfoValid(node.Info))
+            if (node.m_flags != 0)
             {
                 // Loop through segments to find neighboring roads
                 for (int i = 0; i < 8; ++i)
@@ -229,7 +229,7 @@ namespace TransferManagerCE
             if (segmentId != 0)
             {
                 NetSegment segment = NetSegments.m_buffer[segmentId];
-                if (segment.m_flags != 0)
+                if (segment.m_flags != 0 && IsNetInfoValid(segment.Info))
                 {      
                     ushort segmentNode1Id = 0;
                     ushort segmentNode2Id = 0;

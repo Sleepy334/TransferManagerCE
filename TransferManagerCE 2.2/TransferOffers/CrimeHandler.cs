@@ -7,46 +7,6 @@ namespace TransferManagerCE.TransferOffers
 {
     public class CrimeHandler
     {
-        // CommonBuildingAI.HandleCrime but modified to support Crime2
-        public static void HandleCrime(ushort buildingID, ref Building data, int crimeAccumulation, int citizenCount)
-        {
-            if (crimeAccumulation != 0)
-            {
-                byte park = Singleton<DistrictManager>.instance.GetPark(data.m_position);
-                if (park != 0 && (Singleton<DistrictManager>.instance.m_parks.m_buffer[park].m_parkPolicies & DistrictPolicies.Park.SugarBan) != 0)
-                {
-                    crimeAccumulation = (int)((float)crimeAccumulation * 1.2f);
-                }
-
-                if (Singleton<SimulationManager>.instance.m_isNightTime)
-                {
-                    crimeAccumulation = crimeAccumulation * 5 >> 2;
-                }
-
-                if (data.m_eventIndex != 0)
-                {
-                    EventManager instance = Singleton<EventManager>.instance;
-                    EventInfo info = instance.m_events.m_buffer[data.m_eventIndex].Info;
-                    crimeAccumulation = info.m_eventAI.GetCrimeAccumulation(data.m_eventIndex, ref instance.m_events.m_buffer[data.m_eventIndex], crimeAccumulation);
-                }
-
-                crimeAccumulation = Singleton<SimulationManager>.instance.m_randomizer.Int32((uint)crimeAccumulation);
-                crimeAccumulation = UniqueFacultyAI.DecreaseByBonus(UniqueFacultyAI.FacultyBonus.Law, crimeAccumulation);
-                if (!Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.PoliceDepartment))
-                {
-                    crimeAccumulation = 0;
-                }
-            }
-
-            data.m_crimeBuffer = (ushort)Mathf.Min(citizenCount * 100, data.m_crimeBuffer + crimeAccumulation);
-
-            // Update the problem notification
-            SetCrimeNotification(ref data, citizenCount);
-
-            // Add an offer if needed
-            AddCrimeOffer(buildingID, ref data, citizenCount);
-        }
-
         public static void AddCrimeOffer(ushort buildingID, ref Building buildingData, int iCitizenCount)
         {
             int crimeBuffer = buildingData.m_crimeBuffer;
@@ -85,22 +45,6 @@ namespace TransferManagerCE.TransferOffers
                     Singleton<TransferManager>.instance.AddOutgoingOffer(reason, offer);
                 }
             }
-        }
-
-        // CommonBuildingAI.SetCrimeNotification
-        private static void SetCrimeNotification(ref Building data, int citizenCount)
-        {
-            Notification.ProblemStruct problemStruct = Notification.RemoveProblems(data.m_problems, Notification.Problem1.Crime);
-            if (data.m_crimeBuffer > citizenCount * 90)
-            {
-                problemStruct = Notification.AddProblems(problemStruct, Notification.Problem1.Crime | Notification.Problem1.MajorProblem);
-            }
-            else if (data.m_crimeBuffer > citizenCount * 60)
-            {
-                problemStruct = Notification.AddProblems(problemStruct, Notification.Problem1.Crime);
-            }
-
-            data.m_problems = problemStruct;
         }
     }
 }
