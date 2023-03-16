@@ -77,7 +77,7 @@ namespace TransferManagerCE.UI
             // Outside connection settings
             if (m_panelOutsideSettings != null)
             {
-                if (!DependencyUtilities.IsAdvancedOutsideConnectionsRunning() && BuildingTypeHelper.IsOutsideConnection(m_buildingId))
+                if (!DependencyUtils.IsAdvancedOutsideConnectionsRunning() && BuildingTypeHelper.IsOutsideConnection(m_buildingId))
                 {
                     m_tabStrip.SetTabVisible((int)BuildingPanel.TabIndex.TAB_CAPACITY, true);
 

@@ -14,7 +14,7 @@ namespace TransferManagerCE
         [HarmonyPrefix]
         public static bool HandleCrimePrefix(ushort buildingID, ref Building data, int crimeAccumulation, int citizenCount)
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager && DependencyUtilities.IsNaturalDisastersDLC())
+            if (SaveGameSettings.GetSettings().EnableNewTransferManager && DependencyUtils.IsNaturalDisastersDLC())
             {
                 s_bRejectOffers = true;
             }
@@ -31,7 +31,7 @@ namespace TransferManagerCE
             // Turn off rejecting Crime offers
             s_bRejectOffers = false;
 
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager && DependencyUtilities.IsNaturalDisastersDLC())
+            if (SaveGameSettings.GetSettings().EnableNewTransferManager && DependencyUtils.IsNaturalDisastersDLC())
             {
                 CrimeHandler.AddCrimeOffer(buildingID, ref data, citizenCount);
             }

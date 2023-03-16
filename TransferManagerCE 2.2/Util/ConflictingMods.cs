@@ -38,11 +38,6 @@ namespace TransferManagerCE
                                     sConflictingMods += "Configure Outside Connections' Limits\r\n";
                                     break;
                                 }
-                            case "EmployOvereducatedWorkers":
-                                {
-                                    sConflictingMods += "Employ Overeducated Workers V2\r\n";
-                                    break;
-                                }
                             case "TransferManagerCE":
                                 {
                                     iTransferManagerCount++;

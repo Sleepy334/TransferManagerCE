@@ -770,7 +770,7 @@ namespace TransferManagerCE
                     {
                         try
                         {
-                            Assembly? assembly = DependencyUtilities.GetCargoFerriesAssembly();
+                            Assembly? assembly = DependencyUtils.GetCargoFerriesAssembly();
                             if (assembly != null)
                             {
                                 s_CargoFerriesGetActualTransferReasonMethod = assembly.GetType("CargoFerries.AI.CargoFerryWarehouseHarborAI").GetMethod("GetActualTransferReason", BindingFlags.Public | BindingFlags.Instance);

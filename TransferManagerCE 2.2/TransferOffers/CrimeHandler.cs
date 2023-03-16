@@ -29,7 +29,7 @@ namespace TransferManagerCE.TransferOffers
 
                     // Occasionally add a Crime2 offer instead of a Crime offer
                     TransferReason reason;
-                    if (DependencyUtilities.IsNaturalDisastersDLC() &&
+                    if (DependencyUtils.IsNaturalDisastersDLC() &&
                         ((buildingData.m_flags & Building.Flags.RoadAccessFailed) != 0 ||
                         (servicePolicies & DistrictPolicies.Services.HelicopterPriority) != 0 ||
                         Singleton<SimulationManager>.instance.m_randomizer.Int32(20U) == 0))

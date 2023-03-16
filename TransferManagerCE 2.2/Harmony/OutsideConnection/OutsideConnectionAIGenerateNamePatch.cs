@@ -9,7 +9,7 @@ namespace TransferManagerCE
         [HarmonyPostfix]
         public static void Postfix(ushort buildingID, InstanceID caller, ref string __result)
         {
-            if (!DependencyUtilities.IsAdvancedOutsideConnectionsRunning())
+            if (!DependencyUtils.IsAdvancedOutsideConnectionsRunning())
             {
                 if (OutsideConnectionSettings.HasSettings(buildingID))
                 {

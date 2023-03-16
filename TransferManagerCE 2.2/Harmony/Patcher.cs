@@ -58,7 +58,7 @@ namespace TransferManagerCE
                 patchList.Add(typeof(CarAIPathfindFailurePatch));
 
                 // Outside connection patches
-                if (DependencyUtilities.IsAdvancedOutsideConnectionsRunning())
+                if (DependencyUtils.IsAdvancedOutsideConnectionsRunning())
                 {
                     string sLogMessage = "Advanced Outside Connections detected, patches skipped:\r\n";
                     sLogMessage += "OutsideConnectionAIPatch\r\n";
@@ -76,7 +76,7 @@ namespace TransferManagerCE
                 patchList.Add(typeof(PoliceCopterAIAISimulationStepPatch));
                 patchList.Add(typeof(GarbageTruckAIPatchSimulationStepPatch));
 
-                if (DependencyUtilities.IsSmarterFireFightersRunning())
+                if (DependencyUtils.IsSmarterFireFightersRunning())
                 {
                     string sLogMessage = "Smarter Fire Fighters detected, patches skipped:\r\n";
                     sLogMessage += "FireCopterAIAISimulationStepPatch\r\n";

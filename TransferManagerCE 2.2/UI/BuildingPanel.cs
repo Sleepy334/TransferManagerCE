@@ -774,7 +774,7 @@ namespace TransferManagerCE
                 if (m_buildingId != 0)
                 {
                     string sText;
-                    if (!DependencyUtilities.IsAdvancedOutsideConnectionsRunning() && IsOutsideConnection(m_buildingId))
+                    if (!DependencyUtils.IsAdvancedOutsideConnectionsRunning() && IsOutsideConnection(m_buildingId))
                     {
                         m_lblSource.isVisible = false;
                         m_txtSource.isVisible = true;

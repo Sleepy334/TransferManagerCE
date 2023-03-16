@@ -82,7 +82,7 @@ namespace TransferManagerCE
                 if (ApplyHarmonyPatches())
                 {
                     // Display warning about fire fighting patches
-                    if (DependencyUtilities.IsSmarterFireFightersRunning())
+                    if (DependencyUtils.IsSmarterFireFightersRunning())
                     {
                         string strMessage = "Smarter Firefighters: Improved AI mod detected\r\n";
                         strMessage += "\r\n";
@@ -165,7 +165,7 @@ namespace TransferManagerCE
         public bool ApplyHarmonyPatches()
         {
             // Harmony
-            if (DependencyUtilities.IsHarmonyRunning())
+            if (DependencyUtils.IsHarmonyRunning())
             {
                 Patcher.PatchAll();
             }
@@ -201,7 +201,7 @@ namespace TransferManagerCE
 
         public void RemoveHarmonyPathes()
         {
-            if (s_loaded && DependencyUtilities.IsHarmonyRunning())
+            if (s_loaded && DependencyUtils.IsHarmonyRunning())
             {
                 Patcher.UnpatchAll();
             }
@@ -209,7 +209,7 @@ namespace TransferManagerCE
 
         public bool IsHarmonyValid()
         {
-            if (DependencyUtilities.IsHarmonyRunning())
+            if (DependencyUtils.IsHarmonyRunning())
             {
                 return Patcher.GetRequestedPatchCount() == Patcher.GetPatchCount();
             }

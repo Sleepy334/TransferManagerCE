@@ -1,4 +1,5 @@
 ﻿using System;
+using TransferManagerCE.Data;
 using static TransferManager;
 
 namespace TransferManagerCE
@@ -32,8 +33,8 @@ namespace TransferManagerCE
                 if (vehicle.m_flags != 0)
                 {
                     VehicleInfo info = vehicle.Info;
+                    offerOut.Amount = delta; // Only transfer delta amount
                     info.m_vehicleAI.StartTransfer(vehicleId, ref vehicle, material, offerOut);
-                    offerOut.Amount = delta;
                 }
                 else
                 {
@@ -47,8 +48,8 @@ namespace TransferManagerCE
                 if (vehicle.m_flags != 0)
                 {
                     VehicleInfo info = vehicle.Info;
+                    offerIn.Amount = delta; // Only transfer delta amount
                     info.m_vehicleAI.StartTransfer(vehicleId, ref vehicle, material, offerIn);
-                    offerIn.Amount = delta;
                 }
                 else
                 {
@@ -62,10 +63,10 @@ namespace TransferManagerCE
                 if (citizen.m_flags != 0)
                 {
                     CitizenInfo citizenInfo = citizen.GetCitizenInfo(citizenId);
-                    if ((object)citizenInfo != null)
+                    if ((object)citizenInfo is not null)
                     {
+                        offerOut.Amount = delta; // Only transfer delta amount
                         citizenInfo.m_citizenAI.StartTransfer(citizenId, ref citizen, material, offerOut);
-                        offerOut.Amount = delta;
                     }
                     else
                     {
@@ -84,10 +85,10 @@ namespace TransferManagerCE
                 if (citizen.m_flags != 0)
                 {
                     CitizenInfo citizenInfo = citizen.GetCitizenInfo(citizenId);
-                    if ((object)citizenInfo != null)
+                    if ((object)citizenInfo is not null)
                     {
+                        offerIn.Amount = delta; // Only transfer delta amount
                         citizenInfo.m_citizenAI.StartTransfer(citizenId, ref citizen, material, offerIn);
-                        offerIn.Amount = delta;
                     }
                     else
                     {
@@ -111,13 +112,13 @@ namespace TransferManagerCE
                 if (building.m_flags != 0)
                 {
                     BuildingInfo info3 = building.Info;
+                    offerIn.Amount = delta; // Only transfer delta amount
                     info3.m_buildingAI.StartTransfer(offerOut.Building, ref building, material, offerIn);
                 }
                 else
                 {
                     s_iInvalidObjects++;
                 }
-                offerIn.Amount = delta;
             }
             else if (active && offerIn.Building != 0)
             {
@@ -131,13 +132,13 @@ namespace TransferManagerCE
                 if (building.m_flags != 0)
                 {
                     BuildingInfo info4 = building.Info;
+                    offerOut.Amount = delta; // Only transfer delta amount
                     info4.m_buildingAI.StartTransfer(offerIn.Building, ref building, material, offerOut);
                 }
                 else
                 {
                     s_iInvalidObjects++;
                 }
-                offerOut.Amount = delta;
             }
         }
 

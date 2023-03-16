@@ -91,15 +91,15 @@ namespace TransferManagerCE
                 {
                     case CityServiceWorldInfoPanel:
                         {
-                            if (DependencyUtilities.IsPloppableRICORunning())
+                            if (DependencyUtils.IsPloppableRICORunning())
                             {
                                 fXOffset += -m_button.width;
 
-                                if (DependencyUtilities.IsRepainterRunning())
+                                if (DependencyUtils.IsRepainterRunning())
                                 {
                                     fXOffset += -m_button.width + 4f; // Button not as big move it back a bit
 
-                                    if (DependencyUtilities.IsAdvancedBuildingLevelRunning() || DependencyUtilities.IsRONRunning())
+                                    if (DependencyUtils.IsAdvancedBuildingLevelRunning() || DependencyUtils.IsRONRunning())
                                     {
                                         // Need to shift past all 3 buttons
                                         fXOffset += -m_button.width + 10f; // Some of the other icons arent as big, pull it back a bit
@@ -110,15 +110,15 @@ namespace TransferManagerCE
                         }
                     case ZonedBuildingWorldInfoPanel:
                         {
-                            if (DependencyUtilities.IsPloppableRICORunning())
+                            if (DependencyUtils.IsPloppableRICORunning())
                             {
                                 fXOffset += -m_button.width;
 
-                                if (DependencyUtilities.IsRepainterRunning())
+                                if (DependencyUtils.IsRepainterRunning())
                                 {
                                     fXOffset += -m_button.width + 4f; // Button not as big move it back a bit
 
-                                    if (DependencyUtilities.IsAdvancedBuildingLevelRunning())
+                                    if (DependencyUtils.IsAdvancedBuildingLevelRunning())
                                     {
                                         // Need to shift past all 3 buttons
                                         fXOffset += -m_button.width + 10f; // Some of the other icons arent as big, pull it back a bit

@@ -10,7 +10,7 @@ namespace TransferManagerCE
         public static bool Prefix(ushort buildingID, ref int cargoCapacity, ref int residentCapacity, ref int touristFactor0, ref int touristFactor1, ref int touristFactor2, ref int dummyTrafficFactor)
         {
             if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
-                !DependencyUtilities.IsAdvancedOutsideConnectionsRunning() &&
+                !DependencyUtils.IsAdvancedOutsideConnectionsRunning() &&
                 OutsideConnectionSettings.HasSettings(buildingID))
             {
                 OutsideConnectionSettings settings = OutsideConnectionSettings.GetSettings(buildingID);

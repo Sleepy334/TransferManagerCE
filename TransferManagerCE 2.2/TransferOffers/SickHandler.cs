@@ -134,7 +134,7 @@ namespace TransferManagerCE.TransferOffers
 
         public static void AddSickOffers(ushort buildingID, ref Building buildingData, int iBuildingSickCount)
         {
-            bool bNaturalDisasters = DependencyUtilities.IsNaturalDisastersDLC();
+            bool bNaturalDisasters = DependencyUtils.IsNaturalDisastersDLC();
             int sickCount = iBuildingSickCount;
             int count = 0;
             int cargo = 0;

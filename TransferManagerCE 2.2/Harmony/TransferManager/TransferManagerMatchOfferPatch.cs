@@ -21,6 +21,23 @@ namespace TransferManagerCE
             // Check if disabled in settings?
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {
+                // Support Employ Over Educated Workers
+                switch (material)
+                {
+                    case TransferReason.Worker0:
+                    case TransferReason.Worker1:
+                    case TransferReason.Worker2:
+                    case TransferReason.Worker3:
+                        {
+                            if (DependencyUtils.IsEmployOverEducatedWorkersRunning())
+                            {
+                                // Handle with Employ Overeducated Workers MatchOffers rather than ours
+                                return true;
+                            }
+                            break;
+                        }
+                }
+
                 // Dispatch to TransferDispatcher
                 CustomTransferDispatcher.Instance.SubmitMatchOfferJob(material, ref ___m_incomingCount, ref ___m_outgoingCount, ___m_incomingOffers, ___m_outgoingOffers, ref ___m_incomingAmount, ref ___m_outgoingAmount);
                 return false;

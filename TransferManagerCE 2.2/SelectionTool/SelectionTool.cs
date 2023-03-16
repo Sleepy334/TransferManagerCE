@@ -79,7 +79,7 @@ namespace TransferManagerCE
         {
             base.Awake();
 
-            if (DependencyUtilities.IsUnifiedUIRunning())
+            if (DependencyUtils.IsUnifiedUIRunning())
             {
                 Texture2D? icon = TextureResources.LoadDllResource("Transfer.png", 32, 32);
                 if (icon == null)

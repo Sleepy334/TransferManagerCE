@@ -46,7 +46,7 @@ namespace TransferManagerCE
         // Added support for the nursing home mod which tries to patch the same function
         private static bool IsInNursingHomeAndNotTooSick(uint citizenID, ushort sourceBuilding)
         {
-            if (DependencyUtilities.IsSeniorCitizenCenterModRunning() &&
+            if (DependencyUtils.IsSeniorCitizenCenterModRunning() &&
                 Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.HealthCare) &&
                 Singleton<CitizenManager>.exists && 
                 Singleton<CitizenManager>.instance != null &&
@@ -102,7 +102,7 @@ namespace TransferManagerCE
                 }
 
                 // Add a Sick or Sick2 outgoing offer instead
-                bool bNaturalDisasters = DependencyUtilities.IsNaturalDisastersDLC();
+                bool bNaturalDisasters = DependencyUtils.IsNaturalDisastersDLC();
                 if (bNaturalDisasters && (servicePolicies & DistrictPolicies.Services.HelicopterPriority) != 0)
                 {
                     instance2.m_districts.m_buffer[district].m_servicePoliciesEffect |= DistrictPolicies.Services.HelicopterPriority;
