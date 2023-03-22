@@ -731,7 +731,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public bool CanUsePathingForCandidate(TransferReason material)
+        private bool CanUsePathingForCandidate(TransferReason material)
         {
             if (LocalPark > 0)
             {
@@ -739,34 +739,16 @@ namespace TransferManagerCE.CustomManager
                 return false;
             }
 
-            switch (m_object.Type)
+            // Dont use path distance for helicopter transfer reasons
+            if (TransferManagerModes.IsHelicopterReason((CustomTransferReason.Reason)material))
             {
-                case InstanceType.Building:
-                    var buildingAI = Singleton<BuildingManager>.instance.m_buildings.m_buffer[Building].Info.GetAI();
-                    switch (buildingAI)
-                    {
-                        case HelicopterDepotAI:
-                            {
-                                // Dont use path distance for helicopters
-                                if (TransferManagerModes.IsHelicopterReason((CustomTransferReason.Reason) material))
-                                {
-                                    return false;
-                                }
-                                break;
-                            }
-                        case DisasterResponseBuildingAI:
-                            {
-                                // Collapsed2 is for helicopters, dont use path distance
-                                return material != TransferReason.Collapsed2;
-                            }
-                    }
-                    break;
-                case InstanceType.Vehicle:
-                    if (Singleton<VehicleManager>.instance.m_vehicles.m_buffer[Vehicle].Info.GetAI() is HelicopterAI)
-                    {
-                        return false;
-                    }
-                    break;
+                return false;
+            }
+
+            // Don't use path distance for helicopters
+            if (Vehicle != 0 && Singleton<VehicleManager>.instance.m_vehicles.m_buffer[Vehicle].Info.GetAI() is HelicopterAI)
+            {
+                return false;
             }
 
             return true;

@@ -35,7 +35,7 @@ namespace TransferManagerCE
             m_laneTypes = PathDistanceTypes.GetLaneTypes(bGoodsMaterial);
             m_vehicleTypes = PathDistanceTypes.GetVehicleTypes(bGoodsMaterial);
             m_bPedestrianZone = PathDistanceTypes.IsPedestrianZoneService(material);
-            m_bCargoPathAllowed = PathDistanceTypes.IsGoodsMaterial(material);
+            m_bCargoPathAllowed = bGoodsMaterial;
         }
 
         protected abstract void ProcessSegment(ushort segmentId, ushort uiCurrentNodeId, float fCurrentTravelTime);
