@@ -302,6 +302,7 @@ namespace TransferManagerCE
                                                 allowUnderground: false,
                                                 requireConnect: false,
                                                 fMAX_SEARCH_DISTANCE,
+                                                false,
                                                 out PathUnit.Position pathStartPosA,
                                                 out pathPosB,
                                                 out distanceSqrA,

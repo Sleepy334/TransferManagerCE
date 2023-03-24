@@ -28,7 +28,7 @@ namespace TransferManagerCE
             NetLanes = Singleton<NetManager>.instance.m_lanes.m_buffer;
         }
 
-        public void SetMaterial(CustomTransferReason material)
+        public virtual void SetMaterial(CustomTransferReason material)
         {
             bool bGoodsMaterial = PathDistanceTypes.IsGoodsMaterial(material);
             PathDistanceTypes.GetService(bGoodsMaterial, out m_service1, out m_service2, out m_service3);
@@ -140,7 +140,7 @@ namespace TransferManagerCE
             if (service == m_service1 || service == m_service2 || service == m_service3)
             {
                 // Cargo stations seem to label their connector nodes as Beautification for some reason so we need to check AI as well
-                // as we dont want to allow Quays and 
+                // as we dont want to allow Quays and parks
                 if (m_bCargoPathAllowed && service == ItemClass.Service.Beautification)
                 {
                     return info.GetAI() is CargoPathAI;

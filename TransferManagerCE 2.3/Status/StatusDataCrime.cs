@@ -28,7 +28,19 @@ namespace TransferManagerCE.Data
                         }
                     default:
                         {
-                            return building.m_crimeBuffer + " | " + BuildingUtils.GetCriminalCount(m_buildingId, building);
+                            string sValue = "";
+
+                            int iCitizenCount = building.m_citizenCount;
+                            if (iCitizenCount > 0)
+                            {
+                                sValue += building.m_crimeBuffer / iCitizenCount;
+                            }
+                            else
+                            {
+                                sValue += building.m_crimeBuffer;
+                            }
+
+                            return $"{sValue} | {BuildingUtils.GetCriminalCount(m_buildingId, building)}";
                         }
                 }
             }

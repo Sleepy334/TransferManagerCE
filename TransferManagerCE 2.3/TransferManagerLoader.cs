@@ -180,22 +180,6 @@ namespace TransferManagerCE
                 return false;
             }
 
-            if (!IsHarmonyValid())
-            {
-                string strMessage = "Harmony patching failed\r\n";
-                strMessage += "\r\n";
-                strMessage += $"Expected patch count: {Patcher.GetRequestedPatchCount()} Patch Count: {Patcher.GetPatchCount()}";
-                strMessage += "\r\n";
-                strMessage += "If you could send TransferManagerCE.log to the author that would be great\r\n";
-                strMessage += "\r\n";
-                strMessage += "You could try Compatibility Report to check for mod compatibility or use Load Order Mod to ensure your mods are loaded in the correct order.";
-                Prompt.Info("Transfer Manager CE", strMessage);
-
-                RemoveHarmonyPathes();
-
-                return false;
-            }
-
             return true;
         }
 
@@ -205,16 +189,6 @@ namespace TransferManagerCE
             {
                 Patcher.UnpatchAll();
             }
-        }
-
-        public bool IsHarmonyValid()
-        {
-            if (DependencyUtils.IsHarmonyRunning())
-            {
-                return Patcher.GetRequestedPatchCount() == Patcher.GetPatchCount();
-            }
-
-            return false;
         }
 
         public static UITextureAtlas? LoadResources()

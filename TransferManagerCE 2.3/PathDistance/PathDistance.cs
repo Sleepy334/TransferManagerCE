@@ -1,11 +1,8 @@
-using ColossalFramework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using TransferManagerCE.Common;
 using UnityEngine;
-using UnityEngine.Networking.Types;
 using static TransferManagerCE.PathQueue;
 
 namespace TransferManagerCE
@@ -26,6 +23,9 @@ namespace TransferManagerCE
         // Which direction is the vehicle going?
         private bool m_bStartActive = true;
 
+        // Do we bother calculating heuristic
+        private bool m_bUsePathDistanceHeuristic;
+
         private static Stopwatch s_watch = Stopwatch.StartNew();
 
         public PathDistance() : base()
@@ -33,6 +33,14 @@ namespace TransferManagerCE
             QueueData.UpdateHeuristicScale();
             m_sortedNodes = new PathQueue();
             m_visited = new BitArray(NetManager.MAX_NODE_COUNT);
+        }
+
+        public override void SetMaterial(CustomTransferReason material)
+        {
+            base.SetMaterial(material);
+
+            // Dont bother calculating heuristic if set to 0
+            m_bUsePathDistanceHeuristic = SaveGameSettings.GetSettings().PathDistanceHeuristic > 0;
         }
 
         private void ResetArrays()
@@ -258,8 +266,7 @@ namespace TransferManagerCE
 
             // if the candidate count is too large it is better just to use travel time
             // also dont bother calculating heuristic if set to 0
-            if (candidates.Count <= iMAX_CANDIDATE_POSITIONS && 
-                SaveGameSettings.GetSettings().PathDistanceHeuristic > 0)
+            if (m_bUsePathDistanceHeuristic && candidates.Count <= iMAX_CANDIDATE_POSITIONS)
             {
                 int iIndex = 0;
                 foreach (var candidate in candidates)

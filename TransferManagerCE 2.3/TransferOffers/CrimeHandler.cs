@@ -7,6 +7,7 @@ namespace TransferManagerCE.TransferOffers
 {
     public class CrimeHandler
     {
+        // Adds support for Crime2 so we can separate helicopters from police cars for the path distance algorithm.
         public static void AddCrimeOffer(ushort buildingID, ref Building buildingData, int iCitizenCount)
         {
             int crimeBuffer = buildingData.m_crimeBuffer;
