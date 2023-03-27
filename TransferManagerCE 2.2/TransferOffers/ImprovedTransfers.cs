@@ -5,11 +5,15 @@ using ColossalFramework;
 using TransferManagerCE.Settings;
 using static TransferManagerCE.CitiesUtils;
 using static TransferManagerCE.WarehouseUtils;
+using System.Reflection;
+using ICities;
 
 namespace TransferManagerCE
 {
     internal class ImprovedTransfers
     {
+        private static int? s_maxLoadSize = null;
+
         // Return false to skip adding of offer.
         public static bool HandleIncomingOffer(TransferReason material, ref TransferOffer offer)
         {
@@ -111,7 +115,7 @@ namespace TransferManagerCE
             {
                 Building building = Buildings[offer.Building];
                 CemeteryAI? cemeteryAI = building.Info.m_buildingAI as CemeteryAI;
-                if (cemeteryAI != null)
+                if (cemeteryAI is not null)
                 {
                     // Determine free spots in cemetery / Crematorium
                     int iAmount;
@@ -149,7 +153,7 @@ namespace TransferManagerCE
             {
                 Building building = Buildings[offer.Building];
                 LandfillSiteAI? garbageAI = building.Info.m_buildingAI as LandfillSiteAI;
-                if (garbageAI != null)
+                if (garbageAI is not null)
                 {
                     // Get total vehicle count, Factor in budget
                     int iTotalVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.Landfill, offer.Building, building);
@@ -180,7 +184,7 @@ namespace TransferManagerCE
             {
                 Building building = Buildings[offer.Building];
                 PoliceStationAI? buildingAI = building.Info.m_buildingAI as PoliceStationAI;
-                if (buildingAI != null)
+                if (buildingAI is not null)
                 {
                     // Get total vehicle count, Factor in budget
                     int iTotalVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.PoliceStation, offer.Building, building);
@@ -213,7 +217,7 @@ namespace TransferManagerCE
                 if (building.m_flags != 0)
                 {
                     HospitalAI? buildingAI = building.Info?.m_buildingAI as HospitalAI;
-                    if (buildingAI != null)
+                    if (buildingAI is not null)
                     {
                         // Get total vehicle count, Factor in budget
                         int iTotalVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.Hospital, offer.Building, building);
@@ -237,10 +241,10 @@ namespace TransferManagerCE
             if (offer.Building != 0 && SaveGameSettings.GetSettings().ImprovedMailTransfers)
             {
                 Building building = Buildings[offer.Building];
-                if (building.m_flags != 0 && building.Info != null)
+                if (building.m_flags != 0 && building.Info is not null)
                 {
                     PostOfficeAI? buildingAI = building.Info.m_buildingAI as PostOfficeAI;
-                    if (buildingAI != null)
+                    if (buildingAI is not null)
                     {
                         // Get total vehicle count, Factor in budget
                         int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
@@ -270,7 +274,7 @@ namespace TransferManagerCE
                 Building building = Buildings[offer.Building];
                 if (building.m_flags != 0 &&
                     building.m_incomingProblemTimer == 0 &&
-                    building.Info != null &&
+                    building.Info is not null &&
                     building.Info.GetService() == ItemClass.Service.Commercial)
                 {
                     // Cap priority to 6.
@@ -281,21 +285,32 @@ namespace TransferManagerCE
 
         private static void ImprovedWarehouseMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
         {
-            if (offer.Exclude && BuildingSettingsFast.IsImprovedWarehouseMatching(offer.Building))
+            // Check it is actually a warehouse
+            if (!offer.Exclude)
             {
-                // It's a warehouse, set the priority based on storage level
-                Building building = Buildings[offer.Building];
+                return;
+            }
 
-                // Get warehouse mode.
-                WarehouseMode mode = WarehouseUtils.GetWarehouseMode(building);
-
-                // If warehouse mode is "Empty" then the Priority is already 0, we don't want to change this
-                if (building.m_flags != 0 && mode != WarehouseMode.Empty)
+            Building building = Buildings[offer.Building];
+            if (building.m_flags != 0 && building.Info is not null)
+            {
+                WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
+                if (warehouse is not null)
                 {
-                    if (building.Info != null)
+                    // The H&T patch introduced a bad bug for the incoming amount calculation, this restores the old version
+                    // We patch the offer amount always
+                    int buffer = building.m_customBuffer1 * 100;
+                    int maxLoadSize = GetMaxLoadSize(warehouse);
+                    offer.Amount = Mathf.Max(1, (warehouse.m_storageCapacity - buffer) / Mathf.Max(1, maxLoadSize));
+
+                    // It's a warehouse, set the priority based on storage level
+                    if (BuildingSettingsFast.IsImprovedWarehouseMatching(offer.Building))
                     {
-                        WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
-                        if (warehouse != null)
+                        // Get warehouse mode.
+                        WarehouseMode mode = WarehouseUtils.GetWarehouseMode(building);
+
+                        // If warehouse mode is "Empty" then the Priority is already 0, we don't want to change this
+                        if (mode != WarehouseMode.Empty)
                         {
                             // Update priority based on storage level
                             // For incoming we use the storage buffer and incoming supply
@@ -340,6 +355,27 @@ namespace TransferManagerCE
             }
         }
 
+        private static int GetMaxLoadSize(WarehouseAI instance)
+        {
+            if (s_maxLoadSize == null)
+            {
+                // We try to call WarehouseAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
+                // Unfortunately it is private so we need to use reflection, so we cache the results.
+                MethodInfo getMaxLoadSize = typeof(WarehouseAI).GetMethod("GetMaxLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (getMaxLoadSize != null)
+                {
+                    s_maxLoadSize = (int)getMaxLoadSize.Invoke(instance, null);
+                }
+                else
+                {
+                    // Fall back on default if we fail to get the function
+                    s_maxLoadSize = 8000; 
+                }
+            }
+
+            return s_maxLoadSize.Value;
+        }
+
         public static void ImprovedWarehouseMatchingOutgoing(ref TransferOffer offer)
         {
             if (offer.Exclude)
@@ -351,10 +387,10 @@ namespace TransferManagerCE
                 WarehouseMode mode = WarehouseUtils.GetWarehouseMode(building);
 
                 // If warehouse mode is Fill then OUT priority will already be 0. We don't need to change this
-                if (building.m_flags != 0 && building.Info != null && mode != WarehouseMode.Fill)
+                if (building.m_flags != 0 && building.Info is not null && mode != WarehouseMode.Fill)
                 {
                     WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
-                    if (warehouse != null)
+                    if (warehouse is not null)
                     {
                         // Limit priority based on available truck count
                         int iReservePercent = BuildingSettingsFast.ReserveCargoTrucksPercent(offer.Building);

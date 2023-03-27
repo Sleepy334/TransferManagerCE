@@ -80,8 +80,9 @@ namespace TransferManagerCE.CustomManager
                 return ExclusionReason.LowPriority;
             }
 
-            // Don't allow matching if same building
-            if (incomingOffer.GetBuilding() != 0 && incomingOffer.GetBuilding() == outgoingOffer.GetBuilding())
+            // Don't allow matching if same building, unless it is a warehouse IN request in which case it will be the truck
+            // wanting to return its material.
+            if (incomingOffer.GetBuilding() != 0 && !incomingOffer.IsWarehouse() && incomingOffer.GetBuilding() == outgoingOffer.GetBuilding())
             {
                 return ExclusionReason.SameBuilding;
             }
