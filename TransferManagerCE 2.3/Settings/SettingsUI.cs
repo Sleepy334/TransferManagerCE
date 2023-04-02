@@ -731,6 +731,8 @@ namespace TransferManagerCE
         public void OnResetPathingStatisticsClicked()
         {
             PathFindFailure.Reset();
+            HumanAIPathfindFailure.s_pathFailCount = 0;
+            CarAIPathfindFailurePatch.s_pathFailCount = 0;
         }
 
         public void OnVehiclesOnRouteChanged(bool value)

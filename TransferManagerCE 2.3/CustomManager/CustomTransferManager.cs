@@ -37,6 +37,7 @@ namespace TransferManagerCE.CustomManager
         private MatchJobLogFile? m_logFile = null;
         private int m_iMatches = 0;
         private Stopwatch m_watch = Stopwatch.StartNew();
+        private TransferMode m_eTransferMode;
 
         // -------------------------------------------------------------------------------------------
         public CustomTransferManager()
@@ -139,8 +140,8 @@ namespace TransferManagerCE.CustomManager
                 }
 
                 // Select match mode based on material
-                TransferMode eMatchMode = TransferManagerModes.GetTransferMode(material);
-                switch (eMatchMode)
+                m_eTransferMode = TransferManagerModes.GetTransferMode(material);
+                switch (m_eTransferMode)
                 {
                     case TransferMode.Priority:
                         {
@@ -693,11 +694,11 @@ namespace TransferManagerCE.CustomManager
                 {
                     if (offer.IsIncoming())
                     {
-                        reason = m_transferRestrictions.CanTransfer(job.material, ref offer, ref candidateOffer, bCloseByOnly);
+                        reason = m_transferRestrictions.CanTransfer(job.material, m_eTransferMode, ref offer, ref candidateOffer, bCloseByOnly);
                     }
                     else
                     {
-                        reason = m_transferRestrictions.CanTransfer(job.material, ref candidateOffer, ref offer, bCloseByOnly);
+                        reason = m_transferRestrictions.CanTransfer(job.material, m_eTransferMode, ref candidateOffer, ref offer, bCloseByOnly);
                     }
                 }
 
@@ -881,11 +882,11 @@ namespace TransferManagerCE.CustomManager
                 {
                     if (offer.IsIncoming())
                     {
-                        reason = m_transferRestrictions.CanTransfer(job.material, ref offer, ref candidateOffer, bCloseByOnly);
+                        reason = m_transferRestrictions.CanTransfer(job.material, m_eTransferMode, ref offer, ref candidateOffer, bCloseByOnly);
                     }
                     else
                     {
-                        reason = m_transferRestrictions.CanTransfer(job.material, ref candidateOffer, ref offer, bCloseByOnly);
+                        reason = m_transferRestrictions.CanTransfer(job.material, m_eTransferMode, ref candidateOffer, ref offer, bCloseByOnly);
                     }
                 }
                 
@@ -1028,11 +1029,11 @@ namespace TransferManagerCE.CustomManager
                 {
                     if (offer.IsIncoming())
                     {
-                        reason = m_transferRestrictions.CanTransfer(job.material, ref offer, ref candidateOffer, bCloseByOnly);
+                        reason = m_transferRestrictions.CanTransfer(job.material, m_eTransferMode, ref offer, ref candidateOffer, bCloseByOnly);
                     }
                     else
                     {
-                        reason = m_transferRestrictions.CanTransfer(job.material, ref candidateOffer, ref offer, bCloseByOnly);
+                        reason = m_transferRestrictions.CanTransfer(job.material, m_eTransferMode, ref candidateOffer, ref offer, bCloseByOnly);
                     }
                 }
 

@@ -66,7 +66,7 @@ namespace TransferManagerCE
             base.Start();
             name = "StatsPanel";
             width = 900;
-            height = 700;
+            height = 730;
             if (ModSettings.GetSettings().EnablePanelTransparency)
             {
                 opacity = 0.95f;
@@ -233,10 +233,12 @@ namespace TransferManagerCE
                 // Dropped reasons indicate performance issues.
                 list.Add(new GeneralContainer("Dropped Reason Count", CustomTransferDispatcher.Instance.DroppedReasons.ToString()));
                 list.Add(new GeneralContainer("Invalid Transfer Objects", $"{TransferManagerStats.GetTotalInvalidObjectCount()} (Building:{TransferManagerStats.s_iInvalidBuildingObjects}, Vehicle:{TransferManagerStats.s_iInvalidVehicleObjects}, Citizen:{TransferManagerStats.s_iInvalidCitizenObjects})"));
-                
+
                 // Pathing
-                list.Add(new GeneralContainer("Path Fail Count", PathFindFailure.GetPathFailureCount().ToString()));
-                list.Add(new GeneralContainer("Outside Path Fail Count", PathFindFailure.GetOutsidePathFailureCount().ToString()));
+                list.Add(new GeneralContainer("Total Citizen Path Fail Count", HumanAIPathfindFailure.s_pathFailCount.ToString()));
+                list.Add(new GeneralContainer("Total Vehicle Path Fail Count", CarAIPathfindFailurePatch.s_pathFailCount.ToString()));
+                list.Add(new GeneralContainer("Current Path Fail Count", PathFindFailure.GetPathFailureCount().ToString()));
+                list.Add(new GeneralContainer("Current Outside Path Fail Count", PathFindFailure.GetOutsidePathFailureCount().ToString()));
                 if (bPathDistance)
                 {
                     list.Add(new GeneralContainer("No Road Access Fail Count", RoadAccessData.Count.ToString()));

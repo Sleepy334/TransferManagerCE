@@ -41,14 +41,18 @@
   <ItemGroup>
     <None Remove="Locales\en.csv" />
     <None Remove="Resources\clear.png" />
+    <None Remove="Resources\CopyButtonIcon.png" />
     <None Remove="Resources\Information.png" />
+    <None Remove="Resources\PasteButtonIcon.png" />
     <None Remove="Resources\Transfer.png" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Locales\en.csv" />
     <EmbeddedResource Include="Resources\clear.png" />
+    <EmbeddedResource Include="Resources\CopyButtonIcon.png" />
     <EmbeddedResource Include="Resources\Information.png" />
+    <EmbeddedResource Include="Resources\PasteButtonIcon.png" />
     <EmbeddedResource Include="Resources\Transfer.png" />
   </ItemGroup>
 

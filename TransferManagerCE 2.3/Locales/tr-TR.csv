@@ -301,3 +301,5 @@
 "sliderPathDistanceShift","Çarpan Taban Değeri (Seyahat Süresi)"
 "txtPathUnitCount","Yol Birimleri Serbest Bırakıldı"
 "txtEnterBuildingId","Binayı Seç veya Bina Kimliğini Gir"
+"tooltipCopySettings","Copy Settings"
+"tooltipPasteSettings","Paste Settings"

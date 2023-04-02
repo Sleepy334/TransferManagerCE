@@ -278,7 +278,7 @@ namespace TransferManagerCE
                     m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET_FAIL_COUNT, "#", "Failure count", iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
                 }
 
-                m_btnReset = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, tabPathing, Localization.Get("btnResetPathingStatistics"), 200, iButtonHeight, OnReset);
+                m_btnReset = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, tabPathing, Localization.Get("btnResetPathingStatistics"), "", 200, iButtonHeight, OnReset);
                 if (m_btnReset is not null)
                 {
                     m_btnReset.tooltip = "Reset pathing for this building.";

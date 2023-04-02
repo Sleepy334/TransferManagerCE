@@ -79,12 +79,13 @@ namespace TransferManagerCE
             return uiPanel;
         }
 
-        public static UIButton? AddButton(ButtonStyle style, UIComponent parent, string sText, float width, float height, MouseEventHandler? eventClick = null)
+        public static UIButton? AddButton(ButtonStyle style, UIComponent parent, string sText, string sTooltip, float width, float height, MouseEventHandler? eventClick = null)
         {
             UIButton? button = parent.AddUIComponent<UIButton>();
             if (button is not null)
             {
                 button.text = sText;
+                button.tooltip = sTooltip;
                 button.autoSize = false;
                 button.width = width;
                 button.height = height;
@@ -119,6 +120,38 @@ namespace TransferManagerCE
                 if (sprite is not null)
                 {
                     sprite.spriteName = sSprite;
+                    sprite.autoSize = false;
+                    sprite.width = button.width - 4;
+                    sprite.height = button.height - 4;
+                    sprite.CenterToParent();
+                }
+            }
+
+            return button;
+        }
+
+        public static UIButton? AddSpriteButton(ButtonStyle style, UIComponent parent, string sSprite, string sTooltip, UITextureAtlas atlas, float width, float height, MouseEventHandler? eventClick = null)
+        {
+            UIButton? button = parent.AddUIComponent<UIButton>();
+            if (button is not null)
+            {
+                button.text = "";
+                button.tooltip = sTooltip;
+                button.autoSize = false;
+                button.width = width;
+                button.height = height;
+                SetButtonStyle(style, button);
+
+                if (eventClick is not null)
+                {
+                    button.eventClick += eventClick;
+                }
+
+                UISprite sprite = button.AddUIComponent<UISprite>();
+                if (sprite is not null)
+                {
+                    sprite.spriteName = sSprite;
+                    sprite.atlas = atlas;
                     sprite.autoSize = false;
                     sprite.width = button.width - 4;
                     sprite.height = button.height - 4;

@@ -301,3 +301,5 @@
 "sliderPathDistanceShift","Multiplier Base Value (Travel Time)"
 "txtPathUnitCount","Path Units Released"
 "txtEnterBuildingId","Select Building or Enter Building ID"
+"tooltipCopySettings","Copy Settings"
+"tooltipPasteSettings","Paste Settings"

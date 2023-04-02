@@ -72,6 +72,9 @@ namespace TransferManagerCE
                     case InstanceType.Citizen:
                         {
                             // Ignore citizens for now
+#if DEBUG
+                            result.Add(new RoadAccessData(kvp.Key, kvp.Value));
+#endif
                             break;
                         }
                     default:

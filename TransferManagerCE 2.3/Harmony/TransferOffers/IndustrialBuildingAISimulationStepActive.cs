@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
 using HarmonyLib;
+using System.Reflection;
 using TransferManagerCE.TransferOffers;
 using UnityEngine;
 using static TransferManager;
@@ -11,6 +12,7 @@ namespace TransferManagerCE
     public static class IndustrialBuildingAISimulationStepActive
     {
         public static bool s_bRejectOffers = false;
+        private static int? s_maxLoadSize = null;
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
@@ -101,43 +103,69 @@ namespace TransferManagerCE
                     buildingData.m_fireIntensity == 0 &&  
                     random.UInt32(2U) == 0)
                 {
-                    const int iMAX_VEHICLE_LOAD = 8000;
-
-                    // Check we have vehicles available before adding offer
-                    int iVehicles = BuildingUtils.GetOwnVehicleCount(buildingData, outgoingReason);
-                    int iMaxVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.GenericFactory, buildingID);
-                    if (iVehicles < iMaxVehicles)
+                    IndustrialBuildingAI? buildingAI = buildingData.Info.GetAI() as IndustrialBuildingAI;
+                    if (buildingAI is not null)
                     {
-                        TransferManager.TransferOffer offer = default;
+                        // Check we have vehicles available before adding offer
+                        int iVehicles = BuildingUtils.GetOwnVehicleCount(buildingData, outgoingReason);
+                        int iMaxVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.GenericFactory, buildingID);
+                        if (iVehicles < iMaxVehicles)
+                        {
+                            TransferManager.TransferOffer offer = default;
 
-                        // P:0 at storage 8
-                        // P:2 at Storage 12
-                        // Then scale with Outgoing timer after that
-                        if (buildingData.m_customBuffer2 > 12000)
-                        {
-                            offer.Priority = Mathf.Clamp(2 + buildingData.m_outgoingProblemTimer * 6 / 128, 2, 7); // 128 is when the problem icon appears
-                        }
-                        else if (buildingData.m_customBuffer2 > iMAX_VEHICLE_LOAD)
-                        {
-                            offer.Priority = Mathf.Clamp(buildingData.m_outgoingProblemTimer * 8 / 128, 0, 7); // 128 is when the problem icon appears
-                        }
-                        else
-                        {
-                            offer.Priority = 0;
-                        }
-                        offer.Building = buildingID;
-                        offer.Position = buildingData.m_position;
-                        offer.Amount = Mathf.Min(buildingData.m_customBuffer2 / iMAX_VEHICLE_LOAD, iMaxVehicles - iVehicles);
-                        offer.Active = true;
+                            // P:0 at storage 8
+                            // P:2 at Storage 12
+                            // Then scale with Outgoing timer after that
+                            int iMaxVehicleLoad = MaxOutgoingLoadSize(buildingAI);
+                            if (buildingData.m_customBuffer2 > 12000)
+                            {
+                                offer.Priority = Mathf.Clamp(2 + buildingData.m_outgoingProblemTimer * 6 / 128, 2, 7); // 128 is when the problem icon appears
+                            }
+                            else if (buildingData.m_customBuffer2 > iMaxVehicleLoad)
+                            {
+                                offer.Priority = Mathf.Clamp(buildingData.m_outgoingProblemTimer * 8 / 128, 0, 7); // 128 is when the problem icon appears
+                            }
+                            else
+                            {
+                                offer.Priority = 0;
+                            }
+                            offer.Building = buildingID;
+                            offer.Position = buildingData.m_position;
+                            offer.Amount = Mathf.Min(buildingData.m_customBuffer2 / iMaxVehicleLoad, iMaxVehicles - iVehicles);
+                            offer.Active = true;
 
-                        if (offer.Amount > 0)
-                        {
-                            // Add our version
-                            Singleton<TransferManager>.instance.AddOutgoingOffer(outgoingReason, offer);
+                            if (offer.Amount > 0)
+                            {
+                                // Add our version
+                                Singleton<TransferManager>.instance.AddOutgoingOffer(outgoingReason, offer);
+                            }
                         }
-                    } 
+                    }
                 }
             }
+        }
+
+        // We call this function incase it is altered by something like Rebalanced Industries
+        // Cache the result as reflection is slow.
+        private static int MaxOutgoingLoadSize(IndustrialBuildingAI instance)
+        {
+            if (s_maxLoadSize == null)
+            {
+                // We try to call WarehouseAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
+                // Unfortunately it is private so we need to use reflection, so we cache the results.
+                MethodInfo getMaxOutgoingLoadSize = typeof(IndustrialBuildingAI).GetMethod("MaxOutgoingLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (getMaxOutgoingLoadSize != null)
+                {
+                    s_maxLoadSize = (int)getMaxOutgoingLoadSize.Invoke(instance, null);
+                }
+                else
+                {
+                    // Fall back on default if we fail to get the function
+                    s_maxLoadSize = 8000;
+                }        
+            }
+
+            return s_maxLoadSize.Value;
         }
 
         private static TransferManager.TransferReason GetIncomingTransferReason(ushort buildingID, BuildingInfo info)

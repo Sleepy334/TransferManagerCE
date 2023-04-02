@@ -249,7 +249,18 @@ namespace TransferManagerCE.CustomManager
         // -------------------------------------------------------------------------------------------
         public bool IsWarehouse()
         {
-            return Exclude; // Only set by warehouses.
+            // Exclude is set by warehouses and unfortunately in the new TaxiOverhaul mod, Taxi stands
+            if (Exclude)
+            {
+                switch (GetBuildingType())
+                {
+                    case BuildingType.Warehouse:
+                    case BuildingType.CargoFerryWarehouseHarbor:
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         // -------------------------------------------------------------------------------------------

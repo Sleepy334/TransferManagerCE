@@ -166,7 +166,7 @@ namespace TransferManagerCE.UI
                         m_dropPreferLocalIncoming.SetPanelWidth(m_panelIncomingDistrict.width - iDropDownWidthOffset);
                         m_dropPreferLocalIncoming.m_dropdown.textScale = 0.9f;
                     }
-                    m_btnIncomingSelectDistrict = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_panelIncomingDistrict, Localization.Get("btnDistricts") + "...", 120, m_dropPreferLocalIncoming.m_dropdown.height, (c, e) => OnSelectIncomingDistrictClicked());
+                    m_btnIncomingSelectDistrict = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_panelIncomingDistrict, Localization.Get("btnDistricts") + "...", "", 120, m_dropPreferLocalIncoming.m_dropdown.height, (c, e) => OnSelectIncomingDistrictClicked());
                     if (m_btnIncomingSelectDistrict is not null)
                     {
                         m_btnIncomingSelectDistrict.relativePosition = new Vector3(m_dropPreferLocalIncoming.m_panel.width + 6, 2);
@@ -191,7 +191,7 @@ namespace TransferManagerCE.UI
                         m_dropPreferLocalOutgoing.SetPanelWidth(m_panelOutgoingDistrict.width - iDropDownWidthOffset);
                         m_dropPreferLocalOutgoing.m_dropdown.textScale = 0.9f;
                     }
-                    m_btnOutgoingSelectDistrict = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_panelOutgoingDistrict, Localization.Get("btnDistricts") + "...", 120, m_dropPreferLocalOutgoing.m_dropdown.height, (c, e) => OnSelectOutgoingDistrictClicked());
+                    m_btnOutgoingSelectDistrict = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_panelOutgoingDistrict, Localization.Get("btnDistricts") + "...", "", 120, m_dropPreferLocalOutgoing.m_dropdown.height, (c, e) => OnSelectOutgoingDistrictClicked());
                     if (m_btnOutgoingSelectDistrict is not null)
                     {
                         m_btnOutgoingSelectDistrict.relativePosition = new Vector3(m_dropPreferLocalOutgoing.m_panel.width + 6, 2);
@@ -230,7 +230,7 @@ namespace TransferManagerCE.UI
                     m_lblBuildingRestrictionsIncoming.verticalAlignment = UIVerticalAlignment.Middle;
 
                     // Buttons
-                    m_btnBuildingRestrictionsIncoming = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_pnlBuildingRestrictionsIncoming, Localization.Get("btnBuildingRestrictions"), 280, iButtonHeight, OnBuildingRestrictionsIncomingClicked);
+                    m_btnBuildingRestrictionsIncoming = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_pnlBuildingRestrictionsIncoming, Localization.Get("btnBuildingRestrictions"), "", 280, iButtonHeight, OnBuildingRestrictionsIncomingClicked);
                     m_btnBuildingRestrictionsIncomingClear = UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, m_pnlBuildingRestrictionsIncoming, "Niet", iButtonHeight, iButtonHeight, OnBuildingRestrictionsIncomingClearClicked);
                     m_btnBuildingRestrictionsIncomingClear.tooltip = Localization.Get("btnClear");
 
@@ -252,7 +252,7 @@ namespace TransferManagerCE.UI
                     m_lblBuildingRestrictionsOutgoing.verticalAlignment = UIVerticalAlignment.Middle;
 
                     // Buttons
-                    m_btnBuildingRestrictionsOutgoing = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_pnlBuildingRestrictionsOutgoing, Localization.Get("btnBuildingRestrictions"), 280, iButtonHeight, OnBuildingRestrictionsOutgoingClicked);
+                    m_btnBuildingRestrictionsOutgoing = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_pnlBuildingRestrictionsOutgoing, Localization.Get("btnBuildingRestrictions"), "", 280, iButtonHeight, OnBuildingRestrictionsOutgoingClicked);
                     m_btnBuildingRestrictionsOutgoingClear = UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, m_pnlBuildingRestrictionsOutgoing, "Niet", iButtonHeight, iButtonHeight, OnBuildingRestrictionsOutgoingClearClicked);
                     m_btnBuildingRestrictionsOutgoingClear.tooltip = Localization.Get("btnClear");
                 }

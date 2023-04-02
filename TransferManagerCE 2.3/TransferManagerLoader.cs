@@ -200,6 +200,8 @@ namespace TransferManagerCE
                     "clear",
                     "Transfer",
                     "Information",
+                    "CopyButtonIcon",
+                    "PasteButtonIcon",
                 };
 
                 s_atlas = ResourceLoader.CreateTextureAtlas("TransferManagerCEAtlas", spriteNames, "TransferManagerCE.Resources.");

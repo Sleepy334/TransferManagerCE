@@ -124,7 +124,23 @@ namespace TransferManagerCE
                 Vector3 position = GetPosition(instance);
                 if (position != Vector3.zero)
                 {
-                    ToolsModifierControl.cameraController.SetTarget(instance, position, bZoom);
+                    CameraController? camera = GameObject.FindGameObjectWithTag("MainCamera")?.GetComponent<CameraController>();
+                    if (camera != null)
+                    {
+                        // Check if camera needs to go outside game area and enable it if needed
+                        if (!camera.m_unlimitedCamera)
+                        {
+                            Vector3 clampPosition = position;
+                            Singleton<GameAreaManager>.instance.ClampPoint(ref clampPosition);
+                            if (clampPosition != position)
+                            {
+                                // We turn off camera limiting so we can scroll outside game area for outside connections etc...
+                                camera.m_unlimitedCamera = true;
+                            }
+                        }
+                        
+                        camera.SetTarget(instance, position, bZoom);
+                    }
                 }
             }
         }

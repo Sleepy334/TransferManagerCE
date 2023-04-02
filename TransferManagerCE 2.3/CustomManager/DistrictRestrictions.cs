@@ -40,12 +40,12 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool CanTransferGlobalPreferLocal(CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material)
+        public static bool CanTransferGlobalPreferLocal(CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material, TransferMode mode)
         {
             if (SaveGameSettings.GetSettings().PreferLocalService && IsGlobalDistrictRestrictionsSupported(material))
             {
                 // Check if the offers pass the priority test
-                if (IsMatchAllowed(RestrictionSettings.PreferLocal.PreferLocalDistrict, offerIn, offerOut, material))
+                if (IsMatchAllowed(RestrictionSettings.PreferLocal.PreferLocalDistrict, offerIn, offerOut, material, mode))
                 {
                     return true;
                 }
@@ -80,7 +80,7 @@ namespace TransferManagerCE.CustomManager
             return true;
         }
 
-        public static bool CanTransfer(CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material)
+        public static bool CanTransfer(CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material, TransferMode mode)
         {
             // Check if it is an Import/Export
             if (offerIn.IsOutside() || offerOut.IsOutside())
@@ -95,7 +95,7 @@ namespace TransferManagerCE.CustomManager
 
             // Check max priority of both buildings
             RestrictionSettings.PreferLocal eMaxDistrictRestriction = (RestrictionSettings.PreferLocal)Math.Max((int)eInBuildingLocalDistrict, (int)eOutBuildingLocalDistrict);
-            if (IsMatchAllowed(eMaxDistrictRestriction, offerIn, offerOut, material))
+            if (IsMatchAllowed(eMaxDistrictRestriction, offerIn, offerOut, material, mode))
             {
                 return true;
             } 
@@ -172,7 +172,7 @@ namespace TransferManagerCE.CustomManager
             return (bInIsValid && bOutIsValid);
         }
 
-        private static bool IsMatchAllowed(RestrictionSettings.PreferLocal restriction, CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material)
+        private static bool IsMatchAllowed(RestrictionSettings.PreferLocal restriction, CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material, TransferMode mode)
         {
             // We only allow transfers outside district when priority climbs to this value
             const int PREFER_LOCAL_DISTRICT_THRESHOLD = 4;
@@ -186,7 +186,6 @@ namespace TransferManagerCE.CustomManager
                 case RestrictionSettings.PreferLocal.PreferLocalDistrict:
                     {
                         // We use match mode to determine which side needs to be high priority
-                        TransferMode mode = GetTransferMode(material);
                         switch (mode)
                         {
                             case TransferMode.OutgoingFirst:

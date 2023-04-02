@@ -301,3 +301,5 @@
 "sliderPathDistanceShift","基本の乗算値 (移動時間)"
 "txtPathUnitCount","Path Unitsを解放"
 "txtEnterBuildingId","建物を選択するか、Building IDを入力"
+"tooltipCopySettings","Copy Settings"
+"tooltipPasteSettings","Paste Settings"

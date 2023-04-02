@@ -11,6 +11,12 @@ namespace TransferManagerCE.UI
         private UILabel? m_labelApplyToAll = null;
         private UIButton? m_btnApplyToAllDistrict = null;
         private UIButton? m_btnApplyToAllPark = null;
+        private UIButton? m_btnPaste = null;
+
+        // Copy paste support
+        private BuildingType m_eCopyPasteBuildingType = BuildingType.None;
+        private BuildingSubType m_eCopyPasteSubBuildingType = BuildingSubType.None;
+        private BuildingSettings? m_eCopyPasteSettings = null;
 
         public static UIApplyToAll Create(UIComponent parent)
         {
@@ -37,12 +43,16 @@ namespace TransferManagerCE.UI
             m_labelApplyToAll.textScale = 0.9f;
             m_labelApplyToAll.autoSize = false;
             m_labelApplyToAll.height = 30;
-            m_labelApplyToAll.width = 450;
+            m_labelApplyToAll.width = 400;
 
             // Buttons
-            m_btnApplyToAllDistrict = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnDistrict"), 100, 30, OnApplyToAllDistrictClicked);
-            m_btnApplyToAllPark = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnPark"), 100, 30, OnApplyToAllParkClicked);
-            UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnMap"), 60, 30, OnApplyToAllWholeMapClicked);
+            m_btnApplyToAllDistrict = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnDistrict"), "", 100, 30, OnApplyToAllDistrictClicked);
+            m_btnApplyToAllPark = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnPark"), "", 100, 30, OnApplyToAllParkClicked);
+            UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnMap"), "", 60, 30, OnApplyToAllWholeMapClicked);
+
+            // Copy/Paste
+            UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, this, "CopyButtonIcon", Localization.Get("tooltipCopySettings"), TransferManagerLoader.LoadResources(), 30, 30, OnCopyClicked);
+            m_btnPaste = UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, this, "PasteButtonIcon", Localization.Get("tooltipPasteSettings"), TransferManagerLoader.LoadResources(), 30, 30, OnPasteClicked);
         }
 
         private ushort GetBuildingId()
@@ -98,9 +108,37 @@ namespace TransferManagerCE.UI
             }
         }
 
+        public void OnCopyClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            ushort buildingId = GetBuildingId();
+            if (buildingId != 0)
+            {
+                m_eCopyPasteBuildingType = BuildingTypeHelper.GetBuildingType(buildingId);
+                m_eCopyPasteSubBuildingType = BuildingTypeHelper.GetBuildingSubType(buildingId);
+                m_eCopyPasteSettings = BuildingSettingsStorage.GetSettingsOrDefault(buildingId);
+            }
+        }
+
+        public void OnPasteClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            ushort buildingId = GetBuildingId();
+            if (buildingId != 0 && m_eCopyPasteSettings != null)
+            {
+                // This function takes a copy so we dont need to do this first
+                BuildingSettingsStorage.SetSettings(buildingId, m_eCopyPasteSettings);
+
+                if (BuildingPanel.Instance is not null)
+                {
+                    BuildingPanel.Instance.UpdateTabs();
+                }
+            }
+        }
+
         public void UpdatePanel()
         {
             ushort buildingId = GetBuildingId();
+            BuildingType eMainType = GetBuildingType(buildingId);
+            BuildingSubType eSubType = GetBuildingSubType(buildingId);
 
             // Apply to all buttons
             if (m_btnApplyToAllDistrict is not null)
@@ -132,18 +170,22 @@ namespace TransferManagerCE.UI
             {
                 string sTypeDescription;
 
-                BuildingSubType eSubType = GetBuildingSubType(buildingId);
+                
                 if (eSubType != BuildingSubType.None)
                 {
                     sTypeDescription = eSubType.ToString();
                 }
                 else
                 {
-                    BuildingType eMainType = GetBuildingType(buildingId); 
                     sTypeDescription = eMainType.ToString();
                 }
 
                 m_labelApplyToAll.text = Localization.Get("GROUP_BUILDINGPANEL_APPLYTOALL") + ": " + sTypeDescription;
+            }
+
+            if (m_btnPaste != null)
+            {
+                m_btnPaste.isEnabled = (eMainType == m_eCopyPasteBuildingType && m_eCopyPasteSubBuildingType == eSubType);
             }
         }
     }

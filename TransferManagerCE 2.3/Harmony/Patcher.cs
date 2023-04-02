@@ -33,12 +33,15 @@ namespace TransferManagerCE
                 patchList.Add(typeof(TransferManagerGetTransferReason1));
                 patchList.Add(typeof(CommonBuildingAIHandleCrime)); 
 
-                // Patch offer bugs in main game
+                // Patch bugs in main game
                 patchList.Add(typeof(HospitalAIProduceGoods)); // Dead bug
                 patchList.Add(typeof(AuxiliaryBuildingAIProduceGoods)); // Dead bug
                 patchList.Add(typeof(ResidentAIFindHospital)); // ResidentAI.FindHospital bug 
-                patchList.Add(typeof(TransportStationAICreateIncomingVehicle)); // TransportStationAI.CreateIncomingVehicle
-                patchList.Add(typeof(WarehouseAIRemoveGuestVehicles)); 
+                patchList.Add(typeof(AirportBuildingAIHandleCrime)); // Reduce crime rate so it doesnt warn all the time.
+                patchList.Add(typeof(TransportStationAICreateIncomingVehicle)); // TransportStationAI.CreateIncomingVehicle bug introduced in H&T update
+                patchList.Add(typeof(WarehouseAIRemoveGuestVehicles)); // WarehouseAI bugs introduced in H&T update
+                patchList.Add(typeof(ResidentAIUpdateWorkplace));
+                patchList.Add(typeof(HumanAIPathfindFailure)); 
 
                 // Improve on vanilla goods handlers
                 patchList.Add(typeof(IndustrialBuildingAISimulationStepActive));

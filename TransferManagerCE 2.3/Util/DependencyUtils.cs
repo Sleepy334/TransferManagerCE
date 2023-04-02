@@ -123,6 +123,11 @@ namespace TransferManagerCE
         {
             return IsPluginRunning(1674732053, "EmployOvereducatedWorkers");
         }
+
+        public static bool IsTaxiOverhaulRunning()
+        {
+            return IsPluginRunning(long.MaxValue, "TaxiOverhaul");
+        }
         
         public static Assembly? GetCallAgainAssembly()
         {

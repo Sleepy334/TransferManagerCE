@@ -301,3 +301,5 @@
 "sliderPathDistanceShift","倍数基本值（旅行时间）"
 "txtPathUnitCount","已释放路径单元"
 "txtEnterBuildingId","选择建筑或输入建筑 ID"
+"tooltipCopySettings","Copy Settings"
+"tooltipPasteSettings","Paste Settings"

@@ -378,15 +378,8 @@ namespace TransferManagerCE.Util
             return false;
         }
 
-
-        /// <summary>
-        /// Called from CarAIPatch: record a failed pair
-        /// </summary>
-        public static void RecordPathFindFailure(ushort vehicleID, ref Vehicle data)
+        public static void RecordPathFindFailure(InstanceID source, InstanceID target)
         {
-            InstanceID source = new InstanceID { Building = data.m_sourceBuilding };
-            InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleID, data);
-
             if (!source.IsEmpty && !target.IsEmpty && source != target)
             {
                 bool bSourceOutside = false;

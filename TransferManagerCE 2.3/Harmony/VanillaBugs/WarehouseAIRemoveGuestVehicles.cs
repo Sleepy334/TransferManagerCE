@@ -41,7 +41,9 @@ namespace TransferManagerCE
                 while (num != 0)
                 {
                     ushort nextGuestVehicle = buffer[num].m_nextGuestVehicle;
-                    if (buffer[num].m_targetBuilding == buildingID && ((TransferReason)buffer[num].m_transferType == material))
+
+                    // In WarehouseAI it treats m_transferType as a bit mask, which it isnt so it removes police cars and hearses and all sorts of stuff as well as the trucks
+                    if (buffer[num].m_targetBuilding == buildingID && ((TransferReason)buffer[num].m_transferType == material)) 
                     {
                         VehicleInfo info = buffer[num].Info;
                         if (info != null)

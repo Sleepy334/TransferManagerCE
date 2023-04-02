@@ -50,7 +50,7 @@ namespace TransferManagerCE.UI
                     m_sliderOutsideTouristFactor1 = SettingsSlider.Create(helperOutside, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor1"), fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, OnOutsideTouristFactor1Changed);
                     m_sliderOutsideTouristFactor2 = SettingsSlider.Create(helperOutside, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor2"), fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, OnOutsideTouristFactor2Changed);
                     m_sliderOutsideDummyTrafficFactor = SettingsSlider.Create(helperOutside, LayoutDirection.Horizontal, Localization.Get("sliderOutsideDummyTrafficFactor"), fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, OnOutsideDummyTrafficChanged);
-                    UIButton? btnReset = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_panelOutsideSettings.m_content, Localization.Get("btnOutsideReset"), 100, 30, null);
+                    UIButton? btnReset = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_panelOutsideSettings.m_content, Localization.Get("btnOutsideReset"), "", 100, 30, null);
                     if (btnReset is not null)
                     {
                         btnReset.eventClick += (c, e) =>

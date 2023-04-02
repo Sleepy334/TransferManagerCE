@@ -108,10 +108,7 @@ namespace TransferManagerCE
         {
             if (buildingId > 0 && buildingId < BuildingManager.instance.m_buildings.m_size)
             {
-                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                Vector3 oPosition = building.m_position;
-                InstanceID buildingInstance = new InstanceID { Building = buildingId };
-                ToolsModifierControl.cameraController.SetTarget(buildingInstance, oPosition, bZoom);
+                InstanceHelper.ShowInstance(new InstanceID {  Building =  buildingId }, bZoom);
             }
             else
             {

@@ -18,7 +18,7 @@ namespace TransferManagerCE.TransferOffers
                 if (count == 0)
                 {
                     TransferManager.TransferOffer offer = default(TransferManager.TransferOffer);
-                    offer.Priority = crimeBuffer / Mathf.Max(1, iCitizenCount * 10);
+                    offer.Priority = Mathf.Clamp(crimeBuffer / Mathf.Max(1, iCitizenCount * 10), 0, 7);
                     offer.Building = buildingID;
                     offer.Position = buildingData.m_position;
                     offer.Amount = 1;

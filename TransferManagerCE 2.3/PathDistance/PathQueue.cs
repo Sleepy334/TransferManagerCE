@@ -1,5 +1,4 @@
 ﻿using ColossalFramework;
-using System.Collections.Generic;
 using TransferManagerCE.Common;
 
 namespace TransferManagerCE

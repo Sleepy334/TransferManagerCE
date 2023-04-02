@@ -37,6 +37,7 @@ namespace TransferManagerCE.CustomManager
             CloseByOnly,
             ExportVehicleLimit,
             GlobalPreferLocal,
+            BothTaxiStands,
         };
 
 
@@ -53,7 +54,7 @@ namespace TransferManagerCE.CustomManager
             m_bEnablePathFailExclusion = SaveGameSettings.GetSettings().EnablePathFailExclusion;
         }
 
-        public ExclusionReason CanTransfer(TransferReason material, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer, bool bCloseByOnly)
+        public ExclusionReason CanTransfer(TransferReason material, TransferManagerModes.TransferMode mode, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer, bool bCloseByOnly)
         {
             // guards: out=in same? exclude offer
             if (outgoingOffer.m_object == incomingOffer.m_object)
@@ -80,10 +81,18 @@ namespace TransferManagerCE.CustomManager
                 return ExclusionReason.LowPriority;
             }
 
-            // Don't allow matching if same building
-            if (incomingOffer.GetBuilding() != 0 && incomingOffer.GetBuilding() == outgoingOffer.GetBuilding())
+            // Don't allow matching if same building, unless it is a warehouse IN request in which case it will be the truck
+            // wanting to return its material.
+            if (incomingOffer.GetBuilding() != 0 && !incomingOffer.IsWarehouse() && incomingOffer.GetBuilding() == outgoingOffer.GetBuilding())
             {
                 return ExclusionReason.SameBuilding;
+            }
+
+            // New Taxi Overhaul mod sets the Exclude flag when the request is from a Taxi Stand.
+            // Don't allow 2 taxi stands to match as otherwise taxi's will just go back and forth between stands
+            if (material == TransferReason.Taxi && incomingOffer.Exclude && outgoingOffer.Exclude)
+            {
+                return ExclusionReason.BothTaxiStands;
             }
 
             if (bCloseByOnly)
@@ -124,7 +133,7 @@ namespace TransferManagerCE.CustomManager
                     return eExportLimitReason;
                 }
 
-                if (!DistrictRestrictions.CanTransferGlobalPreferLocal(incomingOffer, outgoingOffer, material))
+                if (!DistrictRestrictions.CanTransferGlobalPreferLocal(incomingOffer, outgoingOffer, material, mode))
                 {
                     return ExclusionReason.GlobalPreferLocal;
                 }
@@ -142,7 +151,7 @@ namespace TransferManagerCE.CustomManager
                 }
 
                 // District restrictions - this one is last as it is the slowest
-                if (m_bDistrictRestrictionsSupported && !DistrictRestrictions.CanTransfer(incomingOffer, outgoingOffer, material))
+                if (m_bDistrictRestrictionsSupported && !DistrictRestrictions.CanTransfer(incomingOffer, outgoingOffer, material, mode))
                 {
                     return ExclusionReason.DistrictRestriction;
                 }

@@ -29,12 +29,17 @@ namespace TransferManagerCE
 
         public string GetName()
         {
+#if DEBUG
+            return $"{CitiesUtils.GetBuildingName(m_buildingId)} ({PathNodeCache.FindCachedOutsideNode(m_buildingId)})";
+#else
             return CitiesUtils.GetBuildingName(m_buildingId);
+#endif
+
         }
 
         public void Show()
         {
-            CitiesUtils.ShowBuilding(m_buildingId, true); 
+            InstanceHelper.ShowInstance(new InstanceID { Building = m_buildingId });
             
             BuildingPanel.Init(); 
             if (BuildingPanel.Instance is not null)

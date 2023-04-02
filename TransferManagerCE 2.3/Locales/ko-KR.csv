@@ -304,3 +304,5 @@
 "sliderPathDistanceShift","승수 기본 값 (이동 시간)"
 "txtPathUnitCount","패스 유닛 해제됨"
 "txtEnterBuildingId","Select Building or Enter Building ID"
+"tooltipCopySettings","Copy Settings"
+"tooltipPasteSettings","Paste Settings"

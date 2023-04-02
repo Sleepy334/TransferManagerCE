@@ -246,8 +246,8 @@ namespace TransferManagerCE.UI
             m_chkShowIssuesWithVehicles = (UICheckBox)helper.AddCheckbox(Localization.Get("optionShowIssuesWithVehiclesOnRoute"), ModSettings.GetSettings().TransferIssueShowWithVehiclesOnRoute, OnShowIssuesClicked);
             m_chkShowIssuesWithVehicles.isVisible = false;
 
-            m_btnResetPathing = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, mainPanel, Localization.Get("btnResetPathingStatistics"), 200, 30, OnReset);
-            m_btnResetRoadAccess = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, mainPanel, Localization.Get("btnResetRoadAccess"), 200, 30, OnResetRoadAccess);
+            m_btnResetPathing = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, mainPanel, Localization.Get("btnResetPathingStatistics"), "", 200, 30, OnReset);
+            m_btnResetRoadAccess = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, mainPanel, Localization.Get("btnResetRoadAccess"), "", 200, 30, OnResetRoadAccess);
 
             isVisible = true;
             UpdatePanel();

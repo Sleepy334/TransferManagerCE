@@ -6,7 +6,7 @@ using static TransferManagerCE.BuildingTypeHelper;
 
 namespace TransferManagerCE.CustomManager
 {
-    internal class TransferManagerModes
+    public class TransferManagerModes
     {
         public enum TransferMode
         {
@@ -94,7 +94,6 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.LuxuryProducts:  // We match commercial first then factories OUT offers after
                 case CustomTransferReason.Reason.ElderCare:       // Citizen is IN, Eldercare Center is OUT, IncomingFirst will match Cim with closest ElderCare facility
                 case CustomTransferReason.Reason.ChildCare:       // Citizen is IN, Childcare Center is OUT, IncomingFirst will match Cim with closest ChildCare facility
-                case CustomTransferReason.Reason.Taxi:            // Taxi is OUT from Taxi Depot, IncomingFirst will match Cim with closest Taxi/Taxi Depot
 
                 // Workers we match job to Cim so we can find close by workers
                 case CustomTransferReason.Reason.Worker0:
@@ -103,6 +102,19 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Worker3:
                     {
                         return TransferMode.IncomingFirst;
+                    }
+
+                case CustomTransferReason.Reason.Taxi:            // Taxi is OUT from Taxi Depot, IncomingFirst will match Cim with closest Taxi/Taxi Depot
+                    {
+                        // We revert to more vanilla behaviour when Taxi Overhaul is running as it needs that to work properly.
+                        if (DependencyUtils.IsTaxiOverhaulRunning())
+                        {
+                            return TransferMode.Balanced;
+                        }
+                        else
+                        {
+                            return TransferMode.IncomingFirst;
+                        }
                     }
 
                 // ---------------------------------------------------------------------------------

@@ -1180,6 +1180,8 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Outgoing Material";
+
+                // DLC intermediate materials
                 rule.AddReason(TransferReason.PlanedTimber);
                 rule.AddReason(TransferReason.Paper);
                 rule.AddReason(TransferReason.Glass);
@@ -1188,6 +1190,13 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(TransferReason.Plastics);
                 rule.AddReason(TransferReason.AnimalProducts);
                 rule.AddReason(TransferReason.Flours);
+
+                // We now also add generic intermediate materials due to Industries Remastered assets
+                rule.AddReason(TransferReason.Lumber);
+                rule.AddReason(TransferReason.Petrol);
+                rule.AddReason(TransferReason.Food);
+                rule.AddReason(TransferReason.Coal);
+
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -1206,6 +1215,8 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
+
+                // DLC intermediate materials
                 rule.AddReason(TransferReason.Grain);
                 rule.AddReason(TransferReason.PlanedTimber);
                 rule.AddReason(TransferReason.Paper);
@@ -1215,6 +1226,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(TransferReason.Plastics);
                 rule.AddReason(TransferReason.AnimalProducts);
                 rule.AddReason(TransferReason.Flours);
+
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 list.Add(rule);
@@ -1224,7 +1236,10 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Outgoing Material";
+
+                // DLC final materials
                 rule.AddReason(TransferReason.LuxuryProducts);
+
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
