@@ -1,6 +1,7 @@
 using ColossalFramework;
 using System.Collections.Generic;
 using UnityEngine;
+using static PathUnit;
 
 namespace TransferManagerCE
 {
@@ -122,7 +123,7 @@ namespace TransferManagerCE
             if (!instance.IsEmpty)
             {
                 Vector3 position = GetPosition(instance);
-                if (position != Vector3.zero)
+                if (position != Vector3.zero && !position.ToString().Contains("NaN"))
                 {
                     CameraController? camera = GameObject.FindGameObjectWithTag("MainCamera")?.GetComponent<CameraController>();
                     if (camera != null)

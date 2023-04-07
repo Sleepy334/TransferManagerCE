@@ -124,7 +124,7 @@ namespace TransferManagerCE.UI
                     Building building = BuildingManager.instance.m_buildings.m_buffer[m_data.m_sourceBuildingId];
                     if (building.m_flags != Building.Flags.None)
                     {
-                        CitiesUtils.ShowBuilding(m_data.m_sourceBuildingId);
+                        InstanceHelper.ShowInstance(new InstanceID { Building = m_data.m_sourceBuildingId });
                     }
                     else
                     {

@@ -1,7 +1,10 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
 using HarmonyLib;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using TransferManagerCE.TransferOffers;
 using UnityEngine;
 using static TransferManager;
@@ -11,134 +14,215 @@ namespace TransferManagerCE
     [HarmonyPatch]
     public static class IndustrialBuildingAISimulationStepActive
     {
-        public static bool s_bRejectOffers = false;
+        private static bool s_bPatched = false;
         private static int? s_maxLoadSize = null;
 
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
-        public static void SimulationStepActivePrefix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
+        public static void PatchGenericIndustriesHandler()
         {
-            // We flag rejecting these offers
             if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
                 SaveGameSettings.GetSettings().OverrideGenericIndustriesHandler)
             {
-                s_bRejectOffers = true;
+                if (!s_bPatched)
+                {
+#if DEBUG
+                    Debug.Log("Patch generic industries handler");
+#endif
+                    Patcher.Patch(typeof(IndustrialBuildingAISimulationStepActive));
+                }
             }
+            else if (s_bPatched)
+            {
+#if DEBUG
+                Debug.Log("Unpatch generic industries handler");
+#endif
+                Patcher.Unpatch(typeof(IndustrialBuildingAI), "SimulationStepActive");
+                s_bPatched = false;
+            }
+        }
+
+        // This transpiler patches SimulationStepActive to skip over the AddIncomingOffer and AddOutgoingOffer calls so we can add our own instead
+        [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> SimulationStepActiveTranspiler(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            MethodInfo methodAddOffers = AccessTools.Method(typeof(IndustrialBuildingAISimulationStepActive), nameof(AddOffers));
+            if (methodAddOffers is null)
+            {
+                Debug.LogError("Unable to find AddOffers");
+                return codes;
+            }
+
+            FieldInfo m_fireIntensity = AccessTools.Field(typeof(Building), "m_fireIntensity");
+            if (m_fireIntensity is null)
+            {
+                Debug.LogError("Unable to find Building.m_fireIntensity");
+                return codes;
+            }
+
+            // Find insert index and label
+            int iInsertIndex = 0;
+            Label? jumpLabel = null;
+            for (int i = 0; i < codes.Count - 1; i++)
+            {
+                CodeInstruction instruction = codes[i];
+
+                if (iInsertIndex == 0 && instruction.opcode == OpCodes.Ldfld && instruction.operand == m_fireIntensity)
+                {
+                    // AddIncomingOffer section, store index for patching
+                    iInsertIndex = i - 1;
+                }
+                else if (iInsertIndex > 0 && instruction.opcode == OpCodes.Ldfld && instruction.operand == m_fireIntensity)
+                {
+                    // AddOutgoingOffer section 
+                    // Store the label to jump to.
+                    CodeInstruction brInstruction = codes[i+1];
+                    if (brInstruction.opcode == OpCodes.Brtrue && brInstruction.operand is Label)
+                    {
+                        jumpLabel = (Label)brInstruction.operand;
+                        break;
+                    }
+                }
+            }
+
+            // Transpile instructions
+            if (iInsertIndex > 0 && jumpLabel is not null)
+            {
+                // Move labels (if any)
+                CodeInstruction instruction = codes[iInsertIndex];
+
+                // Add jump instruction
+                CodeInstruction jumpInstruction = new CodeInstruction(OpCodes.Br, jumpLabel) { labels = instruction.labels }; // Relocate labels
+                codes.Insert(iInsertIndex, jumpInstruction);
+
+                // Clear old label references
+                instruction.labels = new List<Label>();
+
+                // Now call our AddOffers function at the end of function instead
+                codes[codes.Count - 1].opcode = OpCodes.Ldarg_1; // Overwrite Opcodes.Ret so we keep labels (if any) before AddOffers
+                codes.Add(new CodeInstruction(OpCodes.Ldarg_2));
+                codes.Add(new CodeInstruction(OpCodes.Call, methodAddOffers));
+
+                // Add ret back in
+                codes.Add(new CodeInstruction(OpCodes.Ret));
+
+                s_bPatched = true;
+
+                Debug.Log("Patching of IndustrialBuildingAI.SimulationStepActive succeeded");
+            }
+            else
+            {
+                Debug.LogError("Patching of IndustrialBuildingAI.SimulationStepActive failed");
+            }
+
+            return codes;
         }
 
         // Generic processing buildings behave badly, they ask twice in one round and with really high priority due to a bug in IndustrialBuildingAI.SimulationStepActive
         // where it uses the max load capacity (8) instead of storage capacity (up to 16) so priority is often twice what it should be.
         // This patch is an attempt to solve this
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
-        public static void SimulationStepActivePostfix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
+        public static void AddOffers(ushort buildingID, ref Building buildingData)
         {
-            // Turn reject flag off again
-            s_bRejectOffers = false;
+            Randomizer random = Singleton<SimulationManager>.instance.m_randomizer;
 
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
-                SaveGameSettings.GetSettings().OverrideGenericIndustriesHandler)
+            // We don't request every time so it gives time for a vehicle to be matched and dispatched before we request again.
+            if (buildingData.m_fireIntensity == 0 && random.UInt32(3U) == 0)
             {
-                Randomizer random = Singleton<SimulationManager>.instance.m_randomizer;
-
-                // We don't request every time so it gives time for a vehicle to be matched and dispatched before we request again.
-                if (buildingData.m_fireIntensity == 0 && random.UInt32(3U) == 0)
+                TransferReason primary = GetIncomingTransferReason(buildingID, buildingData.Info);
+                if (primary != TransferReason.None)
                 {
-                    TransferReason primary = GetIncomingTransferReason(buildingID, buildingData.Info);
-                    if (primary != TransferReason.None)
+                    IndustrialBuildingAI? processingAI = buildingData.Info.GetAI() as IndustrialBuildingAI;
+                    if (processingAI is not null)
                     {
-                        IndustrialBuildingAI? processingAI = buildingData.Info.GetAI() as IndustrialBuildingAI;
-                        if (processingAI is not null)
+                        // Determine priority based on current storage level
+                        int iProductionCapacity = processingAI.CalculateProductionCapacity((ItemClass.Level)buildingData.m_level, new Randomizer(buildingID), buildingData.Width, buildingData.Length);
+                        int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, 8000 * 2);
+
+                        // Factor in trucks on the way but if timer is ticking up, ignore far away trucks
+                        TransferReason secondary = GetSecondaryIncomingTransferReason(buildingID, buildingData.Info);
+                        Rerequest.ProblemLevel level = Rerequest.GetLevelIncomingTimer(buildingData.m_incomingProblemTimer);
+                        int iTransferSize = Rerequest.GetNearbyGuestVehiclesTransferSize(buildingData, level, primary, secondary, out int iTotalTrucks);
+                        if (iTotalTrucks < 10)
                         {
-                            // Determine priority based on current storage level
-                            int iProductionCapacity = processingAI.CalculateProductionCapacity((ItemClass.Level)buildingData.m_level, new Randomizer(buildingID), buildingData.Width, buildingData.Length);
-                            int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, 8000 * 2);
+                            // Calculate a more realistic priority
+                            int iPriority = Mathf.Clamp((iStorageCapacity - buildingData.m_customBuffer1 - iTransferSize) * 8 / iStorageCapacity, 0, 7);
 
-                            // Factor in trucks on the way but if timer is ticking up, ignore far away trucks
-                            TransferReason secondary = GetSecondaryIncomingTransferReason(buildingID, buildingData.Info);
-                            Rerequest.ProblemLevel level = Rerequest.GetLevelIncomingTimer(buildingData.m_incomingProblemTimer);
-                            int iTransferSize = Rerequest.GetNearbyGuestVehiclesTransferSize(buildingData, level, primary, secondary, out int iTotalTrucks);
-                            if (iTotalTrucks < 10)
+                            // We clamp priority to 6 until timer starts so we can target the buildings with notification icons first
+                            if (iPriority == 7 && buildingData.m_incomingProblemTimer == 0)
                             {
-                                // Calculate a more realistic priority
-                                int iPriority = Mathf.Clamp((iStorageCapacity - buildingData.m_customBuffer1 - iTransferSize) * 8 / iStorageCapacity, 0, 7);
+                                iPriority = 6;
+                            }
 
-                                // We clamp priority to 6 until timer starts so we can target the buildings with notification icons first
-                                if (iPriority == 7 && buildingData.m_incomingProblemTimer == 0)
+                            TransferOffer offer = default;
+                            offer.Priority = iPriority;
+                            offer.Building = buildingID;
+                            offer.Position = buildingData.m_position;
+                            offer.Amount = 1;
+                            offer.Active = false;
+
+                            if (iPriority >= 3)
+                            {
+                                // Add new offer
+                                // Alternate primary/secondary offer
+                                if (secondary != TransferReason.None && random.UInt32(2U) == 0)
                                 {
-                                    iPriority = 6;
+                                    Singleton<TransferManager>.instance.AddIncomingOffer(secondary, offer);
                                 }
-
-                                TransferOffer offer = default;
-                                offer.Priority = iPriority;
-                                offer.Building = buildingID;
-                                offer.Position = buildingData.m_position;
-                                offer.Amount = 1;
-                                offer.Active = false;
-
-                                if (iPriority >= 3)
+                                else
                                 {
-                                    // Add new offer
-                                    // Alternate primary/secondary offer
-                                    if (secondary != TransferReason.None && random.UInt32(2U) == 0)
-                                    {
-                                        Singleton<TransferManager>.instance.AddIncomingOffer(secondary, offer);
-                                    }
-                                    else
-                                    {
-                                        Singleton<TransferManager>.instance.AddIncomingOffer(primary, offer);
-                                    }
+                                    Singleton<TransferManager>.instance.AddIncomingOffer(primary, offer);
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                // We override the default outgoing offer so we can factor in the problem timer value into priority
-                // to ensure buildings with the flashing icon get processed first
-                // We don't request every time so it gives time for a vehicle to be matched and
-                // dispatched before we request again.
-                TransferManager.TransferReason outgoingReason = GetOutgoingTransferReason(buildingData.Info);
-                if (outgoingReason != TransferReason.None && 
-                    buildingData.m_fireIntensity == 0 &&  
-                    random.UInt32(2U) == 0)
+            // We override the default outgoing offer so we can factor in the problem timer value into priority
+            // to ensure buildings with the flashing icon get processed first
+            // We don't request every time so it gives time for a vehicle to be matched and
+            // dispatched before we request again.
+            TransferManager.TransferReason outgoingReason = GetOutgoingTransferReason(buildingData.Info);
+            if (outgoingReason != TransferReason.None && 
+                buildingData.m_fireIntensity == 0 &&  
+                random.UInt32(2U) == 0)
+            {
+                IndustrialBuildingAI? buildingAI = buildingData.Info.GetAI() as IndustrialBuildingAI;
+                if (buildingAI is not null)
                 {
-                    IndustrialBuildingAI? buildingAI = buildingData.Info.GetAI() as IndustrialBuildingAI;
-                    if (buildingAI is not null)
+                    // Check we have vehicles available before adding offer
+                    int iVehicles = BuildingUtils.GetOwnVehicleCount(buildingData, outgoingReason);
+                    int iMaxVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.GenericFactory, buildingID);
+                    if (iVehicles < iMaxVehicles)
                     {
-                        // Check we have vehicles available before adding offer
-                        int iVehicles = BuildingUtils.GetOwnVehicleCount(buildingData, outgoingReason);
-                        int iMaxVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.GenericFactory, buildingID);
-                        if (iVehicles < iMaxVehicles)
+                        TransferManager.TransferOffer offer = default;
+
+                        // P:0 at storage 8
+                        // P:2 at Storage 12
+                        // Then scale with Outgoing timer after that
+                        int iMaxVehicleLoad = MaxOutgoingLoadSize(buildingAI);
+                        if (buildingData.m_customBuffer2 > 12000)
                         {
-                            TransferManager.TransferOffer offer = default;
+                            offer.Priority = Mathf.Clamp(2 + buildingData.m_outgoingProblemTimer * 6 / 128, 2, 7); // 128 is when the problem icon appears
+                        }
+                        else if (buildingData.m_customBuffer2 > iMaxVehicleLoad)
+                        {
+                            offer.Priority = Mathf.Clamp(buildingData.m_outgoingProblemTimer * 8 / 128, 0, 7); // 128 is when the problem icon appears
+                        }
+                        else
+                        {
+                            offer.Priority = 0;
+                        }
+                        offer.Building = buildingID;
+                        offer.Position = buildingData.m_position;
+                        offer.Amount = Mathf.Min(buildingData.m_customBuffer2 / iMaxVehicleLoad, iMaxVehicles - iVehicles);
+                        offer.Active = true;
 
-                            // P:0 at storage 8
-                            // P:2 at Storage 12
-                            // Then scale with Outgoing timer after that
-                            int iMaxVehicleLoad = MaxOutgoingLoadSize(buildingAI);
-                            if (buildingData.m_customBuffer2 > 12000)
-                            {
-                                offer.Priority = Mathf.Clamp(2 + buildingData.m_outgoingProblemTimer * 6 / 128, 2, 7); // 128 is when the problem icon appears
-                            }
-                            else if (buildingData.m_customBuffer2 > iMaxVehicleLoad)
-                            {
-                                offer.Priority = Mathf.Clamp(buildingData.m_outgoingProblemTimer * 8 / 128, 0, 7); // 128 is when the problem icon appears
-                            }
-                            else
-                            {
-                                offer.Priority = 0;
-                            }
-                            offer.Building = buildingID;
-                            offer.Position = buildingData.m_position;
-                            offer.Amount = Mathf.Min(buildingData.m_customBuffer2 / iMaxVehicleLoad, iMaxVehicles - iVehicles);
-                            offer.Active = true;
-
-                            if (offer.Amount > 0)
-                            {
-                                // Add our version
-                                Singleton<TransferManager>.instance.AddOutgoingOffer(outgoingReason, offer);
-                            }
+                        if (offer.Amount > 0)
+                        {
+                            // Add our version
+                            Singleton<TransferManager>.instance.AddOutgoingOffer(outgoingReason, offer);
                         }
                     }
                 }

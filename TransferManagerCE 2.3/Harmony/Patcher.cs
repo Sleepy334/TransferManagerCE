@@ -31,7 +31,7 @@ namespace TransferManagerCE
                 // Crime2
                 patchList.Add(typeof(TransferManagerGetFrameReason));
                 patchList.Add(typeof(TransferManagerGetTransferReason1));
-                patchList.Add(typeof(CommonBuildingAIHandleCrime)); 
+                //patchList.Add(typeof(CommonBuildingAIHandleCrime)); 
 
                 // Patch bugs in main game
                 patchList.Add(typeof(HospitalAIProduceGoods)); // Dead bug
@@ -44,7 +44,6 @@ namespace TransferManagerCE
                 patchList.Add(typeof(HumanAIPathfindFailure)); 
 
                 // Improve on vanilla goods handlers
-                patchList.Add(typeof(IndustrialBuildingAISimulationStepActive));
                 patchList.Add(typeof(CommercialBuildingAISimulationStepActive));
                 patchList.Add(typeof(ProcessingFacilityAISimulationStep));
 
@@ -92,12 +91,21 @@ namespace TransferManagerCE
 
                 // Perform the patching
                 PatchAll(patchList);
+
+                // Generic industries handler is handled separately as we need to be able to unpatch it as well
+                // as it uses a transpiler
+                IndustrialBuildingAISimulationStepActive.PatchGenericIndustriesHandler();
+
+                // Crime2 Handler
+                CommonBuildingAIHandleCrime.PatchCrime2Handler();
             }
         }
 
         public static void PatchAll(List<Type> patchList)
         {
+#if DEBUG           
             Debug.Log($"Patching:{patchList.Count} functions");
+#endif
             var harmony = new Harmony(HarmonyId);
 
             foreach (var patchType in patchList)
@@ -118,7 +126,17 @@ namespace TransferManagerCE
             }
         }
 
-        public static void Patch(Harmony harmony, Type patchType)
+        public static void Patch(Type patchType)
+        {
+            Patch(new Harmony(HarmonyId), patchType);
+        }
+
+        public static void Unpatch(Type patchType, string sMethod)
+        {
+            Unpatch(new Harmony(HarmonyId), patchType, sMethod);
+        }
+
+        private static void Patch(Harmony harmony, Type patchType)
         {
 #if DEBUG
             Debug.Log($"Patch:{patchType}");
@@ -127,10 +145,10 @@ namespace TransferManagerCE
             processor.Patch();
         }
 
-        public static void Unpatch(Harmony harmony, Type patchType, string sMethod)
+        private static void Unpatch(Harmony harmony, Type patchType, string sMethod)
         {
 #if DEBUG
-            Debug.Log($"Patch:{patchType} Method:{sMethod}");
+            Debug.Log($"Unpatch:{patchType} Method:{sMethod}");
 #endif
             MethodInfo info = AccessTools.Method(patchType, sMethod);
             harmony.Unpatch(info, HarmonyPatchType.All, HarmonyId);

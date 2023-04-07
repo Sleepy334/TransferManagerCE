@@ -105,7 +105,7 @@ namespace TransferManagerCE.Data
             ushort targetId = GetTargetId();
             if (targetId != 0)
             {
-                CitiesUtils.ShowVehicle(targetId);
+                InstanceHelper.ShowInstance(new InstanceID { Vehicle = targetId });
             }
         }
 
@@ -114,7 +114,7 @@ namespace TransferManagerCE.Data
             ushort buildingId = GetResponderId();
             if (buildingId != 0)
             {
-                CitiesUtils.ShowBuilding(buildingId);
+                InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
             }
         }
 

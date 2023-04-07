@@ -170,7 +170,7 @@ namespace TransferManagerCE.UI
                     Building building = BuildingManager.instance.m_buildings.m_buffer[m_data.m_sourceBuildingId];
                     if (building.m_flags != Building.Flags.None)
                     {
-                        CitiesUtils.ShowBuilding(m_data.m_sourceBuildingId);
+                        InstanceHelper.ShowInstance(new InstanceID { Building = m_data.m_sourceBuildingId });
                     }
                     else
                     {
@@ -182,7 +182,7 @@ namespace TransferManagerCE.UI
                     Building building = BuildingManager.instance.m_buildings.m_buffer[m_data.m_targetBuildingId];
                     if (building.m_flags != Building.Flags.None)
                     {
-                        CitiesUtils.ShowBuilding(m_data.m_targetBuildingId);
+                        InstanceHelper.ShowInstance(new InstanceID { Building = m_data.m_targetBuildingId });
                     }
                     else
                     {
@@ -191,7 +191,7 @@ namespace TransferManagerCE.UI
                 }
                 else if (component == m_lblVehicle)
                 {
-                    CitiesUtils.ShowVehicle(m_data.m_vehicleId);
+                    InstanceHelper.ShowInstance(new InstanceID { Vehicle = m_data.m_vehicleId });
                 }
             }
         }

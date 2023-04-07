@@ -10,7 +10,6 @@ using TransferManagerCE.Settings;
 using TransferManagerCE.Util;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.PathDistance;
 using static TransferManagerCE.PathQueue;
 
 namespace TransferManagerCE
@@ -625,6 +624,8 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.OverrideGenericIndustriesHandler = bChecked;
+
+            IndustrialBuildingAISimulationStepActive.PatchGenericIndustriesHandler();
         }
 
         public void OnWarehouseFirstPercentChanged(float fValue)
@@ -793,6 +794,10 @@ namespace TransferManagerCE
             // Reset the stats as we have changed Transfer Manager.
             MatchStats.Init();
             UpdateTransferManagerEnabled();
+
+            // Remove transpiler patches
+            IndustrialBuildingAISimulationStepActive.PatchGenericIndustriesHandler();
+            CommonBuildingAIHandleCrime.PatchCrime2Handler();
         }
 
         public void setOptionPreferLocalService(bool index)

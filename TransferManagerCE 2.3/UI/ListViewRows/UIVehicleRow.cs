@@ -231,7 +231,7 @@ namespace TransferManagerCE.UI
                 {
                     if (m_data.m_vehicleId != 0)
                     {
-                        CitiesUtils.ShowVehicle(m_data.m_vehicleId);
+                        InstanceHelper.ShowInstance(new InstanceID { Vehicle = m_data.m_vehicleId });
                     }
                 }
             }

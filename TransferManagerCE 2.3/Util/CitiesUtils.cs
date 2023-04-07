@@ -1,14 +1,10 @@
 using ColossalFramework;
 using ColossalFramework.Math;
-using ICities;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using TransferManagerCE.CustomManager;
 using static TransferManager;
-using static TransferManagerCE.CustomManager.CustomTransferOffer;
 using static TransferManagerCE.VehicleTypeHelper;
-using static InvestmentAI;
 
 namespace TransferManagerCE
 {
@@ -91,145 +87,9 @@ namespace TransferManagerCE
             if (CitizenInstanceId > 0 && CitizenInstanceId < CitizenManager.instance.m_instances.m_size)
             {
                 ref CitizenInstance cimInstance = ref CitizenManager.instance.m_instances.m_buffer[CitizenInstanceId];
-                switch (cimInstance.m_lastFrame)
-                {
-                    case 0: return cimInstance.m_frame0.m_position;
-                    case 1: return cimInstance.m_frame1.m_position;
-                    case 2: return cimInstance.m_frame2.m_position;
-                    case 3: return cimInstance.m_frame3.m_position;
-                }
-
-                return cimInstance.m_frame0.m_position;
+                return cimInstance.GetLastFramePosition();
             }
             return Vector3.zero;
-        }
-
-        public static void ShowBuilding(ushort buildingId, bool bZoom = false)
-        {
-            if (buildingId > 0 && buildingId < BuildingManager.instance.m_buildings.m_size)
-            {
-                InstanceHelper.ShowInstance(new InstanceID {  Building =  buildingId }, bZoom);
-            }
-            else
-            {
-                Debug.Log("BuildingId out of range: " + buildingId);
-            }
-        }
-
-        public static void ShowPark(byte parkId, bool bZoom = false)
-        {
-            if (parkId > 0 && parkId < DistrictManager.instance.m_parks.m_size)
-            {
-                InstanceID instance = new InstanceID { Park = parkId };
-                Vector3 oPosition = InstanceHelper.GetPosition(new InstanceID { Park = parkId });
-                ToolsModifierControl.cameraController.SetTarget(instance, oPosition, bZoom);
-            }
-            else
-            {
-                Debug.Log("ParkId out of range: " + parkId);
-            }
-        }
-
-        public static void ShowVehicle(ushort vehicleId)
-        {
-            if (vehicleId > 0 && vehicleId < VehicleManager.instance.m_vehicles.m_size)
-            {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
-                if (vehicle.m_flags != 0)
-                {
-                    Vector3 oPosition = vehicle.GetLastFramePosition();
-                    // We get a crash when trying to show a vehicle with invalid position
-                    // Is this due to More Vehicles?
-                    if (oPosition.ToString().Contains("NaN"))
-                    {
-                        Debug.Log("Ghost Vehicle: " + vehicleId + " has invalid position" + oPosition.ToString());
-                        Singleton<VehicleManager>.instance.ReleaseVehicle(vehicleId);
-                    }
-                    else
-                    {
-                        InstanceID vehicleInstance = new InstanceID { Vehicle = vehicleId };
-                        ToolsModifierControl.cameraController.SetTarget(vehicleInstance, oPosition, false);
-                    }
-                }
-            }
-            else
-            {
-                Debug.Log("VehicleId out of range: " + vehicleId);
-            }
-        }
-
-        public static void ShowCitizen(uint CitizenId)
-        {
-            if (CitizenId > 0 && CitizenId < CitizenManager.instance.m_citizens.m_size)
-            {
-                Citizen oCitizen = CitizenManager.instance.m_citizens.m_buffer[CitizenId];
-                if (oCitizen.m_flags != 0)
-                {
-                    Vector3 oPosition = GetCitizenInstancePosition(oCitizen.m_instance);
-                    if (oPosition == Vector3.zero)
-                    {
-                        ushort buildingId = oCitizen.GetBuildingByLocation();
-                        if (buildingId != 0)
-                        {
-                            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                            oPosition = building.m_position;
-                        }  
-                    }
-
-                    if (oPosition != Vector3.zero)
-                    {
-                        InstanceID instance = new InstanceID { Citizen = CitizenId };
-                        ToolsModifierControl.cameraController.SetTarget(instance, oPosition, false);
-                    }
-                }
-            }
-            else
-            {
-                Debug.Log("CitizenId out of range: " + CitizenId);
-            }
-        }
-
-        public static void ShowNode(ushort nodeId)
-        {
-            if (nodeId > 0 && nodeId < NetManager.instance.m_nodes.m_size)
-            {
-                NetNode oNode = NetManager.instance.m_nodes.m_buffer[nodeId];
-                Vector3 oPosition = oNode.m_position;
-                InstanceID instance = new InstanceID { NetNode = nodeId };
-                ToolsModifierControl.cameraController.SetTarget(instance, oPosition, false);
-            }
-            else if (nodeId > 0)
-            {
-                Debug.Log("NodeId out of range: " + nodeId);
-            }
-        }
-
-        public static void ShowSegment(ushort segmentId)
-        {
-            if (segmentId > 0 && segmentId < NetManager.instance.m_segments.m_size)
-            {
-                NetSegment oSegment = NetManager.instance.m_segments.m_buffer[segmentId];
-                Vector3 oPosition = oSegment.m_middlePosition;
-                InstanceID instance = new InstanceID { NetSegment = segmentId };
-                ToolsModifierControl.cameraController.SetTarget(instance, oPosition, false);
-            }
-            else
-            {
-                Debug.Log("SegmentId out of range: " + segmentId);
-            }
-        }
-
-        public static void ShowTransportLine(int iLineId)
-        {
-            if (iLineId > 0 && iLineId < TransportManager.instance.m_lines.m_size)
-            {
-                TransportLine line = TransportManager.instance.m_lines.m_buffer[iLineId];
-                if (line.m_flags != 0 && line.m_stops != 0)
-                {
-                    // A line has nodes for each stop. Just show first stop.
-                    ShowNode(line.m_stops);
-                }
-            }
         }
 
         public static void ShowPosition(Vector3 position)
@@ -473,21 +333,18 @@ namespace TransferManagerCE
         public static void CheckRoadAccess(TransferReason material, TransferOffer offer)
         {
             // Update access segment if using path distance but do it in simulation thread so we don't break anything
-            if (offer.Building != 0 &&
-                (PathDistanceTypes.GetDistanceAlgorithm(material) != PathDistanceTypes.PathDistanceAlgorithm.LineOfSight) &&
-                !BuildingTypeHelper.IsOutsideConnection(offer.Building))
+            if (offer.Building != 0 && PathDistanceTypes.GetDistanceAlgorithm(material) != PathDistanceTypes.PathDistanceAlgorithm.LineOfSight)
             {
                 ref Building building = ref BuildingManager.instance.m_buildings.m_buffer[offer.Building];
-                if (building.m_accessSegment == 0 && (building.m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone)
+                if (building.m_accessSegment == 0 && 
+                    (building.m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone && 
+                    building.Info.GetAI() is not OutsideConnectionAI)
                 {
                     // See if we can update m_accessSegment.
                     building.Info.m_buildingAI.CheckRoadAccess(offer.Building, ref building);
                     if (building.m_accessSegment == 0)
                     {
-                        RoadAccessData.AddInstance(new InstanceID
-                        {
-                            Building = offer.Building
-                        });
+                        RoadAccessData.AddInstance(new InstanceID { Building = offer.Building });
                     }
                 }
             }

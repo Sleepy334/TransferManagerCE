@@ -185,7 +185,7 @@ namespace TransferManagerCE
                     {
                         if (m_buildingId != 0)
                         {
-                            CitiesUtils.ShowBuilding(m_buildingId);
+                            InstanceHelper.ShowInstance(new InstanceID { Building = m_buildingId });
                         }
                     };
                 }
@@ -346,7 +346,7 @@ namespace TransferManagerCE
                     m_eBuildingType = BuildingTypeHelper.GetBuildingType(buildingId);
 
                     // Select building with tool
-                    CitiesUtils.ShowBuilding(buildingId);
+                    InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
 
                     // Match logging
                     if (MatchLogging.Instance is not null)

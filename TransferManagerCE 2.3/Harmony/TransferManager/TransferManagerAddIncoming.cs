@@ -1,8 +1,6 @@
 ﻿using HarmonyLib;
-using System;
 using TransferManagerCE.CustomManager;
 using static TransferManager;
-using static UnityStandardAssets.CinematicEffects.TemporalAntiAliasing;
 
 namespace TransferManagerCE
 {
@@ -16,14 +14,6 @@ namespace TransferManagerCE
 
             if (settings.EnableNewTransferManager)
             {
-                if (settings.OverrideGenericIndustriesHandler &&
-                    IndustrialBuildingAISimulationStepActive.s_bRejectOffers &&
-                    TransferManagerModes.IsWarehouseMaterial(material))
-                {
-                    // Reject this offer as we are going to add our own instead
-                    return false;
-                }
-
                 // Pass through to Improved matching to adjust offer
                 if (!ImprovedTransfers.HandleIncomingOffer(material, ref offer))
                 {
