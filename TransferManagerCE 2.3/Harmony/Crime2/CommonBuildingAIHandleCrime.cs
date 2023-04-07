@@ -74,7 +74,7 @@ namespace TransferManagerCE
                             {
                                 bAddedBranch = true;
 
-                                // AddIncomingOffer section add Br instruction to new label
+                                // AddOutgoingOffer section add Br instruction to new label
                                 yield return new CodeInstruction(OpCodes.Br, jumpLabel) { labels = instruction.labels }; // Copy labels from Ldarg_S instruction
 
                                 instruction.labels = new List<Label>(); // Clear labels from Ldarg_S
