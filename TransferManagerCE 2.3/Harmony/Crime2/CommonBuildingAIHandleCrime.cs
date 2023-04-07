@@ -4,6 +4,7 @@ using System.Reflection.Emit;
 using System.Reflection;
 using TransferManagerCE.TransferOffers;
 using System.Linq;
+using Mono.Cecil.Cil;
 
 namespace TransferManagerCE
 {
@@ -40,73 +41,105 @@ namespace TransferManagerCE
         // This transpiler patches CommonBuildingAI.HandleCrime to skip over the AddOutgoingOffer call so we can add our own instead
         [HarmonyPatch(typeof(CommonBuildingAI), "HandleCrime")]
         [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> HandleCrimeTranspiler(IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> HandleCrimeTranspiler(ILGenerator generator, IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo methodAddOutgoingOffer = AccessTools.Method(typeof(TransferManager), nameof(TransferManager.AddOutgoingOffer));
             MethodInfo methodAddCrimeOffer = AccessTools.Method(typeof(CrimeHandler), nameof(CrimeHandler.AddCrimeOffer));
 
             // Find insert index and label
-            int iInsertIndex = 0;
-            Label? jumpLabel = null;
+            bool bAddedBranch = false;
+            bool bAddedLabel = false;
+            Label jumpLabel = generator.DefineLabel();
 
-            List<CodeInstruction> codes = instructions.ToList();
-            for (int i = 0; i < codes.Count - 1; i++)
+            // Instruction enumerator.
+            IEnumerator<CodeInstruction> instructionsEnumerator = instructions.GetEnumerator();
+
+            while (instructionsEnumerator.MoveNext())
             {
-                CodeInstruction instruction1 = codes[i];
-                CodeInstruction instruction2 = codes[i + 1];
+                // Get next instruction.
+                CodeInstruction instruction = instructionsEnumerator.Current;
 
-                // We are looking for this line, citizenCount is argument 4.
-                // if (citizenCount != 0 && crimeBuffer > citizenCount * 25 && Singleton<SimulationManager>.instance.m_randomizer.Int32(5u) == 0)
-                if (iInsertIndex == 0 && 
-                    instruction1.opcode == OpCodes.Ldarg_S && instruction1.operand is byte && (byte)instruction1.operand == 4 &&
-                    instruction2.opcode == OpCodes.Brfalse)
+                if (!s_bPatched)
                 {
-                    // AddOutgoingOffer section 
-                    iInsertIndex = i;
-                }
-                else if (iInsertIndex > 0 && instruction1.opcode == OpCodes.Callvirt && instruction1.operand == methodAddOutgoingOffer) // This line: Singleton<TransferManager>.instance.AddOutgoingOffer(TransferManager.TransferReason.Crime, offer);
-                {
-                    // Store the label to jump to
-                    if (instruction2.opcode == OpCodes.Ldarg_0 && instruction2.labels.Count > 0)
+                    // Look for the following:
+                    // if (citizenCount != 0 && crimeBuffer > citizenCount * 25 && Singleton<SimulationManager>.instance.m_randomizer.Int32(5u) == 0)
+                    if (!bAddedBranch && instruction.opcode == OpCodes.Ldarg_S && instruction.operand is byte && (byte)instruction.operand == 4)
                     {
-                        jumpLabel = (Label)instruction2.labels[0];
-                        break;
+                        // Look for Brfalse
+                        if (instructionsEnumerator.MoveNext())
+                        {
+                            CodeInstruction instruction2 = instructionsEnumerator.Current;
+
+                            if (instruction2.opcode == OpCodes.Brfalse)
+                            {
+                                bAddedBranch = true;
+
+                                // AddIncomingOffer section add Br instruction to new label
+                                yield return new CodeInstruction(OpCodes.Br, jumpLabel) { labels = instruction.labels }; // Copy labels from Ldarg_S instruction
+
+                                instruction.labels = new List<Label>(); // Clear labels from Ldarg_S
+                            }
+
+                            // Return instructions
+                            yield return instruction;
+                            yield return instruction2;
+
+                            continue;
+                        }
+                    }
+
+                    // Look for the following:
+                    // This line: Singleton<TransferManager>.instance.AddOutgoingOffer(TransferManager.TransferReason.Crime, offer);
+                    // IL_0BF1: callvirt   System.Void TransferManager::AddOutgoingOffer(TransferManager.TransferReason.Crime, TransferOffer offer)
+                    if (bAddedBranch && !bAddedLabel && instruction.opcode == OpCodes.Callvirt && instruction.operand == methodAddOutgoingOffer)
+                    {
+                        bAddedLabel = true;
+
+                        // return current instruction 
+                        yield return instruction;
+
+                        // Now add the jump label to the next instruction
+                        if (instructionsEnumerator.MoveNext())
+                        {
+                            CodeInstruction instruction2 = instructionsEnumerator.Current;
+
+                            // Add the jump label for the branch to jump to.
+                            instruction2.labels.Add(jumpLabel);
+                            yield return instruction2;
+                        }
+
+                        continue;
+                    }
+
+                    // Now insert our AddOffers call at the end
+                    // IL_0C10: ret
+                    if (bAddedBranch && bAddedLabel && instruction.opcode == OpCodes.Ret)
+                    {
+                        instruction.opcode = OpCodes.Ldarg_1; // Overwrite Opcodes.Ret so we keep labels (if any) before AddOffers
+                        yield return instruction;
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
+                        yield return new CodeInstruction(OpCodes.Call, methodAddCrimeOffer);
+
+                        // Add ret back in
+                        yield return new CodeInstruction(OpCodes.Ret);
+
+                        s_bPatched = true;
+                        continue;
                     }
                 }
+
+                yield return instruction;
             }
 
-            // Transpile instructions
-            if (iInsertIndex > 0 && jumpLabel is not null)
+            if (s_bPatched)
             {
-                // Move labels (if any)
-                CodeInstruction instruction = codes[iInsertIndex];
-
-                // Add jump instruction
-                CodeInstruction jumpInstruction = new CodeInstruction(OpCodes.Br, jumpLabel) { labels = instruction.labels }; // Relocate labels
-                codes.Insert(iInsertIndex, jumpInstruction);
-
-                // Clear old label references
-                instruction.labels = new List<Label>();
-
-                // Now call our AddCrimeOffer function at the end of function instead
-                codes[codes.Count - 1].opcode = OpCodes.Ldarg_1; // Overwrite Opcodes.Ret so we keep labels (if any) before AddCrimeOffer call
-                codes.Add(new CodeInstruction(OpCodes.Ldarg_2));
-                codes.Add(new CodeInstruction(OpCodes.Ldarg, 4));
-                codes.Add(new CodeInstruction(OpCodes.Call, methodAddCrimeOffer));
-
-                // Now add back on the end Opcodes.Ret
-                codes.Add(new CodeInstruction(OpCodes.Ret));
-
-                s_bPatched = true;
-
-                Debug.Log("Patching of HandleCrimeTranspiler succeeded");
+                Debug.Log("Patching of CommonBuildingAI.HandleCrimeTranspiler succeeded");
             }
             else
             {
-                Debug.LogError("Patching of HandleCrimeTranspiler failed");
+                Debug.LogError($"Patching of CommonBuildingAI.HandleCrimeTranspiler failed bAddedBranch: {bAddedBranch} bAddedLabel: {bAddedLabel} s_bPatched: {s_bPatched}");
             }
-
-            return codes;
         }
     }
 }

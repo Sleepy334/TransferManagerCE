@@ -2,7 +2,6 @@
 using ColossalFramework.Math;
 using HarmonyLib;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using TransferManagerCE.TransferOffers;
@@ -40,83 +39,110 @@ namespace TransferManagerCE
             }
         }
 
-        // This transpiler patches SimulationStepActive to skip over the AddIncomingOffer and AddOutgoingOffer calls so we can add our own instead
+        // This transpiler patches SimulationStepActive to skip over the AddIncomingOffer and AddOutgoingOffer calls so we can add our own instead in AddOffers
         [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
         [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> SimulationStepActiveTranspiler(IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> SimulationStepActiveTranspiler(ILGenerator generator, IEnumerable<CodeInstruction> instructions)
         {
-            List<CodeInstruction> codes = instructions.ToList();
-
             MethodInfo methodAddOffers = AccessTools.Method(typeof(IndustrialBuildingAISimulationStepActive), nameof(AddOffers));
-            if (methodAddOffers is null)
-            {
-                Debug.LogError("Unable to find AddOffers");
-                return codes;
-            }
-
+            MethodInfo methodAddOutgoingOffer = AccessTools.Method(typeof(TransferManager), nameof(TransferManager.AddOutgoingOffer));
             FieldInfo m_fireIntensity = AccessTools.Field(typeof(Building), "m_fireIntensity");
-            if (m_fireIntensity is null)
-            {
-                Debug.LogError("Unable to find Building.m_fireIntensity");
-                return codes;
-            }
 
             // Find insert index and label
-            int iInsertIndex = 0;
-            Label? jumpLabel = null;
-            for (int i = 0; i < codes.Count - 1; i++)
-            {
-                CodeInstruction instruction = codes[i];
+            bool bAddedBranch = false;
+            bool bAddedLabel = false;
+            Label jumpLabel = generator.DefineLabel();
 
-                if (iInsertIndex == 0 && instruction.opcode == OpCodes.Ldfld && instruction.operand == m_fireIntensity)
+            // Instruction enumerator.
+            IEnumerator<CodeInstruction> instructionsEnumerator = instructions.GetEnumerator();
+
+            while (instructionsEnumerator.MoveNext())
+            {
+                // Get next instruction.
+                CodeInstruction instruction = instructionsEnumerator.Current;
+
+                if (!s_bPatched)
                 {
-                    // AddIncomingOffer section, store index for patching
-                    iInsertIndex = i - 1;
-                }
-                else if (iInsertIndex > 0 && instruction.opcode == OpCodes.Ldfld && instruction.operand == m_fireIntensity)
-                {
-                    // AddOutgoingOffer section 
-                    // Store the label to jump to.
-                    CodeInstruction brInstruction = codes[i+1];
-                    if (brInstruction.opcode == OpCodes.Brtrue && brInstruction.operand is Label)
+                    // Look for the following:
+                    // if (buildingData.m_fireIntensity == 0 && incomingTransferReason != TransferManager.TransferReason.None)
+                    // IL_0A9D: ldarg.2
+                    // IL_0A9E: ldfld System.Byte Building::m_fireIntensity
+                    if (!bAddedBranch && instruction.opcode == OpCodes.Ldarg_2)
                     {
-                        jumpLabel = (Label)brInstruction.operand;
-                        break;
+                        // Look for buildingData.m_fireIntensity
+                        if (instructionsEnumerator.MoveNext())
+                        {
+                            CodeInstruction instruction2 = instructionsEnumerator.Current;
+
+                            if (instruction2.opcode == OpCodes.Ldfld && instruction2.operand == m_fireIntensity)
+                            {
+                                bAddedBranch = true;
+
+                                // AddIncomingOffer section add Br instruction to new label
+                                yield return new CodeInstruction(OpCodes.Br, jumpLabel) { labels = instruction.labels }; // Copy labels from Ldarg_2 instruction
+
+                                instruction.labels = new List<Label>(); // Clear labels from Ldarg_2
+                            }
+
+                            // Return instructions
+                            yield return instruction;
+                            yield return instruction2;
+
+                            continue;
+                        }
+                    }
+
+                    // Look for the following:
+                    // Singleton<TransferManager>.instance.AddOutgoingOffer(outgoingTransferReason, offer2);
+                    // IL_0BF1: callvirt   System.Void TransferManager::AddOutgoingOffer(TransferReason material, TransferOffer offer)
+                    if (bAddedBranch && !bAddedLabel && instruction.opcode == OpCodes.Callvirt && instruction.operand == methodAddOutgoingOffer)
+                    {
+                        bAddedLabel = true;
+
+                        // return current instruction 
+                        yield return instruction;
+
+                        // Now add the jump label to the next instruction
+                        if (instructionsEnumerator.MoveNext())
+                        {
+                            CodeInstruction instruction2 = instructionsEnumerator.Current;
+
+                            // Add the jump label for the branch to jump to.
+                            instruction2.labels.Add(jumpLabel);
+                            yield return instruction2;
+                        }
+
+                        continue;
+                    }
+
+                    // Now insert our AddOffers call at the end
+                    // IL_0C10: ret
+                    if (bAddedBranch && bAddedLabel && instruction.opcode == OpCodes.Ret)
+                    {
+                        instruction.opcode = OpCodes.Ldarg_1; // Overwrite Opcodes.Ret so we keep labels (if any) before AddOffers
+                        yield return instruction;
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Call, methodAddOffers);
+
+                        // Add ret back in
+                        yield return new CodeInstruction(OpCodes.Ret);
+
+                        s_bPatched = true;
+                        continue;
                     }
                 }
+
+                yield return instruction;
             }
 
-            // Transpile instructions
-            if (iInsertIndex > 0 && jumpLabel is not null)
+            if (s_bPatched)
             {
-                // Move labels (if any)
-                CodeInstruction instruction = codes[iInsertIndex];
-
-                // Add jump instruction
-                CodeInstruction jumpInstruction = new CodeInstruction(OpCodes.Br, jumpLabel) { labels = instruction.labels }; // Relocate labels
-                codes.Insert(iInsertIndex, jumpInstruction);
-
-                // Clear old label references
-                instruction.labels = new List<Label>();
-
-                // Now call our AddOffers function at the end of function instead
-                codes[codes.Count - 1].opcode = OpCodes.Ldarg_1; // Overwrite Opcodes.Ret so we keep labels (if any) before AddOffers
-                codes.Add(new CodeInstruction(OpCodes.Ldarg_2));
-                codes.Add(new CodeInstruction(OpCodes.Call, methodAddOffers));
-
-                // Add ret back in
-                codes.Add(new CodeInstruction(OpCodes.Ret));
-
-                s_bPatched = true;
-
                 Debug.Log("Patching of IndustrialBuildingAI.SimulationStepActive succeeded");
             }
             else
             {
-                Debug.LogError("Patching of IndustrialBuildingAI.SimulationStepActive failed");
+                Debug.LogError($"Patching of IndustrialBuildingAI.SimulationStepActive failed bAddedBranch: {bAddedBranch} bAddedLabel: {bAddedLabel} s_bPatched: {s_bPatched}");
             }
-
-            return codes;
         }
 
         // Generic processing buildings behave badly, they ask twice in one round and with really high priority due to a bug in IndustrialBuildingAI.SimulationStepActive
