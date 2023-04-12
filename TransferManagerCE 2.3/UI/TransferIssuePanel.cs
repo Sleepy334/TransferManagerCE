@@ -86,7 +86,7 @@ namespace TransferManagerCE.UI
             isVisible = false;
             playAudioEvents = true;
             m_ClipChildren = true;
-            CenterToParent();
+            CenterTo(parent);
 
             // Title Bar
             m_title = AddUIComponent<UITitleBar>();

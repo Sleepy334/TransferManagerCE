@@ -132,8 +132,8 @@ namespace TransferManagerCE
             playAudioEvents = true;
             clipChildren = true;
             eventVisibilityChanged += OnVisibilityChanged;
-            CenterToParent();
-            
+            CenterTo(parent);
+
             // Title Bar
             m_title = AddUIComponent<UITitleBar>();
             m_title.SetOnclickHandler(OnCloseClick);

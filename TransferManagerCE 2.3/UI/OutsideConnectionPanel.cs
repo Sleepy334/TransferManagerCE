@@ -60,7 +60,7 @@ namespace TransferManagerCE.UI
             playAudioEvents = true;
             m_ClipChildren = true;
             eventVisibilityChanged += OnVisibilityChanged;
-            CenterToParent();
+            CenterTo(parent);
 
 
             // Title Bar
