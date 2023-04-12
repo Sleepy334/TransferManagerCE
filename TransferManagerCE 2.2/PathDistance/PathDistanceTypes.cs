@@ -192,7 +192,7 @@ namespace TransferManagerCE.CustomManager
         {
             if (IsGoodsMaterial(material))
             {
-                return VehicleInfo.VehicleType.Car | VehicleInfo.VehicleType.Train | VehicleInfo.VehicleType.Ship | VehicleInfo.VehicleType.Plane;
+                return VehicleInfo.VehicleType.Car | VehicleInfo.VehicleType.Train | VehicleInfo.VehicleType.Ship | VehicleInfo.VehicleType.Plane | VehicleInfo.VehicleType.Ferry;
             }
             else
             {

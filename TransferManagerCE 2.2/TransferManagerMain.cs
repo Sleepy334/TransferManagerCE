@@ -5,7 +5,7 @@ namespace TransferManagerCE
 {
     public class TransferManagerMain : IUserMod
 	{
-		private static string Version = "v2.2.35";
+		private static string Version = "v2.2.36";
 
 #if TEST_RELEASE || TEST_DEBUG
         private static string Edition => " TEST";
