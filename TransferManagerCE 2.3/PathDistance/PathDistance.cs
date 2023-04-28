@@ -35,7 +35,7 @@ namespace TransferManagerCE
             m_visited = new BitArray(NetManager.MAX_NODE_COUNT);
         }
 
-        public override void SetMaterial(CustomTransferReason material)
+        public override void SetMaterial(CustomTransferReason.Reason material)
         {
             base.SetMaterial(material);
 

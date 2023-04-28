@@ -14,7 +14,7 @@ namespace TransferManagerCE.CustomManager
             PathDistance = 2
         }
 
-        public static PathDistanceAlgorithm GetDistanceAlgorithm(TransferReason material)
+        public static PathDistanceAlgorithm GetDistanceAlgorithm(CustomTransferReason.Reason material)
         {
             PathDistanceAlgorithm algorithm;
 
@@ -29,56 +29,57 @@ namespace TransferManagerCE.CustomManager
             return algorithm;
         }
 
-        private static PathDistanceAlgorithm GetMaxPathDistanceAlgorithm(TransferReason material)
+        private static PathDistanceAlgorithm GetMaxPathDistanceAlgorithm(CustomTransferReason.Reason material)
         {
             switch (material)
             {
                 // case TransferReason.SickMove: - SickMove is for helicopters, it doesnt need path distance
                 // case TransferReason.ParkMaintenance: - We get lots of no road access issues with all the parking assets from the workshop.
-                case TransferReason.Dead:
-                case TransferReason.Garbage:
-                case TransferReason.Sick:
-                case TransferReason.Crime:
-                case TransferReason.Fire:
-                case TransferReason.Mail:
-                case TransferReason.Taxi:
-                case TransferReason.Cash:
-                case TransferReason.CriminalMove:
-                case TransferReason.RoadMaintenance:
-                case TransferReason.Snow:
+                case CustomTransferReason.Reason.Dead:
+                case CustomTransferReason.Reason.Garbage:
+                case CustomTransferReason.Reason.Sick:
+                case CustomTransferReason.Reason.Crime:
+                case CustomTransferReason.Reason.Fire:
+                case CustomTransferReason.Reason.Mail:
+                case CustomTransferReason.Reason.Taxi:
+                case CustomTransferReason.Reason.TaxiMove:
+                case CustomTransferReason.Reason.Cash:
+                case CustomTransferReason.Reason.CriminalMove:
+                case CustomTransferReason.Reason.RoadMaintenance:
+                case CustomTransferReason.Reason.Snow:
                     return PathDistanceAlgorithm.PathDistance; // Services
 
-                case TransferReason.DeadMove: // we want to scale by priority
-                case TransferReason.GarbageMove: // we want to scale by priority
-                case TransferReason.GarbageTransfer: // we want to scale by priority
-                case TransferReason.SnowMove: // we want to scale by priority
+                case CustomTransferReason.Reason.DeadMove: // we want to scale by priority
+                case CustomTransferReason.Reason.GarbageMove: // we want to scale by priority
+                case CustomTransferReason.Reason.GarbageTransfer: // we want to scale by priority
+                case CustomTransferReason.Reason.SnowMove: // we want to scale by priority
                     return PathDistanceAlgorithm.ConnectedLineOfSight;
 
-                case TransferReason.Oil:
-                case TransferReason.Ore:
-                case TransferReason.Logs:
-                case TransferReason.Grain:
-                case TransferReason.Coal:
-                case TransferReason.Petrol:
-                case TransferReason.Food:
-                case TransferReason.Lumber:
-                case TransferReason.Flours:
-                case TransferReason.Paper:
-                case TransferReason.PlanedTimber:
-                case TransferReason.Petroleum:
-                case TransferReason.Plastics:
-                case TransferReason.Glass:
-                case TransferReason.Metals:
-                case TransferReason.AnimalProducts:
-                case TransferReason.Goods:
-                case TransferReason.LuxuryProducts:
-                case TransferReason.Fish:
+                case CustomTransferReason.Reason.Oil:
+                case CustomTransferReason.Reason.Ore:
+                case CustomTransferReason.Reason.ForestProducts:
+                case CustomTransferReason.Reason.Crops:
+                case CustomTransferReason.Reason.Coal:
+                case CustomTransferReason.Reason.Petrol:
+                case CustomTransferReason.Reason.Food:
+                case CustomTransferReason.Reason.Lumber:
+                case CustomTransferReason.Reason.Flours:
+                case CustomTransferReason.Reason.Paper:
+                case CustomTransferReason.Reason.PlanedTimber:
+                case CustomTransferReason.Reason.Petroleum:
+                case CustomTransferReason.Reason.Plastics:
+                case CustomTransferReason.Reason.Glass:
+                case CustomTransferReason.Reason.Metals:
+                case CustomTransferReason.Reason.AnimalProducts:
+                case CustomTransferReason.Reason.Goods:
+                case CustomTransferReason.Reason.LuxuryProducts:
+                case CustomTransferReason.Reason.Fish:
                     return PathDistanceAlgorithm.PathDistance; // Goods
 
-                case TransferReason.UnsortedMail:
-                case TransferReason.SortedMail:
-                case TransferReason.IncomingMail:
-                case TransferReason.OutgoingMail:
+                case CustomTransferReason.Reason.UnsortedMail:
+                case CustomTransferReason.Reason.SortedMail:
+                case CustomTransferReason.Reason.IncomingMail:
+                case CustomTransferReason.Reason.OutgoingMail:
                     return PathDistanceAlgorithm.ConnectedLineOfSight;
 
                 default: 
@@ -86,36 +87,36 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsGoodsMaterial(TransferReason material)
+        public static bool IsGoodsMaterial(CustomTransferReason.Reason material)
         {
             switch (material)
             {
-                case TransferReason.Oil:
-                case TransferReason.Ore:
-                case TransferReason.Logs:
-                case TransferReason.Grain:
-                case TransferReason.Coal:
-                case TransferReason.Petrol:
-                case TransferReason.Food:
-                case TransferReason.Lumber:
-                case TransferReason.Flours:
-                case TransferReason.Paper:
-                case TransferReason.PlanedTimber:
-                case TransferReason.Petroleum:
-                case TransferReason.Plastics:
-                case TransferReason.Glass:
-                case TransferReason.Metals:
-                case TransferReason.AnimalProducts:
-                case TransferReason.Goods:
-                case TransferReason.LuxuryProducts:
-                case TransferReason.Fish:
+                case CustomTransferReason.Reason.Oil:
+                case CustomTransferReason.Reason.Ore:
+                case CustomTransferReason.Reason.ForestProducts:
+                case CustomTransferReason.Reason.Crops:
+                case CustomTransferReason.Reason.Coal:
+                case CustomTransferReason.Reason.Petrol:
+                case CustomTransferReason.Reason.Food:
+                case CustomTransferReason.Reason.Lumber:
+                case CustomTransferReason.Reason.Flours:
+                case CustomTransferReason.Reason.Paper:
+                case CustomTransferReason.Reason.PlanedTimber:
+                case CustomTransferReason.Reason.Petroleum:
+                case CustomTransferReason.Reason.Plastics:
+                case CustomTransferReason.Reason.Glass:
+                case CustomTransferReason.Reason.Metals:
+                case CustomTransferReason.Reason.AnimalProducts:
+                case CustomTransferReason.Reason.Goods:
+                case CustomTransferReason.Reason.LuxuryProducts:
+                case CustomTransferReason.Reason.Fish:
                     return true;
 
                 // These mail options use the goods paths for the pathing algorithm
-                case TransferReason.UnsortedMail:
-                case TransferReason.SortedMail:
-                case TransferReason.IncomingMail:
-                case TransferReason.OutgoingMail:
+                case CustomTransferReason.Reason.UnsortedMail:
+                case CustomTransferReason.Reason.SortedMail:
+                case CustomTransferReason.Reason.IncomingMail:
+                case CustomTransferReason.Reason.OutgoingMail:
                     return true;
 
                 default:
@@ -123,14 +124,14 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsPedestrianZoneService(TransferReason material)
+        public static bool IsPedestrianZoneService(CustomTransferReason.Reason material)
         {
             switch (material)
             {
-                case TransferReason.Dead:
-                case TransferReason.Sick:
-                case TransferReason.Crime:
-                case TransferReason.Fire:
+                case CustomTransferReason.Reason.Dead:
+                case CustomTransferReason.Reason.Sick:
+                case CustomTransferReason.Reason.Crime:
+                case CustomTransferReason.Reason.Fire:
                     return true;
 
                 default:
@@ -138,21 +139,21 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsOtherService(TransferReason material)
+        public static bool IsOtherService(CustomTransferReason.Reason material)
         {
             switch (material)
             {
-                case TransferReason.Garbage:
-                case TransferReason.Mail:
-                case TransferReason.Taxi:
-                case TransferReason.Cash:
-                case TransferReason.CriminalMove:
-                case TransferReason.RoadMaintenance:
-                case TransferReason.Snow:
-                case TransferReason.DeadMove:
-                case TransferReason.GarbageMove:
-                case TransferReason.GarbageTransfer:
-                case TransferReason.SnowMove:
+                case CustomTransferReason.Reason.Garbage:
+                case CustomTransferReason.Reason.Mail:
+                case CustomTransferReason.Reason.Taxi:
+                case CustomTransferReason.Reason.Cash:
+                case CustomTransferReason.Reason.CriminalMove:
+                case CustomTransferReason.Reason.RoadMaintenance:
+                case CustomTransferReason.Reason.Snow:
+                case CustomTransferReason.Reason.DeadMove:
+                case CustomTransferReason.Reason.GarbageMove:
+                case CustomTransferReason.Reason.GarbageTransfer:
+                case CustomTransferReason.Reason.SnowMove:
                     return true;
 
                 default:

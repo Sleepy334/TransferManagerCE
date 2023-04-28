@@ -126,6 +126,7 @@ namespace TransferManagerCE
             PrisonMove1 = 120,// 120 - sends prison vans from big police stations to small police stations to pick up prisoners
             PrisonMove2 = 121, // 121 - send prison helicopters from the police helicopter depot to pickup prisoners from big police stations
             PrisonMove3 = 122, // 122 - take prisoners from big police stations to prisons
+            TaxiMove = 126,
             Crime2 = 127,
             None = 0xFF
         }
@@ -135,6 +136,11 @@ namespace TransferManagerCE
         public CustomTransferReason(TransferReason reason)
         {
             m_material = (Reason) reason;
+        }
+
+        public CustomTransferReason(Reason reason)
+        {
+            m_material = reason;
         }
 
         public CustomTransferReason(int reason)

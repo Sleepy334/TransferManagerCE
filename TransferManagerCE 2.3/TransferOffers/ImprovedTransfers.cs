@@ -1,12 +1,10 @@
 ﻿using System;
-using static TransferManager;
+using System.Reflection;
 using UnityEngine;
 using ColossalFramework;
 using TransferManagerCE.Settings;
-using static TransferManagerCE.CitiesUtils;
+using static TransferManager;
 using static TransferManagerCE.WarehouseUtils;
-using System.Reflection;
-using ICities;
 
 namespace TransferManagerCE
 {
@@ -17,100 +15,58 @@ namespace TransferManagerCE
         // Return false to skip adding of offer.
         public static bool HandleIncomingOffer(TransferReason material, ref TransferOffer offer)
         {
-            // The new Taxi Overhaul mod sets the Exclude flag for Taxi Stands as well.
-            if (offer.Exclude && material != TransferReason.Taxi)
+            // Currently warehouse offers are the only ones that set the Exclude flag
+            if (offer.Exclude)
             {
                 // Adjust Priority of warehouse offers if ImprovedWarehouseMatching enabled
-                ImprovedWarehouseMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                return ImprovedWarehouseMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
             }
-            else
+
+            switch (material)
             {
-                switch (material)
-                {
-                    case TransferReason.Dead:
-                        {
-                            ImprovedDeadMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
-                            break;
-                        }
-                    case TransferReason.Garbage:
-                        {
-                            ImprovedGarbageMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
-                            break;
-                        }
-                    case TransferReason.Crime:
-                        {
-                            ImprovedCrimeMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
-                            break;
-                        }
-                    case TransferReason.Sick:
-                        {
-                            ImprovedSickMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
-                            break;
-                        }
-                    case TransferReason.Mail:
-                        {
-                            ImprovedMailMatchingIncoming(BuildingManager.instance.m_buildings.m_buffer, ref offer);
-                            break;
-                        }
-                    case TransferReason.Taxi:
-                        {
-                            if (offer.Citizen != 0)
-                            {
-                                Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
-                                if (citizen.m_flags != 0 && citizen.m_instance != 0)
-                                {
-                                    ref CitizenInstance instance = ref CitizenManager.instance.m_instances.m_buffer[citizen.m_instance];
-                                    if (instance.m_flags != 0)
-                                    {
-                                        if (instance.m_sourceBuilding != 0 && BuildingTypeHelper.IsOutsideConnection(instance.m_sourceBuilding))
-                                        {
-                                            // Taxi's do not work when cims coming from outside connections
-                                            //Debug.Log($"Citizen: {offer.Citizen} Waiting for taxi at outside connection {instance.m_sourceBuilding} - SKIPPING");
-
-                                            // Speed up waiting
-                                            if (instance.m_waitCounter > 0)
-                                            {
-                                                instance.m_waitCounter = (byte)Math.Max((int)instance.m_waitCounter, 254);
-                                            }
-
-                                            // We return false so we don't add offer to match set
-                                            return false;
-                                        }
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                    case TransferReason.Goods:
-                    case TransferReason.LuxuryProducts:
-                        {
-                            HandleCommercialOffers(BuildingManager.instance.m_buildings.m_buffer, ref offer);
-                            break;
-                        }
-                    case TransferReason.Worker0:
-                    case TransferReason.Worker1:
-                    case TransferReason.Worker2:
-                    case TransferReason.Worker3:
-                        {
-                            if (offer.Priority < 7 && offer.Building != 0)
-                            {
-                                Building building = BuildingManager.instance.m_buildings.m_buffer[offer.Building];
-                                if (building.m_flags != 0 && building.m_workerProblemTimer > 0)
-                                {
-                                    // Worker problem timer is running set priority to 7
-                                    offer.Priority = 7;
-                                }
-                            }
-                            break;
-                        }
-                }
+                case TransferReason.Dead:
+                    {
+                        return HandleIncomingDeadOffer(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                    }
+                case TransferReason.Garbage:
+                    {
+                        return HandleIncomingGarbageOffer(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                    }
+                case TransferReason.Crime:
+                    {
+                        return HandleIncomingCrimeOffer(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                    }
+                case TransferReason.Sick:
+                    {
+                        return HandleIncomingSickOffer(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                    }
+                case TransferReason.Mail:
+                    {
+                        return HandleIncomingMailOffer(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                    }
+                case TransferReason.Taxi:
+                    {
+                        return HandleIncomingTaxiOffer(ref offer);
+                    }
+                case TransferReason.Goods:
+                case TransferReason.LuxuryProducts:
+                    {
+                        return HandleIncomingCommercialOffer(BuildingManager.instance.m_buildings.m_buffer, ref offer);
+                    }
+                case TransferReason.Worker0:
+                case TransferReason.Worker1:
+                case TransferReason.Worker2:
+                case TransferReason.Worker3:
+                    {
+                        return HandleIncomingWorkerOffer(ref offer);    
+                    }
             }
                 
             // Add offer normally
             return true;
         }
 
-        private static void ImprovedDeadMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
+        private static bool HandleIncomingDeadOffer(Building[] Buildings, ref TransferOffer offer)
         {
             if (offer.Building != 0 && SaveGameSettings.GetSettings().ImprovedDeathcareMatching)
             {
@@ -146,9 +102,11 @@ namespace TransferManagerCE
                     }
                 }
             }
+
+            return true;
         }
 
-        private static void ImprovedGarbageMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
+        private static bool HandleIncomingGarbageOffer(Building[] Buildings, ref TransferOffer offer)
         {
             if (offer.Building != 0 && SaveGameSettings.GetSettings().ImprovedGarbageMatching)
             {
@@ -177,9 +135,11 @@ namespace TransferManagerCE
                     }
                 }
             }
+
+            return true;
         }
 
-        private static void ImprovedCrimeMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
+        private static bool HandleIncomingCrimeOffer(Building[] Buildings, ref TransferOffer offer)
         {
             if (offer.Building != 0 && SaveGameSettings.GetSettings().ImprovedCrimeMatching)
             {
@@ -208,9 +168,11 @@ namespace TransferManagerCE
                     }
                 }
             }
+
+            return true;
         }
 
-        private static void ImprovedSickMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
+        private static bool HandleIncomingSickOffer(Building[] Buildings, ref TransferOffer offer)
         {
             if (offer.Building != 0 && SaveGameSettings.GetSettings().OverrideResidentialSickHandler)
             {
@@ -235,9 +197,11 @@ namespace TransferManagerCE
                     }
                 }
             }
+
+            return true;
         }
 
-        private static void ImprovedMailMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
+        private static bool HandleIncomingMailOffer(Building[] Buildings, ref TransferOffer offer)
         {
             if (offer.Building != 0 && SaveGameSettings.GetSettings().ImprovedMailTransfers)
             {
@@ -264,11 +228,13 @@ namespace TransferManagerCE
                     }
                 }
             }
+
+            return true; // Add normally
         }
 
         // We cap commercial building priority to 6 until the incoming timer starts
         // so that we can ensure we are matching the most urgent offers first
-        private static void HandleCommercialOffers(Building[] Buildings, ref TransferOffer offer)
+        private static bool HandleIncomingCommercialOffer(Building[] Buildings, ref TransferOffer offer)
         {
             if (offer.Priority == 7 && offer.Building != 0)
             {
@@ -282,16 +248,58 @@ namespace TransferManagerCE
                     offer.Priority = 6;
                 }
             }
+
+            return true; // Add offer normally
         }
 
-        private static void ImprovedWarehouseMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
+        // Return false to skip adding of offer.
+        private static bool HandleIncomingTaxiOffer(ref TransferOffer offer)
         {
-            // Check it is actually a warehouse
-            if (!offer.Exclude)
+            if (offer.Citizen != 0)
             {
-                return;
+                Citizen citizen = CitizenManager.instance.m_citizens.m_buffer[offer.Citizen];
+                if (citizen.m_flags != 0 && citizen.m_instance != 0)
+                {
+                    ref CitizenInstance instance = ref CitizenManager.instance.m_instances.m_buffer[citizen.m_instance];
+                    if (instance.m_flags != 0)
+                    {
+                        if (instance.m_sourceBuilding != 0 && BuildingTypeHelper.IsOutsideConnection(instance.m_sourceBuilding))
+                        {
+                            // Taxi's do not work when cims coming from outside connections
+                            //Debug.Log($"Citizen: {offer.Citizen} {citizen.m_flags} Waiting for taxi at outside connection {instance.m_sourceBuilding} - SKIPPING");
+
+                            // Speed up waiting
+                            if (instance.m_waitCounter > 0)
+                            {
+                                instance.m_waitCounter = (byte)Math.Max((int)instance.m_waitCounter, 254);
+                            }
+
+                            return false; // Skip this offer
+                        }
+                    }
+                }
             }
 
+            return true; // Add offer normally
+        }
+
+        private static bool HandleIncomingWorkerOffer(ref TransferOffer offer)
+        {
+            if (offer.Priority < 7 && offer.Building != 0)
+            {
+                Building building = BuildingManager.instance.m_buildings.m_buffer[offer.Building];
+                if (building.m_flags != 0 && building.m_workerProblemTimer > 0)
+                {
+                    // Worker problem timer is running set priority to 7
+                    offer.Priority = 7;
+                }
+            }
+
+            return true; // Add normally
+        }
+                            
+        private static bool ImprovedWarehouseMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
+        {
             Building building = Buildings[offer.Building];
             if (building.m_flags != 0 && building.Info is not null)
             {
@@ -301,7 +309,7 @@ namespace TransferManagerCE
                     // The H&T patch introduced a bad bug for the incoming amount calculation, this restores the old version
                     // We patch the offer amount always
                     int buffer = building.m_customBuffer1 * 100;
-                    int maxLoadSize = GetMaxLoadSize(warehouse);
+                    int maxLoadSize = GetWarehouseMaxLoadSize(warehouse);
                     offer.Amount = Mathf.Max(1, (warehouse.m_storageCapacity - buffer) / Mathf.Max(1, maxLoadSize));
 
                     // It's a warehouse, set the priority based on storage level
@@ -354,6 +362,8 @@ namespace TransferManagerCE
                     }
                 }
             }
+
+            return true;
         }
 
         public static void ImprovedWarehouseMatchingOutgoing(ref TransferOffer offer)
@@ -436,7 +446,7 @@ namespace TransferManagerCE
             }
         }
 
-        private static int GetMaxLoadSize(WarehouseAI instance)
+        private static int GetWarehouseMaxLoadSize(WarehouseAI instance)
         {
             if (s_maxLoadSize == null)
             {

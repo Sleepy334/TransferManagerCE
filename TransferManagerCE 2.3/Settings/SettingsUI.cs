@@ -16,6 +16,8 @@ namespace TransferManagerCE
 {
     public class SettingsUI
     {
+        const int iSEPARATOR_HEIGHT = 10;
+
         private UICheckBox? m_chkEnableTransferManager = null;
         
         // Outside connection tab
@@ -69,9 +71,9 @@ namespace TransferManagerCE
         private UIDropDown? m_dropdownCandidates = null;
         private UIButton? m_btnResetTransferManagerSettings = null;
 
-        private Dictionary<TransferReason, SettingsSlider> m_sliderLimits = new Dictionary<TransferReason, SettingsSlider>();
-        private Dictionary<TransferReason, UICheckBox> m_chkImport = new Dictionary<TransferReason, UICheckBox>();
-        private Dictionary<TransferReason, UICheckBox> m_chkImportWarehouses = new Dictionary<TransferReason, UICheckBox>();
+        private Dictionary<CustomTransferReason.Reason, SettingsSlider> m_sliderLimits = new Dictionary<CustomTransferReason.Reason, SettingsSlider>();
+        private Dictionary<CustomTransferReason.Reason, UICheckBox> m_chkImport = new Dictionary<CustomTransferReason.Reason, UICheckBox>();
+        private Dictionary<CustomTransferReason.Reason, UICheckBox> m_chkImportWarehouses = new Dictionary<CustomTransferReason.Reason, UICheckBox>();
 
         private List<string> m_reasonNames = new List<string>();
 
@@ -198,8 +200,8 @@ namespace TransferManagerCE
             m_dropdownPathDistanceServices.width = 400;
             m_dropdownPathDistanceGoods = (UIDropDown)groupPathDistance.AddDropdown(Localization.Get("dropdownPathDistanceAlgorithmGoods"), itemsPathDistance, (int)oSettings.PathDistanceGoods, OnPathDistanceGoods);
             m_dropdownPathDistanceGoods.width = 400;
-            
-            AddDescription(groupPathDistance, "txtSpacer", 1.0f, "");
+
+            groupPathDistance.AddSpace(iSEPARATOR_HEIGHT);
 
             // Accuracy slider
             AddDescription(groupPathDistance, "txtPathDistanceHeuristic", 1.0f, Localization.Get("txtPathDistanceHeuristic"));
@@ -207,7 +209,7 @@ namespace TransferManagerCE
             m_sliderPathDistanceHeuristic.Percent = true;
             AddDescription(groupPathDistance, "txtPathDistanceHeuristicKey", 1.0f, Localization.Get("txtPathDistanceHeuristicKey"));
 
-            AddDescription(groupPathDistance, "txtSpacer", 1.0f, "");
+            groupPathDistance.AddSpace(iSEPARATOR_HEIGHT);
 
             // Travel Time shift
             AddDescription(groupPathDistance, "txtPathDistanceShift", 1.0f, Localization.Get("txtPathDistanceShift"));
@@ -242,7 +244,7 @@ namespace TransferManagerCE
             // Factory First
             AddDescription(panelFactory, "optionFactoryFirstText", panelFactory, 1.0f, Localization.Get("optionFactoryFirstText"));
             m_chkFactoryFirst = (UICheckBox)groupFactory.AddCheckbox(Localization.Get("optionFactoryFirst"), oSettings.FactoryFirst, (index) => setOptionFactoryFirst(index));
-            AddDescription(panelFactory, "txtSpacer", panelFactory, 1.0f, "");
+            groupFactory.AddSpace(iSEPARATOR_HEIGHT);
 
             // Override generic industries handler
             AddDescription(panelFactory, "txtOverrideGenericIndustriesHandler", panelFactory, 1.0f, Localization.Get("txtOverrideGenericIndustriesHandler"));
@@ -255,23 +257,23 @@ namespace TransferManagerCE
             // Warehouse first
             AddDescription(panelGroupWarehouse, "optionWarehouseFirst_txt", panelGroupWarehouse, 1.0f, Localization.Get("optionWarehouseFirst_txt"));
             m_chkWarehouseFirst = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionWarehouseFirst"), oSettings.WarehouseFirst, (index) => setOptionWarehouseFirst(index));
-            AddDescription(panelGroupWarehouse, "txtSpacer", panelGroupWarehouse, 1.0f, "");
+            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
             // Reserve trucks
             AddDescription(panelGroupWarehouse, "txtNewWarehouseReserveTrucks", panelGroupWarehouse, 1.0f, Localization.Get("txtNewWarehouseReserveTrucks"));
             m_sliderWarehouseReservePercent = SettingsSlider.Create(groupWarehouse, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercent"), 1.0f, 400, 200, 0f, 100f, 5f, (float)oSettings.WarehouseReserveTrucksPercent, OnWarehouseFirstPercentChanged);
             m_sliderWarehouseReservePercent.Percent = true;
-            AddDescription(panelGroupWarehouse, "txtSpacer", panelGroupWarehouse, 1.0f, "");
+            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
             // Improved Warehouse Matching
             AddDescription(panelGroupWarehouse, "txtImprovedWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtImprovedWarehouseMatching"));
             m_chkImprovedWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionImprovedWarehouseMatching"), oSettings.ImprovedWarehouseMatching, (index) => setOptionImprovedWarehouseMatching(index));
-            AddDescription(panelGroupWarehouse, "txtSpacer", panelGroupWarehouse, 1.0f, "");
+            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
             // New warehouse matching
             AddDescription(panelGroupWarehouse, "txtNewInterWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtNewInterWarehouseMatching"));
             m_chkNewInterWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionNewWarehouseTransfer"), oSettings.NewInterWarehouseTransfer, OnNewWarehouseTransferChanged);
-            AddDescription(panelGroupWarehouse, "txtSpacer", panelGroupWarehouse, 1.0f, "");
+            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
         }
 
         public void SetupImportExportTab(UIHelper helper)
@@ -319,8 +321,8 @@ namespace TransferManagerCE
 
             for (int i = 0; i < (int)CustomTransferReason.iLAST_REASON; ++i)
             {
-                TransferReason material = (TransferReason)i;
-                if (TransferRestrictions.IsImportRestrictionsSupported(material))
+                CustomTransferReason.Reason material = (CustomTransferReason.Reason)i;
+                if (TransferManagerModes.IsImportRestrictionsSupported(material))
                 {
                     UIPanel panelMaterialRestrictions = panelImportRestrictions.AddUIComponent<UIPanel>();
                     panelMaterialRestrictions.autoLayout = true;
@@ -328,7 +330,7 @@ namespace TransferManagerCE
                     panelMaterialRestrictions.width = panelImportRestrictions.width;
                     panelMaterialRestrictions.height = 20;
 
-                    UICheckBox? chkMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, ((CustomTransferReason) material).ToString(), 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterial(material, index));
+                    UICheckBox? chkMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterial(material, index));
                     if (chkMaterial is not null)
                     {
                         chkMaterial.width = 300;
@@ -337,7 +339,7 @@ namespace TransferManagerCE
 
                     if (TransferManagerModes.IsWarehouseMaterial(material))
                     {
-                        UICheckBox? chkWarehouseMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, ((CustomTransferReason)material).ToString(), 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterialWarehouses(material, index));
+                        UICheckBox? chkWarehouseMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterialWarehouses(material, index));
                         if (chkWarehouseMaterial is not null)
                         {
                             chkWarehouseMaterial.width = 300;
@@ -366,10 +368,10 @@ namespace TransferManagerCE
             AddDescription(groupSick, "txtOverrideSickCollection", 1.0f, Localization.Get("txtOverrideSickCollection"));
             m_chkOverrideSickCollection = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionOverrideResidentialSick"), oSettings.OverrideResidentialSickHandler, OnOverrideResidentialSick);
             UIPanel panelSick = (groupSick as UIHelper).self as UIPanel;
-            AddDescription(panelSick, "txtSpacer", panelSick, 1.0f, "");
+            groupSick.AddSpace(iSEPARATOR_HEIGHT);
             AddDescription(groupSick, "txtSickCollectionOtherBuildings", 1.0f, Localization.Get("txtSickCollectionOtherBuildings"));
             m_chkSickCollectionOtherBuildings = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionCollectionOtherBuildings"), oSettings.CollectSickFromOtherBuildings, OnCollectSickFromOtherBuildings);
-            AddDescription(panelSick, "txtSpacer", panelSick, 1.0f, "");
+            groupSick.AddSpace(iSEPARATOR_HEIGHT);
             AddDescription(groupSick, "txtSickCollectionWarning", 1.0f, Localization.Get("txtSickCollectionWarning"));
 
             // Prefer local
@@ -377,19 +379,19 @@ namespace TransferManagerCE
             UIPanel txtPanel1 = (group1 as UIHelper).self as UIPanel;
             AddDescription(txtPanel1, "txtPreferLocalService", txtPanel1, 1.0f, Localization.Get("txtPreferLocalService"));
             m_chkPreferLocal = (UICheckBox)group1.AddCheckbox(Localization.Get("optionPreferLocalService"), oSettings.PreferLocalService, (index) => setOptionPreferLocalService(index));
-            AddDescription(txtPanel1, "txtSpacer", txtPanel1, 1.0f, "");
+            group1.AddSpace(iSEPARATOR_HEIGHT);
             AddDescription(txtPanel1, "txtPreferLocalServiceWarning", txtPanel1, 1.0f, Localization.Get("txtPreferLocalServiceWarning"));
 
             // Distance limits section
             UIHelper groupDistanceLimits = (UIHelper) helper.AddGroup(Localization.Get("GROUP_DISTANCE_LIMITS"));
             UIPanel panelDistanceLimits = (groupDistanceLimits as UIHelper).self as UIPanel;
             AddDescription(panelDistanceLimits, "txtDistanceLimits", panelDistanceLimits, 1.0f, Localization.Get("txtDistanceLimits"));
-            m_sliderLimits[TransferReason.Dead] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderDeathcareDistanceLimits"), 1.0f, 400, 200, 0f, 10f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(TransferReason.Dead), (float value) => OnDistanceLimit(TransferReason.Dead, value));
-            m_sliderLimits[TransferReason.Sick] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderHealthcareDistanceLimits"), 1.0f, 400, 200, 0f, 10f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(TransferReason.Sick), (float value) => OnDistanceLimit(TransferReason.Sick, value));
-            m_sliderLimits[TransferReason.Garbage] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderGarbageDistanceLimits"), 1.0f, 400, 200, 0f, 10f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(TransferReason.Garbage), (float value) => OnDistanceLimit(TransferReason.Garbage, value));
-            m_sliderLimits[TransferReason.Crime] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderPoliceDistanceLimits"), 1.0f, 400, 200, 0f, 10f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(TransferReason.Crime), (float value) => OnDistanceLimit(TransferReason.Crime, value));
-            m_sliderLimits[TransferReason.Fire] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderFireDistanceLimits"), 1.0f, 400, 200, 0f, 10f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(TransferReason.Fire), (float value) => OnDistanceLimit(TransferReason.Fire, value));
-            m_sliderLimits[TransferReason.Mail] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderMailDistanceLimits"), 1.0f, 400, 200, 0f, 10f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(TransferReason.Mail), (float value) => OnDistanceLimit(TransferReason.Mail, value)); 
+            m_sliderLimits[CustomTransferReason.Reason.Dead] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderDeathcareDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Dead), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Dead, value));
+            m_sliderLimits[CustomTransferReason.Reason.Sick] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderHealthcareDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Sick), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Sick, value));
+            m_sliderLimits[CustomTransferReason.Reason.Garbage] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderGarbageDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Garbage), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Garbage, value));
+            m_sliderLimits[CustomTransferReason.Reason.Crime] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderPoliceDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Crime), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Crime, value));
+            m_sliderLimits[CustomTransferReason.Reason.Fire] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderFireDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Fire), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Fire, value));
+            m_sliderLimits[CustomTransferReason.Reason.Mail] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderMailDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Mail), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Mail, value)); 
         }
 
         public void SetupVehicleAITab(UIHelper helper)
@@ -412,20 +414,6 @@ namespace TransferManagerCE
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             ModSettings oModSettings = ModSettings.GetSettings();
 
-            UIHelperBase groupTransferManager = helper.AddGroup(Localization.Get("tabTransferManager"));
-            UIPanel panelTransferManager = (groupTransferManager as UIHelper).self as UIPanel;
-
-            // Reset settings
-            m_btnResetTransferManagerSettings = (UIButton) groupTransferManager.AddButton(Localization.Get("btnResetTransferManagerSettings"), OnResetTransferManagerSettingsClicked);
-            AddDescription(panelTransferManager, "txtSeparator", panelTransferManager, 1.0f, "");
-
-            // Reset pathing
-            groupTransferManager.AddButton(Localization.Get("btnResetPathingStatistics"), OnResetPathingStatisticsClicked);
-            AddDescription(panelTransferManager, "txtSeparator", panelTransferManager, 1.0f, "");
-
-            // Reset statistics
-            groupTransferManager.AddButton(Localization.Get("buttonResetTransferStatistics"), OnResetTransferStatisticsClicked);
-
             // Maintenance section
             UIHelperBase groupMaintenance = helper.AddGroup(Localization.Get("GROUP_Maintenance"));
             UIPanel panelMaintenance = (groupMaintenance as UIHelper).self as UIPanel;
@@ -442,7 +430,7 @@ namespace TransferManagerCE
             });
             m_lblPathUnitCount = AddDescription(panelMaintenance, "txtPathUnitCount", panelMaintenance, 1.0f, Localization.Get("txtPathUnitCount") + ": 0");
 
-            AddDescription(panelMaintenance, "txtSeparator", panelMaintenance, 1.0f, "");
+            groupMaintenance.AddSpace(iSEPARATOR_HEIGHT);
 
             // Release Ghost vehicles
             AddDescription(panelMaintenance, "txtReleaseGhostVehicles", panelMaintenance, 1.0f, Localization.Get("txtReleaseGhostVehicles"));
@@ -480,7 +468,7 @@ namespace TransferManagerCE
             groupLogging.AddCheckbox(Localization.Get("optionShowBuildingId"), oModSettings.ShowBuildingId, OnShowBuildingId);
 
             // Log file path
-            AddDescription(groupLogging, "txtSeparator", 1.0f, "");
+            groupLogging.AddSpace(iSEPARATOR_HEIGHT);
             AddDescription(groupLogging, "txtMatchLoggingPath", 1.0f, Localization.Get("txtMatchLoggingPath") + " " + Path.Combine(ModSettings.UserSettingsDir, "TransferManagerCE"));
 
             // Pathing connection graph
@@ -494,6 +482,19 @@ namespace TransferManagerCE
             m_dropdownConnectionGraph = (UIDropDown)groupPathing.AddDropdown(Localization.Get("dropdownConnectionGraph"), itemsConnectionGraph, oModSettings.ShowConnectionGraph, OnShowConnectionGraphChanged);
             m_dropdownConnectionGraph.width = 400;
             AddDescription(groupPathing, "txtShowConnectionGraph", 1.0f, Localization.Get("txtShowConnectionGraph"));
+
+            UIHelperBase groupTransferManager = helper.AddGroup(Localization.Get("tabTransferManager"));
+
+            // Reset settings
+            m_btnResetTransferManagerSettings = (UIButton)groupTransferManager.AddButton(Localization.Get("btnResetTransferManagerSettings"), OnResetTransferManagerSettingsClicked);
+            groupTransferManager.AddSpace(iSEPARATOR_HEIGHT);
+
+            // Reset pathing
+            groupTransferManager.AddButton(Localization.Get("btnResetPathingStatistics"), OnResetPathingStatisticsClicked);
+            groupTransferManager.AddSpace(iSEPARATOR_HEIGHT);
+
+            // Reset statistics
+            groupTransferManager.AddButton(Localization.Get("buttonResetTransferStatistics"), OnResetTransferStatisticsClicked);
         }
 
         public void OnTabVisibilityChanged(UIComponent component, bool bVisible)
@@ -634,13 +635,13 @@ namespace TransferManagerCE
             oSettings.WarehouseReserveTrucksPercent = (int)fValue;
         }
 
-        public void OnImportRestrictMaterial(TransferReason material, bool bChecked)
+        public void OnImportRestrictMaterial(CustomTransferReason.Reason material, bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.SetImportRestriction(material, !bChecked);
         }
 
-        public void OnImportRestrictMaterialWarehouses(TransferReason material, bool bChecked)
+        public void OnImportRestrictMaterialWarehouses(CustomTransferReason.Reason material, bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.SetWarehouseImportRestriction(material, !bChecked);
@@ -677,7 +678,7 @@ namespace TransferManagerCE
         }
 
 
-        public void OnDistanceLimit(TransferReason material, float fValue)
+        public void OnDistanceLimit(CustomTransferReason.Reason material, float fValue)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.SetActiveDistanceRestrictionKm(material, fValue);
@@ -912,7 +913,7 @@ namespace TransferManagerCE
                 m_chkPoliceCarAI.isChecked = oSettings.PoliceCarAI;
                 m_chkPoliceCopterAI.isChecked = oSettings.PoliceCopterAI;
 
-                foreach (KeyValuePair<TransferReason, SettingsSlider> kvp in m_sliderLimits)
+                foreach (KeyValuePair<CustomTransferReason.Reason, SettingsSlider> kvp in m_sliderLimits)
                 {
                     if (kvp.Value is not null)
                     {
@@ -920,7 +921,7 @@ namespace TransferManagerCE
                     }
                 }
 
-                foreach (KeyValuePair<TransferReason, UICheckBox> kvp in m_chkImport)
+                foreach (KeyValuePair<CustomTransferReason.Reason, UICheckBox> kvp in m_chkImport)
                 {
                     if (kvp.Value is not null)
                     {
@@ -928,7 +929,7 @@ namespace TransferManagerCE
                     }
                 }
 
-                foreach (KeyValuePair<TransferReason, UICheckBox> kvp in m_chkImportWarehouses)
+                foreach (KeyValuePair<CustomTransferReason.Reason, UICheckBox> kvp in m_chkImportWarehouses)
                 {
                     if (kvp.Value is not null)
                     {
@@ -1007,7 +1008,7 @@ namespace TransferManagerCE
             EnableCheckbox(m_chkPoliceCarAI, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkPoliceCopterAI, bLoaded && oSettings.EnableNewTransferManager);
                 
-            foreach (KeyValuePair<TransferReason, SettingsSlider> kvp in m_sliderLimits)
+            foreach (KeyValuePair<CustomTransferReason.Reason, SettingsSlider> kvp in m_sliderLimits)
             {
                 if (kvp.Value is not null)
                 {
@@ -1015,7 +1016,7 @@ namespace TransferManagerCE
                 }
             }
 
-            foreach (KeyValuePair<TransferReason, UICheckBox> kvp in m_chkImport)
+            foreach (KeyValuePair<CustomTransferReason.Reason, UICheckBox> kvp in m_chkImport)
             {
                 if (kvp.Value is not null)
                 {
@@ -1030,7 +1031,7 @@ namespace TransferManagerCE
                 }
             }
 
-            foreach (KeyValuePair<TransferReason, UICheckBox> kvp in m_chkImportWarehouses)
+            foreach (KeyValuePair<CustomTransferReason.Reason, UICheckBox> kvp in m_chkImportWarehouses)
             {
                 if (kvp.Value is not null)
                 {

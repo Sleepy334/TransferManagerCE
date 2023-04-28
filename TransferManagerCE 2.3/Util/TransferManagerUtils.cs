@@ -13,7 +13,7 @@ namespace TransferManagerCE
             return (Math.Sqrt(Vector3.SqrMagnitude(offer1.Position - offer2.Position)) * 0.001).ToString("00.000");
         }
 
-        public static string DebugOffer(TransferReason material, CustomTransferOffer offer, bool bAlign, bool bNode, bool bDistrict)
+        public static string DebugOffer(CustomTransferReason.Reason material, CustomTransferOffer offer, bool bAlign, bool bNode, bool bDistrict)
         {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.Append((offer.IsIncoming() ? "IN  | " : "OUT | ") + DebugOffer(offer.m_offer, bAlign));
@@ -60,9 +60,9 @@ namespace TransferManagerCE
             {
                 switch (material)
                 {
-                    case TransferReason.Sick:
-                    case TransferReason.Sick2:
-                    case TransferReason.SickMove:
+                    case CustomTransferReason.Reason.Sick:
+                    case CustomTransferReason.Reason.Sick2:
+                    case CustomTransferReason.Reason.SickMove:
                         {
                             if (offer.GetBuilding() != 0 && building.m_flags != 0 && building.m_healthProblemTimer > 0)
                             {
@@ -74,8 +74,8 @@ namespace TransferManagerCE
                             }
                             break;
                         }
-                    case TransferReason.Dead:
-                    case TransferReason.DeadMove:
+                    case CustomTransferReason.Reason.Dead:
+                    case CustomTransferReason.Reason.DeadMove:
                         {
                             if (offer.GetBuilding() != 0 && building.m_flags != 0 && building.m_deathProblemTimer > 0)
                             {
@@ -87,7 +87,7 @@ namespace TransferManagerCE
                             }
                             break;
                         }
-                    case TransferReason.Garbage:
+                    case CustomTransferReason.Reason.Garbage:
                         {
                             if (offer.GetBuilding() != 0 && building.m_flags != 0 && !offer.IsIncoming())
                             {
@@ -99,10 +99,10 @@ namespace TransferManagerCE
                             }
                             break;
                         }
-                    case TransferReason.Worker0:
-                    case TransferReason.Worker1:
-                    case TransferReason.Worker2:
-                    case TransferReason.Worker3:
+                    case CustomTransferReason.Reason.Worker0:
+                    case CustomTransferReason.Reason.Worker1:
+                    case CustomTransferReason.Reason.Worker2:
+                    case CustomTransferReason.Reason.Worker3:
                         {
                             if (offer.GetBuilding() != 0 && building.m_flags != 0 && offer.IsIncoming())
                             {
@@ -156,7 +156,7 @@ namespace TransferManagerCE
             if (offer.IsWarehouse())
             {
                 stringBuilder.Append($" | WarehouseMode: {offer.GetWarehouseMode()}");
-                stringBuilder.Append($" | Storage: {Math.Round(offer.GetWarehouseStoragePercent() * 100.0f, 2)}%");
+                stringBuilder.Append($" | Storage: {(offer.GetWarehouseStoragePercent() * 100.0).ToString("00")}%");
             }
 
             if (offer.IsOutside())

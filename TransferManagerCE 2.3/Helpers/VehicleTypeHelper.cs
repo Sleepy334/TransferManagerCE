@@ -1,4 +1,5 @@
 using ColossalFramework;
+using ColossalFramework.Globalization;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -171,56 +172,110 @@ namespace TransferManagerCE
 
         public static InstanceID GetVehicleTarget(ushort vehicleId, Vehicle vehicle)
         {
-            if (vehicle.Info is not null && vehicle.Info.GetSubService() == ItemClass.SubService.PublicTransportTaxi)
+            if (vehicle.Info is not null && vehicle.Info.m_vehicleAI is not null)
             {
-                ushort passengerInstance = GetPassengerInstance(ref vehicle);
-                if (passengerInstance != 0)
+                switch (vehicle.Info.GetAI())
                 {
-                    CitizenInstance citizenInstance = Singleton<CitizenManager>.instance.m_instances.m_buffer[passengerInstance];
-                    if ((citizenInstance.m_flags & CitizenInstance.Flags.Character) != 0)
-                    {
-                        return new InstanceID { Citizen = citizenInstance.m_citizen };
-                    }
-                    else if ((citizenInstance.m_flags & CitizenInstance.Flags.TargetIsNode) != 0)
-                    {
-                        return new InstanceID { NetNode = citizenInstance.m_targetBuilding };
-                    }
-                    else
-                    {
-                        return new InstanceID { Building = citizenInstance.m_targetBuilding };
-                    }
-                }
-                return default(InstanceID); // Empty
-            }
-            else
-            {
-                VehicleAI? vehcileAI = vehicle.Info?.GetAI() as VehicleAI;
-                if (vehcileAI is not null)
-                {
-                    return vehcileAI.GetTargetID(vehicleId, ref vehicle);
+                    case TaxiAI taxiAI:
+                        {
+                            ushort passengerInstance = GetPassengerInstance(ref vehicle);
+                            if (passengerInstance != 0)
+                            {
+                                CitizenInstance citizenInstance = Singleton<CitizenManager>.instance.m_instances.m_buffer[passengerInstance];
+                                if ((citizenInstance.m_flags & CitizenInstance.Flags.Character) != 0)
+                                {
+                                    return new InstanceID { Citizen = citizenInstance.m_citizen };
+                                }
+                                else if ((citizenInstance.m_flags & CitizenInstance.Flags.TargetIsNode) != 0)
+                                {
+                                    return new InstanceID { NetNode = citizenInstance.m_targetBuilding };
+                                }
+                                else
+                                {
+                                    return new InstanceID { Building = citizenInstance.m_targetBuilding };
+                                }
+                            }
+
+                            return new InstanceID { Building = vehicle.m_targetBuilding };
+                        }
+                    case VehicleAI vehicleAI:
+                        {
+                            return vehicleAI.GetTargetID(vehicleId, ref vehicle);
+                        }
                 }
             }
 
             return new InstanceID { Building = vehicle.m_targetBuilding };
         }
 
-        public static string DescribeVehicleTarget(Vehicle vehicle, InstanceID target)
+        public static string DescribeVehicleTarget(ushort vehicleId, Vehicle vehicle, InstanceID target)
         {
-            if ((vehicle.m_flags & Vehicle.Flags.GoingBack) != 0)
+            if (vehicle.Info is not null && vehicle.Info.m_vehicleAI is not null)
             {
-                return "Returning to facility";
-            }
-            else if ((vehicle.m_flags & Vehicle.Flags.WaitingTarget) != 0)
-            {
-                return "Waiting for target";
-            }
-            else if ((vehicle.m_flags & Vehicle.Flags.WaitingLoading) != 0)
-            {
-                return "Loading";
-            }
-            else if ((vehicle.m_flags & Vehicle.Flags.WaitingCargo) != 0)
-            {
-                return "Waiting for cargo";
+                string sStatus = vehicle.Info.m_vehicleAI.GetLocalizedStatus(vehicleId, ref vehicle, out InstanceID newTarget);
+                if (!newTarget.IsEmpty)
+                {
+                    return InstanceHelper.DescribeInstance(newTarget);
+                }
+                else
+                {
+                    // Is it a transport line
+                    switch (target.Type)
+                    {
+                        case InstanceType.NetNode:
+                            {
+                                NetNode[] NetNodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
+                                NetNode node = NetNodes[target.Index];
+                                if (node.m_flags != 0 && node.m_transportLine != 0)
+                                {
+                                    return InstanceHelper.DescribeInstance(new InstanceID { TransportLine = node.m_transportLine });
+                                }
+                                break;
+                            }
+                        case InstanceType.Building:
+                            {
+                                switch (vehicle.Info.GetAI())
+                                {
+                                    case CargoTruckAI:
+                                        {
+                                            if ((vehicle.m_flags & Vehicle.Flags.GoingBack) != 0)
+                                            {
+                                                return Locale.Get("VEHICLE_STATUS_CARGOTRUCK_RETURN");
+                                            }
+                                            else if ((vehicle.m_flags & Vehicle.Flags.WaitingTarget) != 0)
+                                            {
+                                                return Locale.Get("VEHICLE_STATUS_CARGOTRUCK_UNLOAD");
+                                            }
+                                            else if ((vehicle.m_flags & Vehicle.Flags.WaitingLoading) != 0)
+                                            {
+                                                return Locale.Get("VEHICLE_STATUS_CARGOTRUCK_WAIT");
+                                            }
+                                            else if ((vehicle.m_flags & Vehicle.Flags.WaitingCargo) != 0)
+                                            {
+                                                return Locale.Get("VEHICLE_STATUS_CARGOTRUCK_WAIT");
+                                            }
+                                            else if ((vehicle.m_flags & Vehicle.Flags.Exporting) != 0)
+                                            {
+                                                return InstanceHelper.DescribeInstance(target);
+                                            }
+                                            break;
+                                        }
+                                    case GarbageTruckAI:
+                                        {
+                                            // Show target building rather than "Collecting Garbage" message.
+                                            if (sStatus.Equals(Locale.Get("VEHICLE_STATUS_GARBAGE_COLLECT")))
+                                            {
+                                                return InstanceHelper.DescribeInstance(target);
+                                            }
+                                            break;
+                                        }
+                                }
+                                break;
+                            }
+                    }
+
+                    return sStatus;
+                }
             }
             else if (!target.IsEmpty)
             {

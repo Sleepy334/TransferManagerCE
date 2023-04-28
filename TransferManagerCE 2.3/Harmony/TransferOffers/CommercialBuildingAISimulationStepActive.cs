@@ -12,7 +12,7 @@ namespace TransferManagerCE
         [HarmonyPatch(typeof(CommercialBuildingAI), "SimulationStepActive")]
         public static void SimulationStepActivePostfix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
         {
-            // Re-request more material if storage is empty and timer has reached MahjorProblem (64) and trucks aren't close by
+            // Re-request more material if storage is empty and timer has reached MajorProblem (64) and trucks aren't close by
             if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
                 buildingData.m_fireIntensity == 0 && 
                 buildingData.m_customBuffer1 == 0 &&

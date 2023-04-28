@@ -37,7 +37,7 @@ namespace TransferManagerCE
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
         {
             // Clear settings for new load
-            BuildingSettingsStorage.ClearSettings();
+            BuildingSettingsStorage.ClearAllSettings();
 
             if (Data is not null && Data.Length > iIndex)
             {
@@ -108,7 +108,7 @@ namespace TransferManagerCE
                         CheckEndTuple($"Building({i})", iBuildingSettingsVersion, Data, ref iIndex);
 
                         // Add this buildings settings
-                        if (settings is not null && !settings.Equals(defaultSettings))
+                        if (settings is not null && !settings.IsDefault())
                         {
                             BuildingSettingsStorage.s_BuildingsSettings[(ushort)buildingId] = settings;
                         }

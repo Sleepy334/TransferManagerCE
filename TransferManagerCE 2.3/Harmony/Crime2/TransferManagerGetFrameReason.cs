@@ -13,16 +13,32 @@ namespace TransferManagerCE
         {
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {
-                if (frameIndex == 149)
+                switch (frameIndex)
                 {
-                    if (__result == TransferReason.None)
-                    {
-                        __result = (TransferReason)CustomTransferReason.Reason.Crime2;
-                    }
-                    else
-                    {
-                        Debug.LogError($"Error: FrameIndex 149 is in use {__result}, Crime2 not available.");
-                    }
+                    case 149:
+                        {
+                            if (__result == TransferReason.None)
+                            {
+                                __result = (TransferReason)CustomTransferReason.Reason.Crime2;
+                            }
+                            else
+                            {
+                                Debug.LogError($"Error: FrameIndex 149 is in use {__result}, Crime2 not available.");
+                            }
+                            break;
+                        }
+                    case 173:
+                        {
+                            if (__result == TransferReason.None)
+                            {
+                                __result = (TransferReason)CustomTransferReason.Reason.TaxiMove;
+                            }
+                            else
+                            {
+                                Debug.LogError($"Error: FrameIndex 173 is in use {__result}, TaxiMove not available.");
+                            }
+                            break;
+                        }
                 }
             }
         }

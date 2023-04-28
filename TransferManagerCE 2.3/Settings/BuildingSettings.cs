@@ -12,12 +12,13 @@ namespace TransferManagerCE
         // Stores a restrictions setting object for each different type of restriction supported by the building
         // eg Dead, DeadMove etc...
         public Dictionary<int, RestrictionSettings> m_restrictions = new Dictionary<int, RestrictionSettings>();
+        private static BuildingSettings s_defaultSettings = new BuildingSettings();
 
         // Only 1 setting per building
         public int m_iOutsideMultiplier = 0; 
         public bool m_bWarehouseOverride = false;
-        public bool m_bImprovedWarehouseMatching = SaveGameSettings.GetSettings().ImprovedWarehouseMatching;
-        public int m_iWarehouseReserveTrucksPercent = SaveGameSettings.GetSettings().WarehouseReserveTrucksPercent;
+        public bool m_bImprovedWarehouseMatching = false;
+        public int m_iWarehouseReserveTrucksPercent = 20;
 
         public BuildingSettings()
         {
@@ -37,18 +38,20 @@ namespace TransferManagerCE
             }
         }
 
+        // We just use IsDefault() rather than implementing this
+        [Obsolete("This method has not yet been implemented.", true)]
         public bool Equals(BuildingSettings oSecond)
         {
-            bool bResult =
-                    m_bWarehouseOverride == oSecond.m_bWarehouseOverride &&
-                    m_bImprovedWarehouseMatching == oSecond.m_bImprovedWarehouseMatching &&
-                    m_iWarehouseReserveTrucksPercent == oSecond.m_iWarehouseReserveTrucksPercent &&
-                    m_iOutsideMultiplier == oSecond.m_iOutsideMultiplier;
-            if (bResult)
-            {
-                return m_restrictions.Equals(oSecond.m_restrictions);
-            }
-            return false;
+            throw new NotImplementedException();
+        }
+
+        public bool IsDefault()
+        {
+            return  m_bWarehouseOverride == s_defaultSettings.m_bWarehouseOverride &&
+                    m_bImprovedWarehouseMatching == s_defaultSettings.m_bImprovedWarehouseMatching &&
+                    m_iWarehouseReserveTrucksPercent == s_defaultSettings.m_iWarehouseReserveTrucksPercent &&
+                    m_iOutsideMultiplier == s_defaultSettings.m_iOutsideMultiplier &&
+                    m_restrictions.Count == 0;
         }
 
         public void SaveData(FastList<byte> Data)
@@ -132,14 +135,25 @@ namespace TransferManagerCE
 
         public void SetRestrictions(int iRestrictionId, RestrictionSettings settings)
         {
-            // Save a copy so we don't end up duplicating settings
+            // Save a copy not the pointer
             SetRestrictionsDirect(iRestrictionId, new RestrictionSettings(settings));
         }
 
         public void SetRestrictionsDirect(int iRestrictionId, RestrictionSettings settings)
         {
-            // Directly save settings object, we assume it's already a stand alone copy.
-            m_restrictions[iRestrictionId] = settings;
+            if (settings.IsDefault())
+            {
+                if (m_restrictions.ContainsKey(iRestrictionId))
+                {
+                    // Default values, just remove settings
+                    m_restrictions.Remove(iRestrictionId);
+                }
+            }
+            else
+            {
+                // Directly save pointer, please ensure this settings object isnt shared
+                m_restrictions[iRestrictionId] = settings;
+            }
         }
 
         public bool IsImprovedWarehouseMatching()
@@ -191,6 +205,19 @@ namespace TransferManagerCE
                 }
             }
             return bChanged;
+        }
+
+        public string DebugSettings()
+        {
+            string sMessage = "";
+
+            sMessage += "\nOutsideMultiplier:" + m_iOutsideMultiplier;
+            sMessage += "\nWarehouseOverride:" + m_bWarehouseOverride;
+            sMessage += "\nImprovedWarehouseMatching:" + m_bImprovedWarehouseMatching;
+            sMessage += "\nWarehouseReserveTrucksPercent:" + m_iWarehouseReserveTrucksPercent;
+            sMessage += "\nRestrictionsCount:" + m_restrictions.Count;
+
+            return sMessage;
         }
     }
 }

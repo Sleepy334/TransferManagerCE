@@ -30,7 +30,7 @@ namespace TransferManagerCE.Settings
             return SaveGameSettings.GetSettings().WarehouseReserveTrucksPercent;
         }
 
-        public static bool IsImportAllowed(ushort buildingId, BuildingType eBuildingType, TransferReason material)
+        public static bool IsImportAllowed(ushort buildingId, BuildingType eBuildingType, CustomTransferReason.Reason material)
         {
             BuildingSettings? settings = BuildingSettingsStorage.GetSettings(buildingId);
             if (settings is not null)
@@ -47,7 +47,7 @@ namespace TransferManagerCE.Settings
             
         }
 
-        public static bool IsExportAllowed(ushort buildingId, BuildingType eBuildingType, TransferReason material)
+        public static bool IsExportAllowed(ushort buildingId, BuildingType eBuildingType, CustomTransferReason.Reason material)
         {
             BuildingSettings? settings = BuildingSettingsStorage.GetSettings(buildingId);
             if (settings is not null)
@@ -63,7 +63,7 @@ namespace TransferManagerCE.Settings
             return true;
         }
 
-        public static float GetDistanceRestrictionSquaredMeters(ushort buildingId, BuildingType eBuildingType, TransferReason material)
+        public static float GetDistanceRestrictionSquaredMeters(ushort buildingId, BuildingType eBuildingType, CustomTransferReason.Reason material)
         {
 
             // Try and get local distance setting

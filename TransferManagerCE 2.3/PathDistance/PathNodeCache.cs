@@ -44,7 +44,7 @@ namespace TransferManagerCE
                 else
                 {
                     // Load data for this connection
-                    UpdateOutsideConnection(BuildingManager.instance.m_buildings.m_buffer, buildingId);
+                    UpdateOutsideConnection(BuildingManager.instance.m_buildings.m_buffer, NetManager.instance.m_nodes.m_buffer, buildingId);
 
                     // Return node if found
                     if (s_OutsideConnectionNodes.TryGetValue(buildingId, out ushort nodeId2))
@@ -97,32 +97,32 @@ namespace TransferManagerCE
             return false;
         }
 
-        private static void UpdateOutsideConnection(Building[] Buildings, ushort buildingId)
+        private static void UpdateOutsideConnection(Building[] Buildings, NetNode[] Nodes, ushort buildingId)
         {
             lock (s_cacheLock)
             {
                 Building building = Buildings[buildingId];
                 if (building.m_flags != 0)
                 {
-                    ushort nodeId = FindNearestOutsideConnectionNode(building.m_position, building.Info.GetService(), building.Info.GetSubService());
+                    ushort nodeId = FindOutsideConnectionNode(buildingId, building.m_position);
                     if (nodeId != 0)
                     {
-                        if (s_OutsideConnectionNodes is null || s_OutsideNodeMultipliers is null || s_OutsideSegmentTravelTime is null)
+                        NetNode node = Nodes[nodeId];
+                        if (node.m_flags != 0 && node.m_building == buildingId)
                         {
-                            s_OutsideConnectionNodes = new Dictionary<ushort, ushort>();
-                            s_OutsideNodeMultipliers = new Dictionary<ushort, float>();
-                            s_OutsideSegmentTravelTime = new Dictionary<ushort, float>();
-                        }
+                            if (s_OutsideConnectionNodes is null || s_OutsideNodeMultipliers is null || s_OutsideSegmentTravelTime is null)
+                            {
+                                s_OutsideConnectionNodes = new Dictionary<ushort, ushort>();
+                                s_OutsideNodeMultipliers = new Dictionary<ushort, float>();
+                                s_OutsideSegmentTravelTime = new Dictionary<ushort, float>();
+                            }
 
-                        // Add the outside connection data
-                        s_OutsideConnectionNodes[buildingId] = nodeId;
-                        float fEffectiveMultiplier = BuildingSettingsFast.GetEffectiveOutsideMultiplier(buildingId);
-                        s_OutsideNodeMultipliers[nodeId] = fEffectiveMultiplier;
+                            // Add the outside connection data
+                            s_OutsideConnectionNodes[buildingId] = nodeId;
+                            float fEffectiveMultiplier = BuildingSettingsFast.GetEffectiveOutsideMultiplier(buildingId);
+                            s_OutsideNodeMultipliers[nodeId] = fEffectiveMultiplier;
 
-                        // Find the segment for this node
-                        NetNode node = NetManager.instance.m_nodes.m_buffer[nodeId];
-                        if (node.m_flags != 0)
-                        {
+                            // Find the segment for this node
                             // Loop through segments to find neighboring roads
                             for (int i = 0; i < 8; ++i)
                             {
@@ -153,39 +153,33 @@ namespace TransferManagerCE
                 if (s_OutsideConnectionNodes is null || s_OutsideNodeMultipliers is null || s_OutsideSegmentTravelTime is null)
                 {
                     Building[] Buildings = BuildingManager.instance.m_buildings.m_buffer;
+                    NetNode[] Nodes = NetManager.instance.m_nodes.m_buffer;
 
                     // Get the list of outside connecions and update cache for each one
                     FastList<ushort> connections = BuildingManager.instance.GetOutsideConnections();
                     foreach (var buildingId in connections)
                     {
-                        UpdateOutsideConnection(Buildings, buildingId);
+                        UpdateOutsideConnection(Buildings, Nodes, buildingId);
                     }
                 }
             }
         }
 
-        private static ushort FindNearestOutsideConnectionNode(Vector3 pos, ItemClass.Service service, ItemClass.SubService subService)
+        private static ushort FindOutsideConnectionNode(ushort buildingId, Vector3 pos)
         {
-            float nearestDistance = float.PositiveInfinity;
-            float distMetric;
-            ushort nearestClassNode = 0;
+            ushort nodeId = 0;
 
             NodeUtils.EnumerateNearbyNodes(pos, 128f, (nodeID, node) =>
             {
-                if ((node.m_flags & NetNode.Flags.Outside) != 0 &&
-                            node.Info.GetService() == service &&
-                            node.Info.GetSubService() == subService)
+                if ((node.m_flags & NetNode.Flags.Outside) != 0 && node.m_building == buildingId)
                 {
-                    distMetric = Vector3.SqrMagnitude(pos - node.m_position);
-                    if (distMetric < nearestDistance)
-                    {
-                        nearestDistance = distMetric;
-                        nearestClassNode = nodeID;
-                    }
+                    nodeId = nodeID;
+                    return false;
                 }
+                return true;
             });
 
-            return nearestClassNode;
+            return nodeId;
         }
     }
 }

@@ -345,7 +345,7 @@ namespace TransferManagerCE
             return list;
         }
 
-        public static int CountImportExportVehicles(ushort buildingId, TransferReason material)
+        public static int CountImportExportVehicles(ushort buildingId, CustomTransferReason.Reason material)
         {
             int iOutside = 0;
 
@@ -354,7 +354,7 @@ namespace TransferManagerCE
             {
                 EnumerateOwnVehicles(building, (vehicleId, vehicle) =>
                 {
-                    if ((TransferReason)vehicle.m_transferType == material)
+                    if ((CustomTransferReason.Reason)vehicle.m_transferType == material)
                     {
                         if ((vehicle.m_flags & (Vehicle.Flags.Importing | Vehicle.Flags.Exporting)) != 0)
                         {

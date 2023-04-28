@@ -7,6 +7,7 @@ using TransferManagerCE.TransferRules;
 using TransferManagerCE.Settings;
 using static TransferManagerCE.CitiesUtils;
 using static TransferManagerCE.WarehouseUtils;
+using System;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -37,7 +38,6 @@ namespace TransferManagerCE.CustomManager
             CloseByOnly,
             ExportVehicleLimit,
             GlobalPreferLocal,
-            BothTaxiStands,
         };
 
 
@@ -45,16 +45,25 @@ namespace TransferManagerCE.CustomManager
         private bool m_bBuildingRestrictionsSupported = false;
         private bool m_bDistanceRestrictionsSupported = false;
         private bool m_bEnablePathFailExclusion = false;
+        private bool m_bIsImportRestrictionsSupported = false;
+        private bool m_bIsExportRestrictionsSupported = false;
+        private bool m_bIsWarehouseMaterial = false;
+        private bool m_bIsHelicopterReason = false;
 
-        public void SetMaterial(TransferReason material)
+        public void SetMaterial(CustomTransferReason.Reason material)
         {
+            // Cache these for better performance
             m_bDistrictRestrictionsSupported = DistrictRestrictions.IsGlobalDistrictRestrictionsSupported(material) || BuildingRuleSets.IsDistrictRestrictionsSupported(material);
             m_bBuildingRestrictionsSupported = BuildingRuleSets.IsBuildingRestrictionsSupported(material);
             m_bDistanceRestrictionsSupported = BuildingRuleSets.IsDistanceRestrictionsSupported(material);
             m_bEnablePathFailExclusion = SaveGameSettings.GetSettings().EnablePathFailExclusion;
+            m_bIsImportRestrictionsSupported = TransferManagerModes.IsImportRestrictionsSupported(material);
+            m_bIsExportRestrictionsSupported = TransferManagerModes.IsExportRestrictionsSupported(material);
+            m_bIsWarehouseMaterial = TransferManagerModes.IsWarehouseMaterial(material);
+            m_bIsHelicopterReason = TransferManagerModes.IsHelicopterReason(material);
         }
 
-        public ExclusionReason CanTransfer(TransferReason material, TransferManagerModes.TransferMode mode, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer, bool bCloseByOnly)
+        public ExclusionReason CanTransfer(CustomTransferReason.Reason material, TransferManagerModes.TransferMode mode, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer, bool bCloseByOnly)
         {
             // guards: out=in same? exclude offer
             if (outgoingOffer.m_object == incomingOffer.m_object)
@@ -86,13 +95,6 @@ namespace TransferManagerCE.CustomManager
             if (incomingOffer.GetBuilding() != 0 && !incomingOffer.IsWarehouse() && incomingOffer.GetBuilding() == outgoingOffer.GetBuilding())
             {
                 return ExclusionReason.SameBuilding;
-            }
-
-            // New Taxi Overhaul mod sets the Exclude flag when the request is from a Taxi Stand.
-            // Don't allow 2 taxi stands to match as otherwise taxi's will just go back and forth between stands
-            if (material == TransferReason.Taxi && incomingOffer.Exclude && outgoingOffer.Exclude)
-            {
-                return ExclusionReason.BothTaxiStands;
             }
 
             if (bCloseByOnly)
@@ -161,10 +163,10 @@ namespace TransferManagerCE.CustomManager
         }
 
         [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private bool PathfindExclusion(CustomTransferReason material, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer)
+        private bool PathfindExclusion(CustomTransferReason.Reason material, ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer)
         {
             // Exclude helicopter transfer reasons from path finding exclusions
-            if (TransferManagerModes.IsHelicopterReason(material.ToReason()))
+            if (m_bIsHelicopterReason)
             {
                 return false;
             }
@@ -198,7 +200,7 @@ namespace TransferManagerCE.CustomManager
             return result;
         }
 
-        private bool DistanceCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, TransferReason material)
+        private bool DistanceCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
             if (!m_bDistanceRestrictionsSupported)
             {
@@ -240,10 +242,16 @@ namespace TransferManagerCE.CustomManager
             return true;
         }
 
-        private bool BuildingCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, TransferReason material)
+        private bool BuildingCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
             // Don't limit import/export, that gets restricted elsewhere.
             if (incomingOffer.IsOutside() || outgoingOffer.IsOutside())
+            {
+                return true;
+            }
+
+            // Check we can get buildings for both offers
+            if (incomingOffer.GetBuilding() == 0 || outgoingOffer.GetBuilding() == 0)
             {
                 return true;
             }
@@ -265,15 +273,15 @@ namespace TransferManagerCE.CustomManager
             return true;
         }
 
-        private bool ActivePassiveCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, TransferReason material)
+        private bool ActivePassiveCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
             // Dont allow Passive/Passive or Active/Active transfers for the following types
             // TODO: Investigate PartnerAdult, PartnerYoung
             switch (material)
             {
-                case TransferReason.Sick:
-                case TransferReason.ElderCare:
-                case TransferReason.ChildCare:
+                case CustomTransferReason.Reason.Sick:
+                case CustomTransferReason.Reason.ElderCare:
+                case CustomTransferReason.Reason.ChildCare:
                     {
                         // Allow ACTIVE/PASSIVE or ACTIVE/ACTIVE but not PASSIVE/PASSIVE as neither travels to make the match
                         return (incomingOffer.Active != outgoingOffer.Active) || (incomingOffer.Active && outgoingOffer.Active);
@@ -285,65 +293,11 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsExportRestrictionsSupported(TransferReason material)
-        {
-            switch (material)
-            {
-                case TransferReason.Oil:
-                case TransferReason.Ore:
-                case TransferReason.Logs:
-                case TransferReason.Grain:
-                case TransferReason.Goods:
-                case TransferReason.Food:
-                case TransferReason.Coal:
-                case TransferReason.Petrol:
-                case TransferReason.Lumber:
-                case TransferReason.AnimalProducts:
-                case TransferReason.Flours:
-                case TransferReason.Paper:
-                case TransferReason.PlanedTimber:
-                case TransferReason.Petroleum:
-                case TransferReason.Plastics:
-                case TransferReason.Glass:
-                case TransferReason.Metals:
-                case TransferReason.LuxuryProducts:
-                case TransferReason.Fish:
-                case TransferReason.OutgoingMail:
-                case TransferReason.UnsortedMail:
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
-        public static bool IsImportRestrictionsSupported(TransferReason material)
-        {
-            switch (material)
-            {
-                case TransferReason.Oil:
-                case TransferReason.Ore:
-                case TransferReason.Logs:
-                case TransferReason.Grain:
-                case TransferReason.Goods:
-                case TransferReason.Food:
-                case TransferReason.Coal:
-                case TransferReason.Petrol:
-                case TransferReason.Lumber:
-                case TransferReason.IncomingMail:
-                case TransferReason.SortedMail:
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
-        private ExclusionReason OutsideConnectionCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, TransferReason material)
+        private ExclusionReason OutsideConnectionCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
             if (incomingOffer.IsOutside())
             {
-                if (IsExportRestrictionsSupported(material))
+                if (m_bIsExportRestrictionsSupported)
                 {
                     if (!outgoingOffer.IsExportAllowed(material))
                     {
@@ -357,7 +311,7 @@ namespace TransferManagerCE.CustomManager
             } 
             else if (outgoingOffer.IsOutside())
             {
-                if (IsImportRestrictionsSupported(material))
+                if (m_bIsImportRestrictionsSupported)
                 {
                     if (!incomingOffer.IsImportAllowed(material))
                     {
@@ -385,7 +339,34 @@ namespace TransferManagerCE.CustomManager
         }
 
         [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private ExclusionReason WarehouseCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, TransferReason material)
+        public float OutsideModifier(CustomTransferReason.Reason material, CustomTransferOffer incoming, CustomTransferOffer outgoing)
+        {
+            if (incoming.IsOutside() && outgoing.IsOutside())
+            {
+                // Dont apply multiplier when both outside.
+            }
+            else if (incoming.IsOutside())
+            {
+                if (m_bIsExportRestrictionsSupported)
+                {
+                    // Apply building multiplier
+                    return (float)Math.Pow(incoming.GetEffectiveOutsideModifier(), 2);
+                }
+            }
+            else if (outgoing.IsOutside())
+            {
+                if (m_bIsImportRestrictionsSupported)
+                {
+                    // Apply building multiplier
+                    return (float)Math.Pow(outgoing.GetEffectiveOutsideModifier(), 2);
+                }
+            }
+
+            return 1.0f;
+        }
+
+        [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        private ExclusionReason WarehouseCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
             // Is it an inter-warehouse transfer
             if (incomingOffer.IsWarehouse() && outgoingOffer.IsWarehouse())
@@ -460,9 +441,9 @@ namespace TransferManagerCE.CustomManager
             return ExclusionReason.None;
         }
 
-        private ExclusionReason ExportVehicleLimitCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, TransferReason material)
+        private ExclusionReason ExportVehicleLimitCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
-            if (TransferManagerModes.IsWarehouseMaterial(material) && 
+            if (m_bIsWarehouseMaterial && 
                 outgoingOffer.Active && 
                 incomingOffer.IsOutside())
             {

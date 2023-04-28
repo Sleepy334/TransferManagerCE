@@ -121,7 +121,7 @@ namespace TransferManagerCE.Data
                 if (vehicle.m_flags != 0)
                 {
                     InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
-                    return VehicleTypeHelper.DescribeVehicleTarget(vehicle, target);
+                    return VehicleTypeHelper.DescribeVehicleTarget(vehicleId, vehicle, target);
                 }
             }
 

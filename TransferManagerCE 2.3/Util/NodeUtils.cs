@@ -7,7 +7,7 @@ namespace TransferManagerCE
 {
     public static class NodeUtils
     {
-        public delegate void NodeDelegate(ushort nodeID, NetNode node);
+        public delegate bool NodeDelegate(ushort nodeID, NetNode node); // Return true to continue loop
 
         public static void EnumerateNearbyNodes(Vector3 pos, float maxDistance, NodeDelegate func)
         {
@@ -30,7 +30,10 @@ namespace TransferManagerCE
                     {
                         NetNode node = NetNodes[nodeId];
 
-                        func(nodeId, node);
+                        if (!func(nodeId, node))
+                        {
+                            return;
+                        }
 
                         nodeId = node.m_nextGridNode;
 

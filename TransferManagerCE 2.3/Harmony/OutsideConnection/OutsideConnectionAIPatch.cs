@@ -3,12 +3,22 @@ using TransferManagerCE.Settings;
 
 namespace TransferManagerCE
 {
-    [HarmonyPatch(typeof(OutsideConnectionAI), "AddConnectionOffers")]
+    [HarmonyPatch]
     public static class OutsideConnectionAIPatch
     {
-        [HarmonyPrefix]
-        public static bool Prefix(ushort buildingID, ref int cargoCapacity, ref int residentCapacity, ref int touristFactor0, ref int touristFactor1, ref int touristFactor2, ref int dummyTrafficFactor)
+        private static bool s_bInAddConnectionOffers = false;
+
+        public static bool IsInAddConnectionOffers
         {
+            get { return s_bInAddConnectionOffers; }
+        }
+
+        [HarmonyPatch(typeof(OutsideConnectionAI), "AddConnectionOffers")]
+        [HarmonyPrefix]
+        public static bool AddConnectionOffersPrefix(ushort buildingID, ref int cargoCapacity, ref int residentCapacity, ref int touristFactor0, ref int touristFactor1, ref int touristFactor2, ref int dummyTrafficFactor)
+        {
+            s_bInAddConnectionOffers = true;
+
             if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
                 !DependencyUtils.IsAdvancedOutsideConnectionsRunning() &&
                 OutsideConnectionSettings.HasSettings(buildingID))
@@ -24,6 +34,13 @@ namespace TransferManagerCE
             }
 
             return true;
+        }
+
+        [HarmonyPatch(typeof(OutsideConnectionAI), "AddConnectionOffers")]
+        [HarmonyPostfix]
+        public static void AddConnectionOffersPostfix(ushort buildingID, ref int cargoCapacity, ref int residentCapacity, ref int touristFactor0, ref int touristFactor1, ref int touristFactor2, ref int dummyTrafficFactor)
+        {
+            s_bInAddConnectionOffers = false;
         }
     }
 }

@@ -11,9 +11,9 @@ namespace TransferManagerCE.CustomManager
     public class DistrictRestrictions
     {
         // Services subject to global prefer local services:
-        public static bool IsGlobalDistrictRestrictionsSupported(CustomTransferReason material)
+        public static bool IsGlobalDistrictRestrictionsSupported(CustomTransferReason.Reason material)
         {
-            switch (material.ToReason())
+            switch (material)
             {
                 case CustomTransferReason.Reason.Garbage:
                 case CustomTransferReason.Reason.Crime:
@@ -40,7 +40,7 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool CanTransferGlobalPreferLocal(CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material, TransferMode mode)
+        public static bool CanTransferGlobalPreferLocal(CustomTransferOffer offerIn, CustomTransferOffer offerOut, CustomTransferReason.Reason material, TransferMode mode)
         {
             if (SaveGameSettings.GetSettings().PreferLocalService && IsGlobalDistrictRestrictionsSupported(material))
             {
@@ -80,7 +80,7 @@ namespace TransferManagerCE.CustomManager
             return true;
         }
 
-        public static bool CanTransfer(CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material, TransferMode mode)
+        public static bool CanTransfer(CustomTransferOffer offerIn, CustomTransferOffer offerOut, CustomTransferReason.Reason material, TransferMode mode)
         {
             // Check if it is an Import/Export
             if (offerIn.IsOutside() || offerOut.IsOutside())
@@ -172,7 +172,7 @@ namespace TransferManagerCE.CustomManager
             return (bInIsValid && bOutIsValid);
         }
 
-        private static bool IsMatchAllowed(RestrictionSettings.PreferLocal restriction, CustomTransferOffer offerIn, CustomTransferOffer offerOut, TransferReason material, TransferMode mode)
+        private static bool IsMatchAllowed(RestrictionSettings.PreferLocal restriction, CustomTransferOffer offerIn, CustomTransferOffer offerOut, CustomTransferReason.Reason material, TransferMode mode)
         {
             // We only allow transfers outside district when priority climbs to this value
             const int PREFER_LOCAL_DISTRICT_THRESHOLD = 4;

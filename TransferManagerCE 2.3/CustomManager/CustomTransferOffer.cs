@@ -249,18 +249,7 @@ namespace TransferManagerCE.CustomManager
         // -------------------------------------------------------------------------------------------
         public bool IsWarehouse()
         {
-            // Exclude is set by warehouses and unfortunately in the new TaxiOverhaul mod, Taxi stands
-            if (Exclude)
-            {
-                switch (GetBuildingType())
-                {
-                    case BuildingType.Warehouse:
-                    case BuildingType.CargoFerryWarehouseHarbor:
-                        return true;
-                }
-            }
-
-            return false;
+            return Exclude;
         }
 
         // -------------------------------------------------------------------------------------------
@@ -395,7 +384,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public bool IsImportAllowed(TransferReason material)
+        public bool IsImportAllowed(CustomTransferReason.Reason material)
         {
             if (m_bImportAllowed is null)
             {
@@ -406,7 +395,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public bool IsExportAllowed(TransferReason material)
+        public bool IsExportAllowed(CustomTransferReason.Reason material)
         {
             if (m_bExportAllowed is null)
             {
@@ -417,7 +406,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public RestrictionSettings.PreferLocal GetDistrictRestriction(TransferReason material)
+        public RestrictionSettings.PreferLocal GetDistrictRestriction(CustomTransferReason.Reason material)
         {
             if (m_preferLocal == RestrictionSettings.PreferLocal.Unknown)
             {
@@ -462,7 +451,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public HashSet<DistrictData> GetAllowedDistrictList(TransferReason material)
+        public HashSet<DistrictData> GetAllowedDistrictList(CustomTransferReason.Reason material)
         {
             if (m_allowedDistricts is null)
             {
@@ -558,7 +547,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public HashSet<ushort> GetAllowedBuildingList(TransferReason material)
+        public HashSet<ushort> GetAllowedBuildingList(CustomTransferReason.Reason material)
         {
             if (m_allowedBuildings is null)
             {
@@ -648,7 +637,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public float GetDistanceRestrictionSquaredMeters(TransferReason material)
+        public float GetDistanceRestrictionSquaredMeters(CustomTransferReason.Reason material)
         {
             if (m_fDistanceRestrictionSquared is null)
             {
@@ -659,7 +648,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public float GetPriorityFactor(TransferReason material)
+        public float GetPriorityFactor(CustomTransferReason.Reason material)
         {
             if (m_priorityFactor is null)
             {
@@ -669,7 +658,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public ushort GetNearestNode(TransferReason material)
+        public ushort GetNearestNode(CustomTransferReason.Reason material)
         {
             if (m_nearestNode == ushort.MaxValue)
             {
@@ -698,7 +687,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public bool IsExportVehicleLimitOk(TransferReason material)
+        public bool IsExportVehicleLimitOk(CustomTransferReason.Reason material)
         {
             if (m_IsExportVehicleLimitOk is null)
             {
@@ -726,7 +715,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public static float PriorityModifier(CustomTransferReason material, int iPriority)
+        public static float PriorityModifier(CustomTransferReason.Reason material, int iPriority)
         {
             if (TransferManagerModes.IsScaleByPriority(material))
             {
@@ -742,7 +731,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        private bool CanUsePathingForCandidate(TransferReason material)
+        private bool CanUsePathingForCandidate(CustomTransferReason.Reason material)
         {
             if (LocalPark > 0)
             {
@@ -751,7 +740,7 @@ namespace TransferManagerCE.CustomManager
             }
 
             // Dont use path distance for helicopter transfer reasons
-            if (TransferManagerModes.IsHelicopterReason((CustomTransferReason.Reason)material))
+            if (TransferManagerModes.IsHelicopterReason(material))
             {
                 return false;
             }

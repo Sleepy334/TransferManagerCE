@@ -675,6 +675,11 @@ namespace TransferManagerCE
                         m_listIncoming.Add(new StatusDataSchool(TransferReason.Student3, eBuildingType, buildingId, 0, 0));
                         break;
                     }
+                case BuildingType.TransportStation:
+                    {
+                        m_listOutgoing.Add(new StatusTransportStation(eBuildingType, buildingId, 0, 0));
+                        break;
+                    }
             }
         }
 

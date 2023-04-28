@@ -11,11 +11,11 @@ namespace TransferManagerCE.TransferRules
         private static readonly object s_dictionaryLock = new object();
         private static bool s_initNeeded = true;
 
-        private static HashSet<TransferReason> s_districtReasons = new HashSet<TransferReason>();
-        private static HashSet<TransferReason> s_buildingReasons = new HashSet<TransferReason>();
-        private static HashSet<TransferReason> s_distanceReasons = new HashSet<TransferReason>();
+        private static HashSet<CustomTransferReason.Reason> s_districtReasons = new HashSet<CustomTransferReason.Reason>();
+        private static HashSet<CustomTransferReason.Reason> s_buildingReasons = new HashSet<CustomTransferReason.Reason>();
+        private static HashSet<CustomTransferReason.Reason> s_distanceReasons = new HashSet<CustomTransferReason.Reason>();
 
-        public static bool IsDistrictRestrictionsSupported(TransferReason material)
+        public static bool IsDistrictRestrictionsSupported(CustomTransferReason.Reason material)
         {
             if (s_initNeeded)
             {
@@ -28,7 +28,7 @@ namespace TransferManagerCE.TransferRules
             return s_districtReasons.Contains(material);
         }
 
-        public static bool IsBuildingRestrictionsSupported(TransferReason material)
+        public static bool IsBuildingRestrictionsSupported(CustomTransferReason.Reason material)
         {
             if (s_initNeeded)
             {
@@ -41,7 +41,7 @@ namespace TransferManagerCE.TransferRules
             return s_buildingReasons.Contains(material);
         }
 
-        public static bool IsDistanceRestrictionsSupported(TransferReason material)
+        public static bool IsDistanceRestrictionsSupported(CustomTransferReason.Reason material)
         {
             if (s_initNeeded)
             {
@@ -54,7 +54,7 @@ namespace TransferManagerCE.TransferRules
             return s_distanceReasons.Contains(material);
         }
 
-        public static int GetRestrictionId(BuildingType eBuildingType, TransferReason material)
+        public static int GetRestrictionId(BuildingType eBuildingType, CustomTransferReason.Reason material)
         {
             lock (s_dictionaryLock)
             {
@@ -74,7 +74,7 @@ namespace TransferManagerCE.TransferRules
             }
         }
 
-        public static bool HasIncomingDistrictRules(BuildingType eBuildingType, TransferReason material)
+        public static bool HasIncomingDistrictRules(BuildingType eBuildingType, CustomTransferReason.Reason material)
         {
             lock (s_dictionaryLock)
             {
@@ -95,7 +95,7 @@ namespace TransferManagerCE.TransferRules
             }
         }
 
-        public static bool HasOutgoingDistrictRules(BuildingType eBuildingType, TransferReason material)
+        public static bool HasOutgoingDistrictRules(BuildingType eBuildingType, CustomTransferReason.Reason material)
         {
             lock (s_dictionaryLock)
             {
@@ -116,7 +116,7 @@ namespace TransferManagerCE.TransferRules
             }
         }
 
-        public static bool HasDistanceRules(BuildingType eBuildingType, TransferReason material)
+        public static bool HasDistanceRules(BuildingType eBuildingType, CustomTransferReason.Reason material)
         {
             lock (s_dictionaryLock)
             {
@@ -171,8 +171,8 @@ namespace TransferManagerCE.TransferRules
                                 // Warehouses, just return the actual material they store
                                 List<ReasonRule> rules = new List<ReasonRule>();
 
-                                CustomTransferReason actualTransferReason = GetWarehouseTransferReason(buildingId);
-                                if (actualTransferReason is not null)
+                                CustomTransferReason.Reason actualTransferReason = GetWarehouseTransferReason(buildingId);
+                                if (actualTransferReason != CustomTransferReason.Reason.None)
                                 {
                                     foreach (ReasonRule rule in buildingRules)
                                     {
@@ -191,8 +191,8 @@ namespace TransferManagerCE.TransferRules
                                 // Warehouses, just return the actual material they store
                                 List<ReasonRule> rules = new List<ReasonRule>();
 
-                                TransferReason material = GetCargoFerryWarehouseActualTransferReason(buildingId);
-                                if (material != TransferReason.None)
+                                CustomTransferReason.Reason material = GetCargoFerryWarehouseActualTransferReason(buildingId);
+                                if (material != CustomTransferReason.Reason.None)
                                 {
                                     foreach (ReasonRule rule in buildingRules)
                                     {
@@ -300,7 +300,7 @@ namespace TransferManagerCE.TransferRules
                         // Districts
                         if (rule.m_incomingDistrict || rule.m_outgoingDistrict)
                         {
-                            foreach (TransferReason material in rule.m_reasons)
+                            foreach (CustomTransferReason.Reason material in rule.m_reasons)
                             {
                                 s_districtReasons.Add(material);
                             }
@@ -309,7 +309,7 @@ namespace TransferManagerCE.TransferRules
                         // Buildings
                         if (rule.m_incomingBuilding || rule.m_outgoingBuilding)
                         {
-                            foreach (TransferReason material in rule.m_reasons)
+                            foreach (CustomTransferReason.Reason material in rule.m_reasons)
                             {
                                 s_buildingReasons.Add(material);
                             }
@@ -318,7 +318,7 @@ namespace TransferManagerCE.TransferRules
                         // Distance
                         if (rule.m_distance)
                         {
-                            foreach (TransferReason material in rule.m_reasons)
+                            foreach (CustomTransferReason.Reason material in rule.m_reasons)
                             {
                                 s_distanceReasons.Add(material);
                             }
@@ -341,7 +341,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonStudent1"); //"Students";
-                rule.AddReason(TransferReason.Student1);
+                rule.AddReason(CustomTransferReason.Reason.StudentES);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -357,7 +357,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonStudent2"); //"Students";
-                rule.AddReason(TransferReason.Student2);
+                rule.AddReason(CustomTransferReason.Reason.StudentHS);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -373,7 +373,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonStudent3"); //"Students";
-                rule.AddReason(TransferReason.Student3);
+                rule.AddReason(CustomTransferReason.Reason.StudentUni);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -390,7 +390,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonCrime"); //"Crime";
-                rule.AddReason(TransferReason.Crime);
+                rule.AddReason(CustomTransferReason.Reason.Crime);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 list.Add(rule);
@@ -399,7 +399,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonGarbage"); //"Garbage";
-                rule.AddReason(TransferReason.Garbage);
+                rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 list.Add(rule);
@@ -418,7 +418,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonDead"); //"Collecting Dead";
-                rule.AddReason(TransferReason.Dead);
+                rule.AddReason(CustomTransferReason.Reason.Dead);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -429,7 +429,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonDeadMove"); //"Moving Dead";
-                rule.AddReason(TransferReason.DeadMove);
+                rule.AddReason(CustomTransferReason.Reason.DeadMove);
                 rule.m_incomingDistrict = true;
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -450,7 +450,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonSick"); //"Collecting Sick";
-                rule.AddReason(TransferReason.Sick);
+                rule.AddReason(CustomTransferReason.Reason.Sick);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -461,7 +461,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonSickMove"); //"Moving Sick";
-                rule.AddReason(TransferReason.SickMove);
+                rule.AddReason(CustomTransferReason.Reason.SickMove);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 list.Add(rule);
@@ -478,7 +478,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonSick"); //"Collecting Sick";
-                rule.AddReason(TransferReason.Sick2);
+                rule.AddReason(CustomTransferReason.Reason.Sick2);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -489,7 +489,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonSickMove"); //"Moving Sick";
-                rule.AddReason(TransferReason.SickMove);
+                rule.AddReason(CustomTransferReason.Reason.SickMove);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -508,7 +508,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonCrime"); //"Crime";
-                rule.AddReason(TransferReason.Crime);
+                rule.AddReason(CustomTransferReason.Reason.Crime);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -520,7 +520,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonCrimeMove"); //"Moving Criminals";
-                rule.AddReason(TransferReason.CriminalMove);
+                rule.AddReason(CustomTransferReason.Reason.CriminalMove);
                 rule.m_incomingDistrict = true;
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -540,7 +540,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonCrime"); //"Crime";
-                rule.AddReason((TransferReason) CustomTransferReason.Reason.Crime2);
+                rule.AddReason(CustomTransferReason.Reason.Crime2);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -552,7 +552,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonCrimeMove"); //"Moving Criminals";
-                rule.AddReason(TransferReason.CriminalMove);
+                rule.AddReason(CustomTransferReason.Reason.CriminalMove);
                 rule.m_incomingDistrict = true;
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -572,7 +572,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonCrimeMove"); //"Moving Criminals";
-                rule.AddReason(TransferReason.CriminalMove);
+                rule.AddReason(CustomTransferReason.Reason.CriminalMove);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -590,7 +590,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonCash"); //"Moving Criminals";
-                rule.AddReason(TransferReason.Cash);
+                rule.AddReason(CustomTransferReason.Reason.Cash);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -608,7 +608,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonFire"); //"Fire";
-                rule.AddReason(TransferReason.Fire);
+                rule.AddReason(CustomTransferReason.Reason.Fire);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -625,7 +625,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonFire2"); //"Fire Helicopter";
-                rule.AddReason(TransferReason.Fire2);
+                rule.AddReason(CustomTransferReason.Reason.Fire2);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -635,7 +635,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonForestFire"); //"Forest Fire";
-                rule.AddReason(TransferReason.ForestFire);
+                rule.AddReason(CustomTransferReason.Reason.ForestFire);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -651,7 +651,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonGarbage"); //"Garbage Collection";
-                rule.AddReason(TransferReason.Garbage);
+                rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Active
                 rule.m_distance = true;
@@ -661,7 +661,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonGarbageMove"); //"Garbage Move";
-                rule.AddReason(TransferReason.GarbageMove);
+                rule.AddReason(CustomTransferReason.Reason.GarbageMove);
                 rule.m_incomingDistrict = true; // Passive
                 rule.m_outgoingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Passive
@@ -673,7 +673,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 2;
                 rule.m_name = Localization.Get("reasonGarbageTransfer"); //"Garbage Transfer";
-                rule.AddReason(TransferReason.GarbageTransfer);
+                rule.AddReason(CustomTransferReason.Reason.GarbageTransfer);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true; // Active
                 rule.m_distance = true;
@@ -690,7 +690,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonGarbage"); //"Garbage Collection";
-                rule.AddReason(TransferReason.Garbage);
+                rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Active
                 rule.m_distance = true;
@@ -700,7 +700,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonGarbageMove"); //"Garbage Move";
-                rule.AddReason(TransferReason.GarbageMove);
+                rule.AddReason(CustomTransferReason.Reason.GarbageMove);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true; // Active
                 list.Add(rule);
@@ -716,7 +716,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonGarbage"); //"Garbage Collection";
-                rule.AddReason(TransferReason.Garbage);
+                rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -726,7 +726,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonGarbageMove"); //"Garbage Move";
-                rule.AddReason(TransferReason.GarbageMove);
+                rule.AddReason(CustomTransferReason.Reason.GarbageMove);
                 rule.m_incomingDistrict = true; // Passive from land fills
                 rule.m_incomingBuilding = true;
                 list.Add(rule);
@@ -735,9 +735,9 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 2;
                 rule.m_name = Localization.Get("reasonMaterialOut"); //"Outgoing Material";
-                rule.AddReason(TransferReason.Coal);
-                rule.AddReason(TransferReason.Lumber);
-                rule.AddReason(TransferReason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Lumber);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
                 rule.m_outgoingDistrict = true; // Active
                 rule.m_outgoingBuilding = true; // Active
                 rule.m_distance = true;
@@ -754,7 +754,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonGarbage"); //"Garbage Collection";
-                rule.AddReason(TransferReason.Garbage);
+                rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -764,7 +764,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonGarbageMove"); //"Garbage Move";
-                rule.AddReason(TransferReason.GarbageMove);
+                rule.AddReason(CustomTransferReason.Reason.GarbageMove);
                 rule.m_incomingDistrict = true; // Passive from land fills
                 rule.m_outgoingDistrict = true; // When in "Empty" mode
                 rule.m_incomingBuilding = true; // Passive from land fills
@@ -776,7 +776,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 2;
                 rule.m_name = Localization.Get("reasonGarbageTransfer"); //"Garbage Transfer";
-                rule.AddReason(TransferReason.GarbageTransfer);
+                rule.AddReason(CustomTransferReason.Reason.GarbageTransfer);
                 rule.m_outgoingDistrict = true; // Passive
                 rule.m_outgoingBuilding = true; // Passive
                 list.Add(rule);
@@ -792,7 +792,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonGarbageTransfer"); //"Garbage Transfer";
-                rule.AddReason(TransferReason.GarbageTransfer);
+                rule.AddReason(CustomTransferReason.Reason.GarbageTransfer);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -802,9 +802,9 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonMaterialOut"); //"Outgoing Material";
-                rule.AddReason(TransferReason.Coal);
-                rule.AddReason(TransferReason.Lumber);
-                rule.AddReason(TransferReason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Lumber);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -821,7 +821,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonMail"); //"Mail";
-                rule.AddReason(TransferReason.Mail);
+                rule.AddReason(CustomTransferReason.Reason.Mail);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Active
                 rule.m_distance = true;
@@ -831,7 +831,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonUnsortedMail"); //"Unsorted Mail";
-                rule.AddReason(TransferReason.UnsortedMail);
+                rule.AddReason(CustomTransferReason.Reason.UnsortedMail);
                 rule.m_outgoingDistrict = true; // Active
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -842,7 +842,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 2;
                 rule.m_name = Localization.Get("reasonSortedMail"); //"Sorted Mail";
-                rule.AddReason(TransferReason.SortedMail);
+                rule.AddReason(CustomTransferReason.Reason.SortedMail);
                 rule.m_incomingDistrict = true; // Passive
                 rule.m_incomingBuilding = true; // Passive
                 rule.m_import = true;
@@ -858,8 +858,8 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonUnsortedMail"); //"Unsorted Mail";
-                rule.AddReason(TransferReason.UnsortedMail);
-                rule.AddReason(TransferReason.OutgoingMail);
+                rule.AddReason(CustomTransferReason.Reason.UnsortedMail);
+                rule.AddReason(CustomTransferReason.Reason.OutgoingMail);
                 rule.m_incomingDistrict = true; // Passive
                 rule.m_incomingBuilding = true; // Passive
                 rule.m_import = true;
@@ -870,8 +870,8 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonSortedMail"); //"Sorted Mail";
-                rule.AddReason(TransferReason.SortedMail);
-                rule.AddReason(TransferReason.IncomingMail);
+                rule.AddReason(CustomTransferReason.Reason.SortedMail);
+                rule.AddReason(CustomTransferReason.Reason.IncomingMail);
                 rule.m_outgoingDistrict = true; // Active
                 rule.m_outgoingBuilding = true; // Active
                 rule.m_distance = true;
@@ -888,7 +888,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonParkMaintenance"); //"Park Maintenance";
-                rule.AddReason(TransferReason.ParkMaintenance);
+                rule.AddReason(CustomTransferReason.Reason.ParkMaintenance);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -903,7 +903,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonRoadMaintenance"); //"Road Maintenance";
-                rule.AddReason(TransferReason.RoadMaintenance);
+                rule.AddReason(CustomTransferReason.Reason.RoadMaintenance);
                 rule.m_outgoingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -917,7 +917,16 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonTaxi"); //"Taxi";
-                rule.AddReason(TransferReason.Taxi);
+                rule.AddReason(CustomTransferReason.Reason.Taxi);
+                rule.m_outgoingDistrict = true;
+                rule.m_distance = true;
+                list.Add(rule);
+            }
+            {
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 1;
+                rule.m_name = Localization.Get("reasonTaxiMove"); //"TaxiMove";
+                rule.AddReason(CustomTransferReason.Reason.TaxiMove);
                 rule.m_outgoingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -930,8 +939,8 @@ namespace TransferManagerCE.TransferRules
             {
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
-                rule.m_name = Localization.Get("reasonTaxi"); //"Taxi";
-                rule.AddReason(TransferReason.Taxi);
+                rule.m_name = Localization.Get("reasonTaxiMove"); //"TaxiMove";
+                rule.AddReason(CustomTransferReason.Reason.TaxiMove);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -948,7 +957,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonCollapsed"); //"Trucks";
-                rule.AddReason(TransferReason.Collapsed);
+                rule.AddReason(CustomTransferReason.Reason.Collapsed);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -959,7 +968,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonCollapsed2"); //"Helicopters";
-                rule.AddReason(TransferReason.Collapsed2);
+                rule.AddReason(CustomTransferReason.Reason.Collapsed2);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -977,7 +986,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonSnow");
-                rule.AddReason(TransferReason.Snow);
+                rule.AddReason(CustomTransferReason.Reason.Snow);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -987,7 +996,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonSnowMove");
-                rule.AddReason(TransferReason.SnowMove);
+                rule.AddReason(CustomTransferReason.Reason.SnowMove);
                 rule.m_incomingDistrict = true;
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -1007,7 +1016,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_import = true;
@@ -1023,7 +1032,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_import = true;
@@ -1039,7 +1048,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_import = true;
@@ -1055,7 +1064,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Goods);
+                rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_import = true;
@@ -1072,7 +1081,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonFloodWater");
-                rule.AddReason(TransferReason.FloodWater);
+                rule.AddReason(CustomTransferReason.Reason.FloodWater);
                 rule.m_incomingDistrict = true;
                 rule.m_distance = true;
                 list.Add(rule);
@@ -1093,7 +1102,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial") + " 1";// "Incoming Goods";
-                rule.AddReason(TransferReason.Goods);
+                rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_import = true;
@@ -1103,7 +1112,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonIncomingMaterial") + " 2";// "Incoming LuxuryProducts";
-                rule.AddReason(TransferReason.LuxuryProducts);
+                rule.AddReason(CustomTransferReason.Reason.LuxuryProducts);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 list.Add(rule);
@@ -1119,7 +1128,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonCrime"); //"Crime";
-                rule.AddReason(TransferReason.Crime);
+                rule.AddReason(CustomTransferReason.Reason.Crime);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 list.Add(rule);
@@ -1128,7 +1137,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonGarbage"); //"Garbage";
-                rule.AddReason(TransferReason.Garbage);
+                rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 list.Add(rule);
@@ -1144,10 +1153,10 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonRawMaterial"); //"Raw Material";
-                rule.AddReason(TransferReason.Oil);
-                rule.AddReason(TransferReason.Grain);
-                rule.AddReason(TransferReason.Ore);
-                rule.AddReason(TransferReason.Logs);
+                rule.AddReason(CustomTransferReason.Reason.Oil);
+                rule.AddReason(CustomTransferReason.Reason.Crops);
+                rule.AddReason(CustomTransferReason.Reason.Ore);
+                rule.AddReason(CustomTransferReason.Reason.ForestProducts);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -1166,10 +1175,10 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Oil);
-                rule.AddReason(TransferReason.Grain);
-                rule.AddReason(TransferReason.Ore);
-                rule.AddReason(TransferReason.Logs);
+                rule.AddReason(CustomTransferReason.Reason.Oil);
+                rule.AddReason(CustomTransferReason.Reason.Crops);
+                rule.AddReason(CustomTransferReason.Reason.Ore);
+                rule.AddReason(CustomTransferReason.Reason.ForestProducts);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_import = true;
@@ -1182,20 +1191,20 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Outgoing Material";
 
                 // DLC intermediate materials
-                rule.AddReason(TransferReason.PlanedTimber);
-                rule.AddReason(TransferReason.Paper);
-                rule.AddReason(TransferReason.Glass);
-                rule.AddReason(TransferReason.Metals);
-                rule.AddReason(TransferReason.Petroleum);
-                rule.AddReason(TransferReason.Plastics);
-                rule.AddReason(TransferReason.AnimalProducts);
-                rule.AddReason(TransferReason.Flours);
+                rule.AddReason(CustomTransferReason.Reason.PlanedTimber);
+                rule.AddReason(CustomTransferReason.Reason.Paper);
+                rule.AddReason(CustomTransferReason.Reason.Glass);
+                rule.AddReason(CustomTransferReason.Reason.Metals);
+                rule.AddReason(CustomTransferReason.Reason.Petroleum);
+                rule.AddReason(CustomTransferReason.Reason.Plastics);
+                rule.AddReason(CustomTransferReason.Reason.AnimalProducts);
+                rule.AddReason(CustomTransferReason.Reason.Flours);
 
                 // We now also add generic intermediate materials due to Industries Remastered assets
-                rule.AddReason(TransferReason.Lumber);
-                rule.AddReason(TransferReason.Petrol);
-                rule.AddReason(TransferReason.Food);
-                rule.AddReason(TransferReason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Lumber);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Food);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
 
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
@@ -1217,15 +1226,15 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
 
                 // DLC intermediate materials
-                rule.AddReason(TransferReason.Grain);
-                rule.AddReason(TransferReason.PlanedTimber);
-                rule.AddReason(TransferReason.Paper);
-                rule.AddReason(TransferReason.Glass);
-                rule.AddReason(TransferReason.Metals);
-                rule.AddReason(TransferReason.Petroleum);
-                rule.AddReason(TransferReason.Plastics);
-                rule.AddReason(TransferReason.AnimalProducts);
-                rule.AddReason(TransferReason.Flours);
+                rule.AddReason(CustomTransferReason.Reason.Crops);
+                rule.AddReason(CustomTransferReason.Reason.PlanedTimber);
+                rule.AddReason(CustomTransferReason.Reason.Paper);
+                rule.AddReason(CustomTransferReason.Reason.Glass);
+                rule.AddReason(CustomTransferReason.Reason.Metals);
+                rule.AddReason(CustomTransferReason.Reason.Petroleum);
+                rule.AddReason(CustomTransferReason.Reason.Plastics);
+                rule.AddReason(CustomTransferReason.Reason.AnimalProducts);
+                rule.AddReason(CustomTransferReason.Reason.Flours);
 
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -1238,7 +1247,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Outgoing Material";
 
                 // DLC final materials
-                rule.AddReason(TransferReason.LuxuryProducts);
+                rule.AddReason(CustomTransferReason.Reason.LuxuryProducts);
 
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
@@ -1258,10 +1267,10 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Oil);
-                rule.AddReason(TransferReason.Grain);
-                rule.AddReason(TransferReason.Ore);
-                rule.AddReason(TransferReason.Logs);
+                rule.AddReason(CustomTransferReason.Reason.Oil);
+                rule.AddReason(CustomTransferReason.Reason.Crops);
+                rule.AddReason(CustomTransferReason.Reason.Ore);
+                rule.AddReason(CustomTransferReason.Reason.ForestProducts);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -1280,10 +1289,10 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Oil);
-                rule.AddReason(TransferReason.Grain);
-                rule.AddReason(TransferReason.Ore);
-                rule.AddReason(TransferReason.Logs);
+                rule.AddReason(CustomTransferReason.Reason.Oil);
+                rule.AddReason(CustomTransferReason.Reason.Crops);
+                rule.AddReason(CustomTransferReason.Reason.Ore);
+                rule.AddReason(CustomTransferReason.Reason.ForestProducts);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -1295,10 +1304,10 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Outgoing Material";
-                rule.AddReason(TransferReason.Coal);
-                rule.AddReason(TransferReason.Lumber);
-                rule.AddReason(TransferReason.Petrol);
-                rule.AddReason(TransferReason.Food);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Lumber);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Food);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -1319,10 +1328,10 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonIncomingMaterial") + " 1";
 
                 // Generic production materials
-                rule.AddReason(TransferReason.Lumber);
-                rule.AddReason(TransferReason.Petrol);
-                rule.AddReason(TransferReason.Food);
-                rule.AddReason(TransferReason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Lumber);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Food);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
 
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -1337,14 +1346,14 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonIncomingMaterial") + " 2";
 
                 // DLC production materials
-                rule.AddReason(TransferReason.PlanedTimber);
-                rule.AddReason(TransferReason.Paper);
-                rule.AddReason(TransferReason.Glass);
-                rule.AddReason(TransferReason.Metals);
-                rule.AddReason(TransferReason.Petroleum);
-                rule.AddReason(TransferReason.Plastics);
-                rule.AddReason(TransferReason.AnimalProducts);
-                rule.AddReason(TransferReason.Flours);
+                rule.AddReason(CustomTransferReason.Reason.PlanedTimber);
+                rule.AddReason(CustomTransferReason.Reason.Paper);
+                rule.AddReason(CustomTransferReason.Reason.Glass);
+                rule.AddReason(CustomTransferReason.Reason.Metals);
+                rule.AddReason(CustomTransferReason.Reason.Petroleum);
+                rule.AddReason(CustomTransferReason.Reason.Plastics);
+                rule.AddReason(CustomTransferReason.Reason.AnimalProducts);
+                rule.AddReason(CustomTransferReason.Reason.Flours);
 
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -1356,7 +1365,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonOutgoingMaterial");
-                rule.AddReason(TransferReason.Goods);
+                rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -1375,7 +1384,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Outgoing Material";
-                rule.AddReason(TransferReason.Fish);
+                rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -1394,7 +1403,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Outgoing Material";
-                rule.AddReason(TransferReason.Fish);
+                rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -1411,7 +1420,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Fish);
+                rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -1422,7 +1431,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonOutgoingMaterial"); //"Outgoing Material";
-                rule.AddReason(TransferReason.Goods);
+                rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
                 rule.m_distance = true;
@@ -1439,7 +1448,7 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonIncomingMaterial"); //"Incoming Material";
-                rule.AddReason(TransferReason.Fish);
+                rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_distance = true;
@@ -1458,16 +1467,16 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonWarehouse"); //"Storage";
-                rule.AddReason(TransferReason.PlanedTimber);
-                rule.AddReason(TransferReason.Paper);
-                rule.AddReason(TransferReason.Glass);
-                rule.AddReason(TransferReason.Metals);
-                rule.AddReason(TransferReason.Petroleum);
-                rule.AddReason(TransferReason.Plastics);
-                rule.AddReason(TransferReason.AnimalProducts);
-                rule.AddReason(TransferReason.Flours);
-                rule.AddReason(TransferReason.LuxuryProducts);
-                rule.AddReason(TransferReason.Fish);
+                rule.AddReason(CustomTransferReason.Reason.PlanedTimber);
+                rule.AddReason(CustomTransferReason.Reason.Paper);
+                rule.AddReason(CustomTransferReason.Reason.Glass);
+                rule.AddReason(CustomTransferReason.Reason.Metals);
+                rule.AddReason(CustomTransferReason.Reason.Petroleum);
+                rule.AddReason(CustomTransferReason.Reason.Plastics);
+                rule.AddReason(CustomTransferReason.Reason.AnimalProducts);
+                rule.AddReason(CustomTransferReason.Reason.Flours);
+                rule.AddReason(CustomTransferReason.Reason.LuxuryProducts);
+                rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_incomingDistrict = true;
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -1481,15 +1490,15 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonWarehouse"); //"Storage";
-                rule.AddReason(TransferReason.Oil);
-                rule.AddReason(TransferReason.Ore);
-                rule.AddReason(TransferReason.Logs);
-                rule.AddReason(TransferReason.Grain);
-                rule.AddReason(TransferReason.Coal);
-                rule.AddReason(TransferReason.Lumber);
-                rule.AddReason(TransferReason.Petrol);
-                rule.AddReason(TransferReason.Food);
-                rule.AddReason(TransferReason.Goods);
+                rule.AddReason(CustomTransferReason.Reason.Oil);
+                rule.AddReason(CustomTransferReason.Reason.Ore);
+                rule.AddReason(CustomTransferReason.Reason.ForestProducts);
+                rule.AddReason(CustomTransferReason.Reason.Crops);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Lumber);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Food);
+                rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_incomingDistrict = true;
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
@@ -1511,30 +1520,25 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
                 rule.m_name = Localization.Get("reasonGoods"); //"Goods";
-                rule.AddReason(TransferReason.Oil);
-                rule.AddReason(TransferReason.Ore);
-                rule.AddReason(TransferReason.Logs);
-                rule.AddReason(TransferReason.Grain);
-                rule.AddReason(TransferReason.Goods);
-                rule.AddReason(TransferReason.Oil);
-                rule.AddReason(TransferReason.Ore);
-                rule.AddReason(TransferReason.Logs);
-                rule.AddReason(TransferReason.Grain);
-                rule.AddReason(TransferReason.Goods);
-                rule.AddReason(TransferReason.Coal);
-                rule.AddReason(TransferReason.Lumber);
-                rule.AddReason(TransferReason.Petrol);
-                rule.AddReason(TransferReason.Food);
-                rule.AddReason(TransferReason.PlanedTimber);
-                rule.AddReason(TransferReason.Paper);
-                rule.AddReason(TransferReason.Glass);
-                rule.AddReason(TransferReason.Metals);
-                rule.AddReason(TransferReason.Petroleum);
-                rule.AddReason(TransferReason.Plastics);
-                rule.AddReason(TransferReason.AnimalProducts);
-                rule.AddReason(TransferReason.Flours);
-                rule.AddReason(TransferReason.LuxuryProducts);
-                rule.AddReason(TransferReason.Fish);
+                rule.AddReason(CustomTransferReason.Reason.Oil);
+                rule.AddReason(CustomTransferReason.Reason.Ore);
+                rule.AddReason(CustomTransferReason.Reason.ForestProducts);
+                rule.AddReason(CustomTransferReason.Reason.Crops);
+                rule.AddReason(CustomTransferReason.Reason.Goods);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Lumber);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Food);
+                rule.AddReason(CustomTransferReason.Reason.PlanedTimber);
+                rule.AddReason(CustomTransferReason.Reason.Paper);
+                rule.AddReason(CustomTransferReason.Reason.Glass);
+                rule.AddReason(CustomTransferReason.Reason.Metals);
+                rule.AddReason(CustomTransferReason.Reason.Petroleum);
+                rule.AddReason(CustomTransferReason.Reason.Plastics);
+                rule.AddReason(CustomTransferReason.Reason.AnimalProducts);
+                rule.AddReason(CustomTransferReason.Reason.Flours);
+                rule.AddReason(CustomTransferReason.Reason.LuxuryProducts);
+                rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_import = true;
                 rule.m_export = true;
                 list.Add(rule);
@@ -1543,10 +1547,10 @@ namespace TransferManagerCE.TransferRules
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonMail"); //"Mail";
-                rule.AddReason(TransferReason.SortedMail);
-                rule.AddReason(TransferReason.IncomingMail);
-                rule.AddReason(TransferReason.UnsortedMail);
-                rule.AddReason(TransferReason.OutgoingMail);
+                rule.AddReason(CustomTransferReason.Reason.SortedMail);
+                rule.AddReason(CustomTransferReason.Reason.IncomingMail);
+                rule.AddReason(CustomTransferReason.Reason.UnsortedMail);
+                rule.AddReason(CustomTransferReason.Reason.OutgoingMail);
                 rule.m_import = true;
                 rule.m_export = true;
                 list.Add(rule);

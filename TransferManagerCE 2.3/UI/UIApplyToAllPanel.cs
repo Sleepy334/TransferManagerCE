@@ -12,6 +12,7 @@ namespace TransferManagerCE.UI
         private UIButton? m_btnApplyToAllDistrict = null;
         private UIButton? m_btnApplyToAllPark = null;
         private UIButton? m_btnPaste = null;
+        private UIButton? m_btnClear = null;
 
         // Copy paste support
         private BuildingType m_eCopyPasteBuildingType = BuildingType.None;
@@ -43,7 +44,7 @@ namespace TransferManagerCE.UI
             m_labelApplyToAll.textScale = 0.9f;
             m_labelApplyToAll.autoSize = false;
             m_labelApplyToAll.height = 30;
-            m_labelApplyToAll.width = 400;
+            m_labelApplyToAll.width = 370;
 
             // Buttons
             m_btnApplyToAllDistrict = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnDistrict"), "", 100, 30, OnApplyToAllDistrictClicked);
@@ -53,6 +54,9 @@ namespace TransferManagerCE.UI
             // Copy/Paste
             UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, this, "CopyButtonIcon", Localization.Get("tooltipCopySettings"), TransferManagerLoader.LoadResources(), 30, 30, OnCopyClicked);
             m_btnPaste = UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, this, "PasteButtonIcon", Localization.Get("tooltipPasteSettings"), TransferManagerLoader.LoadResources(), 30, 30, OnPasteClicked);
+
+            // Clear
+            m_btnClear = UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, this, "Niet", Localization.Get("tooltipClearSettings"), atlas, 30, 30, OnClearClicked);
         }
 
         private ushort GetBuildingId()
@@ -134,6 +138,20 @@ namespace TransferManagerCE.UI
             }
         }
 
+        public void OnClearClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            ushort buildingId = GetBuildingId();
+            if (buildingId != 0)
+            {
+                BuildingSettingsStorage.ClearSettings(buildingId);
+
+                if (BuildingPanel.Instance is not null)
+                {
+                    BuildingPanel.Instance.UpdateTabs();
+                }
+            }
+        }
+
         public void UpdatePanel()
         {
             ushort buildingId = GetBuildingId();
@@ -186,6 +204,11 @@ namespace TransferManagerCE.UI
             if (m_btnPaste != null)
             {
                 m_btnPaste.isEnabled = (eMainType == m_eCopyPasteBuildingType && m_eCopyPasteSubBuildingType == eSubType);
+            }
+
+            if (m_btnClear != null)
+            {
+                m_btnClear.isEnabled = BuildingSettingsStorage.HasSettings(buildingId);
             }
         }
     }

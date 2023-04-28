@@ -108,7 +108,7 @@ namespace TransferManagerCE.CustomManager
                 manager.job = TransferJobQueue.Instance.DequeueWork();
                 if (manager.job is not null)
                 {
-                    TransferReason material = manager.job.material;
+                    CustomTransferReason.Reason material = manager.job.material;
 
                     // match offers in job
                     manager.MatchOffers(material);

@@ -27,7 +27,7 @@ namespace TransferManagerCE
             }
         }
 
-        public static ushort FindNearestNode(TransferReason material, CustomTransferOffer offer)
+        public static ushort FindNearestNode(CustomTransferReason.Reason material, CustomTransferOffer offer)
         {
             ushort uiNearestNodeId = 0;
 
@@ -111,7 +111,7 @@ namespace TransferManagerCE
             return usNode;
         }
 
-        private static ushort FindStartSegment(TransferReason material, CustomTransferOffer offer)
+        private static ushort FindStartSegment(CustomTransferReason.Reason material, CustomTransferOffer offer)
         {
             Init();
             switch (offer.m_object.Type)
@@ -140,7 +140,7 @@ namespace TransferManagerCE
                             // TryGetRandomServicePoint fails a lot, function seems buggy.
                             // Try to find all service points with capacity for this material
                             DistrictPark.PedestrianZoneTransferReason reason;
-                            if (DistrictPark.TryGetPedestrianReason(material, out reason))
+                            if (DistrictPark.TryGetPedestrianReason((TransferReason) material, out reason))
                             {
                                 List<Building> servicePoints = new List<Building>();
                                 foreach (ushort buildingId in park.m_finalServicePointList)
@@ -184,7 +184,7 @@ namespace TransferManagerCE
             return FindPathPosition(material, offer.m_object);
         }
 
-        public static ushort FindStartSegmentBuilding(ushort buildingId, TransferReason material)
+        public static ushort FindStartSegmentBuilding(ushort buildingId, CustomTransferReason.Reason material)
         {
             Init();
             Building building = Buildings.m_buffer[buildingId];
@@ -195,7 +195,7 @@ namespace TransferManagerCE
                 // Handle special cases
                 switch (material)
                 {
-                    case TransferReason.Dead:
+                    case CustomTransferReason.Reason.Dead:
                         {
                             if (building.Info.GetAI() is not null && building.Info.GetAI() is ParkBuildingAI)
                             {
@@ -221,6 +221,11 @@ namespace TransferManagerCE
                         {
                             // this segment will do
                             return building.m_accessSegment;
+                        }
+                        else
+                        {
+                            // The access segment does not support requested vehicle type.
+                            RoadAccessData.AddInstance(new InstanceID { Building = buildingId, });
                         }
                     } 
                 }
@@ -269,7 +274,7 @@ namespace TransferManagerCE
             return position;
         }
 
-        private static ushort FindPathPosition(TransferReason material, InstanceID instance)
+        private static ushort FindPathPosition(CustomTransferReason.Reason material, InstanceID instance)
         {
             // Default method, get position then find nearest segment.
             Vector3 position = GetSidewalkPosition(instance);

@@ -330,7 +330,7 @@ namespace TransferManagerCE
             return iWorkerCount;
         }
 
-        public static void CheckRoadAccess(TransferReason material, TransferOffer offer)
+        public static void CheckRoadAccess(CustomTransferReason.Reason material, TransferOffer offer)
         {
             // Update access segment if using path distance but do it in simulation thread so we don't break anything
             if (offer.Building != 0 && PathDistanceTypes.GetDistanceAlgorithm(material) != PathDistanceTypes.PathDistanceAlgorithm.LineOfSight)

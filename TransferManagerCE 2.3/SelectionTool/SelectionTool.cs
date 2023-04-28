@@ -5,11 +5,12 @@ using ColossalFramework;
 using ColossalFramework.Math;
 using ColossalFramework.UI;
 using TransferManagerCE.Common;
-using TransferManagerCE.CustomManager;
 using TransferManagerCE.Settings;
 using UnifiedUI.Helpers;
 using UnityEngine;
+using static RenderManager;
 using static TransferManagerCE.PathQueue;
+using static TransferManagerCE.Settings.ModSettings;
 
 namespace TransferManagerCE
 {
@@ -23,13 +24,17 @@ namespace TransferManagerCE
         }
         
         public static SelectionTool? Instance = null;
+        public static Color s_accessSegmentColor = new Color32(150, 150, 150, 255);
+
         public SelectionToolMode m_mode = SelectionToolMode.Normal;
+        private int m_iTooltipBuildingRestrictionCount = -1;
 
         private static bool s_bLoadingTool = false;
         private UIComponent? m_button = null;
         private Color[]? m_color = null;
         private bool m_processedClick = false;
         private HighlightBuildings m_highlightBuildings = new HighlightBuildings();
+        private Vector3 m_mousePosition = Vector3.zero;
 
         public static bool HasUnifiedUIButtonBeenAdded()
         {
@@ -107,6 +112,34 @@ namespace TransferManagerCE
         public void SetMode(SelectionToolMode mode)
         {
             m_mode = mode;
+            m_iTooltipBuildingRestrictionCount = 0;
+
+            if (m_mode != SelectionToolMode.Normal)
+            {
+                ushort buildingId = BuildingPanel.Instance.GetBuildingId();
+                if (buildingId != 0 && buildingId != m_hoverInstance.Building)
+                {
+                    int restrictionId = BuildingPanel.Instance.GetRestrictionId();
+                    if (restrictionId != -1)
+                    {
+                        BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(buildingId);
+                        RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(restrictionId);
+
+                        // Get correct array
+                        HashSet<ushort> allowedBuildings;
+                        if (m_mode == SelectionToolMode.BuildingRestrictionIncoming)
+                        {
+                            allowedBuildings = restrictions.GetIncomingBuildingRestrictionsCopy();
+                        }
+                        else
+                        {
+                            allowedBuildings = restrictions.GetOutgoingBuildingRestrictionsCopy();
+                        }
+
+                        m_iTooltipBuildingRestrictionCount = allowedBuildings.Count;
+                    }
+                }
+            }
 
             // Update the building panel to the changed state
             if (BuildingPanel.Instance is not null && BuildingPanel.Instance.isVisible)
@@ -119,40 +152,24 @@ namespace TransferManagerCE
         {
             base.SimulationStep();
 
-            if (RayCastSegmentAndNode(out var hoveredSegment, out var hoveredNode))
+            var input = new RaycastInput(m_mouseRay, m_mouseRayLength)
             {
-                if (hoveredNode > 0)
-                {
-                    m_hoverInstance.NetNode = hoveredNode;
-                }
-            }
-        }
-
-        private static bool RayCastSegmentAndNode(out ushort netSegment, out ushort netNode)
-        {
-            if (RayCastSegmentAndNode(out var output))
-            {
-                netSegment = output.m_netSegment;
-                netNode = output.m_netNode;
-                return true;
-            }
-
-            netSegment = 0;
-            netNode = 0;
-            return false;
-        }
-
-        private static bool RayCastSegmentAndNode(out RaycastOutput output)
-        {
-            var input = new RaycastInput(Camera.main.ScreenPointToRay(Input.mousePosition), Camera.main.farClipPlane)
-            {
-                m_netService = { m_itemLayers = ItemClass.Layer.Default | ItemClass.Layer.MetroTunnels },
+                m_netService = new RaycastService(ItemClass.Service.None, ItemClass.SubService.None, ItemClass.Layer.None),
                 m_ignoreSegmentFlags = NetSegment.Flags.None,
                 m_ignoreNodeFlags = NetNode.Flags.None,
+                m_ignoreTransportFlags = TransportLine.Flags.None,
                 m_ignoreTerrain = true,
             };
 
-            return RayCast(input, out output);
+            if (RayCast(input, out RaycastOutput output))
+            {
+                if (output.m_netNode > 0)
+                {
+                    m_hoverInstance.NetNode = output.m_netNode;
+                }
+            }
+
+            m_mousePosition = output.m_hitPos;
         }
 
         public void Enable()
@@ -230,16 +247,7 @@ namespace TransferManagerCE
                         {
                             if (BuildingTypeHelper.IsOutsideConnection(oNode.m_building))
                             {
-                                RenderManager.instance.OverlayEffect.DrawCircle(
-                                    cameraInfo,
-                                    GetToolColor(false, false),
-                                    oNode.m_position,
-                                    oNode.m_bounds.size.magnitude,
-                                    oNode.m_position.y - 1f,
-                                    oNode.m_position.y + 1f,
-                                    true,
-                                    true);
-                                toolManager.m_drawCallData.m_overlayCalls++;
+                                HighlightNode(toolManager, cameraInfo, oNode, GetToolColor(false, false));
                             }
                         }
                         break;
@@ -261,44 +269,81 @@ namespace TransferManagerCE
                 Building[] BuildingBuffer = BuildingManager.instance.m_buildings.m_buffer;
 
                 ushort usSourceBuildingId = BuildingPanel.Instance.GetBuildingId();
-                Building building = BuildingBuffer[usSourceBuildingId];
-                if (building.m_flags != 0)
+                if (usSourceBuildingId != 0)
                 {
-                    // Highlight currently selected building
-                    HighlightBuilding(toolManager, BuildingBuffer, usSourceBuildingId, cameraInfo, Color.red);
-
-                    if (m_mode == SelectionToolMode.Normal)
+                    Building building = BuildingBuffer[usSourceBuildingId];
+                    if (building.m_flags != 0)
                     {
-                        // Now highlight buildings
-                        m_highlightBuildings.Highlight(toolManager, BuildingBuffer, cameraInfo);
-                    }
-                    else
-                    {
-                        // Building restriction mode.
-                        int restrictionId = BuildingPanel.Instance.GetRestrictionId();
-                        if (restrictionId != -1)
+                        // Highlight currently selected building
+                        if (BuildingSettingsStorage.HasSettings(usSourceBuildingId))
                         {
-                            BuildingSettings? settings = BuildingSettingsStorage.GetSettings(usSourceBuildingId);
-                            if (settings is not null)
-                            {
-                                RestrictionSettings? restrictions = settings.GetRestrictions(restrictionId);
-                                if (restrictions is not null)
-                                {
-                                    // Select appropriate building restrictions
-                                    HashSet<ushort> buildingRestrictions;
-                                    if (m_mode == SelectionToolMode.BuildingRestrictionIncoming)
-                                    {
-                                        buildingRestrictions = restrictions.GetIncomingBuildingRestrictionsCopy();
-                                    }
-                                    else
-                                    {
-                                        buildingRestrictions = restrictions.GetOutgoingBuildingRestrictionsCopy();
-                                    }
+                            HighlightBuilding(toolManager, BuildingBuffer, usSourceBuildingId, cameraInfo, Color.red);
+                        }
+                        else
+                        {
+                            HighlightBuilding(toolManager, BuildingBuffer, usSourceBuildingId, cameraInfo, Color.white);
+                        }
 
-                                    // Now highlight buildings
-                                    foreach (ushort buildingId in buildingRestrictions)
+                        // Highlight accessSegment as well
+                        if (building.m_accessSegment != 0)
+                        {
+                            ref NetSegment segment = ref NetManager.instance.m_segments.m_buffer[building.m_accessSegment];
+                            if (segment.m_flags != 0)
+                            {
+                                NetTool.RenderOverlay(cameraInfo, ref segment, s_accessSegmentColor, s_accessSegmentColor);
+                            }
+                        }
+#if DEBUG
+                        // Highlight net nodes
+                        int iLoopCount = 0;
+                        ushort nodeId = building.m_netNode;
+                        while (nodeId != 0)
+                        {
+                            NetNode node = NetManager.instance.m_nodes.m_buffer[nodeId];
+                            HighlightNode(toolManager, cameraInfo, node, Color.green);
+
+                            nodeId = node.m_nextBuildingNode;
+
+                            if (++iLoopCount > 32768)
+                            {
+                                CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
+                                break;
+                            }
+                        }
+#endif
+                        if (m_mode == SelectionToolMode.Normal)
+                        {
+                            // Now highlight buildings
+                            m_highlightBuildings.Highlight(toolManager, BuildingBuffer, cameraInfo);
+                        }
+                        else
+                        {
+                            // Building restriction mode.
+                            int restrictionId = BuildingPanel.Instance.GetRestrictionId();
+                            if (restrictionId != -1)
+                            {
+                                BuildingSettings? settings = BuildingSettingsStorage.GetSettings(usSourceBuildingId);
+                                if (settings is not null)
+                                {
+                                    RestrictionSettings? restrictions = settings.GetRestrictions(restrictionId);
+                                    if (restrictions is not null)
                                     {
-                                        HighlightBuilding(toolManager, BuildingBuffer, buildingId, cameraInfo, Color.green);
+                                        // Select appropriate building restrictions
+                                        HashSet<ushort> buildingRestrictions;
+                                        if (m_mode == SelectionToolMode.BuildingRestrictionIncoming)
+                                        {
+                                            buildingRestrictions = restrictions.GetIncomingBuildingRestrictionsCopy();
+                                        }
+                                        else
+                                        {
+                                            buildingRestrictions = restrictions.GetOutgoingBuildingRestrictionsCopy();
+                                        }
+
+                                        // Now highlight buildings
+                                        foreach (ushort buildingId in buildingRestrictions)
+                                        {
+                                            HighlightBuilding(toolManager, BuildingBuffer, buildingId, cameraInfo, Color.green);
+                                        }
                                     }
                                 }
                             }
@@ -372,6 +417,7 @@ namespace TransferManagerCE
                     GenerateColorArray(connectionNodes.Colors);
                     if (m_color is not null)
                     {
+                        ToolManager toolManager = Singleton<ToolManager>.instance;
                         NetNode[] Nodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
                         foreach (KeyValuePair<ushort, int> kvp in connectionNodes)
                         {
@@ -381,21 +427,26 @@ namespace TransferManagerCE
                             int iColorIndex = kvp.Value - 1;
                             if (iColorIndex >= 0 && iColorIndex < m_color.Length)
                             {
-                                RenderManager.instance.OverlayEffect.DrawCircle(
+                                HighlightNode(toolManager, cameraInfo, oNode, m_color[iColorIndex]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void HighlightNode(ToolManager toolManager, CameraInfo cameraInfo, NetNode oNode, Color color)
+        {
+            RenderManager.instance.OverlayEffect.DrawCircle(
                                             cameraInfo,
-                                            m_color[iColorIndex],
+                                            color,
                                             oNode.m_position,
                                             oNode.m_bounds.size.magnitude,
                                             oNode.m_position.y - 1f,
                                             oNode.m_position.y + 1f,
                                             true,
                                             true);
-                            }
-                        }
-                    }
-
-                }
-            }
+            toolManager.m_drawCallData.m_overlayCalls++;
         }
 
         private void GenerateColorArray(int iColors)
@@ -459,21 +510,19 @@ namespace TransferManagerCE
 
         protected override void OnToolGUI(Event e)
         {
-            if (m_mode != SelectionToolMode.Normal)
-            {
-                DrawLabel();  
-            } 
-            else if (PathDistanceTest.PATH_TESTING_ENABLED)
-            {
-#if DEBUG
-                DisplayPathDistanceInformation();
-#endif
-            }
-
             if (m_toolController.IsInsideUI)
             {
                 base.OnToolGUI(e);
                 return;
+            }
+
+            if (PathDistanceTest.PATH_TESTING_ENABLED)
+            {
+                DisplayPathDistanceInformation();
+            }
+            else
+            {
+                DisplayNodeInformation();
             }
 
             if (e.type == EventType.MouseDown && Input.GetMouseButtonDown(0))
@@ -491,7 +540,32 @@ namespace TransferManagerCE
             }
         }
 
-#if DEBUG
+        private void DisplayNodeInformation()
+        {
+            // If node connection information is on then display information about node under mouse.
+            if (m_hoverInstance.NetNode != 0 && ModSettings.GetSettings().ShowConnectionGraph > 0)
+            {
+                NetNode oNode = NetManager.instance.m_nodes.m_buffer[m_hoverInstance.NetNode];
+                if (oNode.m_flags != 0)
+                {
+                    var text = $"Node:{m_hoverInstance.NetNode}";
+                    text += $"\nClass:{oNode.Info.GetService()} | {oNode.Info.GetSubService()} | {oNode.Info.GetClassLevel()}";
+                    if (oNode.Info.m_intersectClass is not null)
+                    {
+                        text += $"\nIntersectClass:{oNode.Info.m_intersectClass.m_service} | {oNode.Info.m_intersectClass.m_subService} | {oNode.Info.m_intersectClass.m_level}";
+                    }
+                    text += $"\nLaneTypes:{oNode.Info.m_laneTypes}\nNetAI:{oNode.Info.GetAI()}";
+
+                    var screenPoint = MousePosition;
+                    screenPoint.y = screenPoint.y - 40f;
+                    var color = GUI.color;
+                    GUI.color = Color.white;
+                    DeveloperUI.LabelOutline(new Rect(screenPoint.x, screenPoint.y, 500f, 500f), text, Color.black, Color.cyan, GUI.skin.label, 2f);
+                    GUI.color = color;
+                }
+            }
+        }
+
         private void DisplayPathDistanceInformation()
         {
             if (m_hoverInstance.NetNode != 0)
@@ -526,7 +600,6 @@ namespace TransferManagerCE
                 }
             }  
         }
-#endif
 
         private void HandleLeftClick()
         { 
@@ -592,6 +665,9 @@ namespace TransferManagerCE
                                         {
                                             BuildingPanel.Instance.UpdateTabs();
                                         }
+
+                                        // Update count for tooltip
+                                        m_iTooltipBuildingRestrictionCount = allowedBuildings.Count;
                                     }
                                 }
                             }
@@ -623,16 +699,6 @@ namespace TransferManagerCE
             }
         }
 
-        private void DrawLabel()
-        {
-            var text = Localization.Get("btnBuildingRestrictionsSelected");
-            var screenPoint = MousePosition;
-            var color = GUI.color;
-            GUI.color = Color.white;
-            DeveloperUI.LabelOutline(new Rect(screenPoint.x, screenPoint.y, 500f, 500f), text, Color.black, Color.cyan, GUI.skin.label, 2f);
-            GUI.color = color;
-        }
-
         public static Vector2 MousePosition
         {
             get
@@ -646,6 +712,7 @@ namespace TransferManagerCE
         protected override void OnToolUpdate()
         {
             base.OnToolUpdate();
+
             if (UIView.library.Get("PauseMenu")?.isVisible == true)
             {
                 UIView.library.Hide("PauseMenu");
@@ -656,6 +723,14 @@ namespace TransferManagerCE
             {
                 ToolsModifierControl.SetTool<DefaultTool>();
             }
+
+            if (m_mode != SelectionToolMode.Normal)
+            {
+                string sText = $"{Localization.Get("btnBuildingRestrictionsSelected")}\n\n<color #00AA00>{Localization.Get("txtAllowedBuildings")}: {m_iTooltipBuildingRestrictionCount}</color>";
+                ShowToolInfo(true, sText, m_mousePosition);
+            }
+
+            
         }
 
         public override NetNode.Flags GetNodeIgnoreFlags() => NetNode.Flags.All;

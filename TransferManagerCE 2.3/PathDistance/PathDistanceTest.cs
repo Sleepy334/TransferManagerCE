@@ -10,7 +10,7 @@ namespace TransferManagerCE
     internal class PathDistanceTest
     {
 #if DEBUG
-        public const bool PATH_TESTING_ENABLED = true;
+        public const bool PATH_TESTING_ENABLED = false;
 #else
         public const bool PATH_TESTING_ENABLED = false;
 #endif
@@ -24,7 +24,7 @@ namespace TransferManagerCE
             m_pathDistance = new PathDistance();
         }
 
-        public void FindNearestNeighbour(TransferReason material, ushort buildingId, ushort[] candidates)
+        public void FindNearestNeighbour(CustomTransferReason.Reason material, ushort buildingId, ushort[] candidates)
         {
             s_nodesExamined.Clear();
 
@@ -51,7 +51,7 @@ namespace TransferManagerCE
             }
         }
 
-        private static ushort FindBuildingNode(CustomTransferReason material, ushort building, bool bActive)
+        private static ushort FindBuildingNode(CustomTransferReason.Reason material, ushort building, bool bActive)
         {
             ushort uiNearestNodeId = 0;
 

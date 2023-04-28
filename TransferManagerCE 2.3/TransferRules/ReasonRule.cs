@@ -7,7 +7,7 @@ namespace TransferManagerCE.TransferRules
     {
         public int m_id = 0;
         public string m_name = "";
-        public HashSet<TransferReason> m_reasons = new HashSet<TransferReason>();
+        public HashSet<CustomTransferReason.Reason> m_reasons = new HashSet<CustomTransferReason.Reason>();
         public bool m_incomingDistrict = false;
         public bool m_outgoingDistrict = false;
         public bool m_incomingBuilding = false;
@@ -16,7 +16,7 @@ namespace TransferManagerCE.TransferRules
         public bool m_import = false;
         public bool m_export = false;
 
-        public void AddReason(TransferReason reason)
+        public void AddReason(CustomTransferReason.Reason reason)
         {
             m_reasons.Add(reason);
         }
