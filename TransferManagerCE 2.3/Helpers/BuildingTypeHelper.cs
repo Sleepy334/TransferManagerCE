@@ -408,10 +408,6 @@ namespace TransferManagerCE
                                 {
                                     return BuildingType.SpaceElevator;
                                 }
-                            case TransportStationAI:
-                                {
-                                    return BuildingType.TransportStation;
-                                }
                             case AirportAuxBuildingAI:
                                 {
                                     return BuildingType.AirportAuxBuilding;
@@ -430,6 +426,10 @@ namespace TransferManagerCE
                                             }
                                     }
                                     break;
+                                }
+                            case TransportStationAI:
+                                {
+                                    return BuildingType.TransportStation;
                                 }
                             default:
                                 {
@@ -743,14 +743,14 @@ namespace TransferManagerCE
                 PrefabAI buildingAI = building.Info.GetAI();
                 if (buildingAI is WarehouseAI warehouseAI)
                 {
-                    TransferManager.TransferReason actualTransferReason = warehouseAI.GetActualTransferReason(buildingId, ref building);
-                    return TransferRestrictions.IsImportRestrictionsSupported(actualTransferReason);
+                    CustomTransferReason.Reason actualTransferReason = (CustomTransferReason.Reason) warehouseAI.GetActualTransferReason(buildingId, ref building);
+                    return TransferManagerModes.IsImportRestrictionsSupported(actualTransferReason);
                 } 
             }
             return false;
         }
 
-        public static TransferReason GetCargoFerryWarehouseActualTransferReason(ushort buildingId)
+        public static CustomTransferReason.Reason GetCargoFerryWarehouseActualTransferReason(ushort buildingId)
         {
             if (buildingId != 0)
             {
@@ -775,22 +775,22 @@ namespace TransferManagerCE
                     }
                     if (s_CargoFerriesGetActualTransferReasonMethod is not null)
                     {     
-                        return (TransferManager.TransferReason)s_CargoFerriesGetActualTransferReasonMethod.Invoke(buildingAI, new object[] { buildingId, building });
+                        return (CustomTransferReason.Reason) s_CargoFerriesGetActualTransferReasonMethod.Invoke(buildingAI, new object[] { buildingId, building });
                     }
                 }
             }
-            return TransferReason.None;
+            return CustomTransferReason.Reason.None;
         }
 
-        public static TransferReason GetWarehouseTransferReason(ushort buildingId)
+        public static CustomTransferReason.Reason GetWarehouseTransferReason(ushort buildingId)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
             WarehouseAI? warehouseAI = building.Info.GetAI() as WarehouseAI;
             if (warehouseAI is not null)
             {
-                return warehouseAI.GetTransferReason(buildingId, ref building);
+                return (CustomTransferReason.Reason) warehouseAI.GetTransferReason(buildingId, ref building);
             }
-            return TransferReason.None;
+            return CustomTransferReason.Reason.None;
         }
 
         public static TransferReason GetWarehouseActualTransferReason(ushort buildingId)

@@ -14,7 +14,7 @@ namespace TransferManagerCE
         private static PathConnected? s_otherServicesGraph = null;
         static readonly object s_otherServicesLock = new object();
 
-        public static bool IsConnected(TransferReason material, ushort node1, ushort node2)
+        public static bool IsConnected(CustomTransferReason.Reason material, ushort node1, ushort node2)
         {
             if (PathDistanceTypes.IsGoodsMaterial(material))
             {
@@ -48,7 +48,7 @@ namespace TransferManagerCE
                     s_goodsGraph = new PathConnected();
 
                     // Set up lane requirements
-                    s_goodsGraph.SetMaterial(TransferReason.Goods);
+                    s_goodsGraph.SetMaterial(CustomTransferReason.Reason.Goods);
                     s_goodsGraph.FloodFill();
                 }
 
@@ -65,7 +65,7 @@ namespace TransferManagerCE
                     s_pedestrianZoneServicesGraph = new PathConnected();
 
                     // Set up lane requirements
-                    s_pedestrianZoneServicesGraph.SetMaterial(TransferReason.Dead);
+                    s_pedestrianZoneServicesGraph.SetMaterial(CustomTransferReason.Reason.Dead);
                     s_pedestrianZoneServicesGraph.FloodFill();
                 }
 
@@ -82,7 +82,7 @@ namespace TransferManagerCE
                     s_otherServicesGraph = new PathConnected();
 
                     // Set up lane requirements
-                    s_otherServicesGraph.SetMaterial(TransferReason.Garbage);
+                    s_otherServicesGraph.SetMaterial(CustomTransferReason.Reason.Garbage);
                     s_otherServicesGraph.FloodFill();
                 }
 

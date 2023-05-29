@@ -28,7 +28,7 @@ namespace TransferManagerCE
             NetLanes = Singleton<NetManager>.instance.m_lanes.m_buffer;
         }
 
-        public virtual void SetMaterial(CustomTransferReason material)
+        public virtual void SetMaterial(CustomTransferReason.Reason material)
         {
             bool bGoodsMaterial = PathDistanceTypes.IsGoodsMaterial(material);
             PathDistanceTypes.GetService(bGoodsMaterial, out m_service1, out m_service2, out m_service3);
@@ -143,7 +143,15 @@ namespace TransferManagerCE
                 // as we dont want to allow Quays and parks
                 if (m_bCargoPathAllowed && service == ItemClass.Service.Beautification)
                 {
-                    return info.GetAI() is CargoPathAI;
+                    // Check it actually is a cargo path
+                    switch (info.GetAI())
+                    {
+                        case CargoPathAI:
+                        case CanalAI: // Canals have an embedded ferry path
+                            {
+                                return true;
+                            }
+                    }
                 }
                 else
                 {

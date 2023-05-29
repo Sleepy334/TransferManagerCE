@@ -389,7 +389,7 @@ namespace TransferManagerCE
                 m_tabStrip.SetTabVisible((int)TabIndex.TAB_PATHING, GetPathingIssues().Count > 0);
 
                 // Make "Transfers" tab compact if Capacity or Pathing are displayed
-                m_tabStrip.SetCompactMode((int)TabIndex.TAB_TRANSFERS, m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING) || m_tabStrip.IsTabVisible((int)TabIndex.TAB_CAPACITY));
+                m_tabStrip.SetCompactMode((int)TabIndex.TAB_TRANSFERS, m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING) && m_tabStrip.IsTabVisible((int)TabIndex.TAB_CAPACITY));
             }
         }
 
@@ -579,13 +579,13 @@ namespace TransferManagerCE
                     {
                         if (vehicle.m_flags != 0)
                         {
-                            if (vehicle.m_targetBuilding == 0)
+                            InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
+                            if (target.IsEmpty)
                             {
                                 listReturning.Add(new VehicleData(vehicleId));
                             }
                             else
                             {
-                                InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
                                 switch (target.Type)
                                 {
                                     case InstanceType.Building:

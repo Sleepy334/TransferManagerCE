@@ -16,9 +16,9 @@ namespace TransferManagerCE.CustomManager
             Balanced,
         }
 
-        public static TransferMode GetTransferMode(CustomTransferReason material)
+        public static TransferMode GetTransferMode(CustomTransferReason.Reason material)
         {
-            switch (material.ToReason())
+            switch (material)
             {
                 // ---------------------------------------------------------------------------------
                 // These are all 1-E08 in the vanilla GetDistanceMultiplier so would effectively match first offer
@@ -90,6 +90,8 @@ namespace TransferManagerCE.CustomManager
                     }
 
                 // ---------------------------------------------------------------------------------
+                case CustomTransferReason.Reason.Taxi:            // Taxi is OUT from Taxi Depot, IncomingFirst will match Cim with closest Taxi/Taxi Depot
+                case CustomTransferReason.Reason.TaxiMove:        // TaxiMove is IN to Taxi stands
                 case CustomTransferReason.Reason.Goods:           // We match commercial first then factories OUT offers after
                 case CustomTransferReason.Reason.LuxuryProducts:  // We match commercial first then factories OUT offers after
                 case CustomTransferReason.Reason.ElderCare:       // Citizen is IN, Eldercare Center is OUT, IncomingFirst will match Cim with closest ElderCare facility
@@ -102,19 +104,6 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Worker3:
                     {
                         return TransferMode.IncomingFirst;
-                    }
-
-                case CustomTransferReason.Reason.Taxi:            // Taxi is OUT from Taxi Depot, IncomingFirst will match Cim with closest Taxi/Taxi Depot
-                    {
-                        // We revert to more vanilla behaviour when Taxi Overhaul is running as it needs that to work properly.
-                        if (DependencyUtils.IsTaxiOverhaulRunning())
-                        {
-                            return TransferMode.Balanced;
-                        }
-                        else
-                        {
-                            return TransferMode.IncomingFirst;
-                        }
                     }
 
                 // ---------------------------------------------------------------------------------
@@ -131,9 +120,9 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsScaleByPriority(CustomTransferReason material)
+        public static bool IsScaleByPriority(CustomTransferReason.Reason material)
         {
-            switch (material.ToReason())
+            switch (material)
             {
                 // Note: A lot of these are purely priority matched but we leave the material here in case it ever
                 // gets moved to a different mode.
@@ -204,32 +193,32 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsWarehouseMaterial(TransferReason material)
+        public static bool IsWarehouseMaterial(CustomTransferReason.Reason material)
         {
             switch (material)
             {
                 // Raw warehouses
-                case TransferReason.Oil:
-                case TransferReason.Ore:
-                case TransferReason.Logs:
-                case TransferReason.Grain:
+                case CustomTransferReason.Reason.Oil:
+                case CustomTransferReason.Reason.Ore:
+                case CustomTransferReason.Reason.ForestProducts:
+                case CustomTransferReason.Reason.Crops:
 
                 // General warehouses
-                case TransferReason.Coal:
-                case TransferReason.Petrol:
-                case TransferReason.Food:
-                case TransferReason.Lumber:
-                case TransferReason.Flours:
-                case TransferReason.Paper:
-                case TransferReason.PlanedTimber:
-                case TransferReason.Petroleum:
-                case TransferReason.Plastics:
-                case TransferReason.Glass:
-                case TransferReason.Metals:
-                case TransferReason.AnimalProducts:
-                case TransferReason.Goods:
-                case TransferReason.LuxuryProducts:
-                case TransferReason.Fish:
+                case CustomTransferReason.Reason.Coal:
+                case CustomTransferReason.Reason.Petrol:
+                case CustomTransferReason.Reason.Food:
+                case CustomTransferReason.Reason.Lumber:
+                case CustomTransferReason.Reason.Flours:
+                case CustomTransferReason.Reason.Paper:
+                case CustomTransferReason.Reason.PlanedTimber:
+                case CustomTransferReason.Reason.Petroleum:
+                case CustomTransferReason.Reason.Plastics:
+                case CustomTransferReason.Reason.Glass:
+                case CustomTransferReason.Reason.Metals:
+                case CustomTransferReason.Reason.AnimalProducts:
+                case CustomTransferReason.Reason.Goods:
+                case CustomTransferReason.Reason.LuxuryProducts:
+                case CustomTransferReason.Reason.Fish:
                     return true;
 
                 default:
@@ -237,32 +226,32 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsFactoryMaterial(TransferReason material)
+        public static bool IsFactoryMaterial(CustomTransferReason.Reason material)
         {
             switch (material)
             {
                 // Raw materials used by ProcessingPlants
-                case TransferReason.Oil:
-                case TransferReason.Grain:
-                case TransferReason.Logs:
-                case TransferReason.Ore:
+                case CustomTransferReason.Reason.Oil:
+                case CustomTransferReason.Reason.ForestProducts:
+                case CustomTransferReason.Reason.Crops:
+                case CustomTransferReason.Reason.Ore:
 
                 // Material used by Generic Factories
-                case TransferReason.Lumber:
-                case TransferReason.Coal:
-                case TransferReason.Petrol:
-                case TransferReason.Food:
+                case CustomTransferReason.Reason.Lumber:
+                case CustomTransferReason.Reason.Coal:
+                case CustomTransferReason.Reason.Petrol:
+                case CustomTransferReason.Reason.Food:
 
                 // DLC materials used by unique factories
-                case TransferReason.Flours:
-                case TransferReason.Paper:
-                case TransferReason.PlanedTimber:
-                case TransferReason.Petroleum:
-                case TransferReason.Plastics:
-                case TransferReason.Glass:
-                case TransferReason.Metals:
-                case TransferReason.AnimalProducts:
-                case TransferReason.Fish:
+                case CustomTransferReason.Reason.Flours:
+                case CustomTransferReason.Reason.Paper:
+                case CustomTransferReason.Reason.PlanedTimber:
+                case CustomTransferReason.Reason.Petroleum:
+                case CustomTransferReason.Reason.Plastics:
+                case CustomTransferReason.Reason.Glass:
+                case CustomTransferReason.Reason.Metals:
+                case CustomTransferReason.Reason.AnimalProducts:
+                case CustomTransferReason.Reason.Fish:
                     return true;
 
                 default:
@@ -271,47 +260,47 @@ namespace TransferManagerCE.CustomManager
         }
 
         // These material types dont have any rules that can be applied so we can skip the more complicated restriction checks
-        public static bool IsFastChecksOnly(TransferReason material)
+        public static bool IsFastChecksOnly(CustomTransferReason.Reason material)
         {
             switch (material)
             {
-                case TransferReason.PartnerYoung:
-                case TransferReason.PartnerAdult:
-                case TransferReason.Family0:
-                case TransferReason.Family1:
-                case TransferReason.Family2:
-                case TransferReason.Family3:
-                case TransferReason.Single0:
-                case TransferReason.Single1:
-                case TransferReason.Single2:
-                case TransferReason.Single3:
-                case TransferReason.Single0B:
-                case TransferReason.Single1B:
-                case TransferReason.Single2B:
-                case TransferReason.Single3B:
-                case TransferReason.LeaveCity0:
-                case TransferReason.LeaveCity1:
-                case TransferReason.LeaveCity2:
-                case TransferReason.DummyCar:
-                case TransferReason.DummyTrain:
-                case TransferReason.DummyShip:
-                case TransferReason.DummyPlane:
-                case TransferReason.TouristA:
-                case TransferReason.TouristB:
-                case TransferReason.TouristC:
-                case TransferReason.TouristD:
-                case TransferReason.Entertainment:
-                case TransferReason.EntertainmentB:
-                case TransferReason.EntertainmentC:
-                case TransferReason.EntertainmentD:
-                case TransferReason.Shopping:
-                case TransferReason.ShoppingB:
-                case TransferReason.ShoppingC:
-                case TransferReason.ShoppingD:
-                case TransferReason.ShoppingE:
-                case TransferReason.ShoppingF:
-                case TransferReason.ShoppingG:
-                case TransferReason.ShoppingH:
+                case CustomTransferReason.Reason.PartnerYoung:
+                case CustomTransferReason.Reason.PartnerAdult:
+                case CustomTransferReason.Reason.Family0:
+                case CustomTransferReason.Reason.Family1:
+                case CustomTransferReason.Reason.Family2:
+                case CustomTransferReason.Reason.Family3:
+                case CustomTransferReason.Reason.Single0:
+                case CustomTransferReason.Reason.Single1:
+                case CustomTransferReason.Reason.Single2:
+                case CustomTransferReason.Reason.Single3:
+                case CustomTransferReason.Reason.Single0B:
+                case CustomTransferReason.Reason.Single1B:
+                case CustomTransferReason.Reason.Single2B:
+                case CustomTransferReason.Reason.Single3B:
+                case CustomTransferReason.Reason.LeaveCity0:
+                case CustomTransferReason.Reason.LeaveCity1:
+                case CustomTransferReason.Reason.LeaveCity2:
+                case CustomTransferReason.Reason.DummyCar:
+                case CustomTransferReason.Reason.DummyTrain:
+                case CustomTransferReason.Reason.DummyShip:
+                case CustomTransferReason.Reason.DummyPlane:
+                case CustomTransferReason.Reason.TouristA:
+                case CustomTransferReason.Reason.TouristB:
+                case CustomTransferReason.Reason.TouristC:
+                case CustomTransferReason.Reason.TouristD:
+                case CustomTransferReason.Reason.Entertainment:
+                case CustomTransferReason.Reason.EntertainmentB:
+                case CustomTransferReason.Reason.EntertainmentC:
+                case CustomTransferReason.Reason.EntertainmentD:
+                case CustomTransferReason.Reason.Shopping:
+                case CustomTransferReason.Reason.ShoppingB:
+                case CustomTransferReason.Reason.ShoppingC:
+                case CustomTransferReason.Reason.ShoppingD:
+                case CustomTransferReason.Reason.ShoppingE:
+                case CustomTransferReason.Reason.ShoppingF:
+                case CustomTransferReason.Reason.ShoppingG:
+                case CustomTransferReason.Reason.ShoppingH:
                     return true;
 
                 default:
@@ -319,68 +308,69 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static Color GetTransferReasonColor(TransferReason material)
+        public static Color GetTransferReasonColor(CustomTransferReason.Reason material)
         {
             switch (material)
             {
-                case TransferReason.Garbage:
-                case TransferReason.GarbageMove:
-                case TransferReason.GarbageTransfer:
-                case TransferReason.Crime:
-                case TransferReason.CriminalMove:
-                case TransferReason.Cash:
-                case TransferReason.Fire:
-                case TransferReason.Fire2:
-                case TransferReason.ForestFire:
-                case TransferReason.Sick:
-                case TransferReason.Sick2:
-                case TransferReason.SickMove:
-                case TransferReason.Collapsed:
-                case TransferReason.Collapsed2:
-                case TransferReason.ParkMaintenance:
-                case TransferReason.Taxi:
-                case TransferReason.Dead:
-                case TransferReason.DeadMove:
-                case TransferReason.Snow:
-                case TransferReason.SnowMove:
-                case TransferReason.EvacuateA:
-                case TransferReason.EvacuateB:
-                case TransferReason.EvacuateC:
-                case TransferReason.EvacuateD:
-                case TransferReason.EvacuateVipA:
-                case TransferReason.EvacuateVipB:
-                case TransferReason.EvacuateVipC:
-                case TransferReason.EvacuateVipD:
+                case CustomTransferReason.Reason.Garbage:
+                case CustomTransferReason.Reason.GarbageMove:
+                case CustomTransferReason.Reason.GarbageTransfer:
+                case CustomTransferReason.Reason.Crime:
+                case CustomTransferReason.Reason.CriminalMove:
+                case CustomTransferReason.Reason.Cash:
+                case CustomTransferReason.Reason.Fire:
+                case CustomTransferReason.Reason.Fire2:
+                case CustomTransferReason.Reason.ForestFire:
+                case CustomTransferReason.Reason.Sick:
+                case CustomTransferReason.Reason.Sick2:
+                case CustomTransferReason.Reason.SickMove:
+                case CustomTransferReason.Reason.Collapsed:
+                case CustomTransferReason.Reason.Collapsed2:
+                case CustomTransferReason.Reason.ParkMaintenance:
+                case CustomTransferReason.Reason.Taxi:
+                case CustomTransferReason.Reason.TaxiMove:
+                case CustomTransferReason.Reason.Dead:
+                case CustomTransferReason.Reason.DeadMove:
+                case CustomTransferReason.Reason.Snow:
+                case CustomTransferReason.Reason.SnowMove:
+                case CustomTransferReason.Reason.EvacuateA:
+                case CustomTransferReason.Reason.EvacuateB:
+                case CustomTransferReason.Reason.EvacuateC:
+                case CustomTransferReason.Reason.EvacuateD:
+                case CustomTransferReason.Reason.EvacuateVipA:
+                case CustomTransferReason.Reason.EvacuateVipB:
+                case CustomTransferReason.Reason.EvacuateVipC:
+                case CustomTransferReason.Reason.EvacuateVipD:
                     return Color.magenta;
 
-                case TransferReason.Oil:
-                case TransferReason.Ore:
-                case TransferReason.Logs:
-                case TransferReason.Grain:
-                case TransferReason.Coal:
-                case TransferReason.Petrol:
-                case TransferReason.Food:
-                case TransferReason.Lumber:
-                case TransferReason.Flours:
-                case TransferReason.Paper:
-                case TransferReason.PlanedTimber:
-                case TransferReason.Petroleum:
-                case TransferReason.Plastics:
-                case TransferReason.Glass:
-                case TransferReason.Metals:
-                case TransferReason.AnimalProducts:
+                case CustomTransferReason.Reason.Oil:
+                case CustomTransferReason.Reason.Ore:
+                case CustomTransferReason.Reason.ForestProducts:
+                case CustomTransferReason.Reason.Crops:
+                case CustomTransferReason.Reason.Coal:
+                case CustomTransferReason.Reason.Petrol:
+                case CustomTransferReason.Reason.Food:
+                case CustomTransferReason.Reason.Lumber:
+                case CustomTransferReason.Reason.Flours:
+                case CustomTransferReason.Reason.Paper:
+                case CustomTransferReason.Reason.PlanedTimber:
+                case CustomTransferReason.Reason.Petroleum:
+                case CustomTransferReason.Reason.Plastics:
+                case CustomTransferReason.Reason.Glass:
+                case CustomTransferReason.Reason.Metals:
+                case CustomTransferReason.Reason.AnimalProducts:
                     return Color.cyan;
 
-                case TransferReason.Goods:
-                case TransferReason.LuxuryProducts:
-                case TransferReason.Fish:
+                case CustomTransferReason.Reason.Goods:
+                case CustomTransferReason.Reason.LuxuryProducts:
+                case CustomTransferReason.Reason.Fish:
                     return Color.blue;
 
-                case TransferReason.Mail:
-                case TransferReason.SortedMail:
-                case TransferReason.UnsortedMail:
-                case TransferReason.IncomingMail:
-                case TransferReason.OutgoingMail:
+                case CustomTransferReason.Reason.Mail:
+                case CustomTransferReason.Reason.SortedMail:
+                case CustomTransferReason.Reason.UnsortedMail:
+                case CustomTransferReason.Reason.IncomingMail:
+                case CustomTransferReason.Reason.OutgoingMail:
                     return Color.green;
 
                 default: return Color.yellow;
@@ -389,28 +379,28 @@ namespace TransferManagerCE.CustomManager
 
         // To reproduce vanilla behaviour we choose an offer if within "acceptable" distance, which allows us to exit early
         // instead of having to find the closest possible match that may be lower priority
-        public static float GetAcceptableDistance(TransferReason material)
+        public static float GetAcceptableDistance(CustomTransferReason.Reason material)
         {
             switch (material)
             {
-                case TransferReason.Entertainment:
-                case TransferReason.EntertainmentB:
-                case TransferReason.EntertainmentC:
-                case TransferReason.EntertainmentD:
+                case CustomTransferReason.Reason.Entertainment:
+                case CustomTransferReason.Reason.EntertainmentB:
+                case CustomTransferReason.Reason.EntertainmentC:
+                case CustomTransferReason.Reason.EntertainmentD:
                     return 1000000f; // Accept offer if within 1km
 
-                case TransferReason.Shopping:
-                case TransferReason.ShoppingB:
-                case TransferReason.ShoppingC:
-                case TransferReason.ShoppingD:
-                case TransferReason.ShoppingE:
-                case TransferReason.ShoppingF:
-                case TransferReason.ShoppingG:
-                case TransferReason.ShoppingH:
-                case TransferReason.Worker0:
-                case TransferReason.Worker1:
-                case TransferReason.Worker2:
-                case TransferReason.Worker3:
+                case CustomTransferReason.Reason.Shopping:
+                case CustomTransferReason.Reason.ShoppingB:
+                case CustomTransferReason.Reason.ShoppingC:
+                case CustomTransferReason.Reason.ShoppingD:
+                case CustomTransferReason.Reason.ShoppingE:
+                case CustomTransferReason.Reason.ShoppingF:
+                case CustomTransferReason.Reason.ShoppingG:
+                case CustomTransferReason.Reason.ShoppingH:
+                case CustomTransferReason.Reason.Worker0:
+                case CustomTransferReason.Reason.Worker1:
+                case CustomTransferReason.Reason.Worker2:
+                case CustomTransferReason.Reason.Worker3:
                     return 250000f; // Accept offer if within 500m
 
                 default:
@@ -461,6 +451,60 @@ namespace TransferManagerCE.CustomManager
             }
 
             return false;
+        }
+
+        public static bool IsExportRestrictionsSupported(CustomTransferReason.Reason material)
+        {
+            switch (material)
+            {
+                case CustomTransferReason.Reason.Oil:
+                case CustomTransferReason.Reason.Ore:
+                case CustomTransferReason.Reason.ForestProducts:
+                case CustomTransferReason.Reason.Crops:
+                case CustomTransferReason.Reason.Goods:
+                case CustomTransferReason.Reason.Food:
+                case CustomTransferReason.Reason.Coal:
+                case CustomTransferReason.Reason.Petrol:
+                case CustomTransferReason.Reason.Lumber:
+                case CustomTransferReason.Reason.AnimalProducts:
+                case CustomTransferReason.Reason.Flours:
+                case CustomTransferReason.Reason.Paper:
+                case CustomTransferReason.Reason.PlanedTimber:
+                case CustomTransferReason.Reason.Petroleum:
+                case CustomTransferReason.Reason.Plastics:
+                case CustomTransferReason.Reason.Glass:
+                case CustomTransferReason.Reason.Metals:
+                case CustomTransferReason.Reason.LuxuryProducts:
+                case CustomTransferReason.Reason.Fish:
+                case CustomTransferReason.Reason.OutgoingMail:
+                case CustomTransferReason.Reason.UnsortedMail:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        public static bool IsImportRestrictionsSupported(CustomTransferReason.Reason material)
+        {
+            switch (material)
+            {
+                case CustomTransferReason.Reason.Oil:
+                case CustomTransferReason.Reason.Ore:
+                case CustomTransferReason.Reason.ForestProducts:
+                case CustomTransferReason.Reason.Crops:
+                case CustomTransferReason.Reason.Goods:
+                case CustomTransferReason.Reason.Food:
+                case CustomTransferReason.Reason.Coal:
+                case CustomTransferReason.Reason.Petrol:
+                case CustomTransferReason.Reason.Lumber:
+                case CustomTransferReason.Reason.IncomingMail:
+                case CustomTransferReason.Reason.SortedMail:
+                    return true;
+
+                default:
+                    return false;
+            }
         }
     }
 }

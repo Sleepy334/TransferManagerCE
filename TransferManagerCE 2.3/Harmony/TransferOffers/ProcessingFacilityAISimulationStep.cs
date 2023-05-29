@@ -1,9 +1,6 @@
-using ColossalFramework;
 using HarmonyLib;
-using ICities;
 using TransferManagerCE.TransferOffers;
 using UnityEngine;
-using static TransferManager;
 
 namespace TransferManagerCE
 {

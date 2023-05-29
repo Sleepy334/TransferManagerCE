@@ -9,10 +9,10 @@ namespace TransferManagerCE.CustomManager
     internal class DispatchedReasons
     {
         // A set of all running job reasons
-        private HashSet<TransferReason> m_dispatchedReasons = new HashSet<TransferReason>();
+        private HashSet<CustomTransferReason.Reason> m_dispatchedReasons = new HashSet<CustomTransferReason.Reason>();
         private readonly object m_reasonsLock = new object();
 
-        public bool IsDispatchedReason(TransferReason material)
+        public bool IsDispatchedReason(CustomTransferReason.Reason material)
         {
             lock (m_reasonsLock)
             {
@@ -20,7 +20,7 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public void AddDispatchedReason(TransferReason material)
+        public void AddDispatchedReason(CustomTransferReason.Reason material)
         {
             lock (m_reasonsLock)
             {
@@ -28,7 +28,7 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public void RemoveDispatchedReason(TransferReason material)
+        public void RemoveDispatchedReason(CustomTransferReason.Reason material)
         {
             lock (m_reasonsLock)
             {

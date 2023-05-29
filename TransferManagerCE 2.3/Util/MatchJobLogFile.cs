@@ -22,7 +22,7 @@ namespace TransferManagerCE.Util
             Error,
         }
 
-        private CustomTransferReason m_material;
+        private CustomTransferReason.Reason m_material;
         private LogCandidates m_candidateLogging = LogCandidates.All;
         Dictionary<ExclusionReason, int> m_candidateReasons = new Dictionary<ExclusionReason, int>();
         private bool m_bScaleByPriority = false;
@@ -35,7 +35,7 @@ namespace TransferManagerCE.Util
         private static int s_iLogFileNumber = 1;
 
         // -------------------------------------------------------------------------------------------
-        public MatchJobLogFile(CustomTransferReason material)
+        public MatchJobLogFile(CustomTransferReason.Reason material)
         {
             m_material = material;
             m_candidateLogging = (LogCandidates)ModSettings.GetSettings().MatchLogCandidates;

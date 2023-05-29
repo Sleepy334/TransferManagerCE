@@ -22,7 +22,7 @@ namespace TransferManagerCE
                 }
 
                 // Update access segment if using path distance but do it in simulation thread so we don't break anything
-                CitiesUtils.CheckRoadAccess(material, offer);
+                CitiesUtils.CheckRoadAccess((CustomTransferReason.Reason) material, offer);
             }
 
             // Update the stats for the specific material

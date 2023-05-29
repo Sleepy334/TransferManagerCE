@@ -15,7 +15,7 @@ namespace TransferManagerCE.Patch
         /// <returns>True (continue on to game method) if the zoning tool isn't already active, false (pre-empt game method) otherwise</returns>
         public static bool Prefix()
         {
-            // Is a panel showing
+            // Handle "Escape" in order of importance
             if (SelectionTool.Instance is not null && SelectionTool.Instance.m_mode != SelectionTool.SelectionToolMode.Normal)
             {
                 SelectionTool.Instance.SetMode(SelectionTool.SelectionToolMode.Normal);
@@ -30,8 +30,13 @@ namespace TransferManagerCE.Patch
             {
                 return false;
             }
-            else if(StatsPanel.Instance is not null && StatsPanel.Instance.HandleEscape())
+            else if (StatsPanel.Instance is not null && StatsPanel.Instance.HandleEscape())
             {
+                return false;
+            }
+            else if (ToolsModifierControl.toolController.CurrentTool == SelectionTool.Instance) 
+            {
+                ToolsModifierControl.SetTool<DefaultTool>();
                 return false;
             }
             else if (BuildingPanel.Instance is not null && BuildingPanel.Instance.HandleEscape())

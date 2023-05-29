@@ -47,10 +47,10 @@ namespace TransferManagerCE.CustomManager
 
         // -------------------------------------------------------------------------------------------
         [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public void MatchOffers(TransferReason material)
+        public void MatchOffers(CustomTransferReason.Reason material)
         {
             // guard: ignore transferreason.none
-            if (material == TransferReason.None)
+            if (material == CustomTransferReason.Reason.None)
             {
                 return;
             }
@@ -61,8 +61,8 @@ namespace TransferManagerCE.CustomManager
             }
 
             // Setup match logging if requested
-            TransferReason logReason = (TransferReason) ModSettings.GetSettings().MatchLogReason;
-            if (logReason != TransferReason.None && logReason == material)
+            CustomTransferReason.Reason logReason = (CustomTransferReason.Reason) ModSettings.GetSettings().MatchLogReason;
+            if (logReason != CustomTransferReason.Reason.None && logReason == material)
             {
                 m_logFile = new MatchJobLogFile(material);
                 m_logFile.LogHeader(job);
@@ -80,7 +80,7 @@ namespace TransferManagerCE.CustomManager
             m_iMatches = 0;
 
             // Pathing support
-            m_DistanceAlgorithm = PathDistanceTypes.GetDistanceAlgorithm(material);
+            m_DistanceAlgorithm = PathDistanceTypes.GetDistanceAlgorithm((CustomTransferReason.Reason) material);
 
             // Check we can actually use path distance and set up the path distance object
             if (m_DistanceAlgorithm == PathDistanceAlgorithm.PathDistance)
@@ -933,11 +933,11 @@ namespace TransferManagerCE.CustomManager
                     // Apply outside distance modifier to make them more or less desirable.
                     if (offer.IsIncoming())
                     {
-                        distanceOutsideFactor = OutsideModifier(job.material, offer, candidateOffer);
+                        distanceOutsideFactor = m_transferRestrictions.OutsideModifier(job.material, offer, candidateOffer);
                     }
                     else
                     {
-                        distanceOutsideFactor = OutsideModifier(job.material, candidateOffer, offer);
+                        distanceOutsideFactor = m_transferRestrictions.OutsideModifier(job.material, candidateOffer, offer);
                     }
 
                     // Scale by factors
@@ -1147,34 +1147,6 @@ namespace TransferManagerCE.CustomManager
                 job.m_outgoingAmount -= iAmount;
                 job.m_outgoingCountRemaining--;
             }
-        }
-
-        // -------------------------------------------------------------------------------------------
-        [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private float OutsideModifier(TransferReason material, CustomTransferOffer incoming, CustomTransferOffer outgoing)
-        {
-            if (incoming.IsOutside() && outgoing.IsOutside())
-            {
-                // Dont apply multiplier when both outside.
-            }
-            else if (incoming.IsOutside())
-            {
-                if (IsExportRestrictionsSupported(material))
-                {
-                    // Apply building multiplier
-                    return (float)Math.Pow(incoming.GetEffectiveOutsideModifier(), 2);
-                }
-            }
-            else if (outgoing.IsOutside())
-            {
-                if (IsImportRestrictionsSupported(material))
-                {
-                    // Apply building multiplier
-                    return (float)Math.Pow(outgoing.GetEffectiveOutsideModifier(), 2);
-                }
-            }
-
-            return 1.0f;
         }
 
         // -------------------------------------------------------------------------------------------

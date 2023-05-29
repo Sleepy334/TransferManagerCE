@@ -9,7 +9,7 @@ namespace TransferManagerCE.CustomManager
     public sealed class TransferJob
     {
         public int m_cycle;
-        public TransferManager.TransferReason material;
+        public CustomTransferReason.Reason material;
         public int m_outgoingCount; // Total number of OUT offers
         public int m_incomingCount; // Total number of IN offers
         public int m_outgoingCountRemaining; // Total number of OUT offers that still have some Amount remaining
@@ -27,7 +27,7 @@ namespace TransferManagerCE.CustomManager
 
         public void Reset()
         {
-            material = TransferManager.TransferReason.None; //flag as unused
+            material = CustomTransferReason.Reason.None; //flag as unused
 
             for (int i = 0; i < m_incomingCount; ++i)
             {

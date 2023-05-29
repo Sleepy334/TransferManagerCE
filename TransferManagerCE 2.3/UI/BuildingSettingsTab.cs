@@ -261,7 +261,7 @@ namespace TransferManagerCE.UI
                 if (m_panelServiceDistance is not null)
                 {
                     UIHelper helperDistance = new UIHelper(m_panelServiceDistance.m_content);
-                    m_sliderServiceDistance = SettingsSlider.Create(helperDistance, LayoutDirection.Horizontal, Localization.Get("sliderDistanceRestriction"), fTEXT_SCALE, 400, 280, 0f, 10, 1f, 0f, OnServiceDistanceChanged);
+                    m_sliderServiceDistance = SettingsSlider.Create(helperDistance, LayoutDirection.Horizontal, Localization.Get("sliderDistanceRestriction"), fTEXT_SCALE, 400, 280, 0f, 20f, 1f, 0f, OnServiceDistanceChanged);
                     m_sliderServiceDistance.SetTooltip(Localization.Get("sliderDistanceRestrictionTooltip"));
                 }
 
@@ -650,7 +650,7 @@ namespace TransferManagerCE.UI
             m_bInSetup = false;
         }
 
-        private string GetRestrictionReasons(HashSet<TransferReason> reasons)
+        private string GetRestrictionReasons(HashSet<CustomTransferReason.Reason> reasons)
         {
             string sTooltip = "Restriction Reasons:";
             if (m_buildingId != 0)
@@ -665,7 +665,7 @@ namespace TransferManagerCE.UI
                 }
                 else
                 {
-                    foreach (CustomTransferReason reason in reasons)
+                    foreach (CustomTransferReason.Reason reason in reasons)
                     {
                         sTooltip += $"\r\n- {reason}";
                     }
@@ -963,7 +963,7 @@ namespace TransferManagerCE.UI
                 RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
                 PathDistanceTest pd = new PathDistanceTest();
-                pd.FindNearestNeighbour(TransferReason.Goods, m_buildingId, restrictions.GetIncomingBuildingRestrictionsCopy().ToArray());
+                pd.FindNearestNeighbour(CustomTransferReason.Reason.Goods, m_buildingId, restrictions.GetIncomingBuildingRestrictionsCopy().ToArray());
             }
             else
             {

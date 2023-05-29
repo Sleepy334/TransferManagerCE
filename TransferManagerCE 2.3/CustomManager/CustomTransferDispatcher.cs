@@ -113,7 +113,7 @@ namespace TransferManagerCE.CustomManager
             }
 
             // Have we already got this match reason in the queue
-            if (m_dispatchedReasons.IsDispatchedReason(material))
+            if (m_dispatchedReasons.IsDispatchedReason((CustomTransferReason.Reason) material))
             {
                 m_droppedReasonCount++;
                 ClearAllTransferOffers(material, ref incomingCount, ref outgoingCount, ref incomingAmount, ref outgoingAmount);
@@ -131,11 +131,11 @@ namespace TransferManagerCE.CustomManager
             }
 
             // Add it to current dispatched reasons so we don't add another one till this one completes
-            m_dispatchedReasons.AddDispatchedReason(material);
+            m_dispatchedReasons.AddDispatchedReason((CustomTransferReason.Reason) material);
 
             // set job header info
             job.m_cycle = m_cycle;
-            job.material = material;
+            job.material = (CustomTransferReason.Reason) material;
             job.m_incomingCount = 0;
             job.m_outgoingCount = 0;
             job.m_incomingAmount = incomingAmount[(int)material];
@@ -243,7 +243,7 @@ namespace TransferManagerCE.CustomManager
             return m_shuffledList;
         }
 
-        public void RemoveDispatchedReason(TransferReason material)
+        public void RemoveDispatchedReason(CustomTransferReason.Reason material)
         {
             m_dispatchedReasons.RemoveDispatchedReason(material);
         }
@@ -253,7 +253,7 @@ namespace TransferManagerCE.CustomManager
             return m_resultQueue;
         }
 
-        public void EnqueueTransferResult(TransferReason material, TransferOffer outgoingOffer, TransferOffer incomingOffer, int deltaamount)
+        public void EnqueueTransferResult(CustomTransferReason.Reason material, TransferOffer outgoingOffer, TransferOffer incomingOffer, int deltaamount)
         {
             m_resultQueue.EnqueueTransferResult(material, outgoingOffer, incomingOffer, deltaamount);
         }

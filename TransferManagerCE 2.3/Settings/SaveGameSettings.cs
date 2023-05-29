@@ -65,9 +65,9 @@ namespace TransferManagerCE
         public bool PoliceCopterAI = false;
         
         // Arrays
-        private Dictionary<TransferReason, int> m_ActiveDistanceRestrictions = new Dictionary<TransferReason, int>();
-        private HashSet<TransferReason> m_ImportRestricted = new HashSet<TransferReason>();
-        private HashSet<TransferReason> m_WarehouseImportRestricted = new HashSet<TransferReason>();
+        private Dictionary<CustomTransferReason.Reason, int> m_ActiveDistanceRestrictions = new Dictionary<CustomTransferReason.Reason, int>();
+        private HashSet<CustomTransferReason.Reason> m_ImportRestricted = new HashSet<CustomTransferReason.Reason>();
+        private HashSet<CustomTransferReason.Reason> m_WarehouseImportRestricted = new HashSet<CustomTransferReason.Reason>();
         
         public SaveGameSettings()
         {
@@ -83,12 +83,12 @@ namespace TransferManagerCE
             s_SaveGameSettings = settings;
         }
 
-        public float GetActiveDistanceRestrictionKm(TransferReason material)
+        public float GetActiveDistanceRestrictionKm(CustomTransferReason.Reason material)
         {
             return (float)Math.Sqrt(GetActiveDistanceRestrictionSquaredMeters(material)) * 0.001f;
         }
 
-        public void SetActiveDistanceRestrictionKm(TransferReason material, float fValueKm)
+        public void SetActiveDistanceRestrictionKm(CustomTransferReason.Reason material, float fValueKm)
         {
             if (fValueKm == 0f)
             {
@@ -103,7 +103,7 @@ namespace TransferManagerCE
             }
         }
 
-        public float GetActiveDistanceRestrictionSquaredMeters(TransferReason material)
+        public float GetActiveDistanceRestrictionSquaredMeters(CustomTransferReason.Reason material)
         {
             if (m_ActiveDistanceRestrictions.ContainsKey(material))
             {
@@ -112,12 +112,12 @@ namespace TransferManagerCE
             return 0f;
         }
 
-        public bool IsImportRestricted(TransferReason material)
+        public bool IsImportRestricted(CustomTransferReason.Reason material)
         {
             return m_ImportRestricted.Contains(material);
         }
 
-        public void SetImportRestriction(TransferReason material, bool bRestricted)
+        public void SetImportRestriction(CustomTransferReason.Reason material, bool bRestricted)
         {
             if (bRestricted)
             {
@@ -128,12 +128,12 @@ namespace TransferManagerCE
                 m_ImportRestricted.Remove(material);
             }
         }
-        public bool IsWarehouseImportRestricted(TransferReason material)
+        public bool IsWarehouseImportRestricted(CustomTransferReason.Reason material)
         {
             return m_WarehouseImportRestricted.Contains(material);
         }
 
-        public void SetWarehouseImportRestriction(TransferReason material, bool bRestricted)
+        public void SetWarehouseImportRestriction(CustomTransferReason.Reason material, bool bRestricted)
         {
             if (bRestricted)
             {
@@ -191,7 +191,7 @@ namespace TransferManagerCE
 
             // Distance restrictions
             StorageData.WriteInt32(m_ActiveDistanceRestrictions.Count, Data);
-            foreach (KeyValuePair<TransferReason, int> kvp in m_ActiveDistanceRestrictions)
+            foreach (KeyValuePair<CustomTransferReason.Reason, int> kvp in m_ActiveDistanceRestrictions)
             {
                 StorageData.WriteInt32((int)kvp.Key, Data);
                 StorageData.WriteInt32(kvp.Value, Data);
@@ -199,14 +199,14 @@ namespace TransferManagerCE
 
             // Import restrictions
             StorageData.WriteInt32(m_ImportRestricted.Count, Data);
-            foreach (TransferReason material in m_ImportRestricted)
+            foreach (CustomTransferReason.Reason material in m_ImportRestricted)
             {
                 StorageData.WriteInt32((int)material, Data);
             }
 
             // Warehouse Import restrictions
             StorageData.WriteInt32(m_WarehouseImportRestricted.Count, Data);
-            foreach (TransferReason material in m_WarehouseImportRestricted)
+            foreach (CustomTransferReason.Reason material in m_WarehouseImportRestricted)
             {
                 StorageData.WriteInt32((int)material, Data);
             }
@@ -568,7 +568,7 @@ namespace TransferManagerCE
                 {
                     int key = StorageData.ReadInt32(Data, ref iIndex);
                     int iValue = StorageData.ReadInt32(Data, ref iIndex);
-                    m_ActiveDistanceRestrictions[(TransferReason)key] = iValue;
+                    m_ActiveDistanceRestrictions[(CustomTransferReason.Reason)key] = iValue;
                 }
             }
         }
@@ -580,8 +580,8 @@ namespace TransferManagerCE
                 int iImportRestrictionCount = StorageData.ReadInt32(Data, ref iIndex);
                 for (int i = 0; i < iImportRestrictionCount; ++i)
                 {
-                    TransferReason material = (TransferReason)StorageData.ReadInt32(Data, ref iIndex);
-                    if (!m_ImportRestricted.Contains(material) && TransferRestrictions.IsImportRestrictionsSupported(material))
+                    CustomTransferReason.Reason material = (CustomTransferReason.Reason)StorageData.ReadInt32(Data, ref iIndex);
+                    if (!m_ImportRestricted.Contains(material) && TransferManagerModes.IsImportRestrictionsSupported(material))
                     {
                         m_ImportRestricted.Add(material);
                     }
@@ -596,8 +596,8 @@ namespace TransferManagerCE
                 int iWarehouseImportRestricted = StorageData.ReadInt32(Data, ref iIndex);
                 for (int i = 0; i < iWarehouseImportRestricted; ++i)
                 {
-                    TransferReason material = (TransferReason)StorageData.ReadInt32(Data, ref iIndex);
-                    if (!m_WarehouseImportRestricted.Contains(material) && TransferRestrictions.IsImportRestrictionsSupported(material))
+                    CustomTransferReason.Reason material = (CustomTransferReason.Reason)StorageData.ReadInt32(Data, ref iIndex);
+                    if (!m_WarehouseImportRestricted.Contains(material) && TransferManagerModes.IsImportRestrictionsSupported(material))
                     {
                         m_WarehouseImportRestricted.Add(material);
                     }
@@ -637,7 +637,7 @@ namespace TransferManagerCE
             if (m_ActiveDistanceRestrictions is not null)
             {
                 sMessage += "\r\nDistanceRestrictionCount: " + m_ActiveDistanceRestrictions.Count;
-                foreach (KeyValuePair<TransferReason, int> kvp in m_ActiveDistanceRestrictions)
+                foreach (KeyValuePair<CustomTransferReason.Reason, int> kvp in m_ActiveDistanceRestrictions)
                 {
                     sMessage += "\r\nKey: " + kvp.Key + " Value: " + kvp.Value + " (" + Math.Sqrt(kvp.Value) * 0.001 + ")";
                 }

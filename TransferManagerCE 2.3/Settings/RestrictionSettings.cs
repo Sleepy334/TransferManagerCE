@@ -5,9 +5,10 @@ using TransferManagerCE.Common;
 
 namespace TransferManagerCE
 {
-    public class RestrictionSettings : IEquatable<RestrictionSettings>
+    public class RestrictionSettings
     {
         public const int iRESTRICTION_SETTINGS_DATA_VERSION = 2;
+        private static RestrictionSettings s_defaultSettings = new RestrictionSettings();
 
         public enum PreferLocal
         {
@@ -83,21 +84,28 @@ namespace TransferManagerCE
             m_outgoingBuildingsAllowed = new HashSet<ushort>(oSecond.m_outgoingBuildingsAllowed);
         }
 
-        public bool Equals(RestrictionSettings oSecond)
+        // We just use IsDefault() rather than implementing this
+        [Obsolete("This method has not yet been implemented.", true)]
+        public bool Equals(RestrictionSettings second)
         {
-            return m_bAllowImport == oSecond.m_bAllowImport &&
-                    m_bAllowExport == oSecond.m_bAllowExport &&
-                    m_iPreferLocalDistrictsIncoming == oSecond.m_iPreferLocalDistrictsIncoming &&
-                    m_iPreferLocalDistrictsOutgoing == oSecond.m_iPreferLocalDistrictsOutgoing &&
-                    m_iServiceDistance == oSecond.m_iServiceDistance &&
-                    m_bIncomingAllowLocalDistrict == oSecond.m_bIncomingAllowLocalDistrict &&
-                    m_bIncomingAllowLocalPark == oSecond.m_bIncomingAllowLocalPark &&
-                    m_bOutgoingAllowLocalDistrict == oSecond.m_bOutgoingAllowLocalDistrict &&
-                    m_bOutgoingAllowLocalPark == oSecond.m_bOutgoingAllowLocalPark &&
-                    m_incomingDistrictAllowed == oSecond.m_incomingDistrictAllowed &&
-                    m_outgoingDistrictAllowed == oSecond.m_outgoingDistrictAllowed &&
-                    m_incomingBuildingsAllowed == oSecond.m_incomingBuildingsAllowed &&
-                    m_outgoingBuildingsAllowed == oSecond.m_outgoingBuildingsAllowed;
+            throw new NotImplementedException();
+        }
+
+        public bool IsDefault()
+        {
+            return m_bAllowImport == s_defaultSettings.m_bAllowImport &&
+                    m_bAllowExport == s_defaultSettings.m_bAllowExport &&
+                    m_iPreferLocalDistrictsIncoming == s_defaultSettings.m_iPreferLocalDistrictsIncoming &&
+                    m_iPreferLocalDistrictsOutgoing == s_defaultSettings.m_iPreferLocalDistrictsOutgoing &&
+                    m_iServiceDistance == s_defaultSettings.m_iServiceDistance &&
+                    m_bIncomingAllowLocalDistrict == s_defaultSettings.m_bIncomingAllowLocalDistrict &&
+                    m_bIncomingAllowLocalPark == s_defaultSettings.m_bIncomingAllowLocalPark &&
+                    m_bOutgoingAllowLocalDistrict == s_defaultSettings.m_bOutgoingAllowLocalDistrict &&
+                    m_bOutgoingAllowLocalPark == s_defaultSettings.m_bOutgoingAllowLocalPark &&
+                    m_incomingDistrictAllowed.SetEquals(s_defaultSettings.m_incomingDistrictAllowed) &&
+                    m_outgoingDistrictAllowed.SetEquals(s_defaultSettings.m_outgoingDistrictAllowed) &&
+                    m_incomingBuildingsAllowed.SetEquals(s_defaultSettings.m_incomingBuildingsAllowed) &&
+                    m_outgoingBuildingsAllowed.SetEquals(s_defaultSettings.m_outgoingBuildingsAllowed);
         }
 
         public void SaveData(FastList<byte> Data)
@@ -454,15 +462,19 @@ namespace TransferManagerCE
         {
             string sMessage = "";
 
-            sMessage += " Import:" + m_bAllowImport;
-            sMessage += " Export:" + m_bAllowExport;
-            sMessage += " PreferIn:" + m_iPreferLocalDistrictsIncoming;
-            sMessage += " PreferOut:" + m_iPreferLocalDistrictsOutgoing;
-            sMessage += " ServiceDistance:" + m_iServiceDistance;
-            sMessage += " IncomingAllowLocalDistrict:" + m_bIncomingAllowLocalDistrict;
-            sMessage += " IncomingAllowLocalPark:" + m_bIncomingAllowLocalPark;
-            sMessage += " OutgoingAllowLocalDistrict:" + m_bOutgoingAllowLocalDistrict;
-            sMessage += " OutgoingAllowLocalPark:" + m_bOutgoingAllowLocalPark;
+            sMessage += "\nImport:" + m_bAllowImport;
+            sMessage += "\nExport:" + m_bAllowExport;
+            sMessage += "\nPreferIn:" + m_iPreferLocalDistrictsIncoming;
+            sMessage += "\nPreferOut:" + m_iPreferLocalDistrictsOutgoing;
+            sMessage += "\nServiceDistance:" + m_iServiceDistance;
+            sMessage += "\nIncomingAllowLocalDistrict:" + m_bIncomingAllowLocalDistrict;
+            sMessage += "\nIncomingAllowLocalPark:" + m_bIncomingAllowLocalPark;
+            sMessage += "\nOutgoingAllowLocalDistrict:" + m_bOutgoingAllowLocalDistrict;
+            sMessage += "\nOutgoingAllowLocalPark:" + m_bOutgoingAllowLocalPark;
+            sMessage += "\nIncomingAllowedCount:" + m_incomingDistrictAllowed.Count;
+            sMessage += "\nOutgoingAllowedCount:" + m_outgoingDistrictAllowed.Count;
+            sMessage += "\nIncomingBuildingsAllowedCount:" + m_incomingBuildingsAllowed.Count;
+            sMessage += "\nOutgoingBuildingsAllowedCount:" + m_outgoingBuildingsAllowed.Count;
 
             return sMessage;
         }

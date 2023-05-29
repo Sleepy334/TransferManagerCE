@@ -47,12 +47,12 @@ namespace TransferManagerCE
             m_Matches = new Queue<TransferResult>(iINITIAL_QUEUE_SIZE);
         }
 
-        public void EnqueueTransferResult(TransferReason material, TransferOffer outgoingOffer, TransferOffer incomingOffer, int deltaamount)
+        public void EnqueueTransferResult(CustomTransferReason.Reason material, TransferOffer outgoingOffer, TransferOffer incomingOffer, int deltaamount)
         {            
             if (m_Matches is not null)
             {
                 TransferResult result = new TransferResult();
-                result.material = material;
+                result.material = (TransferReason) material;
                 result.outgoingOffer = outgoingOffer;
                 result.incomingOffer = incomingOffer;
                 result.deltaamount = deltaamount;
@@ -76,6 +76,9 @@ namespace TransferManagerCE
                 Citizen[] Citizens = Singleton<CitizenManager>.instance.m_citizens.m_buffer;
                 DistrictPark[] Parks = Singleton<DistrictManager>.instance.m_parks.m_buffer;
 
+                // Set this before loop
+                TransferReason TaxiMove = (TransferReason)CustomTransferReason.Reason.TaxiMove;
+
                 while (m_Matches.Count > 0)
                 {
                     TransferResult oResult;
@@ -88,6 +91,12 @@ namespace TransferManagerCE
                     {
                         // Handle this match
                         MatchHandler.Match(oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
+
+                        // Convert TaxiMove back to Taxi so they handle the transfer correctly.
+                        if (oResult.material == TaxiMove)
+                        {
+                            oResult.material = TransferReason.Taxi;
+                        }
 
                         // Start transfer
                         TransferHandler.StartTransfer(Buildings, Vehicles, Citizens, Parks, oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);

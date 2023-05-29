@@ -16,13 +16,13 @@ namespace TransferManagerCE
         public byte m_hour;
         public byte m_minute;
         public byte m_second;
-        public CustomTransferReason m_material;
+        public CustomTransferReason.Reason m_material;
         public MatchOffer m_incoming;
         public MatchOffer m_outgoing;
 
         public MatchData()
         {
-            m_material = TransferReason.None;
+            m_material = CustomTransferReason.Reason.None;
         }
 
         public MatchData(TransferReason material, TransferOffer outgoing, TransferOffer incoming)
@@ -30,7 +30,7 @@ namespace TransferManagerCE
             m_hour = (byte)DateTime.Now.Hour;
             m_minute = (byte)DateTime.Now.Minute;
             m_second = (byte)DateTime.Now.Second;
-            m_material = material;
+            m_material = (CustomTransferReason.Reason) material;
             m_incoming = new MatchOffer(incoming);
             m_outgoing = new MatchOffer(outgoing);
         }
@@ -116,7 +116,7 @@ namespace TransferManagerCE
                 m_hour = reader.ReadByte();
                 m_minute = reader.ReadByte();
                 m_second = reader.ReadByte();
-                m_material = new CustomTransferReason((TransferReason)reader.ReadByte());
+                m_material = (CustomTransferReason.Reason)reader.ReadByte();
                 m_incoming = new MatchOffer();
                 m_incoming.Read(reader);
                 m_outgoing = new MatchOffer();

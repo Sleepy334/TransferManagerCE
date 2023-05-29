@@ -11,7 +11,7 @@ namespace TransferManagerCE.Data
         public class CycleJobData 
         {
             public int m_cycle = 0;
-            public TransferReason m_material = TransferReason.None;
+            public CustomTransferReason.Reason m_material = CustomTransferReason.Reason.None;
             public long m_ticks = 0;
         }
 
@@ -25,7 +25,7 @@ namespace TransferManagerCE.Data
 
         // Longest match time
         public static long s_longestMatchTicks = 0;
-        public static TransferReason s_longestMaterial = TransferReason.None;
+        public static CustomTransferReason.Reason s_longestMaterial = CustomTransferReason.Reason.None;
 
         // Cycle longest match time
         private static CycleJobData s_currentCycle = new CycleJobData();
@@ -34,7 +34,7 @@ namespace TransferManagerCE.Data
         // Largest match
         public static int s_largestIncoming = 0;
         public static int s_largestOutgoing = 0;
-        public static TransferReason s_largestMaterial = TransferReason.None;
+        public static CustomTransferReason.Reason s_largestMaterial = CustomTransferReason.Reason.None;
 
         // Invalid objects
         public static int s_iInvalidCitizenObjects = 0;
@@ -63,11 +63,11 @@ namespace TransferManagerCE.Data
                 s_TotalPathDistanceMatchTimeTicks = 0;
 
                 s_longestMatchTicks = 0;
-                s_longestMaterial = TransferReason.None;
+                s_longestMaterial = CustomTransferReason.Reason.None;
 
                 s_largestIncoming = 0;
                 s_largestOutgoing = 0;
-                s_largestMaterial = TransferReason.None;
+                s_largestMaterial = CustomTransferReason.Reason.None;
 
                 // Invalid objects
                 s_iInvalidCitizenObjects = 0;
@@ -76,7 +76,7 @@ namespace TransferManagerCE.Data
             }
         }
 
-        public static void UpdateStats(int cycle, TransferReason material, PathDistanceAlgorithm algorithm, long jobMatchTimeTicks)
+        public static void UpdateStats(int cycle, CustomTransferReason.Reason material, PathDistanceAlgorithm algorithm, long jobMatchTimeTicks)
         {
             lock (s_lock)
             {

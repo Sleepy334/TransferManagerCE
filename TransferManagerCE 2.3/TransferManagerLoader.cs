@@ -242,7 +242,7 @@ namespace TransferManagerCE
             SaveGameSettings.SetSettings(new SaveGameSettings());
 
             // Reset Building Settings
-            BuildingSettingsStorage.ClearSettings();
+            BuildingSettingsStorage.ClearAllSettings();
 
             // Reset Outside Connection Settings
             OutsideConnectionSettings.ClearSettings();

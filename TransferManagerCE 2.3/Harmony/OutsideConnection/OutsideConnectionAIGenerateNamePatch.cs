@@ -3,11 +3,12 @@ using TransferManagerCE.Settings;
 
 namespace TransferManagerCE
 {
-    [HarmonyPatch(typeof(OutsideConnectionAI), "GenerateName")]
+    [HarmonyPatch]
     public static class OutsideConnectionAIGenerateNamePatch
     {
+        [HarmonyPatch(typeof(OutsideConnectionAI), "GenerateName")]
         [HarmonyPostfix]
-        public static void Postfix(ushort buildingID, InstanceID caller, ref string __result)
+        public static void GenerateNamePostfix(ushort buildingID, InstanceID caller, ref string __result)
         {
             if (!DependencyUtils.IsAdvancedOutsideConnectionsRunning())
             {
@@ -24,11 +25,11 @@ namespace TransferManagerCE
                 }
 
                 // Add the outside connection number on the end to help differentiate
-                __result = $"{__result} #{GetPosition(buildingID)}";
+                __result = $"{__result} #{GetIndex(buildingID)}";
             }
         }
 
-        private static int GetPosition(ushort buildingId)
+        private static int GetIndex(ushort buildingId)
         {
             int iPosition = 0;
             foreach (ushort outsideId in BuildingManager.instance.GetOutsideConnections())

@@ -10,9 +10,22 @@ namespace TransferManagerCE
         private static readonly object s_dictionaryLock = new object();
         private static BuildingSettings s_defaultSettings = new BuildingSettings();
 
+        public static bool HasSettings(ushort buildingId)
+        {
+            if (buildingId != 0 && s_BuildingsSettings is not null)
+            {
+                lock (s_dictionaryLock)
+                {
+                    return s_BuildingsSettings.ContainsKey(buildingId);
+                }
+            }
+
+            return false;
+        }
+
         public static BuildingSettings? GetSettings(ushort buildingId)
         {
-            if (s_BuildingsSettings is not null)
+            if (buildingId != 0 && s_BuildingsSettings is not null)
             {
                 lock (s_dictionaryLock)
                 {
@@ -28,7 +41,7 @@ namespace TransferManagerCE
 
         public static BuildingSettings GetSettingsOrDefault(ushort buildingId)
         {
-            if (s_BuildingsSettings is not null)
+            if (buildingId != 0 && s_BuildingsSettings is not null)
             {
                 lock (s_dictionaryLock)
                 {
@@ -44,11 +57,11 @@ namespace TransferManagerCE
 
         public static void SetSettings(ushort buildingId, BuildingSettings settings)
         {
-            if (s_BuildingsSettings is not null)
+            if (buildingId != 0 && s_BuildingsSettings is not null)
             {
                 lock (s_dictionaryLock)
                 {
-                    if (settings.Equals(s_defaultSettings))
+                    if (settings.IsDefault())
                     {
                         if (s_BuildingsSettings.ContainsKey(buildingId))
                         {
@@ -65,7 +78,22 @@ namespace TransferManagerCE
             }
         }
 
-        public static void ClearSettings()
+        public static void ClearSettings(ushort buildingId)
+        {
+            if (buildingId != 0 && s_BuildingsSettings is not null)
+            {
+                lock (s_dictionaryLock)
+                {
+                    // Remove settings for this building
+                    if (s_BuildingsSettings.ContainsKey(buildingId))
+                    {
+                        s_BuildingsSettings.Remove(buildingId);
+                    }
+                }
+            }
+        }
+
+        public static void ClearAllSettings()
         {
             if (s_BuildingsSettings is not null)
             {
@@ -76,7 +104,7 @@ namespace TransferManagerCE
             }
         }
 
-        public static RestrictionSettings? GetRestrictions(ushort buildingId, BuildingTypeHelper.BuildingType eType, TransferReason material)
+        public static RestrictionSettings? GetRestrictions(ushort buildingId, BuildingTypeHelper.BuildingType eType, CustomTransferReason.Reason material)
         {
             int iRestrictionId = BuildingRuleSets.GetRestrictionId(eType, material);
             if (iRestrictionId != -1)
@@ -91,7 +119,7 @@ namespace TransferManagerCE
             return null;
         }
 
-        public static RestrictionSettings GetRestrictionsOrDefault(ushort buildingId, BuildingTypeHelper.BuildingType eType, TransferReason material)
+        public static RestrictionSettings GetRestrictionsOrDefault(ushort buildingId, BuildingTypeHelper.BuildingType eType, CustomTransferReason.Reason material)
         {
             int iRestrictionId = BuildingRuleSets.GetRestrictionId(eType, material);
             if (iRestrictionId != -1)
@@ -113,10 +141,7 @@ namespace TransferManagerCE
             lock (s_dictionaryLock)
             {
                 // Remove settings for this building
-                if (s_BuildingsSettings.ContainsKey(buildingId))
-                {
-                    s_BuildingsSettings.Remove(buildingId);
-                }
+                ClearSettings(buildingId);
 
                 // Remove this building from building restrictions arrays
                 Dictionary<ushort, BuildingSettings> changedSettings = new Dictionary<ushort, BuildingSettings>();

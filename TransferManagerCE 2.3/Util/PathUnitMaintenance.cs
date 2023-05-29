@@ -6,15 +6,20 @@ namespace TransferManagerCE
         {
             PathManager.instance.WaitForAllPaths();
 
+            // Local reference
+            PathUnit[] PathUnits = PathManager.instance.m_pathUnits.m_buffer;
+
+            // Save current count
             int iPathUnitCount = PathManager.instance.m_pathUnitCount;
-            
+
             // Look for PathUnit's that have m_simulationFlags set but no references any more.
-            for (int i = 0; i < PathManager.instance.m_pathUnits.m_size; ++i)
+            uint uiSize = PathManager.instance.m_pathUnits.m_size;
+            for (uint i = 0; i < uiSize; ++i)
             {
-                PathUnit unit = PathManager.instance.m_pathUnits.m_buffer[i];
+                PathUnit unit = PathUnits[i];
                 if (unit.m_simulationFlags != 0 && unit.m_referenceCount == 0)
                 {
-                    PathManager.instance.ReleasePath((uint)i);
+                    PathManager.instance.ReleasePath(i);
                 }
             }
 
