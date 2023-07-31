@@ -123,10 +123,15 @@ namespace TransferManagerCE
             IntercityBus = 112,
             BiofuelBus = 113,
             Cash = 114,
-            PrisonMove1 = 120,// 120 - sends prison vans from big police stations to small police stations to pick up prisoners
-            PrisonMove2 = 121, // 121 - send prison helicopters from the police helicopter depot to pickup prisoners from big police stations
-            PrisonMove3 = 122, // 122 - take prisoners from big police stations to prisons
-            TaxiMove = 126,
+            TaxiMove = 115,
+            BusinessA = 119,
+            BusinessB = 120,
+            BusinessC = 121,
+            BusinessD = 122,
+            NatureA = 123,
+            NatureB = 124,
+            NatureC = 125,
+            NatureD = 126,
             Crime2 = 127,
             None = 0xFF
         }

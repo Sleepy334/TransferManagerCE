@@ -19,6 +19,7 @@ namespace TransferManagerCE
         private Queue<MatchData>? m_MatchQueue = null;
 
         private ushort m_buildingId = 0;
+        private ushort m_subBuildingId = 0;
 
         public static MatchLogging Instance
         {
@@ -38,9 +39,10 @@ namespace TransferManagerCE
             m_MatchQueue = new Queue<MatchData>(iMATCH_LOGGING_LIMIT);
         }
 
-        public void SetBuildingId(ushort buildingId)
+        public void SetBuildingId(ushort buildingId, ushort subBuildingId)
         {
             m_buildingId = buildingId;
+            m_subBuildingId = subBuildingId;
         }
 
         public void StartTransfer(TransferReason material, TransferOffer outgoingOffer, TransferOffer incomingOffer)
@@ -65,20 +67,30 @@ namespace TransferManagerCE
 
                         m_MatchQueue.Enqueue(match);
                     }
-                }
 
-                // Add to current building matches if open
-                if (m_buildingId != 0 && 
-                    (incomingBuildings.Contains(m_buildingId) || outgoingBuildings.Contains(m_buildingId))) 
-                {
+                    // Add to current building matches if open
                     if (BuildingPanel.Instance is not null && BuildingPanel.Instance.isVisible)
                     {
-                        BuildingMatchData? buildingMatch = GetBuildingMatch(m_buildingId, match);
-                        if (buildingMatch is not null)
+                        if (m_buildingId != 0 &&
+                            (incomingBuildings.Contains(m_buildingId) || outgoingBuildings.Contains(m_buildingId)))
                         {
-                            BuildingPanel.Instance.GetBuildingMatches().AddMatch(m_buildingId, buildingMatch);
+                            BuildingMatchData? buildingMatch = GetBuildingMatch(m_buildingId, match);
+                            if (buildingMatch is not null)
+                            {
+                                BuildingPanel.Instance.GetBuildingMatches().AddMatch(m_buildingId, buildingMatch);
+                            }
                         }
-                    }
+
+                        if (m_subBuildingId != 0 &&
+                            (incomingBuildings.Contains(m_subBuildingId) || outgoingBuildings.Contains(m_subBuildingId)))
+                        {
+                            BuildingMatchData? buildingMatch = GetBuildingMatch(m_subBuildingId, match);
+                            if (buildingMatch is not null)
+                            {
+                                BuildingPanel.Instance.GetBuildingMatches().AddMatch(m_subBuildingId, buildingMatch);
+                            }
+                        }
+                    }  
                 }
             }
         }
@@ -117,6 +129,15 @@ namespace TransferManagerCE
                             if (buildingMatch is not null)
                             {
                                 matches.Add(buildingMatch);
+                            }
+
+                            if (m_subBuildingId != 0)
+                            {
+                                BuildingMatchData? subBuildingMatch = GetBuildingMatch(m_subBuildingId, matchData);
+                                if (subBuildingMatch is not null)
+                                {
+                                    matches.Add(subBuildingMatch);
+                                }
                             }
                         }
                     }

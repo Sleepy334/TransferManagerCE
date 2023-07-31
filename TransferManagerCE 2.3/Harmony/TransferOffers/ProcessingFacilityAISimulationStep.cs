@@ -9,8 +9,8 @@ namespace TransferManagerCE
     public static class ProcessingFacilityAISimulationStep
     {
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(ProcessingFacilityAI), "SimulationStep")]
-        public static void PostFix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
+        [HarmonyPatch(typeof(ProcessingFacilityAI), "ProduceGoods")]
+        public static void PostFix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData, int productionRate, int finalProductionRate, ref Citizen.BehaviourData behaviour, int aliveWorkerCount, int totalWorkerCount, int workPlaceCount, int aliveVisitorCount, int totalVisitorCount, int visitPlaceCount)
         {
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {

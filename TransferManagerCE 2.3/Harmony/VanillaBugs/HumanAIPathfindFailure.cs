@@ -33,7 +33,7 @@ namespace TransferManagerCE
                 {
                     target = new InstanceID { Building = data.m_targetBuilding };
                 }
-                PathFindFailure.RecordPathFindFailure(new InstanceID { Building = data.m_sourceBuilding }, target);
+                //PathFindFailure.RecordPathFindFailure(new InstanceID { Building = data.m_sourceBuilding }, target);
             }
 #endif
             return true;

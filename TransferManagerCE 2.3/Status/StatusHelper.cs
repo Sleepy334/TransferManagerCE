@@ -40,9 +40,22 @@ namespace TransferManagerCE
                 Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
                 BuildingType eBuildingType = GetBuildingType(building);
 
-                // Add status entries for each guest vehicle
-                AddVehicles(eBuildingType, buildingId, building);
+                if (building.m_flags != 0)
+                {
+                    // Add status entries for each guest vehicle
+                    AddVehicles(eBuildingType, buildingId, building);
 
+                    // Add sub building vehicles as well
+                    if (building.m_subBuilding != 0)
+                    {
+                        Building subBuilding = BuildingManager.instance.m_buildings.m_buffer[building.m_subBuilding];
+                        if (subBuilding.m_flags != 0)
+                        {
+                            AddVehicles(eBuildingType, building.m_subBuilding, subBuilding);
+                        }
+                    }
+                }
+                
                 // Now add status values for items that didnt have vehicles responding
                 // Common to all (Services)
                 AddCommonServices(eBuildingType, buildingId);

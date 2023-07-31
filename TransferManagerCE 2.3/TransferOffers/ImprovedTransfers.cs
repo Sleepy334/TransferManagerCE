@@ -10,8 +10,6 @@ namespace TransferManagerCE
 {
     internal class ImprovedTransfers
     {
-        private static int? s_maxLoadSize = null;
-
         // Return false to skip adding of offer.
         public static bool HandleIncomingOffer(TransferReason material, ref TransferOffer offer)
         {
@@ -306,12 +304,6 @@ namespace TransferManagerCE
                 WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
                 if (warehouse is not null)
                 {
-                    // The H&T patch introduced a bad bug for the incoming amount calculation, this restores the old version
-                    // We patch the offer amount always
-                    int buffer = building.m_customBuffer1 * 100;
-                    int maxLoadSize = GetWarehouseMaxLoadSize(warehouse);
-                    offer.Amount = Mathf.Max(1, (warehouse.m_storageCapacity - buffer) / Mathf.Max(1, maxLoadSize));
-
                     // It's a warehouse, set the priority based on storage level
                     if (BuildingSettingsFast.IsImprovedWarehouseMatching(offer.Building))
                     {
@@ -444,27 +436,6 @@ namespace TransferManagerCE
                     }
                 }
             }
-        }
-
-        private static int GetWarehouseMaxLoadSize(WarehouseAI instance)
-        {
-            if (s_maxLoadSize == null)
-            {
-                // We try to call WarehouseAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
-                // Unfortunately it is private so we need to use reflection, so we cache the results.
-                MethodInfo getMaxLoadSize = typeof(WarehouseAI).GetMethod("GetMaxLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
-                if (getMaxLoadSize != null)
-                {
-                    s_maxLoadSize = (int)getMaxLoadSize.Invoke(instance, null);
-                }
-                else
-                {
-                    // Fall back on default if we fail to get the function
-                    s_maxLoadSize = 8000;
-                }
-            }
-
-            return s_maxLoadSize.Value;
         }
     }
 }

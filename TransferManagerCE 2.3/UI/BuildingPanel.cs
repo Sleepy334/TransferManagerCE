@@ -47,6 +47,7 @@ namespace TransferManagerCE
 
         // Currently viewed building id.
         private ushort m_buildingId = 0;
+        private ushort m_subBuildingId = 0;
 
         private BuildingType m_eBuildingType;
 
@@ -99,6 +100,11 @@ namespace TransferManagerCE
         public ushort GetBuildingId()
         {
             return m_buildingId;
+        }
+
+        public ushort GetSubBuildingId()
+        {
+            return m_subBuildingId;
         }
 
         public int GetRestrictionId()
@@ -310,10 +316,16 @@ namespace TransferManagerCE
 
         public void HandleOffer(TransferOffer offer)
         {
-            if (isVisible && IsTransferTabActive() &&
-                InstanceHelper.GetBuildings(offer.m_object).Contains(GetBuildingId()))
+            if (isVisible && IsTransferTabActive())
             {
-                InvalidatePanel();
+                if (InstanceHelper.GetBuildings(offer.m_object).Contains(GetBuildingId()))
+                {
+                    InvalidatePanel();
+                }
+                else if (m_subBuildingId != 0 && InstanceHelper.GetBuildings(offer.m_object).Contains(m_subBuildingId))
+                {
+                    InvalidatePanel();
+                }
             }
         }
 
@@ -336,28 +348,40 @@ namespace TransferManagerCE
             {
                 m_buildingId = buildingId;
 
-                // Update tabs building id's as well
-                m_settingsTab.SetTabBuilding(buildingId);
-                m_capacityTab.SetTabBuilding(buildingId);
-                m_transfersTab.SetTabBuilding(buildingId);
-
                 if (buildingId != 0)
                 {
                     m_eBuildingType = BuildingTypeHelper.GetBuildingType(buildingId);
 
+                    // Update sub building (if any)
+                    Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                    m_subBuildingId = building.m_subBuilding;
+                } 
+                else
+                {
+                    m_eBuildingType = BuildingType.None;
+                    m_subBuildingId = 0;
+                }
+
+                // Update tabs building id's as well
+                m_settingsTab.SetTabBuilding(buildingId);
+                m_capacityTab.SetTabBuilding(buildingId);
+                m_transfersTab.SetTabBuilding(m_buildingId, m_subBuildingId);
+
+                // Match logging
+                if (MatchLogging.Instance is not null)
+                {
+                    MatchLogging.Instance.SetBuildingId(m_buildingId, m_subBuildingId);
+                }
+
+                if (buildingId != 0)
+                {
                     // Select building with tool
                     InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
-
-                    // Match logging
-                    if (MatchLogging.Instance is not null)
-                    {
-                        MatchLogging.Instance.SetBuildingId(buildingId);
-                    }
 
                     if (SelectionTool.Instance is not null)
                     {
                         SelectionTool.Instance.UpdateSelection();
-                    }
+                    } 
                 }
 
                 UpdateBuildingName();
@@ -563,109 +587,7 @@ namespace TransferManagerCE
 
         public List<VehicleData> GetVehicles(out int iVehicleCount)
         {
-            List<VehicleData> list = new List<VehicleData>();
-            iVehicleCount = 0;
-
-            if (m_buildingId != 0)
-            {
-                List<VehicleData> listInternal = new List<VehicleData>();
-                List<VehicleData> listExternal = new List<VehicleData>();
-                List<VehicleData> listReturning = new List<VehicleData>();
-
-                Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-                if (building.m_flags != 0)
-                {
-                    BuildingUtils.EnumerateOwnVehicles(building, (vehicleId, vehicle) =>
-                    {
-                        if (vehicle.m_flags != 0)
-                        {
-                            InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
-                            if (target.IsEmpty)
-                            {
-                                listReturning.Add(new VehicleData(vehicleId));
-                            }
-                            else
-                            {
-                                switch (target.Type)
-                                {
-                                    case InstanceType.Building:
-                                        {
-                                            if (IsOutsideConnection(target.Building))
-                                            {
-                                                listExternal.Add(new VehicleData(vehicleId));
-                                            }
-                                            else
-                                            {
-                                                listInternal.Add(new VehicleData(vehicleId));
-                                            }
-                                            break;
-                                        }
-                                    case InstanceType.NetNode:
-                                        {
-                                            NetNode node = NetManager.instance.m_nodes.m_buffer[target.NetNode];
-                                            if ((node.m_flags & NetNode.Flags.Outside) != 0)
-                                            {
-                                                listExternal.Add(new VehicleData(vehicleId));
-                                            }
-                                            else
-                                            {
-                                                listInternal.Add(new VehicleData(vehicleId));
-                                            }
-                                            break;
-                                        }
-                                    default:
-                                        {
-                                            listInternal.Add(new VehicleData(vehicleId));
-                                            break;
-                                        }
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // Now produce output list
-                // Internal first
-                listInternal.Sort();
-                foreach (VehicleData vehicleData in listInternal)
-                {
-                    list.Add(vehicleData);
-                }
-
-                if (listExternal.Count > 0)
-                {
-                    if (list.Count > 0)
-                    {
-                        list.Add(new VehicleDataSeparator());
-                    }
-
-                    // External
-                    listExternal.Sort();
-                    foreach (VehicleData vehicleData in listExternal)
-                    {
-                        list.Add(vehicleData);
-                    }
-                }
-
-                if (listReturning.Count > 0)
-                {
-                    if (list.Count > 0)
-                    {
-                        list.Add(new VehicleDataSeparator());
-                    }
-                    
-                    // Returning
-                    listReturning.Sort();
-                    foreach (VehicleData vehicleData in listReturning)
-                    {
-                        list.Add(vehicleData);
-                    }
-                }
-
-                iVehicleCount = listInternal.Count + listExternal.Count + listReturning.Count;
-            }
-
-            return list;
+            return new BuildingOwnVehicles().GetVehicles(m_buildingId, out iVehicleCount);
         }
 
         public bool IsTransferTabActive()

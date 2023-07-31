@@ -38,6 +38,10 @@ namespace TransferManagerCE
         private UICheckBox? m_chkOverrideSickCollection = null;
         private UICheckBox? m_chkSickCollectionOtherBuildings = null;
 
+        //Taxi Stand
+        private UICheckBox? m_chkTaxiMove = null;
+        private SettingsSlider? m_sliderTaxiStandDelay = null;
+
         // Warehouse
         private UICheckBox? m_chkFactoryFirst = null;
         private UICheckBox? m_chkOverrideGenericIndustriesHandler = null;
@@ -374,7 +378,15 @@ namespace TransferManagerCE
             groupSick.AddSpace(iSEPARATOR_HEIGHT);
             AddDescription(groupSick, "txtSickCollectionWarning", 1.0f, Localization.Get("txtSickCollectionWarning"));
 
-            // Prefer local
+            // Taxi Move
+            UIHelper groupTaxiMove = (UIHelper)helper.AddGroup(Localization.Get("GROUP_TAXI_MOVE"));
+            AddDescription(groupTaxiMove, "txtTaxiMove", 1.0f, Localization.Get("txtTaxiMove"));
+            m_chkTaxiMove = (UICheckBox)groupTaxiMove.AddCheckbox(Localization.Get("optionTaxiMove"), oSettings.TaxiMove, OnTaxiMove);
+            groupTaxiMove.AddSpace(iSEPARATOR_HEIGHT);
+            AddDescription(groupTaxiMove, "txtTaxiStandDelay", 1.0f, Localization.Get("txtTaxiStandDelay"));
+            m_sliderTaxiStandDelay = SettingsSlider.Create(groupTaxiMove, LayoutDirection.Horizontal, Localization.Get("sliderTaxiStandDelay"), 1.0f, 400, 200, 0f, 20f, 1.0f, (float) oSettings.TaxiStandDelay, OnTaxiStandDelay);
+            
+                // Prefer local
             UIHelperBase group1 = helper.AddGroup(Localization.Get("GROUP_SERVICE_DISTRICT_OPTIONS"));
             UIPanel txtPanel1 = (group1 as UIHelper).self as UIPanel;
             AddDescription(txtPanel1, "txtPreferLocalService", txtPanel1, 1.0f, Localization.Get("txtPreferLocalService"));
@@ -614,7 +626,21 @@ namespace TransferManagerCE
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.CollectSickFromOtherBuildings = bChecked;
         }
-        
+
+        public void OnTaxiMove(bool bChecked)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.TaxiMove = bChecked;
+
+            Patcher.PatchTaxiStandHandler();
+        }
+
+        public void OnTaxiStandDelay(float fValue)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.TaxiStandDelay = (int)fValue;
+        }
+
         public void OnDisableDummyTraffic(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
@@ -799,6 +825,7 @@ namespace TransferManagerCE
             // Remove transpiler patches
             IndustrialBuildingAISimulationStepActive.PatchGenericIndustriesHandler();
             CommonBuildingAIHandleCrime.PatchCrime2Handler();
+            Patcher.PatchTaxiStandHandler();
         }
 
         public void setOptionPreferLocalService(bool index)
@@ -906,6 +933,10 @@ namespace TransferManagerCE
                 m_chkOverrideSickCollection.isChecked = oSettings.OverrideResidentialSickHandler;
                 m_chkSickCollectionOtherBuildings.isChecked = oSettings.CollectSickFromOtherBuildings;
 
+                //Taxi Move
+                m_chkTaxiMove.isChecked = oSettings.TaxiMove;
+                m_sliderTaxiStandDelay.SetValue(oSettings.TaxiStandDelay);
+                
                 // VehicleAI
                 m_chkFireTruckAI.isChecked = oSettings.FireTruckAI;
                 m_chkFireCopterAI.isChecked = oSettings.FireCopterAI;
@@ -993,6 +1024,10 @@ namespace TransferManagerCE
             EnableCheckbox(m_chkImprovedMailTransfers, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkOverrideSickCollection, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkSickCollectionOtherBuildings, bLoaded && oSettings.EnableNewTransferManager);
+
+            // Taxi Move
+            EnableCheckbox(m_chkTaxiMove, bLoaded && oSettings.EnableNewTransferManager);
+            m_sliderTaxiStandDelay.Enable(bLoaded && oSettings.EnableNewTransferManager);
 
             // Import / Export
             m_sliderShipMultiplier.Enable(bLoaded && oSettings.EnableNewTransferManager);

@@ -233,6 +233,9 @@ namespace TransferManagerCE
                     {
                         m_onHighlightClick(component, param);
                     }
+
+                    // Update tooltip to new state
+                    m_btnHighlight.RefreshTooltip();
                 };
                 fOffset += m_btnHighlight.width;
             }

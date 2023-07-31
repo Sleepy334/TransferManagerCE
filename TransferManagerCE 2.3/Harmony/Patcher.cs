@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 
@@ -9,6 +10,7 @@ namespace TransferManagerCE
         public const string HarmonyId = "Sleepy.TransferManagerCE";
 
         private static bool s_patched = false;
+        private static bool s_bTaxiStandPatched = false;
 
         public static void PatchAll() 
         {
@@ -31,32 +33,30 @@ namespace TransferManagerCE
                 // Crime2
                 patchList.Add(typeof(TransferManagerGetFrameReason));
                 patchList.Add(typeof(TransferManagerGetTransferReason1));
-                patchList.Add(typeof(CommonBuildingAIHandleCrime)); 
+                patchList.Add(typeof(CommonBuildingAIHandleCrime));
 
-                // Patch bugs in main game
+                // Dead
                 patchList.Add(typeof(HospitalAIProduceGoods)); // Dead bug
                 patchList.Add(typeof(AuxiliaryBuildingAIProduceGoods)); // Dead bug
-                patchList.Add(typeof(ResidentAIFindHospital)); // ResidentAI.FindHospital bug 
-                patchList.Add(typeof(AirportBuildingAIHandleCrime)); // Reduce crime rate so it doesnt warn all the time.
-                patchList.Add(typeof(TransportStationAICreateIncomingVehicle)); // TransportStationAI.CreateIncomingVehicle bug introduced in H&T update
-                patchList.Add(typeof(WarehouseAIRemoveGuestVehicles)); // WarehouseAI bugs introduced in H&T update
-                patchList.Add(typeof(ResidentAIUpdateWorkplace)); // Don't add offers for citizens that are about to be released.
-                patchList.Add(typeof(HumanAIPathfindFailure)); // MovingIn citizens should be released
-
-                // Improved Taxi stand support
-                patchList.Add(typeof(TaxiAIPatch));
-                patchList.Add(typeof(TaxiStandAIPatch));
 
                 // Improve on vanilla goods handlers
                 patchList.Add(typeof(CommercialBuildingAISimulationStepActive));
                 patchList.Add(typeof(ProcessingFacilityAISimulationStep));
 
                 // Improved Sick Collection
+                patchList.Add(typeof(CommonBuildingAIHandleSickPatch));
                 patchList.Add(typeof(PrivateBuildingAISimulationStepPatch)); 
                 patchList.Add(typeof(PlayerBuildingAISimulationStepActivePatch));
                 
                 // Path failures
                 patchList.Add(typeof(CarAIPathfindFailurePatch));
+
+                // Patch bugs in main game
+                patchList.Add(typeof(ResidentAIFindHospital)); // ResidentAI.FindHospital bug 
+                patchList.Add(typeof(TransportStationAICreateIncomingVehicle)); // TransportStationAI.CreateIncomingVehicle bug introduced in H&T update
+                patchList.Add(typeof(WarehouseAIPatches)); // WarehouseAI bugs introduced in H&T update
+                patchList.Add(typeof(ResidentAIUpdateWorkplace)); // Don't add offers for citizens that are about to be released.
+                patchList.Add(typeof(HumanAIPathfindFailure)); // MovingIn citizens should be released
 
                 // Outside connection patches
                 if (DependencyUtils.IsAdvancedOutsideConnectionsRunning())
@@ -102,6 +102,9 @@ namespace TransferManagerCE
 
                 // Crime2 Handler
                 CommonBuildingAIHandleCrime.PatchCrime2Handler();
+
+                // Improved taxi stand support
+                PatchTaxiStandHandler();
             }
         }
 
@@ -154,8 +157,47 @@ namespace TransferManagerCE
 #if DEBUG
             Debug.Log($"Unpatch:{patchType} Method:{sMethod}");
 #endif
-            MethodInfo info = AccessTools.Method(patchType, sMethod);
-            harmony.Unpatch(info, HarmonyPatchType.All, HarmonyId);
+            // Get all methods
+            MethodInfo[] methods = patchType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+            // Now check method name matches
+            foreach (MethodInfo? method in methods)
+            {
+                //Debug.Log($"method: {method}.");
+                if (method.Name.Equals(sMethod))
+                {
+                    harmony.Unpatch(method, HarmonyPatchType.All, HarmonyId);
+#if DEBUG
+                    Debug.Log($"{patchType}.{sMethod} unpatched.");
+#endif
+                }
+            }
+        }
+
+        public static void PatchTaxiStandHandler()
+        {
+            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
+                SaveGameSettings.GetSettings().TaxiMove)
+            {
+                if (!s_bTaxiStandPatched)
+                {
+#if DEBUG
+                    Debug.Log("Patching taxi stand handler");
+#endif
+                    Patcher.Patch(typeof(TaxiAIPatch));
+                    Patcher.Patch(typeof(TaxiStandAIPatch));
+                    s_bTaxiStandPatched = true;
+                }
+            }
+            else if (s_bTaxiStandPatched)
+            {
+#if DEBUG
+                Debug.Log("Unpatch taxi stand handler");
+#endif
+                Patcher.Unpatch(typeof(TaxiAI), "SimulationStep");
+                Patcher.Unpatch(typeof(TaxiStandAI), "ProduceGoods");
+                s_bTaxiStandPatched = false;
+            }
         }
     }
 }

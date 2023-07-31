@@ -12,7 +12,9 @@ namespace TransferManagerCE
     public class TaxiAIPatch
     {
         // This transpiler patches TaxiAI.SimulationStep to skip over the transfer offer calls so we can add our own instead
-        [HarmonyPatch(typeof(TaxiAI), "SimulationStep", new Type[] { typeof(ushort), typeof(Vehicle), typeof(Vehicle.Frame), typeof(ushort), typeof(Vehicle), typeof(int) }, new ArgumentType[] { ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Normal })]
+        [HarmonyPatch(typeof(TaxiAI), "SimulationStep", 
+            new Type[] { typeof(ushort), typeof(Vehicle), typeof(Vehicle.Frame), typeof(ushort), typeof(Vehicle), typeof(int) }, 
+            new ArgumentType[] { ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Normal })]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> SimulationStepTranspiler(IEnumerable<CodeInstruction> instructions)
         {
@@ -48,7 +50,9 @@ namespace TransferManagerCE
                             yield return new CodeInstruction(OpCodes.Ret);
 
                             // Clear labels from old instruction
-                            instruction1.labels = new List<Label>(); 
+                            instruction1.labels = new List<Label>();
+
+                            Debug.Log("TaxiAI.SimulationStep patched");
                         }
 
                         yield return instruction1;

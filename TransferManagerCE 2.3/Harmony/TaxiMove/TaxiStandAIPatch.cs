@@ -107,7 +107,7 @@ namespace TransferManagerCE
             }
 
             // Also put in a taxi request for the taxi at the head of the stand
-            if (usFrontVehicleId != 0 && iFrontVehicleWaitCount > 10 && Singleton<SimulationManager>.instance.m_randomizer.Int32(3u) == 0)
+            if (usFrontVehicleId != 0 && iFrontVehicleWaitCount > SaveGameSettings.GetSettings().TaxiStandDelay && Singleton<SimulationManager>.instance.m_randomizer.Int32(3u) == 0)
             {
                 TransferManager.TransferOffer offer = default(TransferManager.TransferOffer);
                 offer.Priority = Mathf.Clamp(iFrontVehicleWaitCount / 10, 0, 7); // Increase priority the longer the taxi has been waiting

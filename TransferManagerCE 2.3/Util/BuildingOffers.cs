@@ -28,7 +28,7 @@ namespace TransferManagerCE
             m_incomingCount = (ushort[])incomingCountField.GetValue(manager);
         }
 
-        public List<OfferData> GetOffersForBuilding(ushort buildingId)
+        public List<OfferData> GetOffersForBuilding(ushort buildingId, ushort subBuildingId)
         {
             List<OfferData> offers = new List<OfferData>();
 
@@ -49,7 +49,12 @@ namespace TransferManagerCE
                         for (int offerIndex = 0; offerIndex < m_outgoingCount[offer_offset]; offerIndex++)
                         {
                             TransferOffer offer = m_outgoingOffers[offer_offset * 256 + offerIndex];
+
                             if (InstanceHelper.GetBuildings(offer.m_object).Contains(buildingId))
+                            {
+                                offers.Add(new OfferData(reason, false, offer));
+                            }
+                            else if (subBuildingId != 0 && InstanceHelper.GetBuildings(offer.m_object).Contains(subBuildingId))
                             {
                                 offers.Add(new OfferData(reason, false, offer));
                             }
@@ -63,7 +68,12 @@ namespace TransferManagerCE
                         for (int offerIndex = 0; offerIndex < m_incomingCount[offer_offset]; offerIndex++)
                         {
                             TransferOffer offer = m_incomingOffers[offer_offset * 256 + offerIndex];
+
                             if (InstanceHelper.GetBuildings(offer.m_object).Contains(buildingId))
+                            {
+                                offers.Add(new OfferData(reason, true, offer));
+                            }
+                            else if (subBuildingId != 0 && InstanceHelper.GetBuildings(offer.m_object).Contains(subBuildingId))
                             {
                                 offers.Add(new OfferData(reason, true, offer));
                             }

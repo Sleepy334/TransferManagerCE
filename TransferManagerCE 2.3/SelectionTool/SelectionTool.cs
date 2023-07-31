@@ -34,7 +34,7 @@ namespace TransferManagerCE
         private Color[]? m_color = null;
         private bool m_processedClick = false;
         private HighlightBuildings m_highlightBuildings = new HighlightBuildings();
-        private Vector3 m_mousePosition = Vector3.zero;
+        private Vector3 m_mousePos = Vector3.zero;
 
         public static bool HasUnifiedUIButtonBeenAdded()
         {
@@ -152,12 +152,17 @@ namespace TransferManagerCE
         {
             base.SimulationStep();
 
+            // Check we arent still setting up tool when this is called as it can crash
+            if (s_bLoadingTool)
+            {
+                return;
+            }
+
             var input = new RaycastInput(m_mouseRay, m_mouseRayLength)
             {
                 m_netService = new RaycastService(ItemClass.Service.None, ItemClass.SubService.None, ItemClass.Layer.None),
                 m_ignoreSegmentFlags = NetSegment.Flags.None,
                 m_ignoreNodeFlags = NetNode.Flags.None,
-                m_ignoreTransportFlags = TransportLine.Flags.None,
                 m_ignoreTerrain = true,
             };
 
@@ -169,7 +174,7 @@ namespace TransferManagerCE
                 }
             }
 
-            m_mousePosition = output.m_hitPos;
+            m_mousePos = output.m_hitPos;
         }
 
         public void Enable()
@@ -492,7 +497,7 @@ namespace TransferManagerCE
                 // Also highlight any sub buildings
                 float m_angle = building.m_angle * 57.29578f;
                 BuildingInfo info3 = building.Info;
-                if (info3.m_subBuildings is not null && info3.m_subBuildings.Length != 0)
+                if (info3 is not null && info3.m_subBuildings is not null && info3.m_subBuildings.Length != 0)
                 {
                     Matrix4x4 matrix4x = default(Matrix4x4);
                     matrix4x.SetTRS(building.m_position, Quaternion.AngleAxis(m_angle, Vector3.down), Vector3.one);
@@ -510,7 +515,7 @@ namespace TransferManagerCE
 
         protected override void OnToolGUI(Event e)
         {
-            if (m_toolController.IsInsideUI)
+            if (s_bLoadingTool || m_toolController.IsInsideUI)
             {
                 base.OnToolGUI(e);
                 return;
@@ -727,10 +732,8 @@ namespace TransferManagerCE
             if (m_mode != SelectionToolMode.Normal)
             {
                 string sText = $"{Localization.Get("btnBuildingRestrictionsSelected")}\n\n<color #00AA00>{Localization.Get("txtAllowedBuildings")}: {m_iTooltipBuildingRestrictionCount}</color>";
-                ShowToolInfo(true, sText, m_mousePosition);
+                ShowToolInfo(true, sText, m_mousePos);
             }
-
-            
         }
 
         public override NetNode.Flags GetNodeIgnoreFlags() => NetNode.Flags.All;

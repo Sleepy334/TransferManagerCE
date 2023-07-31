@@ -103,11 +103,11 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void SetTabBuilding(ushort buildingId)
+        public void SetTabBuilding(ushort buildingId, ushort subBuildingId)
         {
             if (m_matches is not null)
             {
-                m_matches.SetBuildingId(buildingId);
+                m_matches.SetBuildingId(buildingId, subBuildingId);
             }
             Clear();
         }
@@ -153,9 +153,10 @@ namespace TransferManagerCE.UI
                 }
                 else
                 {
-                    offers = m_buildingOffers.GetOffersForBuilding(buildingId);
+                    offers = m_buildingOffers.GetOffersForBuilding(buildingId, BuildingPanel.Instance.GetSubBuildingId());
                     offers.Sort();
                 }
+
                 m_listOffers.GetList().rowsData = new FastList<object>
                 {
                     m_buffer = offers.ToArray(),

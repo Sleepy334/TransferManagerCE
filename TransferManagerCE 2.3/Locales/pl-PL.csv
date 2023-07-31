@@ -306,3 +306,8 @@
 "tooltipCopySettings","Copy Settings"
 "tooltipPasteSettings","Paste Settings"
 "tooltipClearSettings","Clear Settings"
+"GROUP_TAXI_MOVE","Taxi Stand Usage"
+"txtTaxiMove","This option makes the Taxi Stand the hub for taxi's rather than the depot. This means taxi's will now wait at stands near an airport or busy tourist district rather than be hidden at a taxi depot."
+"optionTaxiMove","Improve Taxi Stand Usage"
+"sliderTaxiStandDelay","Taxi Stand Delay"
+"txtTaxiStandDelay","Add a small delay before a taxi, that is waiting at a stand, will make a taxi offer. This stops taxis from constantly arriving at a taxi stand then immediately being dispatched to pick up another citizen."

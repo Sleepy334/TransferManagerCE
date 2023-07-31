@@ -159,6 +159,13 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
+        public bool Unlimited
+        {
+            get { return m_offer.Unlimited; }
+            set { m_offer.Unlimited = value; }
+        }
+
+        // -------------------------------------------------------------------------------------------
         public int LocalPark
         {
             get { return m_offer.m_isLocalPark; }
@@ -342,7 +349,15 @@ namespace TransferManagerCE.CustomManager
                 {
                     case InstanceType.Building:
                         {
-                            m_offerBuildingId = Building;
+                            Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[Building];
+                            if (building.m_parentBuilding != 0)
+                            {
+                                m_offerBuildingId = building.m_parentBuilding;
+                            }
+                            else
+                            {
+                                m_offerBuildingId = Building;
+                            }
                             break;
                         }
                     case InstanceType.Vehicle:

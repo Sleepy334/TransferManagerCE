@@ -14,7 +14,7 @@ namespace TransferManagerCE
             ConnectedLineOfSight = 1,
             PathDistance = 2
         }
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 23;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 24;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
@@ -49,6 +49,10 @@ namespace TransferManagerCE
         public bool ImprovedGarbageMatching = true;
         public bool ImprovedCrimeMatching = true;
         public bool ImprovedMailTransfers = true;
+
+        // TaxiMove
+        public bool TaxiMove = true;
+        public int TaxiStandDelay = 5;
 
         // Sick Collection
         public bool OverrideResidentialSickHandler = true;
@@ -220,6 +224,9 @@ namespace TransferManagerCE
             StorageData.WriteInt32(PathDistanceServices, Data); // Version 23
             StorageData.WriteInt32(PathDistanceGoods, Data); // Version 23
             StorageData.WriteInt32(PathDistanceTravelTimeBaseValue, Data); // 23
+
+            StorageData.WriteBool(TaxiMove, Data); // Settings version 24
+            StorageData.WriteInt32(TaxiStandDelay, Data); // Settings version 24
         }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
@@ -261,6 +268,7 @@ namespace TransferManagerCE
                         case 21: s_SaveGameSettings.LoadDataVersion21(Data, ref iIndex); break;
                         case 22: s_SaveGameSettings.LoadDataVersion22(Data, ref iIndex); break;
                         case 23: s_SaveGameSettings.LoadDataVersion23(Data, ref iIndex); break;
+                        case 24: s_SaveGameSettings.LoadDataVersion24(Data, ref iIndex); break;
                         default:
                             {
                                 Debug.Log("New data version, unable to load!");
@@ -273,6 +281,17 @@ namespace TransferManagerCE
                 }
             }
         }
+
+        private void LoadDataVersion24(byte[] Data, ref int iIndex)
+        {
+            // Load all previous versions settings
+            LoadDataVersion23(Data, ref iIndex);
+
+            // Added in version 24
+            TaxiMove = StorageData.ReadBool(Data, ref iIndex);
+            TaxiStandDelay = StorageData.ReadInt32(Data, ref iIndex);
+        }
+
         private void LoadDataVersion23(byte[] Data, ref int iIndex)
         {
             // Load all previous versions settings

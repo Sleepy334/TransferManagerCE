@@ -25,7 +25,7 @@ namespace TransferManagerCE
                 {
                     return false; // Don't add this offer as Import is completely restricted
                 } 
-                else if (material == TransferReason.Taxi && offer.Building != 0) 
+                else if (settings.TaxiMove && material == TransferReason.Taxi && offer.Building != 0) 
                 {
                     HandleOutgoingTaxiOffer(ref material, offer);
                 }

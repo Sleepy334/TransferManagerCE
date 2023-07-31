@@ -10,17 +10,23 @@ namespace TransferManagerCE
         List<BuildingMatchData>? m_Matches = null;
         static readonly object s_MatchLock = new object();
         private ushort m_buildingId = 0;
+        private ushort m_subBuildingId = 0;
 
         public BuildingMatches()
         {
 
         }
 
-        public void SetBuildingId(ushort buildingId)
+        public void SetBuildingId(ushort buildingId, ushort subBuildingId)
         {
             if (m_buildingId != buildingId)
             {
                 m_buildingId = buildingId;
+                InvalidateMatches();
+            }
+            if (m_subBuildingId != subBuildingId)
+            {
+                m_subBuildingId = subBuildingId;
                 InvalidateMatches();
             }
         }
@@ -62,7 +68,7 @@ namespace TransferManagerCE
         {
             lock (s_MatchLock)
             {
-                if (m_Matches is not null && buildingId == m_buildingId)
+                if (m_Matches is not null && buildingId != 0 && (buildingId == m_buildingId || buildingId == m_subBuildingId))
                 {
                     m_Matches.Insert(0, match);
 
@@ -80,7 +86,7 @@ namespace TransferManagerCE
         {
             lock (s_MatchLock)
             {
-                if (m_Matches is not null && buildingId == m_buildingId)
+                if (m_Matches is not null && buildingId != 0 && (buildingId == m_buildingId || buildingId == m_subBuildingId))
                 {
                     m_Matches.AddRange(matches);
                     m_Matches.Sort();

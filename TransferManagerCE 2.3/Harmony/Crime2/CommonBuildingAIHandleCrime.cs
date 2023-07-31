@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Reflection;
-using TransferManagerCE.TransferOffers;
-using System.Linq;
-using Mono.Cecil.Cil;
+using ColossalFramework;
+using static TransferManager;
+using static TransferManagerCE.CustomTransferReason;
+using UnityEngine;
 
 namespace TransferManagerCE
 {
@@ -44,7 +45,7 @@ namespace TransferManagerCE
         public static IEnumerable<CodeInstruction> HandleCrimeTranspiler(ILGenerator generator, IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo methodAddOutgoingOffer = AccessTools.Method(typeof(TransferManager), nameof(TransferManager.AddOutgoingOffer));
-            MethodInfo methodAddCrimeOffer = AccessTools.Method(typeof(CrimeHandler), nameof(CrimeHandler.AddCrimeOffer));
+            MethodInfo methodAddCrimeOffer = AccessTools.Method(typeof(CommonBuildingAIHandleCrime), nameof(CommonBuildingAIHandleCrime.AddCrimeOffer));
 
             // Find insert index and label
             bool bAddedBranch = false;
@@ -139,6 +140,46 @@ namespace TransferManagerCE
             else
             {
                 Debug.LogError($"Patching of CommonBuildingAI.HandleCrimeTranspiler failed bAddedBranch: {bAddedBranch} bAddedLabel: {bAddedLabel} s_bPatched: {s_bPatched}");
+            }
+        }
+
+        private static void AddCrimeOffer(ushort buildingID, ref Building buildingData, int iCitizenCount)
+        {
+            int crimeBuffer = buildingData.m_crimeBuffer;
+            if (iCitizenCount != 0 && crimeBuffer > iCitizenCount * 25 && Singleton<SimulationManager>.instance.m_randomizer.Int32(5u) == 0)
+            {
+                // Check if we have police vehicles responding
+                int count = BuildingUtils.GetGuestVehicleCount(buildingData, TransferReason.Crime, (TransferReason)Reason.Crime2);
+                if (count == 0)
+                {
+                    TransferOffer offer = default;
+                    offer.Priority = Mathf.Clamp(crimeBuffer / Mathf.Max(1, iCitizenCount * 10), 0, 7);
+                    offer.Building = buildingID;
+                    offer.Position = buildingData.m_position;
+                    offer.Amount = 1;
+
+                    // Add support for the helicopter policy
+                    DistrictManager instance2 = Singleton<DistrictManager>.instance;
+                    byte district = instance2.GetDistrict(buildingData.m_position);
+                    DistrictPolicies.Services servicePolicies = instance2.m_districts.m_buffer[district].m_servicePolicies;
+
+                    // Occasionally add a Crime2 offer instead of a Crime offer
+                    TransferReason reason;
+                    if (DependencyUtils.IsNaturalDisastersDLC() &&
+                        ((buildingData.m_flags & Building.Flags.RoadAccessFailed) != 0 ||
+                        (servicePolicies & DistrictPolicies.Services.HelicopterPriority) != 0 ||
+                        Singleton<SimulationManager>.instance.m_randomizer.Int32(20U) == 0))
+                    {
+                        // Add Crime2 offer instead
+                        reason = (TransferReason)Reason.Crime2;
+                    }
+                    else
+                    {
+                        reason = TransferReason.Crime;
+                    }
+
+                    Singleton<TransferManager>.instance.AddOutgoingOffer(reason, offer);
+                }
             }
         }
     }
