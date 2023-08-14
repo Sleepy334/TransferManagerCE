@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using TransferManagerCE.CustomManager;
+using TransferManagerCE.UI;
 using static TransferManager;
 
 namespace TransferManagerCE

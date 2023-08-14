@@ -18,7 +18,11 @@ namespace TransferManagerCE
                 Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
                 if (building.m_flags != Building.Flags.None)
                 {
-                    sName = Singleton<BuildingManager>.instance.GetBuildingName(buildingId, InstanceID.Empty);
+                    if (building.m_parentBuilding != 0)
+                    {
+                        sName += "(S) "; // Add an S for sub building.
+                    }
+                    sName += Singleton<BuildingManager>.instance.GetBuildingName(buildingId, InstanceID.Empty);
                     if (string.IsNullOrEmpty(sName))
                     {
                         sName = "Building:" + buildingId;

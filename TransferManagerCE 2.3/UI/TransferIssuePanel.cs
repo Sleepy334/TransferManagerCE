@@ -335,7 +335,7 @@ namespace TransferManagerCE.UI
             Dictionary<Util.PATHFINDPAIR, long> failures = Util.PathFindFailure.GetPathFailsCopy();
             foreach (KeyValuePair<Util.PATHFINDPAIR, long> kvp in failures)
             {
-                list.Add(new PathingContainer(kvp.Value, kvp.Key.m_source, kvp.Key.m_target));
+                list.Add(new PathingContainer(kvp.Value, kvp.Key.m_source, kvp.Key.m_target, 0, false));
             }
 
             return list;
@@ -348,7 +348,7 @@ namespace TransferManagerCE.UI
             Dictionary<Util.PATHFINDPAIR, long> outsideFailures = Util.PathFindFailure.GetOutsideFailsCopy();
             foreach (KeyValuePair<Util.PATHFINDPAIR, long> kvp in outsideFailures)
             {
-                list.Add(new PathingContainer(kvp.Value, kvp.Key.m_source, kvp.Key.m_target));
+                list.Add(new PathingContainer(kvp.Value, kvp.Key.m_source, kvp.Key.m_target, 0, false));
             }
 
             return list;

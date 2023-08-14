@@ -133,7 +133,12 @@ namespace TransferManagerCE.UI
                 }
                 if (m_lblOwner is not null)
                 {
-                    m_lblOwner.text = InstanceHelper.DescribeInstance(rowData.m_source);
+                    string sText = "";
+                    if (rowData.m_iSourceOrTarget == 1)
+                    {
+                        sText += "* ";
+                    }
+                    m_lblOwner.text = sText + InstanceHelper.DescribeInstance(rowData.m_source);
                 }
                 if (m_lblSourceFailCount is not null)
                 {
@@ -141,7 +146,12 @@ namespace TransferManagerCE.UI
                 }
                 if (m_lblTarget is not null)
                 {
-                    m_lblTarget.text = InstanceHelper.DescribeInstance(rowData.m_target);
+                    string sText = "";
+                    if (rowData.m_iSourceOrTarget == 2)
+                    {
+                        sText += "* ";
+                    }
+                    m_lblTarget.text = sText + InstanceHelper.DescribeInstance(rowData.m_target);
                 }
                 if (m_lblTargetFailCount is not null)
                 {

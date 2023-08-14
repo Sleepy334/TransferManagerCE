@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using TransferManagerCE.Util;
+using UnityEngine;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
@@ -18,12 +20,8 @@ namespace TransferManagerCE.Data
             {
                 case BuildingType.ServicePoint:
                     {
-                        Dictionary<TransferReason, int> serviceValues = StatusHelper.GetServicePointValues(m_buildingId);
-                        if (serviceValues.ContainsKey(m_material))
-                        {
-                            return $"{serviceValues[m_material]}";
-                        }
-                        break;
+                        ServicePointUtils.GetServicePointInValues(m_buildingId, m_material, out int iCount, out int iBuffer);
+                        return $"{iCount} | {ServicePointUtils.DisplayBuffer(iBuffer)}";
                     }
             }
 
@@ -32,7 +30,7 @@ namespace TransferManagerCE.Data
 
         public override string GetValueTooltip()
         {
-            return $"# of buildings requesting \"{m_material}\"";
+            return $"<Building Count> | <Buffer>";
         }
     }
 }

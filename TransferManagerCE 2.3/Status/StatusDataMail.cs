@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TransferManagerCE.Util;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
@@ -25,7 +26,7 @@ namespace TransferManagerCE.Data
                     }
                 case BuildingType.ServicePoint:
                     {
-                        return $"# of buildings requesting \"{m_material}\"";
+                        return $"<Building Count> | <Buffer>";
                     }
             }
 
@@ -51,15 +52,8 @@ namespace TransferManagerCE.Data
                     }
                 case BuildingType.ServicePoint:
                     {
-                        Dictionary<TransferReason, int> serviceValues = StatusHelper.GetServicePointValues(m_buildingId);
-                        if (serviceValues.ContainsKey(TransferReason.Mail))
-                        {
-                            return $"{serviceValues[TransferReason.Mail]}";
-                        }
-                        else
-                        {
-                            return $"0";
-                        }
+                        ServicePointUtils.GetServicePointOutValues(m_buildingId, m_material, out int iCount, out int iBuffer);
+                        return $"{iCount} | {ServicePointUtils.DisplayBuffer(iBuffer)}";
                     }
                 case BuildingType.Residential:
                     {

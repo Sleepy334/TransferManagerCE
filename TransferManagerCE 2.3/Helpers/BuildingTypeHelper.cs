@@ -365,7 +365,34 @@ namespace TransferManagerCE
                             case ItemClass.SubService.PlayerEducationTradeSchool:
                             case ItemClass.SubService.PlayerEducationLiberalArts:
                                 {
-                                    return BuildingType.CampusBuilding;
+                                    // If it is a school building rather than an administration building then allow restrictions
+                                    if (building.Info.GetAI() is SchoolAI)
+                                    {
+                                        switch (building.Info.GetClassLevel())
+                                        {
+                                            case ItemClass.Level.Level1:
+                                                {
+                                                    return BuildingType.ElementartySchool;
+                                                }
+                                            case ItemClass.Level.Level2:
+                                                {
+                                                    return BuildingType.HighSchool;
+                                                }
+                                            case ItemClass.Level.Level3:
+                                                {
+                                                    return BuildingType.University;
+                                                }
+                                            case ItemClass.Level.Level4:
+                                                {
+                                                    return BuildingType.Library;
+                                                }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        return BuildingType.CampusBuilding;
+                                    }
+                                    break;
                                 }
                         }
                         break;

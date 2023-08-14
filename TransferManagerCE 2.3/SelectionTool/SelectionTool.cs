@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Drawing.Drawing2D;
 using ColossalFramework;
 using ColossalFramework.Math;
 using ColossalFramework.UI;
+using Epic.OnlineServices.Presence;
 using TransferManagerCE.Common;
 using TransferManagerCE.Settings;
+using TransferManagerCE.UI;
 using UnifiedUI.Helpers;
 using UnityEngine;
 using static RenderManager;
 using static TransferManagerCE.PathQueue;
-using static TransferManagerCE.Settings.ModSettings;
 
 namespace TransferManagerCE
 {
@@ -279,6 +280,16 @@ namespace TransferManagerCE
                     Building building = BuildingBuffer[usSourceBuildingId];
                     if (building.m_flags != 0)
                     {
+                        // Highlight accessSegment first so it is underneath
+                        if (building.m_accessSegment != 0)
+                        {
+                            ref NetSegment segment = ref NetManager.instance.m_segments.m_buffer[building.m_accessSegment];
+                            if (segment.m_flags != 0)
+                            {
+                                NetTool.RenderOverlay(cameraInfo, ref segment, s_accessSegmentColor, s_accessSegmentColor);
+                            }
+                        }
+
                         // Highlight currently selected building
                         if (BuildingSettingsStorage.HasSettings(usSourceBuildingId))
                         {
@@ -287,16 +298,6 @@ namespace TransferManagerCE
                         else
                         {
                             HighlightBuilding(toolManager, BuildingBuffer, usSourceBuildingId, cameraInfo, Color.white);
-                        }
-
-                        // Highlight accessSegment as well
-                        if (building.m_accessSegment != 0)
-                        {
-                            ref NetSegment segment = ref NetManager.instance.m_segments.m_buffer[building.m_accessSegment];
-                            if (segment.m_flags != 0)
-                            {
-                                NetTool.RenderOverlay(cameraInfo, ref segment, s_accessSegmentColor, s_accessSegmentColor);
-                            }
                         }
 #if DEBUG
                         // Highlight net nodes
@@ -491,6 +492,12 @@ namespace TransferManagerCE
             ref Building building = ref BuildingBuffer[usBuildingId];
             if (building.m_flags != 0)
             {
+                // Highlight building path
+                if (building.Info is not null)
+                {
+                    building.Info.m_buildingAI.RenderBuildOverlay(cameraInfo, color, building.m_position, building.m_angle, default(Segment3));
+                }
+                
                 // Highlight building
                 BuildingTool.RenderOverlay(cameraInfo, ref building, color, color);
                 
@@ -499,6 +506,7 @@ namespace TransferManagerCE
                 BuildingInfo info3 = building.Info;
                 if (info3 is not null && info3.m_subBuildings is not null && info3.m_subBuildings.Length != 0)
                 {
+                    // Render sub buildings
                     Matrix4x4 matrix4x = default(Matrix4x4);
                     matrix4x.SetTRS(building.m_position, Quaternion.AngleAxis(m_angle, Vector3.down), Vector3.one);
                     for (int i = 0; i < info3.m_subBuildings.Length; i++)
@@ -506,7 +514,6 @@ namespace TransferManagerCE
                         BuildingInfo buildingInfo = info3.m_subBuildings[i].m_buildingInfo;
                         Vector3 position = matrix4x.MultiplyPoint(info3.m_subBuildings[i].m_position);
                         float angle = (info3.m_subBuildings[i].m_angle + m_angle) * ((float)Math.PI / 180f);
-                        buildingInfo.m_buildingAI.RenderBuildOverlay(cameraInfo, color, position, angle, default(Segment3));
                         BuildingTool.RenderOverlay(cameraInfo, buildingInfo, 0, position, angle, color, radius: false);
                     }
                 }

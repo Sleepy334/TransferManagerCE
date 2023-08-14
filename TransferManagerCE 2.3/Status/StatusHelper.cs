@@ -2,8 +2,13 @@ using ColossalFramework;
 using System.Collections.Generic;
 using TransferManagerCE.CustomManager;
 using TransferManagerCE.Data;
+using static DistrictPolicies;
+using UnityEngine;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCE.CustomTransferReason;
+using System;
+using TransferManagerCE.Util;
 
 namespace TransferManagerCE
 {
@@ -454,9 +459,10 @@ namespace TransferManagerCE
                     case BuildingType.Bank:
                         m_listIncoming.Add(new StatusDataCash(eBuildingType, buildingId, 0, 0));
                         break;
-
-                    // Banks only supply services to commercial buildings
                     case BuildingType.Commercial:
+                        m_listServices.Add(new StatusDataCash(eBuildingType, buildingId, 0, 0));
+                        break;
+                    case BuildingType.ServicePoint:
                         m_listServices.Add(new StatusDataCash(eBuildingType, buildingId, 0, 0));
                         break;
                 }
@@ -638,7 +644,7 @@ namespace TransferManagerCE
                         }
                         break;
                     }
-                case BuildingTypeHelper.BuildingType.PostSortingFacility:
+                case BuildingType.PostSortingFacility:
                     {
                         // Incoming
                         if (!m_setAddedReasons.Contains(TransferReason.UnsortedMail))
@@ -652,7 +658,7 @@ namespace TransferManagerCE
                         }
                         break;
                     }
-                case BuildingTypeHelper.BuildingType.FishMarket:
+                case BuildingType.FishMarket:
                     {
                         if (!m_setAddedReasons.Contains(TransferReason.Fish))
                         {
@@ -660,14 +666,14 @@ namespace TransferManagerCE
                         }
                         break;
                     }
-                 case BuildingTypeHelper.BuildingType.ServicePoint:
+                 case BuildingType.ServicePoint:
                     {
-                        Dictionary<TransferReason, int> serviceValues = StatusHelper.GetServicePointValues(buildingId);
-                        foreach (KeyValuePair<TransferReason, int> kvp in serviceValues)
+                        HashSet<TransferReason> serviceValues = ServicePointUtils.GetServicePointMaterials(buildingId);
+                        foreach (TransferReason reason in serviceValues)
                         {
-                            if (!m_setAddedReasons.Contains(kvp.Key))
+                            if (!m_setAddedReasons.Contains(reason))
                             {
-                                m_listIncoming.Add(new StatusDataServicePoint(kvp.Key, eBuildingType, buildingId, 0, 0));
+                                m_listIncoming.Add(new StatusDataServicePoint(reason, eBuildingType, buildingId, 0, 0));
                             }
                         }
                        
@@ -694,40 +700,6 @@ namespace TransferManagerCE
                         break;
                     }
             }
-        }
-
-        public static Dictionary<TransferReason, int> GetServicePointValues(ushort buildingId)
-        {
-            Dictionary<TransferReason, int> serviceValues = new Dictionary<TransferReason, int>();
-
-            BuildingType buildingType = GetBuildingType(buildingId);
-            if (buildingType == BuildingType.ServicePoint)
-            {
-                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                if (building.m_flags != 0)
-                {
-                    // Print out parks request and suggestion arrays
-                    byte parkId = DistrictManager.instance.GetPark(building.m_position);
-                    if (parkId != 0)
-                    {
-                        DistrictPark park = DistrictManager.instance.m_parks.m_buffer[parkId];
-                        if (park.m_flags != 0 && park.IsPedestrianZone)
-                        {
-                            for (int i = 0; i < DistrictPark.kPedestrianZoneTransferReasons.Length; ++i)
-                            {
-                                DistrictPark.PedestrianZoneTransferReason reason = DistrictPark.kPedestrianZoneTransferReasons[i];
-                                int iMaterialCount = park.m_materialRequest[i].Count + park.m_materialSuggestion[i].Count;
-                                if (iMaterialCount > 0)
-                                {
-                                    serviceValues[reason.m_material] = iMaterialCount;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return serviceValues;
         }
     }
 }

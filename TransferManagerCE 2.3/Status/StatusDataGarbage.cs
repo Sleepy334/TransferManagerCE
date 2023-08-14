@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TransferManagerCE.Util;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
@@ -46,15 +47,8 @@ namespace TransferManagerCE.Data
                     }
                 case BuildingType.ServicePoint:
                     {
-                        Dictionary<TransferReason, int> serviceValues = StatusHelper.GetServicePointValues(m_buildingId);
-                        if (serviceValues.ContainsKey(TransferReason.Garbage))
-                        {
-                            return $"{building.m_garbageBuffer}/{serviceValues[TransferReason.Garbage]}";
-                        }
-                        else
-                        {
-                            return $"{building.m_garbageBuffer}/0";
-                        }
+                        ServicePointUtils.GetServicePointOutValues(m_buildingId, TransferReason.Garbage, out int iCount, out int iBuffer);
+                        return $"{iCount} | {ServicePointUtils.DisplayBuffer(iBuffer)}";
                     }
                 default:
                     {
@@ -87,7 +81,7 @@ namespace TransferManagerCE.Data
                     }
                 case BuildingType.ServicePoint:
                     {
-                        return "<garbage buffer> / <# of buildings wanting garbage collection>";
+                        return "<Building Count> | <Garbage buffer>";
                     }
                 default:
                     {

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TransferManagerCE.CustomManager;
 using TransferManagerCE.Data;
 using TransferManagerCE.Settings;
+using TransferManagerCE.UI;
 using UnityEngine;
 
 namespace TransferManagerCE
@@ -100,6 +101,11 @@ namespace TransferManagerCE
                             case BuildingTypeHelper.BuildingType.Commercial:
                                 {
                                     LoadBuildingsCommercialIssues(buildingId);
+                                    break;
+                                }
+                            case BuildingTypeHelper.BuildingType.ServicePoint:
+                                {
+                                    LoadBuildingsServicePoints(buildingId);
                                     break;
                                 }
                             default:
@@ -573,5 +579,31 @@ namespace TransferManagerCE
                 }
             }
         }
+
+        private void LoadBuildingsServicePoints(ushort usSourceBuildingId)
+        {
+            // Highlight sick citizens
+            Building[] BuildingBuffer = BuildingManager.instance.m_buildings.m_buffer;
+
+            m_highlightBuildings.Clear();
+            for (int i = 0; i < BuildingBuffer.Length; i++)
+            {
+                // Dont highlight current building
+                if (i == usSourceBuildingId)
+                {
+                    continue;
+                }
+
+                Building building = BuildingBuffer[i];
+                if (building.m_flags != 0)
+                {
+                    if (BuildingTypeHelper.GetBuildingType(building) == BuildingTypeHelper.BuildingType.ServicePoint)
+                    {
+                        m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.green));
+                    }
+                }
+            }
+        }
+        
     }
 }

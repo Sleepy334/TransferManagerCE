@@ -52,6 +52,14 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.TouristB:
                 case CustomTransferReason.Reason.TouristC:
                 case CustomTransferReason.Reason.TouristD:
+                case CustomTransferReason.Reason.BusinessA:
+                case CustomTransferReason.Reason.BusinessB:
+                case CustomTransferReason.Reason.BusinessC:
+                case CustomTransferReason.Reason.BusinessD:
+                case CustomTransferReason.Reason.NatureA:
+                case CustomTransferReason.Reason.NatureB:
+                case CustomTransferReason.Reason.NatureC:
+                case CustomTransferReason.Reason.NatureD:
                     {
                         return TransferMode.Priority;
                     }
@@ -301,6 +309,15 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.ShoppingF:
                 case CustomTransferReason.Reason.ShoppingG:
                 case CustomTransferReason.Reason.ShoppingH:
+                case CustomTransferReason.Reason.BusinessA:
+                case CustomTransferReason.Reason.BusinessB:
+                case CustomTransferReason.Reason.BusinessC:
+                case CustomTransferReason.Reason.BusinessD:
+                case CustomTransferReason.Reason.NatureA:
+                case CustomTransferReason.Reason.NatureB:
+                case CustomTransferReason.Reason.NatureC:
+                case CustomTransferReason.Reason.NatureD:
+
                     return true;
 
                 default:

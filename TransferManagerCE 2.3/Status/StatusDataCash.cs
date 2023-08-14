@@ -1,6 +1,8 @@
 using ColossalFramework.Math;
 using ICities;
 using System;
+using System.Collections.Generic;
+using TransferManagerCE.Util;
 using UnityEngine;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
@@ -25,6 +27,11 @@ namespace TransferManagerCE.Data
                         {
                             return "0"; // TODO
                         }
+                    case BuildingType.ServicePoint:
+                        {
+                            ServicePointUtils.GetServicePointOutValues(m_buildingId, TransferReason.Cash, out int iCount, out int iBuffer);
+                            return $"{iCount} | {ServicePointUtils.DisplayBuffer(iBuffer)}";
+                        }
                     default:
                         {
                             int iCashCapacity = GetCashCapacity(m_buildingId, building);
@@ -45,7 +52,14 @@ namespace TransferManagerCE.Data
 
         public override string GetValueTooltip()
         {
-            return "";
+            if (m_eBuildingType == BuildingType.ServicePoint)
+            {
+                return $"<Building Count> | <Buffer>";
+            }
+            else
+            {
+                return "<% of Cash Capacity>";
+            }
         }
 
         public static int GetCashCapacity(ushort buildingID, Building data)

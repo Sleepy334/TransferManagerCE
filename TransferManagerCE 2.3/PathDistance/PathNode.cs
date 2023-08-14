@@ -118,7 +118,7 @@ namespace TransferManagerCE
             {
                 case InstanceType.Building:
                     {
-                        // We have a specialized function for buildings as they have the m_accessSegemtn field that we can use.
+                        // We have a specialized function for buildings as they have the m_accessSegment field that we can use.
                         return FindStartSegmentBuilding(offer.Building, material);
                     }
                 case InstanceType.Citizen:

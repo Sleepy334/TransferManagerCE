@@ -15,13 +15,17 @@ namespace TransferManagerCE
         public long m_time;
         public InstanceID m_source;
         public InstanceID m_target;
+        public int m_iSourceOrTarget;
+        public bool m_bSubBuilding;
 
-        public PathingContainer(long time, InstanceID source, InstanceID target)
+        public PathingContainer(long time, InstanceID source, InstanceID target, int iSourceOrtarget, bool bSubBuilding)
         {
             m_iPathingId = s_iPathingId++;
             m_time = time;
             m_source = source;
             m_target = target;
+            m_iSourceOrTarget = iSourceOrtarget;
+            m_bSubBuilding = bSubBuilding;
         }
 
         public PathingContainer(PathingContainer oSecond) 
@@ -30,6 +34,8 @@ namespace TransferManagerCE
             m_time = oSecond.m_time;
             m_source = oSecond.m_source;
             m_target = oSecond.m_target;
+            m_iSourceOrTarget = oSecond.m_iSourceOrTarget;
+            m_bSubBuilding = oSecond.m_bSubBuilding;
         }
 
         public int CompareTo(object second)

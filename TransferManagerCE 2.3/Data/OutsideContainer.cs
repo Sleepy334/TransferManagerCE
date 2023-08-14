@@ -2,6 +2,7 @@ using ColossalFramework.UI;
 using SleepyCommon;
 using System;
 using TransferManagerCE.Settings;
+using TransferManagerCE.UI;
 using static TransferManager;
 
 namespace TransferManagerCE

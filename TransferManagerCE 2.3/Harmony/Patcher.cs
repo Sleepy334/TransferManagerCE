@@ -57,6 +57,8 @@ namespace TransferManagerCE
                 patchList.Add(typeof(WarehouseAIPatches)); // WarehouseAI bugs introduced in H&T update
                 patchList.Add(typeof(ResidentAIUpdateWorkplace)); // Don't add offers for citizens that are about to be released.
                 patchList.Add(typeof(HumanAIPathfindFailure)); // MovingIn citizens should be released
+                patchList.Add(typeof(StartPathFindPatches)); // Cargo Station infinite loop bug
+                patchList.Add(typeof(PlayerBuildingAIPatches)); // Override to set the train track as the access segemnt.
 
                 // Outside connection patches
                 if (DependencyUtils.IsAdvancedOutsideConnectionsRunning())

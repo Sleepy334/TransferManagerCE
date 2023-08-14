@@ -1,13 +1,11 @@
+using System;
 using UnityEngine;
 using TransferManagerCE.Util;
-using static TransferManager;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using TransferManagerCE.TransferRules;
 using TransferManagerCE.Settings;
-using static TransferManagerCE.CitiesUtils;
 using static TransferManagerCE.WarehouseUtils;
-using System;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -250,24 +248,47 @@ namespace TransferManagerCE.CustomManager
                 return true;
             }
 
-            // Check we can get buildings for both offers
-            if (incomingOffer.GetBuilding() == 0 || outgoingOffer.GetBuilding() == 0)
+            // Check we can get buildings or service points for both offers
+            if ((incomingOffer.GetBuilding() == 0 && incomingOffer.Park == 0) || 
+                (outgoingOffer.GetBuilding() == 0 && outgoingOffer.Park == 0))
             {
                 return true;
             }
 
             // Check incoming list
             HashSet<ushort> incomingList = incomingOffer.GetAllowedBuildingList(material);
-            if (incomingList.Count > 0 && !incomingList.Contains(outgoingOffer.GetBuilding()))
+            if (incomingList.Count > 0)
             {
-                return false;
+                if (outgoingOffer.Park > 0)
+                {
+                    // Get service points and check against allowed list
+                    if (!incomingList.Overlaps(InstanceHelper.GetBuildings(outgoingOffer.m_object)))
+                    {
+                        return false;
+                    }
+                }
+                else if (!incomingList.Contains(outgoingOffer.GetBuilding()))
+                {
+                    return false;
+                }
             }
 
             // Check outgoing list
             HashSet<ushort> outgoingList = outgoingOffer.GetAllowedBuildingList(material);
-            if (outgoingList.Count > 0 && !outgoingList.Contains(incomingOffer.GetBuilding()))
+            if (outgoingList.Count > 0)
             {
-                return false;
+                if (incomingOffer.Park > 0)
+                {
+                    // Get service points and check against allowed list
+                    if (!outgoingList.Overlaps(InstanceHelper.GetBuildings(incomingOffer.m_object)))
+                    {
+                        return false;
+                    }
+                }
+                else if (!outgoingList.Contains(incomingOffer.GetBuilding()))
+                {
+                    return false;
+                }
             }
 
             return true;

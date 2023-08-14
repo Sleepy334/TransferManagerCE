@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using TransferManagerCE.Settings;
+using TransferManagerCE.UI;
 using UnityEngine;
 
 namespace TransferManagerCE

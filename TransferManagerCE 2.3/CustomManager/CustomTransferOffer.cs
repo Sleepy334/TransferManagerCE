@@ -709,21 +709,25 @@ namespace TransferManagerCE.CustomManager
                 m_IsExportVehicleLimitOk = true;
 
                 int iExportLimitPercent = SaveGameSettings.GetSettings().ExportVehicleLimit;
-                if (iExportLimitPercent < 100)
+                if (iExportLimitPercent == 0)
                 {
-                    float fExportLimitPercent = (float)iExportLimitPercent * 0.01f;
+                    // No export allowed
+                    m_IsExportVehicleLimitOk = false;
+                }
+                else if (iExportLimitPercent < 100)
+                {
                     int iTotalTrucks = BuildingVehicleCount.GetMaxVehicleCount(GetBuildingType(), GetBuilding());
                     if (iTotalTrucks > 0)
                     {
                         int outside = BuildingUtils.CountImportExportVehicles(GetBuilding(), material);
+                        float fExportLimitPercent = (float)iExportLimitPercent * 0.01f;
                         int maxExport = (int)((float)iTotalTrucks * fExportLimitPercent);
-                        if (outside > maxExport)
+                        if (outside >= maxExport)
                         {
                             m_IsExportVehicleLimitOk = false;
                         }
                     }
                 }
-
             }
 
             return m_IsExportVehicleLimitOk.Value;
