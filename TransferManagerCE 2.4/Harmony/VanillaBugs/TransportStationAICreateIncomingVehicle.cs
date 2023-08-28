@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using TransferManagerCE.Settings;
 
 namespace TransferManagerCE
 {
@@ -11,7 +12,7 @@ namespace TransferManagerCE
         [HarmonyPrefix]
         public static bool CreateIncomingVehiclePrefix(TransportStationAI __instance, ushort buildingID, ref Building buildingData, ushort startStop, int gateIndex, ref bool __result)
         {
-            if (__instance.m_transportLineInfo == null)
+            if (__instance.m_transportLineInfo == null && ModSettings.GetSettings().FixTransportStationNullReferenceException)
             {
 #if DEBUG
                 Debug.Log($"BuildingId: {buildingID} - Error: m_transportLineInfo is null ");

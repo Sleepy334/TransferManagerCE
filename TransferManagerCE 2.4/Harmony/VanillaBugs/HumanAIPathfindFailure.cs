@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
 using System.Diagnostics;
+using TransferManagerCE.Settings;
 using TransferManagerCE.UI;
 using TransferManagerCE.Util;
 using static RenderManager;
@@ -19,23 +20,26 @@ namespace TransferManagerCE
         {
             s_citizenId = data.m_citizen;
             s_pathFailCount++;
-#if DEBUG
-            // We currently only add these path fails in DEBUG as there are usually so many of them.
-            Citizen cim = CitizenManager.instance.m_citizens.m_buffer[s_citizenId];
-            if (cim.m_flags != 0 && data.m_targetBuilding != 0)
+
+            // Log citizen path failures if requested
+            if (ModSettings.GetSettings().LogCitizenPathFailures)
             {
-                InstanceID target;
-                if ((data.m_flags & CitizenInstance.Flags.TargetIsNode) != 0)
+                Citizen cim = CitizenManager.instance.m_citizens.m_buffer[s_citizenId];
+                if (cim.m_flags != 0 && data.m_targetBuilding != 0)
                 {
-                    target = new InstanceID {  NetNode = data.m_targetBuilding };
+                    InstanceID target;
+                    if ((data.m_flags & CitizenInstance.Flags.TargetIsNode) != 0)
+                    {
+                        target = new InstanceID { NetNode = data.m_targetBuilding };
+                    }
+                    else
+                    {
+                        target = new InstanceID { Building = data.m_targetBuilding };
+                    }
+                    PathFindFailure.RecordPathFindFailure(new InstanceID { Building = data.m_sourceBuilding }, target);
                 }
-                else
-                {
-                    target = new InstanceID { Building = data.m_targetBuilding };
-                }
-                //PathFindFailure.RecordPathFindFailure(new InstanceID { Building = data.m_sourceBuilding }, target);
             }
-#endif
+
             return true;
         }
 

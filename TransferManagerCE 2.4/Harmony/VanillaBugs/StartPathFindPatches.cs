@@ -1,6 +1,7 @@
 using HarmonyLib;
 using System;
 using System.Runtime.CompilerServices;
+using TransferManagerCE.Settings;
 using UnityEngine;
 using static TransferManager;
 
@@ -28,12 +29,15 @@ namespace TransferManagerCE
         {
             // DEBUG: Set this flag to test infinite loop behaviour.
             //vehicleData.m_flags2 |= Vehicle.Flags2.TransferToServicePoint;
-            
-            // If GoingBack or a mail van then we always want to call base.StartPathFind so we don't get a route through a cargo station and end up in an infinte loop
-            if ((TransferReason) vehicleData.m_transferType == TransferReason.Mail || (vehicleData.m_flags & Vehicle.Flags.GoingBack) != 0)
+
+            if (ModSettings.GetSettings().FixPostVansStuckCargoStations)
             {
-                __result = CarAIStartPathFindReverse(__instance, vehicleID, ref vehicleData, startPos, endPos, startBothWays, endBothWays, undergroundTarget);
-                return false; // Don't call normal function
+                // If GoingBack or a mail van then we always want to call base.StartPathFind so we don't get a route through a cargo station and end up in an infinte loop
+                if ((TransferReason)vehicleData.m_transferType == TransferReason.Mail || (vehicleData.m_flags & Vehicle.Flags.GoingBack) != 0)
+                {
+                    __result = CarAIStartPathFindReverse(__instance, vehicleID, ref vehicleData, startPos, endPos, startBothWays, endBothWays, undergroundTarget);
+                    return false; // Don't call normal function
+                }
             }
             
             return true; // Handle normally
@@ -49,9 +53,14 @@ namespace TransferManagerCE
             // DEBUG: Set this flag to test infinite loop behaviour.
             // vehicleData.m_flags2 |= Vehicle.Flags2.TransferToServicePoint;
 
-            // We dont ever want a bank van to route through a cargo station so override vanilla StartPathFind call with a call to CarAI.StartPathFind instead.
-            __result = CarAIStartPathFindReverse(__instance, vehicleID, ref vehicleData, startPos, endPos, startBothWays, endBothWays, undergroundTarget);
-            return false; // Don't call normal function
+            if (ModSettings.GetSettings().FixBankVansStuckCargoStations)
+            {
+                // We dont ever want a bank van to route through a cargo station so override vanilla StartPathFind call with a call to CarAI.StartPathFind instead.
+                __result = CarAIStartPathFindReverse(__instance, vehicleID, ref vehicleData, startPos, endPos, startBothWays, endBothWays, undergroundTarget);
+                return false; // Don't call normal function
+            }
+
+            return true;
         }
 
         // Patch GarbageTruckAI.StartPathFind as it's pathing code for a service point looks very buggy and users have reported issues with garbage not getting collected.

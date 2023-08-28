@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
 using System;
+using TransferManagerCE.Settings;
 
 namespace TransferManagerCE
 {
@@ -11,57 +12,52 @@ namespace TransferManagerCE
         [HarmonyPrefix]
         public static bool CargoShipAIArriveAtTarget(ushort vehicleID, ref Vehicle data, ref bool __result)
         {
-            __result = ArriveAtTarget(vehicleID, ref data);
-            return false; // Bypass original function
+            if (ModSettings.GetSettings().FixCargoTrucksDisappearingOutsideConnections)
+            {
+                __result = ArriveAtTarget(vehicleID, ref data);
+                return false; // Bypass original function
+            }
+            
+            return true;
         }
 
         [HarmonyPatch(typeof(CargoPlaneAI), "ArriveAtTarget")]
         [HarmonyPrefix]
         public static bool CargoPlaneAIArriveAtTarget(ushort vehicleID, ref Vehicle data, ref bool __result)
         {
-            __result = ArriveAtTarget(vehicleID, ref data);
-            return false; // Bypass original function
+            if (ModSettings.GetSettings().FixCargoTrucksDisappearingOutsideConnections)
+            {
+                __result = ArriveAtTarget(vehicleID, ref data);
+                return false; // Bypass original function
+            }
+
+            return true;
         }
 
-        [HarmonyPatch(typeof(CargoTrainAI), "ArriveAtTarget")]
-        [HarmonyPrefix]
-        public static bool CargoTrainAIArriveAtTarget(ushort vehicleID, ref Vehicle data, ref bool __result)
-        {
-            __result = ArriveAtTarget(vehicleID, ref data);
-            return false; // Bypass original function
-        }
-
+        // Copied from CargoTrainAI.ArriveAtTarget
         private static bool ArriveAtTarget(ushort vehicleID, ref Vehicle data)
         {
-            VehicleManager instance = Singleton<VehicleManager>.instance;
+            Vehicle[] buffer = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
             ushort num = data.m_firstCargo;
             data.m_firstCargo = 0;
             int num2 = 0;
             while (num != 0)
             {
-                // Get a ref for this vehicle
-                ref Vehicle vehicle = ref instance.m_vehicles.m_buffer[num];
-
-                ushort nextCargo = vehicle.m_nextCargo;
-                vehicle.m_nextCargo = 0;
-                vehicle.m_cargoParent = 0;
-                VehicleInfo info = vehicle.Info;
+                ushort nextCargo = buffer[num].m_nextCargo;
+                buffer[num].m_nextCargo = 0;
+                buffer[num].m_cargoParent = 0;
+                VehicleInfo info = buffer[num].Info;
                 if (data.m_targetBuilding != 0)
                 {
-                    // If cargo vehicle target is also vehicle target then just call ArriveAtDestination.
-                    if (data.m_targetBuilding == vehicle.m_targetBuilding)
+                    if (data.m_targetBuilding == buffer[num].m_targetBuilding)
                     {
-#if DEBUG
-                        Debug.Log($"Vehicle:{num} - Arrived at destination");
-#endif
-                        info.m_vehicleAI.ArriveAtDestination(num, ref vehicle);
+                        info.m_vehicleAI.ArriveAtDestination(num, ref buffer[num]);
                     }
                     else
                     {
-                        info.m_vehicleAI.SetSource(num, ref instance.m_vehicles.m_buffer[num], data.m_targetBuilding);
-                        info.m_vehicleAI.SetTarget(num, ref instance.m_vehicles.m_buffer[num], vehicle.m_targetBuilding);
+                        info.m_vehicleAI.SetSource(num, ref buffer[num], data.m_targetBuilding);
+                        info.m_vehicleAI.SetTarget(num, ref buffer[num], buffer[num].m_targetBuilding);
                     }
-
                 }
 
                 num = nextCargo;
@@ -74,7 +70,7 @@ namespace TransferManagerCE
 
             data.m_waitCounter = 0;
             data.m_flags |= Vehicle.Flags.WaitingLoading;
-            return false; // Bypass original function
+            return false;
         }
     }
 }

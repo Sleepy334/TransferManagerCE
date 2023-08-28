@@ -30,7 +30,10 @@ namespace TransferManagerCE.Data
             m_buildingId = buildingId;
             m_responderBuilding = responderBuilding;
             m_targetVehicle = targetVehicle;
+        }
 
+        public void Calculate()
+        {
             // Cache these as they are slow
             m_value = CalculateValue();
             m_target = CalculateTarget();

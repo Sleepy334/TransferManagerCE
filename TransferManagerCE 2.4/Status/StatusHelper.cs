@@ -1,14 +1,15 @@
+using System;
 using ColossalFramework;
 using System.Collections.Generic;
-using TransferManagerCE.CustomManager;
 using TransferManagerCE.Data;
-using static DistrictPolicies;
-using UnityEngine;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
-using static TransferManagerCE.CustomTransferReason;
-using System;
 using TransferManagerCE.Util;
+using System.Text.RegularExpressions;
+using System.Diagnostics;
+using TransferManagerCE.Settings;
+using UnityEngine;
+using ICities;
 
 namespace TransferManagerCE
 {
@@ -17,6 +18,7 @@ namespace TransferManagerCE
         List<StatusData> m_listServices;
         List<StatusData> m_listIncoming;
         List<StatusData> m_listOutgoing;
+        List<StatusData> m_listStops;
 
         HashSet<TransferReason> m_setAddedReasons;
         HashSet<ushort> m_setAddedVehicles;
@@ -26,6 +28,7 @@ namespace TransferManagerCE
             m_listServices = new List<StatusData>();
             m_listIncoming = new List<StatusData>();
             m_listOutgoing = new List<StatusData>();
+            m_listStops = new List<StatusData>();
             m_setAddedReasons = new HashSet<TransferReason>();
             m_setAddedVehicles = new HashSet<ushort>();
         }
@@ -39,6 +42,7 @@ namespace TransferManagerCE
                 m_listServices.Clear();
                 m_listIncoming.Clear();
                 m_listOutgoing.Clear();
+                m_listStops.Clear();
                 m_setAddedReasons.Clear();
                 m_setAddedVehicles.Clear();
 
@@ -52,7 +56,10 @@ namespace TransferManagerCE
                     
                     // Now add status values for items that didnt have vehicles responding
                     // Common to all (Services)
-                    AddCommonServices(eBuildingType, buildingId);
+                    if (eBuildingType != BuildingType.OutsideConnection)
+                    {
+                        AddCommonServices(eBuildingType, buildingId);
+                    }
 
                     // Add building specific values
                     AddBuildingSpecific(eBuildingType, buildingId, building);
@@ -85,6 +92,7 @@ namespace TransferManagerCE
 
                 if (m_listServices.Count > 0)
                 {
+                    m_listServices.ForEach(item => item.Calculate());
                     m_listServices.Sort();
                     m_listServices.Reverse();
                     list.AddRange(m_listServices);
@@ -92,7 +100,11 @@ namespace TransferManagerCE
 
                 if (m_listOutgoing.Count > 0)
                 {
-                    list.Add(new StatusDataSeparator());
+                    if (list.Count > 0)
+                    {
+                        list.Add(new StatusDataSeparator());
+                    }
+                    m_listOutgoing.ForEach(item => item.Calculate());
                     m_listOutgoing.Sort();
                     m_listOutgoing.Reverse();
                     list.AddRange(m_listOutgoing);
@@ -100,10 +112,24 @@ namespace TransferManagerCE
 
                 if (m_listIncoming.Count > 0)
                 {
-                    list.Add(new StatusDataSeparator());
+                    if (list.Count > 0)
+                    {
+                        list.Add(new StatusDataSeparator());
+                    }
+                    m_listIncoming.ForEach(item => item.Calculate());
                     m_listIncoming.Sort();
                     m_listIncoming.Reverse();
                     list.AddRange(m_listIncoming);
+                }
+
+                if (m_listStops.Count > 0)
+                {
+                    if (list.Count > 0)
+                    {
+                        list.Add(new StatusDataSeparator());
+                    }
+                    m_listStops.ForEach(item => item.Calculate());
+                    list.AddRange(m_listStops);
                 }
             }
 
@@ -272,8 +298,9 @@ namespace TransferManagerCE
                                 {
                                     case BuildingType.Commercial:
                                         {
-                                            m_listIncoming.Add(new StatusDataCommercial(eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
-                                            m_setAddedReasons.Add(TransferReason.Goods);
+                                            CommercialBuildingAI buildingAI = building.Info.GetAI() as CommercialBuildingAI;
+                                            m_listIncoming.Add(new StatusDataCommercial(buildingAI.m_incomingResource, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            m_setAddedReasons.Add(buildingAI.m_incomingResource);
                                             m_setAddedVehicles.Add(actualVehicleId);
                                             break;
                                         }
@@ -564,9 +591,24 @@ namespace TransferManagerCE
                     }
                 case BuildingTypeHelper.BuildingType.Commercial:
                     {
-                        if (!m_setAddedReasons.Contains(TransferReason.Goods) && !m_setAddedReasons.Contains(TransferReason.Food))
+                        CommercialBuildingAI buildingAI = building.Info.GetAI() as CommercialBuildingAI;
+                        if (!m_setAddedReasons.Contains(buildingAI.m_incomingResource))
                         {
-                            m_listIncoming.Add(new StatusDataCommercial(eBuildingType, buildingId, 0, 0));
+                            m_listIncoming.Add(new StatusDataCommercial(buildingAI.m_incomingResource, eBuildingType, buildingId, 0, 0));
+                        }
+                        TransferReason material = StatusDataCommercial.GetOutgoingTransferReason(buildingId, building.Info);
+                        if (!m_setAddedReasons.Contains(material))
+                        {
+                            m_listOutgoing.Add(new StatusDataCommercial(material, eBuildingType, buildingId, 0, 0));
+                        }
+                        break;
+                    }
+                case BuildingType.Office:
+                    {
+                        TransferReason material = StatusDataOffice.GetOutgoingTransferReason(building);
+                        if (material != TransferReason.None)
+                        {
+                            m_listOutgoing.Add(new StatusDataOffice(material, eBuildingType, buildingId, 0, 0));
                         }
                         break;
                     }
@@ -577,6 +619,9 @@ namespace TransferManagerCE
                         {
                             m_listIncoming.Add(new StatusDataShelter(TransferReason.Food, eBuildingType, buildingId, 0, 0));
                         }
+
+                        AddNetStops(eBuildingType, building, buildingId);
+
                         break;
                     }
                 case BuildingTypeHelper.BuildingType.GenericExtractor:
@@ -716,6 +761,11 @@ namespace TransferManagerCE
                         m_listIncoming.Add(new StatusDataSchool(TransferReason.Student3, eBuildingType, buildingId, 0, 0));
                         break;
                     }
+                case BuildingType.CableCarStation:
+                    {
+                        AddNetStops(eBuildingType, building, buildingId);
+                        break;
+                    }
                 case BuildingType.TransportStation:
                     {
                         // Only add for parent building as this code loops through sub buildings anyway
@@ -723,7 +773,10 @@ namespace TransferManagerCE
                         {
                             m_listOutgoing.Add(new StatusTransportStation(eBuildingType, buildingId, 0, 0));
                         }
-                        
+
+                        // Add stops
+                        AddNetStops(eBuildingType, building, buildingId);
+
                         break;
                     }
                 case BuildingType.SnowDump:
@@ -731,6 +784,61 @@ namespace TransferManagerCE
                         m_listIncoming.Add(new StatusDataSnowDump(eBuildingType, buildingId, 0, 0));
                         break;
                     }
+            }
+        }
+
+        private void AddNetStops(BuildingType eBuildingType, Building building, ushort buildingId)
+        {
+            // Add stops
+            int iLoopCount = 0;
+            ushort nodeId = building.m_netNode;
+            while (nodeId != 0)
+            {
+                NetNode node = NetManager.instance.m_nodes.m_buffer[nodeId];
+                NetInfo info = node.Info;
+                if ((object)info != null)
+                {
+                    switch (info.m_class.m_layer)
+                    {
+                        case ItemClass.Layer.PublicTransport:
+                            {
+                                switch (eBuildingType)
+                                {
+                                    case BuildingType.TransportStation:
+                                        {
+                                            if (node.m_transportLine == 0)
+                                            {
+                                                m_listStops.Add(new StatusIntercityStop(eBuildingType, buildingId, nodeId));
+                                            }
+                                            break;
+                                        }
+                                    case BuildingType.CableCarStation:
+                                        {
+                                            if (node.m_transportLine == 0)
+                                            {
+                                                m_listStops.Add(new StatusCableCarStop(eBuildingType, buildingId, nodeId));
+                                            }
+                                            break;
+                                        }
+                                    case BuildingType.DisasterShelter:
+                                        {
+                                            m_listStops.Add(new StatusEvacuationStop(eBuildingType, buildingId, nodeId));
+                                            break;
+                                        }
+                                }
+
+                                break;
+                            }
+                    }
+                }
+
+                nodeId = node.m_nextBuildingNode;
+
+                if (++iLoopCount > 32768)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
+                    break;
+                }
             }
         }
     }

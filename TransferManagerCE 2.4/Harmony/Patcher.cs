@@ -60,7 +60,9 @@ namespace TransferManagerCE
                 patchList.Add(typeof(CheckRoadAccessPatches)); // Override to set the train track as the access segemnt.
                 patchList.Add(typeof(CargoSpawnPatches));
                 patchList.Add(typeof(ArriveAtTargetPatches));
-                
+                patchList.Add(typeof(CheckPassengersPatches));
+                patchList.Add(typeof(CreateOutgoingVehiclePatch)); 
+
                 // Outside connection patches
                 if (DependencyUtils.IsAdvancedOutsideConnectionsRunning())
                 {

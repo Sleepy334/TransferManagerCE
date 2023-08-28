@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
 using System;
+using TransferManagerCE.Settings;
 using UnityEngine;
 
 namespace TransferManagerCE
@@ -13,7 +14,7 @@ namespace TransferManagerCE
         [HarmonyPrefix]
         public static bool CheckRoadAccessPrefix(BuildingAI __instance, ushort buildingID, ref Building data)
         {
-            if (__instance is WarehouseStationAI)
+            if (__instance is WarehouseStationAI && ModSettings.GetSettings().FixCargoWarehouseAccessSegment)
             {
                 bool flag = true;
                 data.m_accessSegment = 0;

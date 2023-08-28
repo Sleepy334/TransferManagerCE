@@ -118,6 +118,95 @@ namespace TransferManagerCE.Settings
             set;
         } = 32;
 
+        public bool ForceCargoShipSpawn
+        {
+            get;
+            set;
+        } = true;
+
+        public bool ForcePassengerShipSpawn
+        {
+            get;
+            set;
+        } = true;
+        
+        public bool ForceCargoPlaneSpawn
+        {
+            get;
+            set;
+        } = true;
+
+        public bool ForcePassengerPlaneSpawn
+        {
+            get;
+            set;
+        } = true;
+
+        public bool ForcePassengerPlaneSpawnAtGate
+        {
+            get;
+            set;
+        } = true;
+
+        public bool FixCargoTrucksDisappearingOutsideConnections
+        {
+            get;
+            set;
+        } = true;
+        public bool ResetStopMaxWaitTimeWhenNoPasengers
+        {
+            get;
+            set;
+        } = true;
+
+        public bool FixBankVansStuckCargoStations
+        {
+            get;
+            set;
+        } = true;
+
+        public bool FixPostVansStuckCargoStations
+        {
+            get;
+            set;
+        } = true;
+
+        public bool FixTransportStationNullReferenceException
+        {
+            get;
+            set;
+        } = true;
+
+        public bool FixFishWarehouses
+        {
+            get;
+            set;
+        } = true;
+
+        public bool FixCargoWarehouseAccessSegment
+        {
+            get;
+            set;
+        } = true;
+
+        public bool RemoveEmptyWarehouseLimit
+        {
+            get;
+            set;
+        } = true;
+
+        public bool FixCargoWarehouseExcludeFlag
+        {
+            get;
+            set;
+        } = true;
+
+        public bool LogCitizenPathFailures
+        {
+            get;
+            set;
+        } = false;
+
         [XmlIgnore]
         public UnsavedKeyMapping TransferIssueHotkey = new UnsavedKeyMapping(
             "TransferIssueHotkey",
@@ -228,7 +317,7 @@ namespace TransferManagerCE.Settings
                 using (StreamWriter writer = new StreamWriter(SettingsFile))
                 {
                     XmlSerializer xmlSerializer = new XmlSerializer(typeof(ModSettings)); 
-                    xmlSerializer.Serialize(writer, ModSettings.GetSettings());
+                    xmlSerializer.Serialize(writer, this);
                 }
             }
             catch (Exception ex)

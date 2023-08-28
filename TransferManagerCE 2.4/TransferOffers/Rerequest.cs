@@ -39,53 +39,65 @@ namespace TransferManagerCE.TransferOffers
         // We ignore far away trucks based on the problem level
         public static int GetNearbyGuestVehiclesTransferSize(Building building, ProblemLevel level, TransferReason material1, TransferReason material2, out int iTotalTrucks)
         {
+            Vehicle[] Vehicles = VehicleManager.instance.m_vehicles.m_buffer;
+
             int iTransferSize = 0;
             int iTempTotalTrucks = 0;
 
-            BuildingUtils.EnumerateGuestVehicles(building, (vehcileId, vehicle) =>
+            BuildingUtils.EnumerateGuestVehicles(building, (vehicleId, vehicle) =>
             {
                 // We only include this material if the truck is close by depending on incoming timer value
                 if (vehicle.m_flags != 0 && ((TransferReason)vehicle.m_transferType == material1 || (material2 != TransferReason.None && (TransferReason)vehicle.m_transferType == material2)))
                 {
                     iTempTotalTrucks++;
+                    bool bVehicleValid = true;
 
-                    switch (level)
+                    // Check parent is also valid
+                    if (vehicle.m_cargoParent != 0)
                     {
-                        case ProblemLevel.Level2:
-                            {
-                                // We exclude vehicles who are loading or who's parent is loading
-                                if (!IsVehicleOrParentWaiting(vehicle))
+                        bVehicleValid = Vehicles[vehicle.m_cargoParent].m_flags != 0;
+                    }
+
+                    if (bVehicleValid)
+                    {
+                        switch (level)
+                        {
+                            case ProblemLevel.Level2:
                                 {
-                                    // We need it to be really close, 2km as we are about to be abandoned
-                                    double dDistanceSquared = Vector3.SqrMagnitude(vehicle.GetLastFramePosition() - building.m_position);
-                                    if (dDistanceSquared < iREREQUEST_DISTANCE_LEVEL2)
+                                    // We exclude vehicles who are loading or who's parent is loading
+                                    if (!IsVehicleOrParentWaiting(Vehicles, vehicle))
                                     {
-                                        iTransferSize += vehicle.m_transferSize;
+                                        // We need it to be really close, 2km as we are about to be abandoned
+                                        double dDistanceSquared = Vector3.SqrMagnitude(vehicle.GetLastFramePosition() - building.m_position);
+                                        if (dDistanceSquared < iREREQUEST_DISTANCE_LEVEL2)
+                                        {
+                                            iTransferSize += vehicle.m_transferSize;
+                                        }
                                     }
+                                    break;
                                 }
-                                break;
-                            }
-                        case ProblemLevel.Level1:
-                            {
-                                // We exclude vehicles who are loading or who's parent is loading
-                                if (!IsVehicleOrParentWaiting(vehicle))
+                            case ProblemLevel.Level1:
                                 {
-                                    // Include truck if closer than 4km as we still have a little time for them to arrive
-                                    double dDistanceSquared = Vector3.SqrMagnitude(vehicle.GetLastFramePosition() - building.m_position);
-                                    if (dDistanceSquared < iREREQUEST_DISTANCE_LEVEL1)
+                                    // We exclude vehicles who are loading or who's parent is loading
+                                    if (!IsVehicleOrParentWaiting(Vehicles, vehicle))
                                     {
-                                        iTransferSize += vehicle.m_transferSize;
+                                        // Include truck if closer than 4km as we still have a little time for them to arrive
+                                        double dDistanceSquared = Vector3.SqrMagnitude(vehicle.GetLastFramePosition() - building.m_position);
+                                        if (dDistanceSquared < iREREQUEST_DISTANCE_LEVEL1)
+                                        {
+                                            iTransferSize += vehicle.m_transferSize;
+                                        }
                                     }
+
+                                    break;
                                 }
-                                
-                                break;
-                            }
-                        case ProblemLevel.Level0:
-                            {
-                                // Any distance is fine
-                                iTransferSize += vehicle.m_transferSize;
-                                break;
-                            }
+                            case ProblemLevel.Level0:
+                                {
+                                    // Any distance is fine
+                                    iTransferSize += vehicle.m_transferSize;
+                                    break;
+                                }
+                        }
                     }
                 }
             });
@@ -133,7 +145,7 @@ namespace TransferManagerCE.TransferOffers
             }
         }
 
-        private static bool IsVehicleOrParentWaiting(Vehicle vehicle)
+        private static bool IsVehicleOrParentWaiting(Vehicle[] Vehicles, Vehicle vehicle)
         {
             if (vehicle.m_waitCounter > 0)
             {
@@ -141,8 +153,7 @@ namespace TransferManagerCE.TransferOffers
             }
             else if (vehicle.m_cargoParent != 0)
             {
-                Vehicle parent = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[vehicle.m_cargoParent];
-                return parent.m_waitCounter > 0;
+                return Vehicles[vehicle.m_cargoParent].m_waitCounter > 0;
             }
 
             return false;

@@ -268,7 +268,7 @@ namespace TransferManagerCE.UI
                 }
             }
             
-            UIPanel? tabPathing = m_tabStrip.AddTabIcon("ToolbarIconRoads", Localization.Get("tabTransferIssuesPathing"), "", 130f);
+            UIPanel? tabPathing = m_tabStrip.AddTabIcon("ToolbarIconRoads", Localization.Get("tabTransferIssuesPathing"), "", 140f);
             if (tabPathing is not null)
             {
                 const int iButtonHeight = 30;
@@ -344,7 +344,7 @@ namespace TransferManagerCE.UI
         {
             if (bVisible)
             {
-                UpdatePanel();
+                InvalidatePanel();
             }
         }
 
@@ -358,7 +358,9 @@ namespace TransferManagerCE.UI
                 if (buildingId != 0)
                 {
                     m_eBuildingType = BuildingTypeHelper.GetBuildingType(buildingId);
-
+#if DEBUG
+                    Debug.Log($"Building type: {m_eBuildingType}");
+#endif
                     // Update sub buildings (if any)
                     Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
                     if (building.m_flags != 0)
@@ -616,7 +618,7 @@ namespace TransferManagerCE.UI
                 SelectionTool.Instance.SetMode(SelectionTool.SelectionToolMode.Normal);
             }
 
-            UpdatePanel();
+            InvalidatePanel();
         }
 
         public List<VehicleData> GetVehicles(out int iVehicleCount)

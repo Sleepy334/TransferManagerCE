@@ -97,6 +97,7 @@ namespace TransferManagerCE
             TramDepot,
             FerryDepot,
             PassengerHelicopterDepot,
+            CableCarStation,
 
             CampusBuilding,
         }
@@ -520,6 +521,10 @@ namespace TransferManagerCE
                                                     return BuildingType.FerryDepot;
                                                 }
                                                 break;
+                                            }
+                                        case ItemClass.SubService.PublicTransportCableCar:
+                                            {
+                                                return BuildingType.CableCarStation;
                                             }
                                         default:
                                             {

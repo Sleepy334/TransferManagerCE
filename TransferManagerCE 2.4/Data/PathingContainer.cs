@@ -11,6 +11,7 @@ namespace TransferManagerCE
     {
         public enum SourceOrTarget
         {
+            None,
             Source,
             Target,
         }

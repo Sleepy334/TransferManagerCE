@@ -98,12 +98,14 @@ namespace TransferManagerCE
             UIHelper tabGeneral = tabStrip.AddTabPage(Localization.Get("tabGeneral"), true);
             UIHelper tabTransferManager = tabStrip.AddTabPage(Localization.Get("tabTransferManager"), true);
             UIHelper tabVehicleAI = tabStrip.AddTabPage(Localization.Get("tabVehicleAI"), true);
+            UIHelper tabAdvanced = tabStrip.AddTabPage(Localization.Get("tabAdvanced"), true);
             UIHelper tabMaintenance = tabStrip.AddTabPage(Localization.Get("tabMaintenance"), true);
 
             // Setup tabs
             SetupGeneralTab(tabGeneral);
             SetupTransferManagerTab(tabTransferManager);
             SetupVehicleAITab(tabVehicleAI);
+            SetupAdvanced(tabAdvanced);
             SetupMaintenance(tabMaintenance);
 
             UpdateTransferManagerEnabled();
@@ -421,6 +423,32 @@ namespace TransferManagerCE
             m_chkPoliceCopterAI = (UICheckBox)group.AddCheckbox(Localization.Get("optionPoliceCopterAI"), oSettings.PoliceCopterAI, OnPoliceCopterAI);
         }
 
+        public void SetupAdvanced(UIHelper helper)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+
+            // Experimental section
+            UIHelperBase group = helper.AddGroup(Localization.Get("GROUP_PATCHES"));
+            UIPanel panel = (group as UIHelper).self as UIPanel;
+            AddDescription(panel, "txtAdvancedDescription", panel, 1.0f, Localization.Get("txtAdvancedDescription"));
+            group.AddCheckbox(Localization.Get("optionForceCargoShipSpawn"), oSettings.ForceCargoShipSpawn, (bChecked) => { oSettings.ForceCargoShipSpawn = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionForcePassengerShipSpawn"), oSettings.ForcePassengerShipSpawn, (bChecked) => { oSettings.ForcePassengerShipSpawn = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionForceCargoPlaneSpawn"), oSettings.ForceCargoPlaneSpawn, (bChecked) => { oSettings.ForceCargoPlaneSpawn = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionForcePassengerPlaneSpawn"), oSettings.ForcePassengerPlaneSpawn, (bChecked) => { oSettings.ForcePassengerPlaneSpawn = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionForceAirportGateToSpawn"), oSettings.ForcePassengerPlaneSpawnAtGate, (bChecked) => { oSettings.ForcePassengerPlaneSpawnAtGate = bChecked; oSettings.Save(); });
+            group.AddSpace(iSEPARATOR_HEIGHT);
+            group.AddCheckbox(Localization.Get("optionResetStopMaxWaitTimeWhenNoPasengers"), oSettings.ResetStopMaxWaitTimeWhenNoPasengers, (bChecked) => { oSettings.ResetStopMaxWaitTimeWhenNoPasengers = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionFixCargoTrucksDisappearingOutsideConnections"), oSettings.ForceCargoPlaneSpawn, (bChecked) => { oSettings.FixCargoTrucksDisappearingOutsideConnections = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionFixBankVansStuckCargoStations"), oSettings.FixBankVansStuckCargoStations, (bChecked) => { oSettings.FixBankVansStuckCargoStations = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionFixPostVansStuckCargoStations"), oSettings.FixPostVansStuckCargoStations, (bChecked) => { oSettings.FixPostVansStuckCargoStations = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionFixTransportStationNullReferenceException"), oSettings.FixTransportStationNullReferenceException, (bChecked) => { oSettings.FixTransportStationNullReferenceException = bChecked; oSettings.Save(); });
+            group.AddSpace(iSEPARATOR_HEIGHT);
+            group.AddCheckbox(Localization.Get("optionFixFishWarehouses"), oSettings.FixFishWarehouses, (bChecked) => { oSettings.FixFishWarehouses = bChecked; oSettings.Save();});
+            group.AddCheckbox(Localization.Get("optionFixCargoWarehouseAccessSegment"), oSettings.FixCargoWarehouseAccessSegment, (bChecked) => { oSettings.FixCargoWarehouseAccessSegment = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionFixCargoWarehouseExcludeFlag"), oSettings.FixCargoWarehouseExcludeFlag, (bChecked) => { oSettings.FixCargoWarehouseExcludeFlag = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionRemoveEmptyWarehouseLimit"), oSettings.RemoveEmptyWarehouseLimit, (bChecked) => { oSettings.RemoveEmptyWarehouseLimit = bChecked; oSettings.Save(); });
+        }
+
         public void SetupMaintenance(UIHelper helper)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
@@ -494,6 +522,9 @@ namespace TransferManagerCE
             m_dropdownConnectionGraph = (UIDropDown)groupPathing.AddDropdown(Localization.Get("dropdownConnectionGraph"), itemsConnectionGraph, oModSettings.ShowConnectionGraph, OnShowConnectionGraphChanged);
             m_dropdownConnectionGraph.width = 400;
             AddDescription(groupPathing, "txtShowConnectionGraph", 1.0f, Localization.Get("txtShowConnectionGraph"));
+            groupPathing.AddSpace(iSEPARATOR_HEIGHT); 
+            groupPathing.AddCheckbox(Localization.Get("optionLogCitizenPathFailures"), oModSettings.LogCitizenPathFailures, OnLogCitizenPathFailuresChanged);
+            AddDescription(groupPathing, "txtLogCitizenPathFailureWarning", 1.0f, Localization.Get("txtLogCitizenPathFailureWarning"));
 
             UIHelperBase groupTransferManager = helper.AddGroup(Localization.Get("tabTransferManager"));
 
@@ -548,6 +579,13 @@ namespace TransferManagerCE
         {
             ModSettings oSettings = ModSettings.GetSettings();
             oSettings.ShowConnectionGraph = mode;
+            oSettings.Save();
+        }
+
+        public void OnLogCitizenPathFailuresChanged(bool bChecked)
+        {
+            ModSettings oSettings = ModSettings.GetSettings();
+            oSettings.LogCitizenPathFailures = bChecked;
             oSettings.Save();
         }
 

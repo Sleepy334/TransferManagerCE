@@ -47,7 +47,6 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.DummyPlane:
 
                 // Version 1.9.5 Moved these to priority based as we want tourists to spread around the city rather than match closely to the edge of the map
-                // We also want entertainment to spread around the city 
                 case CustomTransferReason.Reason.TouristA:
                 case CustomTransferReason.Reason.TouristB:
                 case CustomTransferReason.Reason.TouristC:
@@ -93,6 +92,10 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.ShoppingF:
                 case CustomTransferReason.Reason.ShoppingG:
                 case CustomTransferReason.Reason.ShoppingH:
+                case CustomTransferReason.Reason.Entertainment:
+                case CustomTransferReason.Reason.EntertainmentB:
+                case CustomTransferReason.Reason.EntertainmentC:
+                case CustomTransferReason.Reason.EntertainmentD:
                     {
                         return TransferMode.OutgoingFirst;
                     }
