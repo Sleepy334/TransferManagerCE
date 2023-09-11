@@ -50,6 +50,10 @@ namespace TransferManagerCE
                 // Path failures
                 patchList.Add(typeof(CarAIPathfindFailurePatch));
 
+                // Mail2
+                patchList.Add(typeof(Mail2PostOfficePatches));
+                patchList.Add(typeof(Mail2PostVanPatches));
+
                 // Patch bugs in main game
                 patchList.Add(typeof(ResidentAIFindHospital)); // ResidentAI.FindHospital bug 
                 patchList.Add(typeof(TransportStationAICreateIncomingVehicle)); // TransportStationAI.CreateIncomingVehicle bug introduced in H&T update
@@ -61,7 +65,7 @@ namespace TransferManagerCE
                 patchList.Add(typeof(CargoSpawnPatches));
                 patchList.Add(typeof(ArriveAtTargetPatches));
                 patchList.Add(typeof(CheckPassengersPatches));
-                patchList.Add(typeof(CreateOutgoingVehiclePatch)); 
+                patchList.Add(typeof(AirportGateAIPatches));
 
                 // Outside connection patches
                 if (DependencyUtils.IsAdvancedOutsideConnectionsRunning())

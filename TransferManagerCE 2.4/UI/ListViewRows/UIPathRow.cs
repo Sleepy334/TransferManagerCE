@@ -123,44 +123,53 @@ namespace TransferManagerCE.UI
 
         public void Display(object data, bool isRowOdd)
         {
-            PathingContainer? rowData = (PathingContainer?)data;
-            if (rowData is not null)
+            m_data = (PathingContainer?)data;
+
+            if (m_data is not null)
             {
-                m_data = rowData;
                 if (m_lblTime is not null)
                 {
-                    m_lblTime.text = rowData.GetSeconds().ToString();
+                    m_lblTime.text = m_data.GetSeconds().ToString();
                 }
                 if (m_lblOwner is not null)
                 {
                     string sText = "";
-                    if (rowData.m_eSourceOrTarget == PathingContainer.SourceOrTarget.Source)
+                    if (m_data.m_eSourceOrTarget == PathingContainer.SourceOrTarget.Source)
                     {
                         sText += "* ";
                     }
-                    m_lblOwner.text = sText + InstanceHelper.DescribeInstance(rowData.m_source);
+                    m_lblOwner.text = sText + InstanceHelper.DescribeInstance(m_data.m_source);
                 }
                 if (m_lblSourceFailCount is not null)
                 {
-                    m_lblSourceFailCount.text = PathFindFailure.GetTotalPathFailures(rowData.m_source).ToString();
+                    m_lblSourceFailCount.text = PathFindFailure.GetTotalPathFailures(m_data.m_source).ToString();
                 }
                 if (m_lblTarget is not null)
                 {
                     string sText = "";
-                    if (rowData.m_eSourceOrTarget == PathingContainer.SourceOrTarget.Target)
+                    if (m_data.m_eSourceOrTarget == PathingContainer.SourceOrTarget.Target)
                     {
                         sText += "* ";
                     }
-                    m_lblTarget.text = sText + InstanceHelper.DescribeInstance(rowData.m_target);
+                    m_lblTarget.text = sText + InstanceHelper.DescribeInstance(m_data.m_target);
                 }
                 if (m_lblTargetFailCount is not null)
                 {
-                    m_lblTargetFailCount.text = PathFindFailure.GetTotalPathFailures(rowData.m_target).ToString();
+                    m_lblTargetFailCount.text = PathFindFailure.GetTotalPathFailures(m_data.m_target).ToString();
                 }
             }
-            else
+        }
+
+        public void Disabled()
+        {
+            if (m_data is not null)
             {
                 m_data = null;
+                m_lblTime.tooltip = "";
+                m_lblOwner.tooltip = "";
+                m_lblSourceFailCount.tooltip = "";
+                m_lblTarget.tooltip = "";
+                m_lblTargetFailCount.tooltip = "";
             }
         }
 

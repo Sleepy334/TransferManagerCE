@@ -188,50 +188,63 @@ namespace TransferManagerCE.UI
 
         public void Display(object data, bool isRowOdd)
         {
-            BuildingMatchData? rowData = (BuildingMatchData?)data;
-            if (rowData is not null)
+            m_data = (BuildingMatchData?) data;
+
+            if (m_data is not null)
             {
-                m_data = rowData;
                 if (m_lblTime is not null)
                 {
-                    m_lblTime.text = rowData.Time();
+                    m_lblTime.text = m_data.Time();
                 }
                 if (m_lblMaterial is not null)
                 {
-                    m_lblMaterial.text = rowData.m_material.ToString();
+                    m_lblMaterial.text = m_data.m_material.ToString();
                 }
                 if (m_lblInOut is not null)
                 {
-                    m_lblInOut.text = rowData.GetInOutStatus();
+                    m_lblInOut.text = m_data.GetInOutStatus();
                 }
                 if (m_lblActive is not null)
                 {
-                    m_lblActive.text = rowData.GetActiveStatus();
+                    m_lblActive.text = m_data.GetActiveStatus();
                 }
                 if (m_lblAmount is not null)
                 {
-                    m_lblAmount.text = rowData.GetAmount();
+                    m_lblAmount.text = m_data.GetAmount();
                 }
                 if (m_lblDistance is not null)
                 {
-                    m_lblDistance.text = rowData.GetDistance().ToString("0.00");
+                    m_lblDistance.text = m_data.GetDistance().ToString("0.00");
                 }
                 if (m_lblPriority is not null)
                 {
-                    m_lblPriority.text = rowData.GetPriority();
+                    m_lblPriority.text = m_data.GetPriority();
                 }
                 if (m_lblPark is not null)
                 {
-                    m_lblPark.text = rowData.GetPark();
+                    m_lblPark.text = m_data.GetPark();
                 }
                 if (m_lblDescription is not null)
                 {
-                    m_lblDescription.text = rowData.DisplayMatch();
+                    m_lblDescription.text = m_data.DisplayMatch();
                 }
             }
-            else
+        }
+
+        public void Disabled()
+        {
+            if (m_data is not null)
             {
                 m_data = null;
+                m_lblTime.tooltip = "";
+                m_lblMaterial.tooltip = "";
+                m_lblInOut.tooltip = "";
+                m_lblActive.tooltip = "";
+                m_lblAmount.tooltip = "";
+                m_lblDistance.tooltip = "";
+                m_lblPriority.tooltip = "";
+                m_lblPark.tooltip = "";
+                m_lblDescription.tooltip = "";
             }
         }
 
@@ -253,6 +266,21 @@ namespace TransferManagerCE.UI
 
         private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
         {
+            if (m_lblTime is null)
+            {
+                return;
+            }
+
+            if (enabled && m_data is not null)
+            {
+                m_lblMaterial.tooltip = m_data.m_material.ToString();
+                m_lblDescription.tooltip = m_data.DisplayMatch();
+            }
+            else
+            {
+                m_lblMaterial.tooltip = "";
+                m_lblDescription.tooltip = "";
+            }
         }
 
         protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)

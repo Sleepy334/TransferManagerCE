@@ -423,6 +423,8 @@ namespace TransferManagerCE.UI
         {
             if (m_tabStrip is not null)
             {
+                TabIndex tab = (TabIndex) m_tabStrip.GetSelectTabIndex();
+
                 if (SaveGameSettings.GetSettings().EnableNewTransferManager)
                 {
                     m_settingsTab.UpdateSettingsTab();
@@ -433,7 +435,7 @@ namespace TransferManagerCE.UI
                 }
 
                 m_capacityTab.UpdateTab();
-                m_transfersTab.UpdateTab();
+                m_transfersTab.UpdateTab(tab == TabIndex.TAB_TRANSFERS);
 
                 // Vehicle tab
                 m_tabStrip.SetTabVisible((int)TabIndex.TAB_VEHICLES, HasVehicles(m_buildingId));
@@ -839,6 +841,9 @@ namespace TransferManagerCE.UI
 
             if (m_tabStrip is not null)
             {
+                List<StatusData>? statusList = null;
+                int iStatusCount = 0;
+
                 // Update status tab count
                 if (m_tabStrip.IsTabVisible((int)TabIndex.TAB_STATUS))
                 {
@@ -846,10 +851,10 @@ namespace TransferManagerCE.UI
                     if (m_buildingId != 0)
                     {
                         // Add vehicle count if there are any guest vehicles
-                        int iCount = BuildingUtils.GetGuestParentVehiclesForBuilding(building).Count;
-                        if (iCount > 0)
+                        statusList = new StatusHelper().GetStatusList(m_buildingId, out iStatusCount);
+                        if (iStatusCount > 0)
                         {
-                            sMessage += " (" + iCount + ")";
+                            sMessage += " (" + iStatusCount + ")";
                         }
                     }
 
@@ -914,15 +919,13 @@ namespace TransferManagerCE.UI
                         }
                     case TabIndex.TAB_STATUS: // Status
                         {
-                            if (m_listStatus is not null)
+                            if (m_listStatus is not null && statusList is not null)
                             {
-                                List<StatusData> status = new StatusHelper().GetStatusList(m_buildingId);
-                                    
                                 // Services
                                 m_listStatus.GetList().rowsData = new FastList<object>
                                 {
-                                    m_buffer = status.ToArray(),
-                                    m_size = status.Count,
+                                    m_buffer = statusList.ToArray(),
+                                    m_size = statusList.Count,
                                 };
                             }
                             break;
@@ -956,7 +959,7 @@ namespace TransferManagerCE.UI
                         {
                             if (m_transfersTab is not null)
                             {
-                                m_transfersTab.UpdateTab();
+                                m_transfersTab.UpdateTab(true);
                             }
                             break;
                         }

@@ -148,7 +148,7 @@ namespace TransferManagerCE
             }
         }
 
-        public static void RecordAddIncoming(TransferReason material, TransferOffer offer)
+        public static void RecordAddIncoming(TransferReason material, int amount)
         {
             // Update the stats for the specific material
             if (ModSettings.GetSettings().StatisticsEnabled && s_Stats is not null)
@@ -156,19 +156,19 @@ namespace TransferManagerCE
                 if ((int)material < s_Stats.Length)
                 {
                     s_Stats[(int)material].TotalIncomingCount++;
-                    s_Stats[(int)material].TotalIncomingAmount += offer.Amount;
+                    s_Stats[(int)material].TotalIncomingAmount += amount;
                 }
 
                 // Update the stats
                 if (iMATERIAL_TOTAL_LOCATION < s_Stats.Length)
                 {
                     s_Stats[iMATERIAL_TOTAL_LOCATION].TotalIncomingCount++;
-                    s_Stats[iMATERIAL_TOTAL_LOCATION].TotalIncomingAmount += offer.Amount;
+                    s_Stats[iMATERIAL_TOTAL_LOCATION].TotalIncomingAmount += amount;
                 }
             }
         }
 
-        public static void RecordAddOutgoing(TransferReason material, TransferOffer offer)
+        public static void RecordAddOutgoing(TransferReason material, int amount)
         {
             // Update the stats for the specific material
             if (ModSettings.GetSettings().StatisticsEnabled && s_Stats is not null)
@@ -176,14 +176,14 @@ namespace TransferManagerCE
                 if ((int)material < s_Stats.Length)
                 {
                     s_Stats[(int)material].TotalOutgoingCount++;
-                    s_Stats[(int)material].TotalOutgoingAmount += offer.Amount;
+                    s_Stats[(int)material].TotalOutgoingAmount += amount;
                 }
 
                 // Update the stats
                 if (iMATERIAL_TOTAL_LOCATION < s_Stats.Length)
                 {
                     s_Stats[iMATERIAL_TOTAL_LOCATION].TotalOutgoingCount++;
-                    s_Stats[iMATERIAL_TOTAL_LOCATION].TotalOutgoingAmount += offer.Amount;
+                    s_Stats[iMATERIAL_TOTAL_LOCATION].TotalOutgoingAmount += amount;
                 }
             }
         }

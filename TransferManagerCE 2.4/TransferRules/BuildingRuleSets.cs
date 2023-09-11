@@ -167,6 +167,7 @@ namespace TransferManagerCE.TransferRules
                     switch (eBuildingType)
                     {
                         case BuildingType.Warehouse:
+                        case BuildingType.WarehouseStation:
                             {
                                 // Warehouses, just return the actual material they store
                                 List<ReasonRule> rules = new List<ReasonRule>();
@@ -829,6 +830,16 @@ namespace TransferManagerCE.TransferRules
             }
             {
                 ReasonRule rule = new ReasonRule();
+                rule.m_id = 3;
+                rule.m_name = Localization.Get("reasonMail2"); //"Mail";
+                rule.AddReason(CustomTransferReason.Reason.Mail2);
+                rule.m_incomingDistrict = true; // Active
+                rule.m_incomingBuilding = true; // Active
+                rule.m_distance = true;
+                list.Add(rule);
+            }
+            {
+                ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonUnsortedMail"); //"Unsorted Mail";
                 rule.AddReason(CustomTransferReason.Reason.UnsortedMail);
@@ -854,6 +865,16 @@ namespace TransferManagerCE.TransferRules
         private static void PostSortingFacility()
         {
             List<ReasonRule> list = new List<ReasonRule>();
+            {
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 2;
+                rule.m_name = Localization.Get("reasonMail2"); //"Mail";
+                rule.AddReason(CustomTransferReason.Reason.Mail2);
+                rule.m_incomingDistrict = true; // Active
+                rule.m_incomingBuilding = true; // Active
+                rule.m_distance = true;
+                list.Add(rule);
+            }
             {
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 0;
@@ -1510,8 +1531,10 @@ namespace TransferManagerCE.TransferRules
             }
 
             BuildingRules[BuildingType.Warehouse] = list;
+            BuildingRules[BuildingType.WarehouseStation] = list;
             BuildingRules[BuildingType.CargoFerryWarehouseHarbor] = list;
         }
+
         private static void OutsideConnection()
         {
             List<ReasonRule> list = new List<ReasonRule>();

@@ -1,4 +1,5 @@
 ﻿using ColossalFramework;
+using ICities;
 using System;
 using System.Collections.Generic;
 using TransferManagerCE.Data;
@@ -13,6 +14,22 @@ namespace TransferManagerCE.CustomManager
 {
     public class CustomTransferOffer
     {
+        public enum TransportType 
+        {
+            None,
+            Road,
+            Plane,
+            Train,
+            Ship,
+        }
+
+        public enum WarehouseStationOffer
+        {
+            None,
+            Warehouse,
+            CargoStation,
+        }
+
         // Actual TransferOffer object
         public TransferOffer m_offer;
         private bool m_bIncoming; // Offer direction
@@ -52,6 +69,9 @@ namespace TransferManagerCE.CustomManager
 
         // Priority scaling
         private float? m_priorityFactor = null;
+
+        private TransportType m_transportType = TransportType.None;
+        private WarehouseStationOffer m_warehouseStationOfferType = WarehouseStationOffer.None;
 
         // -------------------------------------------------------------------------------------------
         public CustomTransferOffer(bool bIncoming, TransferOffer offer)
@@ -109,6 +129,7 @@ namespace TransferManagerCE.CustomManager
 
             // Priority scaling
             m_priorityFactor = null;
+            m_transportType = TransportType.None;
         }
 
         // -------------------------------------------------------------------------------------------
@@ -635,12 +656,13 @@ namespace TransferManagerCE.CustomManager
                         }
                     case InstanceType.Vehicle:
                         {
-                            Vehicle vehicle = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[m_object.Vehicle];
-                            m_bIsValid = vehicle.m_flags != 0;
+                            Vehicle vehicle = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[m_object.Vehicle];                     
+                            m_bIsValid = vehicle.m_flags != 0 && vehicle.m_sourceBuilding != 0;
                             if (!m_bIsValid.Value)
                             {
                                 TransferManagerStats.s_iInvalidVehicleObjects++;
                             }
+
                             break;
                         }
                     case InstanceType.Citizen:
@@ -747,6 +769,123 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
+        public TransportType GetTransportType()
+        {
+            if (m_transportType == TransportType.None)
+            {
+                if (IsWarehouseStation())
+                {
+                    // We don't want to call GetBuilding() as that will return the parent building always.
+                    if (Building != 0)
+                    {
+                        Building building = BuildingManager.instance.m_buildings.m_buffer[Building];
+                        m_transportType = GetTransportType(building);
+                    }
+                    else if (Vehicle != 0)
+                    {
+                        Vehicle vehicle = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[m_object.Vehicle];
+                        if (vehicle.m_sourceBuilding != 0)
+                        {
+                            Building building = BuildingManager.instance.m_buildings.m_buffer[vehicle.m_sourceBuilding];
+                            m_transportType = GetTransportType(building);
+                        }
+                    }
+                }
+                else if (GetBuilding() != 0)
+                {
+                    
+                    Building building = BuildingManager.instance.m_buildings.m_buffer[GetBuilding()];
+                    m_transportType = GetTransportType(building);
+                }
+            }
+
+            return m_transportType;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        public bool IsWarehouseStation()
+        {
+            return (GetBuildingType() == BuildingType.WarehouseStation);
+        }
+
+        // -------------------------------------------------------------------------------------------
+        public WarehouseStationOffer GetWarehouseStationOffer()
+        {
+            if (m_warehouseStationOfferType == WarehouseStationOffer.None)
+            {
+                if (GetBuildingType() == BuildingType.WarehouseStation)
+                {
+                    if (Building != 0)
+                    {
+                        if (GetBuilding() == Building)
+                        {
+                            m_warehouseStationOfferType = WarehouseStationOffer.Warehouse;
+                        }
+                        else
+                        {
+                            m_warehouseStationOfferType = WarehouseStationOffer.CargoStation;
+                        }
+                    }
+                    else if (Vehicle != 0)
+                    {
+                        Vehicle vehicle = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[m_object.Vehicle];
+                        if (vehicle.m_sourceBuilding != 0)
+                        {
+                            if (GetBuilding() == vehicle.m_sourceBuilding)
+                            {
+                                m_warehouseStationOfferType = WarehouseStationOffer.Warehouse;
+                            }
+                            else
+                            {
+                                m_warehouseStationOfferType = WarehouseStationOffer.CargoStation;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return m_warehouseStationOfferType;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        public ushort GetWarehouseStationId()
+        {
+            if (GetBuildingType() == BuildingType.WarehouseStation)
+            {
+                Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[Building];
+                if (building.Info.GetAI() is WarehouseStationAI)
+                {
+                    return Building;
+                }
+                else
+                {
+                    return building.m_subBuilding;
+                }
+            }
+
+            return 0;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        public ushort GetWarehouseId()
+        {
+            if (GetBuildingType() == BuildingType.WarehouseStation)
+            {
+                Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[Building];
+                if (building.Info.GetAI() is WarehouseAI)
+                {
+                    return Building;
+                }
+                else
+                {
+                    return building.m_parentBuilding;
+                }
+            }
+
+            return 0;
+        }
+
+        // -------------------------------------------------------------------------------------------
         public static float PriorityModifier(CustomTransferReason.Reason material, int iPriority)
         {
             if (TransferManagerModes.IsScaleByPriority(material))
@@ -784,6 +923,31 @@ namespace TransferManagerCE.CustomManager
             }
 
             return true;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        private TransportType GetTransportType(Building building)
+        {
+            if (building.Info is not null)
+            {
+                switch (building.Info.GetSubService())
+                {
+                    case ItemClass.SubService.PublicTransportPlane:
+                        {
+                            return TransportType.Plane;
+                        }
+                    case ItemClass.SubService.PublicTransportShip:
+                        {
+                            return TransportType.Ship;
+                        }
+                    case ItemClass.SubService.PublicTransportTrain:
+                        {
+                            return TransportType.Train;
+                        }
+                }
+            }
+
+            return TransportType.Road;
         }
     }
 }

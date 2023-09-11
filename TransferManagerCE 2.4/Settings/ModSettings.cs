@@ -177,6 +177,12 @@ namespace TransferManagerCE.Settings
             set;
         } = true;
 
+        public bool FixPostTruckCollectingMail
+        {
+            get;
+            set;
+        } = true;
+        
         public bool FixFishWarehouses
         {
             get;

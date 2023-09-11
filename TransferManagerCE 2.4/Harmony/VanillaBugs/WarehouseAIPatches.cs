@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
 using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -37,15 +38,28 @@ namespace TransferManagerCE
             // We want to find the set_Exclude function of TransferOffer.
             PropertyInfo proertySetExclude = AccessTools.Property(typeof(TransferOffer), nameof(TransferOffer.Exclude));
             MethodInfo methodSetExclude = proertySetExclude.GetSetMethod();
+            MethodInfo methodRandomizer = AccessTools.Method(typeof(ColossalFramework.Math.Randomizer), nameof(UInt32), new Type[] { typeof(uint) });
 
             // Instruction enumerator.
             IEnumerator<CodeInstruction> instructionsEnumerator = instructions.GetEnumerator();
 
+            bool bPatchedRandomizerCall = false;
             int iDowngradeCallCount = 0;
             while (instructionsEnumerator.MoveNext())
             {
                 // Get next instruction.
                 CodeInstruction instruction = instructionsEnumerator.Current;
+
+                // Modify rate of warehouse station cargo calls to 50% / 50%
+                if (!bPatchedRandomizerCall && instruction.opcode == OpCodes.Call && instruction.operand == methodRandomizer)
+                {
+                    Debug.Log($"Patched Randomizer call to 2U.");
+                    bPatchedRandomizerCall = true;
+                    yield return new CodeInstruction(OpCodes.Pop); // Remove previous value
+                    yield return new CodeInstruction(OpCodes.Ldc_I4_2); // Add 2U
+                    yield return instruction; // Perform ransomizer.
+                    continue;
+                }
 
                 if (bRemoveEmptyWarehouseLimit)
                 {

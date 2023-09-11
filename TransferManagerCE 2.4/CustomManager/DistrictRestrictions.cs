@@ -28,6 +28,7 @@ namespace TransferManagerCE.CustomManager
                 // case CustomTransferReason.Reason.Collapsed2: Collapsed2 is artificially limited to P:! so never gets high enough.
                 case CustomTransferReason.Reason.ParkMaintenance:
                 case CustomTransferReason.Reason.Mail:
+                case CustomTransferReason.Reason.Mail2:
                 case CustomTransferReason.Reason.Taxi:
                 case CustomTransferReason.Reason.Dead:
                     return true;

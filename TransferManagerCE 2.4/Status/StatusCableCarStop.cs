@@ -5,8 +5,8 @@ namespace TransferManagerCE.Data
 {
     public class StatusCableCarStop : StatusNodeStop
     {
-        public StatusCableCarStop(BuildingType eBuildingType, ushort buildingId, ushort nodeId) :
-            base(eBuildingType, buildingId, nodeId)
+        public StatusCableCarStop(BuildingType eBuildingType, ushort buildingId, ushort nodeId, ushort targetVehicleId) :
+            base(eBuildingType, buildingId, nodeId, targetVehicleId)
         {
         }
 

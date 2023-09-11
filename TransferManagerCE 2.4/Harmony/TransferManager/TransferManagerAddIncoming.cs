@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using TransferManagerCE.CustomManager;
 using TransferManagerCE.UI;
 using static TransferManager;
 
@@ -27,7 +26,7 @@ namespace TransferManagerCE
             }
 
             // Update the stats for the specific material
-            MatchStats.RecordAddIncoming(material, offer);
+            MatchStats.RecordAddIncoming(material, offer.Amount);
 
             // Let building panel know a new offer is available
             if (BuildingPanel.Instance is not null)

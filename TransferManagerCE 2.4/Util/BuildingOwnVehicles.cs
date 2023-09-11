@@ -94,48 +94,45 @@ namespace TransferManagerCE.Util
             {
                 BuildingUtils.EnumerateOwnVehicles(building, (vehicleId, vehicle) =>
                 {
-                    if (vehicle.m_flags != 0)
+                    InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
+                    if (target.IsEmpty || (target.Building != 0 && target.Building == vehicle.m_sourceBuilding))
                     {
-                        InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
-                        if (target.IsEmpty || (target.Building != 0 && target.Building == vehicle.m_sourceBuilding))
+                        m_listReturning.Add(new VehicleData(vehicleId));
+                    }
+                    else
+                    {
+                        switch (target.Type)
                         {
-                            m_listReturning.Add(new VehicleData(vehicleId));
-                        }
-                        else
-                        {
-                            switch (target.Type)
-                            {
-                                case InstanceType.Building:
+                            case InstanceType.Building:
+                                {
+                                    if (BuildingTypeHelper.IsOutsideConnection(target.Building))
                                     {
-                                        if (BuildingTypeHelper.IsOutsideConnection(target.Building))
-                                        {
-                                            m_listExternal.Add(new VehicleData(vehicleId));
-                                        }
-                                        else
-                                        {
-                                            m_listInternal.Add(new VehicleData(vehicleId));
-                                        }
-                                        break;
+                                        m_listExternal.Add(new VehicleData(vehicleId));
                                     }
-                                case InstanceType.NetNode:
-                                    {
-                                        NetNode node = NetManager.instance.m_nodes.m_buffer[target.NetNode];
-                                        if ((node.m_flags & NetNode.Flags.Outside) != 0)
-                                        {
-                                            m_listExternal.Add(new VehicleData(vehicleId));
-                                        }
-                                        else
-                                        {
-                                            m_listInternal.Add(new VehicleData(vehicleId));
-                                        }
-                                        break;
-                                    }
-                                default:
+                                    else
                                     {
                                         m_listInternal.Add(new VehicleData(vehicleId));
-                                        break;
                                     }
-                            }
+                                    break;
+                                }
+                            case InstanceType.NetNode:
+                                {
+                                    NetNode node = NetManager.instance.m_nodes.m_buffer[target.NetNode];
+                                    if ((node.m_flags & NetNode.Flags.Outside) != 0)
+                                    {
+                                        m_listExternal.Add(new VehicleData(vehicleId));
+                                    }
+                                    else
+                                    {
+                                        m_listInternal.Add(new VehicleData(vehicleId));
+                                    }
+                                    break;
+                                }
+                            default:
+                                {
+                                    m_listInternal.Add(new VehicleData(vehicleId));
+                                    break;
+                                }
                         }
                     }
                 });

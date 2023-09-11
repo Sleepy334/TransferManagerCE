@@ -69,22 +69,28 @@ namespace TransferManagerCE.UI
 
         public void Display(object data, bool isRowOdd)
         {
-            RoadAccessData? rowData = (RoadAccessData?)data;
-            if (rowData is not null)
+            m_data = (RoadAccessData?)data;
+
+            if (m_data is not null)
             {
-                m_data = rowData;
                 if (m_lblOwner is not null)
                 {
-                    m_lblOwner.text = InstanceHelper.DescribeInstance(rowData.m_source);
+                    m_lblOwner.text = InstanceHelper.DescribeInstance(m_data.m_source);
                 }
                 if (m_lblSourceFailCount is not null)
                 {
-                    m_lblSourceFailCount.text = rowData.m_iCount.ToString();
+                    m_lblSourceFailCount.text = m_data.m_iCount.ToString();
                 }
             }
-            else
+        }
+
+        public void Disabled()
+        {
+            if (m_data is not null)
             {
                 m_data = null;
+                m_lblOwner.tooltip = "";
+                m_lblSourceFailCount.tooltip = "";
             }
         }
 

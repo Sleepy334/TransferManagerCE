@@ -88,6 +88,11 @@ namespace TransferManagerCE.Data
             return m_responder;
         }
 
+        public virtual string GetResponderTooltip()
+        {
+            return GetResponder();
+        }
+
         public virtual string GetTarget()
         {
             return m_target;

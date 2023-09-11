@@ -16,6 +16,9 @@ namespace TransferManagerCE.UI
         /// <param name="isRowOdd">Use this to display a different look for your odd rows</param>
         void Display(object data, bool isRowOdd);
 
+        // Called when row transistions from having data to no data, can be used to clear tooltips etc...
+        void Disabled();
+
         /// <summary>
         /// Change the style of the selected row here
         /// </summary>
@@ -361,11 +364,14 @@ namespace TransferManagerCE.UI
             {
                 int dataPos = Mathf.FloorToInt(m_pos + i);
                 float offset = rowHeight * (m_pos + i - dataPos);
+
                 if (dataPos < m_rowsData.m_size)
                 {
                     if (m_updateContent)
+                    {
                         m_rows[i].Display(m_rowsData[dataPos], dataPos % 2 == 1);
-
+                    }
+                        
                     if (dataPos == m_selectedDataId && m_updateContent)
                     {
                         m_selectedRowId = i;
@@ -375,7 +381,15 @@ namespace TransferManagerCE.UI
                     m_rows[i].enabled = true;
                 }
                 else
+                {
+                    
+                    if (m_rows[i].enabled)
+                    {
+                        m_rows[i].Disabled();
+                    }
+
                     m_rows[i].enabled = false;
+                }
 
                 m_rows[i].relativePosition = new Vector3(0, i * rowHeight - offset);
             }

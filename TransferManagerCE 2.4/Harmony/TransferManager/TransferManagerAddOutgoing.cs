@@ -26,9 +26,14 @@ namespace TransferManagerCE
                 {
                     return false; // Don't add this offer as Import is completely restricted
                 } 
-                else if (settings.TaxiMove && material == TransferReason.Taxi && offer.Building != 0) 
+                else if (material == TransferReason.Taxi && settings.TaxiMove && offer.Building != 0) 
                 {
                     HandleOutgoingTaxiOffer(ref material, offer);
+                }
+                else if (material == TransferReason.Mail && offer.Park != 0 && offer.m_isLocalPark == 0)
+                {
+                    // This is a service point request, convert it to Mail2.
+                    material = (TransferReason) CustomTransferReason.Reason.Mail2;
                 }
 
                 // Update access segment if using path distance but do it in simulation thread so we don't break anything
@@ -36,7 +41,7 @@ namespace TransferManagerCE
             } 
 
             // Update the stats for the specific material
-            MatchStats.RecordAddOutgoing(material, offer);
+            MatchStats.RecordAddOutgoing(material, offer.Amount);
 
             // Let building panel know a new offer is available
             if (BuildingPanel.Instance is not null)

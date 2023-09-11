@@ -84,26 +84,33 @@ namespace TransferManagerCE.UI
 
         public void Display(object data, bool isRowOdd)
         {
-            TransferIssueContainer? rowData = (TransferIssueContainer?)data;
-            if (rowData is not null)
+            m_data = (TransferIssueContainer?)data;
+
+            if (m_data is not null)
             {
-                m_data = rowData;
                 if (m_lblMaterial is not null)
                 {
-                    m_lblMaterial.text = rowData.m_value.ToString();
+                    m_lblMaterial.text = m_data.m_value.ToString();
                 }
                 if (m_lblTime is not null)
                 {
-                    m_lblTime.text = rowData.m_timer.ToString();
+                    m_lblTime.text = m_data.m_timer.ToString();
                 }
                 if (m_lblOwner is not null)
                 {
-                    m_lblOwner.text = CitiesUtils.GetBuildingName(rowData.m_sourceBuildingId).ToString();
+                    m_lblOwner.text = CitiesUtils.GetBuildingName(m_data.m_sourceBuildingId).ToString();
                 }
             }
-            else
+        }
+
+        public void Disabled()
+        {
+            if (m_data is not null)
             {
                 m_data = null;
+                m_lblTime.tooltip = "";
+                m_lblMaterial.tooltip = "";
+                m_lblOwner.tooltip = "";
             }
         }
 

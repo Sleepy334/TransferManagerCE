@@ -138,28 +138,28 @@ namespace TransferManagerCE.UI
 
         public void Display(object data, bool isRowOdd)
         {
-            OutsideContainer? rowData = (OutsideContainer?)data;
-            if (rowData is not null)
+            m_data = (OutsideContainer?)data;
+
+            if (m_data is not null)
             {
-                m_data = rowData;
                 if (m_lblName is not null)
                 {
-                    m_lblName.text = rowData.GetName();
+                    m_lblName.text = m_data.GetName();
                 }
                 if (m_lblType is not null)
                 {
-                    m_lblType.text = rowData.m_eType.ToString();
+                    m_lblType.text = m_data.m_eType.ToString();
                 }
                 if (m_lblMultiplier is not null)
                 {
-                    m_lblMultiplier.text = BuildingSettingsFast.GetEffectiveOutsideMultiplier(rowData.m_buildingId).ToString();
+                    m_lblMultiplier.text = BuildingSettingsFast.GetEffectiveOutsideMultiplier(m_data.m_buildingId).ToString();
                 }
-                int iOwnCount = BuildingUtils.GetOwnParentVehiclesForBuilding(rowData.m_buildingId, out int iOwnStuck).Count;
+                int iOwnCount = BuildingUtils.GetOwnParentVehiclesForBuilding(m_data.m_buildingId, out int iOwnStuck).Count;
                 if (m_lblOwn is not null)
                 {
                     m_lblOwn.text = iOwnCount.ToString();
                 }
-                int iGuestCount = BuildingUtils.GetGuestParentVehiclesForBuilding(rowData.m_buildingId, out int iGuestStuck).Count;
+                int iGuestCount = BuildingUtils.GetGuestParentVehiclesForBuilding(m_data.m_buildingId, out int iGuestStuck).Count;
                 if (m_lblGuest is not null)
                 {
                     m_lblGuest.text = iGuestCount.ToString();
@@ -169,9 +169,19 @@ namespace TransferManagerCE.UI
                     m_lblStuck.text = (iOwnStuck + iGuestStuck).ToString();
                 }
             }
-            else
+        }
+
+        public void Disabled()
+        {
+            if (m_data is not null)
             {
                 m_data = null;
+                m_lblName.tooltip = "";
+                m_lblType.tooltip = "";
+                m_lblMultiplier.tooltip = "";
+                m_lblOwn.tooltip = "";
+                m_lblGuest.tooltip = "";
+                m_lblStuck.tooltip = "";
             }
         }
 

@@ -41,6 +41,7 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Crime:
                 case CustomTransferReason.Reason.Fire:
                 case CustomTransferReason.Reason.Mail:
+                case CustomTransferReason.Reason.Mail2:
                 case CustomTransferReason.Reason.Taxi:
                 case CustomTransferReason.Reason.TaxiMove:
                 case CustomTransferReason.Reason.Cash:
@@ -145,6 +146,7 @@ namespace TransferManagerCE.CustomManager
             {
                 case CustomTransferReason.Reason.Garbage:
                 case CustomTransferReason.Reason.Mail:
+                case CustomTransferReason.Reason.Mail2:
                 case CustomTransferReason.Reason.Taxi:
                 case CustomTransferReason.Reason.Cash:
                 case CustomTransferReason.Reason.CriminalMove:

@@ -276,6 +276,15 @@ namespace TransferManagerCE
                                             }
                                             break;
                                         }
+                                    case PostVanAI:
+                                        {
+                                            // Show target building rather than "Delivering Mail" message.
+                                            if (sStatus.Equals(Locale.Get("VEHICLE_STATUS_POST_VEHICLE_DELIVER")))
+                                            {
+                                                return InstanceHelper.DescribeInstance(target);
+                                            }
+                                            break;
+                                        }
                                 }
                                 break;
                             }

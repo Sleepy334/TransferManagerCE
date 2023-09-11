@@ -442,6 +442,7 @@ namespace TransferManagerCE
             group.AddCheckbox(Localization.Get("optionFixBankVansStuckCargoStations"), oSettings.FixBankVansStuckCargoStations, (bChecked) => { oSettings.FixBankVansStuckCargoStations = bChecked; oSettings.Save(); });
             group.AddCheckbox(Localization.Get("optionFixPostVansStuckCargoStations"), oSettings.FixPostVansStuckCargoStations, (bChecked) => { oSettings.FixPostVansStuckCargoStations = bChecked; oSettings.Save(); });
             group.AddCheckbox(Localization.Get("optionFixTransportStationNullReferenceException"), oSettings.FixTransportStationNullReferenceException, (bChecked) => { oSettings.FixTransportStationNullReferenceException = bChecked; oSettings.Save(); });
+            group.AddCheckbox(Localization.Get("optionFixPostTruckCollectingMail"), oSettings.FixPostTruckCollectingMail, (bChecked) => { oSettings.FixPostTruckCollectingMail = bChecked; oSettings.Save(); });
             group.AddSpace(iSEPARATOR_HEIGHT);
             group.AddCheckbox(Localization.Get("optionFixFishWarehouses"), oSettings.FixFishWarehouses, (bChecked) => { oSettings.FixFishWarehouses = bChecked; oSettings.Save();});
             group.AddCheckbox(Localization.Get("optionFixCargoWarehouseAccessSegment"), oSettings.FixCargoWarehouseAccessSegment, (bChecked) => { oSettings.FixCargoWarehouseAccessSegment = bChecked; oSettings.Save(); });
@@ -746,6 +747,12 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.SetActiveDistanceRestrictionKm(material, fValue);
+
+            // If updating mail restrictions, we also update global Mail2 restrictions
+            if (material == CustomTransferReason.Reason.Mail)
+            {
+                oSettings.SetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Mail2, fValue);
+            }
         }
 
         public void OnLocalizationDropDownChanged(int value)

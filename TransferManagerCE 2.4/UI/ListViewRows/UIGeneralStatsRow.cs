@@ -66,28 +66,28 @@ namespace TransferManagerCE.UI
 
         public void Display(object data, bool isRowOdd)
         {
-            if (isRowOdd)
-            {
-                //backgroundSprite = "InfoviewPanel";
-                //color = new Color32(96, 96, 96, 255);
-            }
+            m_data = (GeneralContainer?)data;
 
-            GeneralContainer? rowData = (GeneralContainer?)data;
-            if (rowData is not null)
+            if (m_data is not null)
             {
-                m_data = rowData;
                 if (m_lblDescription is not null)
                 {
-                    m_lblDescription.text = rowData.m_description;
+                    m_lblDescription.text = m_data.m_description;
                 }
                 if (m_lblValue is not null)
                 {
-                    m_lblValue.text = rowData.m_value;
+                    m_lblValue.text = m_data.m_value;
                 }
             }
-            else
+        }
+
+        public void Disabled()
+        {
+            if (m_data is not null)
             {
                 m_data = null;
+                m_lblDescription.tooltip = "";
+                m_lblValue.tooltip = "";
             }
         }
 

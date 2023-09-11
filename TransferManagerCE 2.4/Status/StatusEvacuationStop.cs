@@ -5,8 +5,8 @@ namespace TransferManagerCE.Data
 {
     public class StatusEvacuationStop : StatusNodeStop
     {
-        public StatusEvacuationStop(BuildingType eBuildingType, ushort buildingId, ushort nodeId) :
-            base(eBuildingType, buildingId, nodeId)
+        public StatusEvacuationStop(BuildingType eBuildingType, ushort buildingId, ushort nodeId, ushort targetVehicleId) :
+            base(eBuildingType, buildingId, nodeId, targetVehicleId)
         {
         }
 

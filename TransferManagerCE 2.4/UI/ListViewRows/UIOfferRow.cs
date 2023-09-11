@@ -1,5 +1,6 @@
 using ColossalFramework.UI;
 using UnityEngine;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace TransferManagerCE.UI
 {
@@ -152,42 +153,58 @@ namespace TransferManagerCE.UI
 
         public void Display(object data, bool isRowOdd)
         {
-            OfferData? rowData = (OfferData?)data;
-            if (rowData is not null)
+            m_data = (OfferData?)data;
+
+            if (m_data is not null)
             {
-                m_data = rowData;
                 if (m_lblMaterial is not null)
                 {
-                    m_lblMaterial.text = rowData.m_material.ToString();
+                    m_lblMaterial.text = m_data.m_material.ToString();
                 }
                 if (m_lblInOut is not null)
                 {
-                    m_lblInOut.text = rowData.m_bIncoming ? "IN" : "OUT";
+                    m_lblInOut.text = m_data.m_bIncoming ? "IN" : "OUT";
                 }
                 if (m_lblActive is not null)
                 {
-                    m_lblActive.text = rowData.m_bActive ? "Active" : "Passive";
+                    m_lblActive.text = m_data.m_bActive ? "Active" : "Passive";
                 }
                 if (m_lblAmount is not null)
                 {
-                    m_lblAmount.text = rowData.m_offer.Amount.ToString();
+                    m_lblAmount.text = m_data.m_offer.Amount.ToString();
+                    if (m_data.m_offer.Unlimited)
+                    {
+                        m_lblAmount.text += "*";
+                    }
                 }
                 if (m_lblPriority is not null)
                 {
-                    m_lblPriority.text = rowData.m_iPrioirty.ToString();
+                    m_lblPriority.text = m_data.m_iPrioirty.ToString();
                 }
                 if (m_lblPark is not null)
                 {
-                    m_lblPark.text = rowData.m_byLocalPark.ToString();
+                    m_lblPark.text = m_data.m_byLocalPark.ToString();
                 }
                 if (m_lblDescription is not null)
                 {
-                    m_lblDescription.text = rowData.DisplayOffer();
+                    m_lblDescription.text = m_data.DisplayOffer();
                 }
             }
-            else
+        }
+
+        public void Disabled()
+        {
+            if (m_data is not null)
             {
                 m_data = null;
+
+                m_lblMaterial.tooltip = "";
+                m_lblInOut.tooltip = "";
+                m_lblActive.tooltip = "";
+                m_lblAmount.tooltip = "";
+                m_lblPriority.tooltip = "";
+                m_lblPark.tooltip = "";
+                m_lblDescription.tooltip = "";
             }
         }
 
@@ -209,6 +226,21 @@ namespace TransferManagerCE.UI
 
         private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
         {
+            if (m_lblMaterial is null)
+            {
+                return;
+            }
+
+            if (enabled && m_data is not null)
+            {
+                m_lblMaterial.tooltip = m_data.m_material.ToString();
+                m_lblDescription.tooltip = m_data.DisplayOffer();
+            }
+            else
+            {
+                m_lblMaterial.tooltip = "";
+                m_lblDescription.tooltip = "";
+            }
         }
 
         protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)

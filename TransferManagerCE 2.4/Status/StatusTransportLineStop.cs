@@ -1,16 +1,15 @@
-using static RenderManager;
-using System;
-using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
-using ICities;
 
 namespace TransferManagerCE.Data
 {
-    public class StatusIntercityStop : StatusNodeStop
+    public class StatusTransportLineStop : StatusNodeStop
     {
-        public StatusIntercityStop(BuildingType eBuildingType, ushort buildingId, ushort nodeId, ushort targetVehicleId) :
+        private ushort m_lineId;
+
+        public StatusTransportLineStop(BuildingType eBuildingType, ushort buildingId, ushort LineId, ushort nodeId, ushort targetVehicleId) :
             base(eBuildingType, buildingId, nodeId, targetVehicleId)
         {
+            m_lineId = LineId;
         }
 
         protected override TransportInfo.TransportType GetTransportType()
@@ -52,7 +51,13 @@ namespace TransferManagerCE.Data
 
         public override string GetMaterialDescription()
         {
-            return "Intercity Stop";
+            TransportLine line = TransportManager.instance.m_lines.m_buffer[m_lineId];
+            return line.Info.m_transportType.ToString();
+        }
+
+        public override string GetResponder()
+        {
+            return CitiesUtils.GetSafeLineName(m_lineId);
         }
     }
 }

@@ -30,6 +30,7 @@ namespace TransferManagerCE.CustomManager
 
         // Current transfer job from workqueue
         public TransferJob? job = null;
+        private CustomTransferReason.Reason m_material;
         private PathDistance? m_pathDistance = null;
         private TransferRestrictions m_transferRestrictions;
         private PathDistanceAlgorithm m_DistanceAlgorithm;
@@ -38,6 +39,7 @@ namespace TransferManagerCE.CustomManager
         private int m_iMatches = 0;
         private Stopwatch m_watch = Stopwatch.StartNew();
         private TransferMode m_eTransferMode;
+        private bool m_bIsWarehouseMaterial = false;
 
         // -------------------------------------------------------------------------------------------
         public CustomTransferManager()
@@ -76,8 +78,10 @@ namespace TransferManagerCE.CustomManager
             TransferManagerStats.UpdateLargestMatch(job);
 
             // Reset members as we re-use the match jobs.
+            m_material = material;
             m_transferRestrictions.SetMaterial(material);
             m_iMatches = 0;
+            m_bIsWarehouseMaterial = IsWarehouseMaterial(material);
 
             // Pathing support
             m_DistanceAlgorithm = PathDistanceTypes.GetDistanceAlgorithm((CustomTransferReason.Reason) material);
@@ -128,7 +132,10 @@ namespace TransferManagerCE.CustomManager
                 if (IsFactoryMaterial(job.material) && SaveGameSettings.GetSettings().FactoryFirst)
                 {
                     // We match IN only first as matching OUT factories first can make some very bad matches
+                    // Also disable LowPriority check as we always want the closest match
+                    m_transferRestrictions.SetFactoryFirst(true);
                     MatchIncomingOffers(MatchOfferAlgorithm.Distance, 0, bWarehouseOnly: false, bFactoryOnly: true, bCloseByOnly: false);
+                    m_transferRestrictions.SetFactoryFirst(false);
                 }
 
                 // We now also occasionally do warehouse OUT matches first as well just to keep warehouses ticking over
@@ -1074,23 +1081,61 @@ namespace TransferManagerCE.CustomManager
                 ref CustomTransferOffer incomingOffer = ref job.m_incomingOffers[indexIn];
                 ref CustomTransferOffer outgoingOffer = ref job.m_outgoingOffers[indexOut];
 
+                // By default delta is min of 2 amounts, new Unlimited flag may change this later.
+                int deltaamount = Math.Min(incomingOffer.Amount, outgoingOffer.Amount);
+
+                if (m_bIsWarehouseMaterial)
+                {
+                    /*
+                    // Unlimited flag, we only apply when transport type is not road so we dont end up
+                    // with hundreds of trucks driving in from outside connection.
+                    if (incomingOffer.Unlimited && outgoingOffer.Unlimited)
+                    {
+                        deltaamount = Math.Max(incomingOffer.Amount, outgoingOffer.Amount);
+                        Debug.Log($"IN|OUT {m_material} {incomingOffer.GetBuildingType()}|{outgoingOffer.GetBuildingType()} Unlimited {incomingOffer.Amount}/{outgoingOffer.Amount}|{deltaamount} Transport:{incomingOffer.GetTransportType()}");
+                    }
+                    if (incomingOffer.Unlimited && incomingOffer.IsMassTransit())
+                    {
+                        deltaamount = outgoingOffer.Amount;
+                        Debug.Log($"IN {m_material} {incomingOffer.GetBuildingType()}|{outgoingOffer.GetBuildingType()} Unlimited {incomingOffer.Amount}/{outgoingOffer.Amount}|{deltaamount} Transport:{incomingOffer.GetTransportType()}");
+                    }
+                    else if (outgoingOffer.Unlimited && outgoingOffer.IsMassTransit())
+                    {
+                        deltaamount = incomingOffer.Amount;
+                        Debug.Log($"OUT {m_material} {incomingOffer.GetBuildingType()}|{outgoingOffer.GetBuildingType()} Unlimited {incomingOffer.Amount}/{outgoingOffer.Amount}|{deltaamount} Transport:{outgoingOffer.GetTransportType()}");
+                    }
+                    */
+
+                    // If it is a warehouse station we do some more processing
+                    HandleWarehouseStation(ref incomingOffer, ref outgoingOffer, ref deltaamount);
+                }
+
                 if (m_logFile is not null)
                 {
-                    m_logFile.LogMatch(incomingOffer, outgoingOffer);
+                    m_logFile.LogMatch(incomingOffer, outgoingOffer, deltaamount);
                 }
 
                 // Start the transfer
-                int deltaamount = Math.Min(incomingOffer.Amount, outgoingOffer.Amount);
                 if (deltaamount > 0)
                 {
+                    // reduce overall amounts before updating offer amounts so we use old values
+                    // Warning: deltaamount may be greater than Amount due to Unlimited flag!
+                    job.m_incomingAmount -= Math.Min(incomingOffer.Amount, deltaamount);
+                    job.m_outgoingAmount -= Math.Min(outgoingOffer.Amount, deltaamount);
+
+                    // Update offer amounts so we show actual match amounts in matches list
+                    incomingOffer.Amount = Math.Max(incomingOffer.Amount, deltaamount);
+                    outgoingOffer.Amount = Math.Max(outgoingOffer.Amount, deltaamount);
+
+                    // Add match to queue
+                    // Note: TransferOffer is a struct so this takes a copy!
                     CustomTransferDispatcher.Instance.EnqueueTransferResult(job.material, outgoingOffer.m_offer, incomingOffer.m_offer, deltaamount);
 
-                    // reduce offer amount
-                    incomingOffer.Amount -= deltaamount;
-                    outgoingOffer.Amount -= deltaamount;
-                    job.m_incomingAmount -= deltaamount;
-                    job.m_outgoingAmount -= deltaamount;
+                    // Now reduce offer amount by delta amount
+                    incomingOffer.Amount = Math.Max(incomingOffer.Amount - deltaamount, 0);
+                    outgoingOffer.Amount = Math.Max(outgoingOffer.Amount - deltaamount, 0);
 
+                    // If amount is 0 then reduce remaining count so we can early exit.
                     if (incomingOffer.Amount <= 0)
                     {
                         job.m_incomingCountRemaining--;
@@ -1185,6 +1230,27 @@ namespace TransferManagerCE.CustomManager
             }
 
             return true;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        private void HandleWarehouseStation(ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer, ref int deltaamount)
+        {
+            if (incomingOffer.IsWarehouseStation())
+            {
+                if (outgoingOffer.Unlimited && incomingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.CargoStation)
+                {
+                    // It's an unlimited train connection so use warehouse amount
+                    deltaamount = incomingOffer.Amount;
+                }
+            }
+            else if (outgoingOffer.IsWarehouseStation())
+            {
+                if (incomingOffer.Unlimited && outgoingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.CargoStation)
+                {
+                    // It's an unlimited train connection so use warehouse amount
+                    deltaamount = outgoingOffer.Amount;
+                }
+            }
         }
 
         // -------------------------------------------------------------------------------------------

@@ -264,6 +264,10 @@ namespace TransferManagerCE.UI
             }
         }
 
+        public void Disabled()
+        {
+        }
+
         public float SafeDiv(float fNumerator, float fDenominator)
         {
             if (fNumerator == 0 || fDenominator == 0)

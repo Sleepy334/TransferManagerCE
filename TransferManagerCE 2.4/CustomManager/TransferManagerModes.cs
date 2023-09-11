@@ -64,8 +64,9 @@ namespace TransferManagerCE.CustomManager
                     }
 
                 // ---------------------------------------------------------------------------------
-                case CustomTransferReason.Reason.Mail:            // We want vans (P:7) to be matched with closest mail first (IN) CloseByOnly: ON, Then buildings (OUT) to Post Offices, CloseByOnly: OFF
-                case CustomTransferReason.Reason.Snow:            // Snow - We want trucks (P:7) to be matched with closest segment, and Snow Dump (P:1) to be matched with highest priority segment
+                case CustomTransferReason.Reason.Mail:           // We want vans (P:7) to be matched with closest mail first (IN) CloseByOnly: ON, Then buildings (OUT) to Post Offices, CloseByOnly: OFF
+                case CustomTransferReason.Reason.Mail2:          // Buildings (OUT) to Post Offices, CloseByOnly: OFF
+                case CustomTransferReason.Reason.Snow:           // Snow - We want trucks (P:7) to be matched with closest segment, and Snow Dump (P:1) to be matched with highest priority segment
                 case CustomTransferReason.Reason.Garbage:        // Match building with closest LandFill
                 case CustomTransferReason.Reason.Dead:           // Matches bodies to cemeteries
                 case CustomTransferReason.Reason.Crime:          // Matches crime to police stations
@@ -387,6 +388,7 @@ namespace TransferManagerCE.CustomManager
                     return Color.blue;
 
                 case CustomTransferReason.Reason.Mail:
+                case CustomTransferReason.Reason.Mail2:
                 case CustomTransferReason.Reason.SortedMail:
                 case CustomTransferReason.Reason.UnsortedMail:
                 case CustomTransferReason.Reason.IncomingMail:
@@ -434,6 +436,7 @@ namespace TransferManagerCE.CustomManager
             switch (material)
             {
                 case CustomTransferReason.Reason.Mail:
+                case CustomTransferReason.Reason.Mail2:
                 case CustomTransferReason.Reason.Snow:
                 case CustomTransferReason.Reason.Garbage:
                 case CustomTransferReason.Reason.Dead:

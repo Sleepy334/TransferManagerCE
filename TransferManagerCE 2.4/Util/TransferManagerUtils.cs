@@ -167,7 +167,7 @@ namespace TransferManagerCE
             return stringBuilder.ToString();
         }
 
-        private static string DebugOffer(TransferOffer offer, bool bAlign = false)
+        public static string DebugOffer(TransferOffer offer, bool bAlign = false)
         {
             string sMessage = $"{InstanceHelper.DescribeInstance(offer.m_object)} [{offer.m_object.Type}:{offer.m_object.Index}]";
             if (bAlign)
@@ -179,6 +179,7 @@ namespace TransferManagerCE
             stringBuilder.Append($" | Priority:{offer.Priority}");
             stringBuilder.Append(offer.Active ? " | Active " : " | Passive");
             stringBuilder.Append($" | Amount:{offer.Amount.ToString("000")}");
+            stringBuilder.Append(offer.Unlimited ? "*" : " ");
             stringBuilder.Append($" | Park:{offer.m_isLocalPark.ToString("000")}");
 
             return stringBuilder.ToString();

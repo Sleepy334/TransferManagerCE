@@ -126,6 +126,7 @@ namespace TransferManagerCE
                         }
                         break;
                     }
+                case BuildingType.WarehouseStation:
                 case BuildingType.Warehouse:
                     {
                         WarehouseAI? warehouseAI = building.Info?.m_buildingAI as WarehouseAI;

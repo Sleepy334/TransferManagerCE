@@ -134,10 +134,13 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void UpdateTab()
+        public void UpdateTab(bool bActive)
         {
-            UpdateOffers();
-            UpdateMatches();
+            if (bActive)
+            {
+                UpdateOffers();
+                UpdateMatches();
+            }
         }
 
         private void UpdateOffers()

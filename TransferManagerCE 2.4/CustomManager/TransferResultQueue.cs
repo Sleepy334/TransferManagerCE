@@ -2,6 +2,7 @@ using ColossalFramework;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using TransferManagerCE.CustomManager;
 using UnityEngine;
 using static TransferManager;
 
@@ -16,8 +17,8 @@ namespace TransferManagerCE
         public struct TransferResult
         {
             public TransferReason material;
-            public TransferOffer outgoingOffer;
-            public TransferOffer incomingOffer;
+            public TransferOffer outgoingOffer; // structure so we get a copy
+            public TransferOffer incomingOffer; // structure so we get a copy
             public int deltaamount;
         }
 
@@ -77,7 +78,8 @@ namespace TransferManagerCE
                 DistrictPark[] Parks = Singleton<DistrictManager>.instance.m_parks.m_buffer;
 
                 // Set this before loop
-                TransferReason TaxiMove = (TransferReason)CustomTransferReason.Reason.TaxiMove;
+                const TransferReason TaxiMove = (TransferReason)CustomTransferReason.Reason.TaxiMove;
+                const TransferReason Mail2 = (TransferReason)CustomTransferReason.Reason.Mail2;
 
                 while (m_Matches.Count > 0)
                 {
@@ -92,10 +94,19 @@ namespace TransferManagerCE
                         // Handle this match
                         MatchHandler.Match(oResult.material, oResult.outgoingOffer, oResult.incomingOffer, oResult.deltaamount);
 
-                        // Convert TaxiMove back to Taxi so they handle the transfer correctly.
-                        if (oResult.material == TaxiMove)
+                        // Convert TaxiMove back to Taxi and Mail2 -> Mail so they handle the transfer correctly.
+                        switch (oResult.material)
                         {
-                            oResult.material = TransferReason.Taxi;
+                            case TaxiMove:
+                                {
+                                    oResult.material = TransferReason.Taxi;
+                                    break;
+                                }
+                            case Mail2:
+                                {
+                                    oResult.material = TransferReason.Mail;
+                                    break;
+                                }
                         }
 
                         // Start transfer

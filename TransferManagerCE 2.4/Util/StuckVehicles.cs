@@ -19,7 +19,7 @@ namespace TransferManagerCE
 
             Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
 
-            List<ushort> ghostVehicles = new List<ushort>();
+            HashSet<ushort> ghostVehicles = new HashSet<ushort>();
             for (int i = 1; i < VehicleManager.instance.m_vehicles.m_buffer.Length; i++)
             {
                 ushort vehicleId = (ushort)i;
@@ -32,40 +32,43 @@ namespace TransferManagerCE
                         Math.Abs(oPosition.y) > 100000 ||
                         Math.Abs(oPosition.z) > 100000)
                     {
-                        sMessage += $"\r\nVehicle:{i} Flags: {vehicle.m_flags} Position {oPosition}";
+                        sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - Invalid Position {oPosition}";
 
                         // Despawn vehicle so a new one can be created
-                        if (!ghostVehicles.Contains(vehicleId))
-                        {
-                            ghostVehicles.Add(vehicleId);
-                        }
+                        ghostVehicles.Add(vehicleId);
                     }
 
                     // If m_flags has WaitingPath but not Created then it is broken
                     if ((vehicle.m_flags & Vehicle.Flags.WaitingPath) != 0 && (vehicle.m_flags & Vehicle.Flags.Created) == 0)
                     {
-                        sMessage += $"\r\nVehicle:{i} Flags:{vehicle.m_flags}";
+                        sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle);
 
                         // Despawn vehicle so a new one can be created
-                        if (!ghostVehicles.Contains(vehicleId))
-                        {
-                            ghostVehicles.Add(vehicleId);
-                        }
+                        ghostVehicles.Add(vehicleId);
                     }
                     else if (vehicle.m_cargoParent != 0)
                     {
                         Vehicle parent = Vehicles[vehicle.m_cargoParent];
                         if (parent.m_flags == 0)
                         {
-                            sMessage += $"\r\nVehicle:{i} Flags:{vehicle.m_flags} CargoParent:{vehicle.m_cargoParent} ParentFlags:{parent.m_flags}";
+                            sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - Invalid ParentFlags:{parent.m_flags}";
 
                             // Despawn vehicle so a new one can be created
-                            if (!ghostVehicles.Contains(vehicleId))
-                            {
-                                ghostVehicles.Add(vehicleId);
-                            }
+                            ghostVehicles.Add(vehicleId);
                         }
                     }
+                }
+                else if (vehicle.m_nextOwnVehicle != 0)
+                {
+                    sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - [m_flags = 0, m_nextOwnVehicle = {vehicle.m_nextOwnVehicle}]";
+                    vehicle.m_flags |= Vehicle.Flags.Created;
+                    ghostVehicles.Add(vehicleId);
+                }
+                else if (vehicle.m_nextGuestVehicle != 0)
+                {
+                    sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - [m_flags = 0, m_nextGuestVehicle = {vehicle.m_nextGuestVehicle}]";
+                    vehicle.m_flags |= Vehicle.Flags.Created;
+                    ghostVehicles.Add(vehicleId);
                 }
             }
 
@@ -82,32 +85,38 @@ namespace TransferManagerCE
                         if (vehicle.m_flags == 0)
                         {
                             // Add the created flag so we can actually remove the vehicle
-                            sMessage += $"\r\nVehicle:{vehicleId} Flags:{vehicle.m_flags}";
-                            vehicle.m_flags |= Vehicle.Flags.Created;
+                            sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - Invalid Flags, Outside connection {connection} guest vehicle.";
+                            Vehicles[vehicleId].m_flags |= Vehicle.Flags.Created;
                             ghostVehicles.Add(vehicleId);
                         }
                         else if (vehicle.m_waitCounter >= 255)
                         {
                             // Waiting timer is maxed and the vehicle hasnt moved, remove
-                            sMessage += $"\r\nVehicle:{vehicleId} Flags:{vehicle.m_flags} WaitTimer:{vehicle.m_waitCounter}";
+                            sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - WaitTimer = 255, Outside connection {connection} guest vehicle.";
                             ghostVehicles.Add(vehicleId);
                         }
                     });
-
+                    
                     // Own vehicles
                     BuildingUtils.EnumerateOwnVehicles(building, (vehicleId, vehicle) =>
                     {
                         if (vehicle.m_flags == 0)
                         {
                             // Add the created flag so we can actually remove the vehicle
-                            sMessage += $"\r\nVehicle:{vehicleId} Flags:{vehicle.m_flags}";
-                            vehicle.m_flags |= Vehicle.Flags.Created;
+                            sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - Invalid Flags, Outside connection {connection} own vehicle.";
+                            Vehicles[vehicleId].m_flags |= Vehicle.Flags.Created;
                             ghostVehicles.Add(vehicleId);
                         }
                         else if (vehicle.m_waitCounter >= 255)
                         {
                             // Waiting timer is maxed and the vehicle hasnt moved, remove
-                            sMessage += $"\r\nVehicle:{vehicleId} Flags:{vehicle.m_flags} WaitTimer:{vehicle.m_waitCounter}";
+                            sMessage += $"\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - WaitTimer = 255, Outside connection {connection} own vehicle.";
+                            ghostVehicles.Add(vehicleId);
+                        }
+                        else if (vehicle.m_sourceBuilding != 0 && vehicle.m_sourceBuilding == vehicle.m_targetBuilding)
+                        {
+                            // Waiting timer is maxed and the vehicle hasnt moved, remove
+                            sMessage += $"\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - Source = Target, Outside connection {connection} own vehicle.";
                             ghostVehicles.Add(vehicleId);
                         }
                     });
@@ -117,7 +126,7 @@ namespace TransferManagerCE
             // Perform actual de-spawning
             foreach (ushort vehicleId in ghostVehicles)
             {
-                ref Vehicle vehicle = ref VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
+                ref Vehicle vehicle = ref Vehicles[vehicleId];
                 if (vehicle.m_flags != 0)
                 {
                     Singleton<VehicleManager>.instance.ReleaseVehicle(vehicleId);
@@ -135,6 +144,16 @@ namespace TransferManagerCE
             }
 
             return ghostVehicles.Count;
+        }
+
+        private static string GetVehicleDescription(ushort vehicleId, Vehicle vehicle)
+        {
+            string sText = $"Vehicle:{vehicleId} Flags:{vehicle.m_flags} Source:{vehicle.m_sourceBuilding} Target:{vehicle.m_targetBuilding} WaitTimer:{vehicle.m_waitCounter} CargoParent:{vehicle.m_cargoParent}";
+            if (vehicle.Info is not null && vehicle.Info.GetAI() is not null)
+            {
+                sText += $" Type:{vehicle.Info.GetAI()}";
+            }
+            return sText;
         }
     }
 }

@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using TransferManagerCE.TransferRules;
 using System.Linq;
 using static TransferManagerCE.UITabStrip;
+using static TransferManagerCE.UI.BuildingPanel;
+using System.Data;
 
 namespace TransferManagerCE.UI
 {
@@ -328,7 +330,7 @@ namespace TransferManagerCE.UI
                     m_tabStripTransferReason.SetTabVisible(iTabIndex, true);
 
                     // Add 
-                    if (eType == BuildingType.Warehouse)
+                    if (IsWarehouse(eType))
                     {
                         string sName = rule.m_name;
 
@@ -351,7 +353,7 @@ namespace TransferManagerCE.UI
                     else
                     {
                         m_tabStripTransferReason.SetTabText(iTabIndex, rule.m_name);
-                        m_tabStripTransferReason.SetTabWidth(iTabIndex, 200f);
+                        m_tabStripTransferReason.SetTabWidth(iTabIndex, GetTabWidth(rule.m_reasons));
                     }
 
                     m_tabStripTransferReason.SetTabId(iTabIndex, rule.m_id);
@@ -580,7 +582,7 @@ namespace TransferManagerCE.UI
                 // Warehouse settings
                 if (m_panelGoodsDelivery is not null)
                 {
-                    if (eType == BuildingType.Warehouse)
+                    if (IsWarehouse(eType))
                     {
                         m_panelGoodsDelivery.Show();
 
@@ -1047,7 +1049,22 @@ namespace TransferManagerCE.UI
                 UnityEngine.Object.Destroy(m_grpDistrictRestrictions.gameObject);
                 m_grpDistrictRestrictions = null;
             }
-            
+        }
+
+        private float GetTabWidth(HashSet<CustomTransferReason.Reason> reasons)
+        {
+            if (reasons.Count == 1)
+            {
+                CustomTransferReason.Reason reason = reasons.Single();
+                switch (reason)
+                {
+                    case CustomTransferReason.Reason.Mail: return 120f;
+                    case CustomTransferReason.Reason.Mail2: return 140f;
+                    default: return 200f;
+                }
+            }
+
+            return 200f;
         }
     }
 }

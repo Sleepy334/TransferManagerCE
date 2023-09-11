@@ -223,9 +223,21 @@ namespace TransferManagerCE.UI
                     m_btnDelete.isVisible = m_data.m_targetVehicle != 0;
                 }
             }
-            else
+        }
+
+        public void Disabled()
+        {
+            if (m_data is not null)
             {
                 m_data = null;
+                m_lblMaterial.tooltip = "";
+                m_lblValue.tooltip = "";
+                m_lblTimer.tooltip = "";
+                m_lblTarget.tooltip = "";
+                m_lblLoad.tooltip = "";
+                m_lblDistance.tooltip = "";
+                m_lblOwner.tooltip = "";
+                m_btnDelete.tooltip = "";
             }
         }
 
@@ -254,9 +266,20 @@ namespace TransferManagerCE.UI
 
         private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
         {
-            if (m_data is not null && m_lblValue is not null)
+            if (m_lblValue is null || m_lblOwner is null)
+            {
+                return;
+            }
+
+            if (enabled && m_data is not null)
             {
                 m_lblValue.tooltip = m_data.GetValueTooltip();
+                m_lblOwner.tooltip = m_data.GetResponderTooltip();
+            }
+            else
+            {
+                m_lblValue.tooltip = "";
+                m_lblOwner.tooltip = "";
             }
         }
 

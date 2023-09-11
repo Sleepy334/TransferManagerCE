@@ -124,6 +124,7 @@ namespace TransferManagerCE
             BiofuelBus = 113,
             Cash = 114,
             TaxiMove = 115,
+            Mail2 = 116,
             BusinessA = 119,
             BusinessB = 120,
             BusinessC = 121,

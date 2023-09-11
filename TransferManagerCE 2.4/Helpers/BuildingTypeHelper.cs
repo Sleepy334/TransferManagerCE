@@ -37,6 +37,7 @@ namespace TransferManagerCE
             CargoStation,
             CargoFerryWarehouseHarbor,
             Warehouse,
+            WarehouseStation,
             OutsideConnection,
             SpaceElevator,
 
@@ -50,6 +51,8 @@ namespace TransferManagerCE
             FireHelicopterDepot,
             Hospital,
             MedicalHelicopterDepot,
+            Childcare,
+            Eldercare,
             Cemetery,
             ParkMaintenanceDepot,
             RoadMaintenanceDepot,
@@ -294,6 +297,10 @@ namespace TransferManagerCE
                                 return BuildingType.MedicalHelicopterDepot;
                             case CemeteryAI:
                                 return BuildingType.Cemetery;
+                            case ChildcareAI:
+                                return BuildingType.Childcare;
+                            case EldercareAI:
+                                return BuildingType.Eldercare;
                             default:
                                 return BuildingType.Healthcare;
                         }
@@ -557,7 +564,20 @@ namespace TransferManagerCE
                         {
                             switch (building.Info.m_buildingAI)
                             {
-                                case WarehouseAI: return BuildingType.Warehouse;
+                                case WarehouseAI:
+                                    {
+                                        // Check if its the new warehouse with cargo station.
+                                        if (building.m_subBuilding != 0)
+                                        {
+                                            Building subBuilding = BuildingManager.instance.m_buildings.m_buffer[building.m_subBuilding];
+                                            if (subBuilding.Info is not null && subBuilding.Info.GetAI() is WarehouseStationAI)
+                                            {
+                                                return BuildingType.WarehouseStation;
+                                            }
+                                        }
+                                        return BuildingType.Warehouse;
+                                    }
+                                case WarehouseStationAI: return BuildingType.WarehouseStation;
                                 case ExtractingFacilityAI: return BuildingType.ExtractionFacility;
                                 case UniqueFactoryAI: return BuildingType.UniqueFactory;
                                 case ProcessingFacilityAI: return BuildingType.ProcessingFacility;
@@ -612,7 +632,7 @@ namespace TransferManagerCE
             }
 
 #if DEBUG
-            Debug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
+            //Debug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
 #endif
 
             return BuildingType.None;
@@ -625,6 +645,7 @@ namespace TransferManagerCE
                 BuildingType eMainType = GetBuildingType(buildingId);
                 switch (eMainType)
                 {
+                    case BuildingType.WarehouseStation:
                     case BuildingType.Warehouse:
                         {
                             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
@@ -756,30 +777,17 @@ namespace TransferManagerCE
             return OutsideType.Unknown;
         }
 
-        public static bool IsWarehouse(ushort buildingId)
+        public static bool IsWarehouse(BuildingType eType) 
         {
-            if (buildingId != 0)
+            switch (eType)
             {
-                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                PrefabAI buildingAI = building.Info.GetAI();
-                return buildingAI is WarehouseAI || buildingAI.GetType().ToString().Contains("CargoFerryWarehouseHarborAI");
+                case BuildingType.Warehouse:
+                case BuildingType.WarehouseStation:
+                case BuildingType.CargoFerryWarehouseHarbor: 
+                    return true;
+                default:
+                    return false;
             }
-            return false;
-        }
-
-        public static bool IsWarehouseCanImport(ushort buildingId)
-        {
-            if (buildingId != 0)
-            {
-                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                PrefabAI buildingAI = building.Info.GetAI();
-                if (buildingAI is WarehouseAI warehouseAI)
-                {
-                    CustomTransferReason.Reason actualTransferReason = (CustomTransferReason.Reason) warehouseAI.GetActualTransferReason(buildingId, ref building);
-                    return TransferManagerModes.IsImportRestrictionsSupported(actualTransferReason);
-                } 
-            }
-            return false;
         }
 
         public static CustomTransferReason.Reason GetCargoFerryWarehouseActualTransferReason(ushort buildingId)
@@ -891,6 +899,7 @@ namespace TransferManagerCE
             switch (eType)
             {
                 case BuildingType.Warehouse:
+                case BuildingType.WarehouseStation:
                 case BuildingType.CargoFerryWarehouseHarbor:
                 case BuildingType.ExtractionFacility:
                 case BuildingType.GenericExtractor:
@@ -923,6 +932,7 @@ namespace TransferManagerCE
                 case BuildingType.OutsideConnection:
                 case BuildingType.TaxiDepot:
                 case BuildingType.TransportStation:
+                case BuildingType.CableCarStation:
                 case BuildingType.TourDepot:
                 case BuildingType.BusDepot:
                 case BuildingType.TramDepot:

@@ -184,9 +184,9 @@ namespace TransferManagerCE.Util
         }
 
         // -------------------------------------------------------------------------------------------
-        public void LogMatch(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer)
+        public void LogMatch(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, int deltaamount)
         {
-            LogInfo($"       ### Match Found ### Material:{m_material} Distance:{TransferManagerUtils.GetDistanceKm(incomingOffer, outgoingOffer)}km");
+            LogInfo($"       ### Match Found ### Material:{m_material} Amount:{deltaamount} Distance:{TransferManagerUtils.GetDistanceKm(incomingOffer, outgoingOffer)}km");
             LogInfo("       - " + TransferManagerUtils.DebugOffer(m_material, incomingOffer, false, false, false));
             LogInfo("       - " + TransferManagerUtils.DebugOffer(m_material, outgoingOffer, false, false, false));
         }
