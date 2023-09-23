@@ -21,7 +21,7 @@ namespace TransferManagerCE
             // Now highlight buildings
             foreach (KeyValuePair<ushort, Color> kvp in m_highlightBuildings)
             {
-                SelectionTool.HighlightBuilding(toolManager, BuildingBuffer, kvp.Key, cameraInfo, kvp.Value);
+                SelectionModeBase.HighlightBuilding(toolManager, BuildingBuffer, kvp.Key, cameraInfo, kvp.Value);
             }
         }
 

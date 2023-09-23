@@ -1,6 +1,7 @@
 using ColossalFramework.UI;
 using System;
 using TransferManagerCE;
+using TransferManagerCE.UI;
 using static TransferManagerCE.BuildingSettings;
 
 namespace SleepyCommon
@@ -67,7 +68,7 @@ namespace SleepyCommon
 
         public bool IsChecked()
         {
-            TransferManagerCE.DistrictPanel? panel = TransferManagerCE.DistrictPanel.Instance;
+            DistrictSelectionPanel? panel = DistrictSelectionPanel.Instance;
             if (panel is not null)
             {
                 ushort buildingId = panel.m_buildingId;
@@ -81,11 +82,11 @@ namespace SleepyCommon
                     {
                         if (m_bIncoming)
                         {
-                            return restrictions.IsIncomingDistrictAllowed(m_eType, m_districtId);
+                            return restrictions.m_incomingDistrictSettings.IsAdditionalDistrictAllowed(m_eType, m_districtId);
                         }
                         else
                         {
-                            return restrictions.IsOutgoingDistrictAllowed(m_eType, m_districtId);
+                            return restrictions.m_outgoingDistrictSettings.IsAdditionalDistrictAllowed(m_eType, m_districtId);
                         }
                     }
                 }

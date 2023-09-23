@@ -54,6 +54,9 @@ namespace TransferManagerCE
                 patchList.Add(typeof(Mail2PostOfficePatches));
                 patchList.Add(typeof(Mail2PostVanPatches));
 
+                // DistrictSelection
+                patchList.Add(typeof(DistrictSelectionPatches)); 
+
                 // Patch bugs in main game
                 patchList.Add(typeof(ResidentAIFindHospital)); // ResidentAI.FindHospital bug 
                 patchList.Add(typeof(TransportStationAICreateIncomingVehicle)); // TransportStationAI.CreateIncomingVehicle bug introduced in H&T update
@@ -62,10 +65,11 @@ namespace TransferManagerCE
                 patchList.Add(typeof(HumanAIPathfindFailure)); // MovingIn citizens should be released
                 patchList.Add(typeof(StartPathFindPatches)); // Cargo Station infinite loop bug
                 patchList.Add(typeof(CheckRoadAccessPatches)); // Override to set the train track as the access segemnt.
-                patchList.Add(typeof(CargoSpawnPatches));
+                patchList.Add(typeof(ShipSpawnPatches));
                 patchList.Add(typeof(ArriveAtTargetPatches));
                 patchList.Add(typeof(CheckPassengersPatches));
                 patchList.Add(typeof(AirportGateAIPatches));
+                patchList.Add(typeof(CargoTrainDespawnPatches));
 
                 // Outside connection patches
                 if (DependencyUtils.IsAdvancedOutsideConnectionsRunning())

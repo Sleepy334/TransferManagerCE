@@ -21,9 +21,9 @@ namespace TransferManagerCE.Patch
                 SelectionTool.Instance.SetMode(SelectionTool.SelectionToolMode.Normal);
                 return false;
             }
-            if (DistrictPanel.Instance is not null && DistrictPanel.Instance.isVisible)
+            if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
             {
-                DistrictPanel.Instance.Hide();
+                DistrictSelectionPanel.Instance.Hide();
                 return false;
             }
             else if (TransferIssuePanel.Instance is not null && TransferIssuePanel.Instance.HandleEscape())

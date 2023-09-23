@@ -55,7 +55,7 @@ namespace TransferManagerCE.CustomManager
         // Districts settings
         private byte? m_district = null;
         private byte? m_area = null;
-        private RestrictionSettings.PreferLocal m_preferLocal = RestrictionSettings.PreferLocal.Unknown;
+        private DistrictRestrictionSettings.PreferLocal m_preferLocal = DistrictRestrictionSettings.PreferLocal.Unknown;
         private HashSet<DistrictData>? m_actualDistricts = null;
         private HashSet<DistrictData>? m_allowedDistricts = null;
         private static readonly HashSet<DistrictData> s_emptyDistrictSet = new HashSet<DistrictData>(); // Used when empty
@@ -117,7 +117,7 @@ namespace TransferManagerCE.CustomManager
             // Districts settings
             m_district = null;
             m_area = null;
-            m_preferLocal = RestrictionSettings.PreferLocal.Unknown;
+            m_preferLocal = DistrictRestrictionSettings.PreferLocal.Unknown;
             m_actualDistricts = null;
             m_allowedDistricts = null;
 
@@ -455,12 +455,12 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public RestrictionSettings.PreferLocal GetDistrictRestriction(CustomTransferReason.Reason material)
+        public DistrictRestrictionSettings.PreferLocal GetDistrictRestriction(CustomTransferReason.Reason material)
         {
-            if (m_preferLocal == RestrictionSettings.PreferLocal.Unknown)
+            if (m_preferLocal == DistrictRestrictionSettings.PreferLocal.Unknown)
             {
                 // Default is all districts
-                m_preferLocal = RestrictionSettings.PreferLocal.AllDistricts;
+                m_preferLocal = DistrictRestrictionSettings.PreferLocal.AllDistricts;
 
                 // Local setting
                 ushort buildingId = GetBuilding();
@@ -477,7 +477,7 @@ namespace TransferManagerCE.CustomManager
                                 RestrictionSettings? restrictions = BuildingSettingsStorage.GetRestrictions(buildingId, eBuildingType, material);
                                 if (restrictions is not null)
                                 {
-                                    m_preferLocal = restrictions.m_iPreferLocalDistrictsIncoming;
+                                    m_preferLocal = restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts;
                                 }
                             }
                         }
@@ -488,7 +488,7 @@ namespace TransferManagerCE.CustomManager
                                 RestrictionSettings? restrictions = BuildingSettingsStorage.GetRestrictions(buildingId, eBuildingType, material);
                                 if (restrictions is not null)
                                 {
-                                    m_preferLocal = restrictions.m_iPreferLocalDistrictsOutgoing;
+                                    m_preferLocal = restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts;
                                 }
                             }
                         }
@@ -513,11 +513,11 @@ namespace TransferManagerCE.CustomManager
                     {
                         if (m_bIncoming)
                         {
-                            m_allowedDistricts = restrictions.GetAllowedDistrictsIncoming(GetBuilding(), GetDistrict(), GetArea());
+                            m_allowedDistricts = restrictions.m_incomingDistrictSettings.GetAllowedDistricts(GetBuilding(), GetDistrict(), GetArea());
                         }
                         else
                         {
-                            m_allowedDistricts = restrictions.GetAllowedDistrictsOutgoing(GetBuilding(), GetDistrict(), GetArea());
+                            m_allowedDistricts = restrictions.m_outgoingDistrictSettings.GetAllowedDistricts(GetBuilding(), GetDistrict(), GetArea());
                         }
                     }
                 }
@@ -611,18 +611,18 @@ namespace TransferManagerCE.CustomManager
                         {
                             if (m_bIncoming)
                             {
-                                if (restrictions.HasIncomingBuildingRestrictions())
+                                if (restrictions.m_incomingBuildingSettings.HasBuildingRestrictions())
                                 {
                                     // Take a copy for thread safety
-                                    m_allowedBuildings = restrictions.GetIncomingBuildingRestrictionsCopy();
+                                    m_allowedBuildings = restrictions.m_incomingBuildingSettings.GetBuildingRestrictionsCopy();
                                 }
                             }
                             else
                             {
-                                if (restrictions.HasOutgoingBuildingRestrictions())
+                                if (restrictions.m_outgoingBuildingSettings.HasBuildingRestrictions())
                                 {
                                     // Take a copy for thread safety
-                                    m_allowedBuildings = restrictions.GetOutgoingBuildingRestrictionsCopy();
+                                    m_allowedBuildings = restrictions.m_outgoingBuildingSettings.GetBuildingRestrictionsCopy();
                                 }
                             }
                         } 
@@ -800,6 +800,20 @@ namespace TransferManagerCE.CustomManager
             }
 
             return m_transportType;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        public bool IsMassTransit()
+        {
+            switch (GetTransportType())
+            {
+                case TransportType.Plane:
+                case TransportType.Train:
+                case TransportType.Ship:
+                    return true;
+            }
+
+            return false;
         }
 
         // -------------------------------------------------------------------------------------------

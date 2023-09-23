@@ -40,6 +40,7 @@ namespace TransferManagerCE.CustomManager
         private Stopwatch m_watch = Stopwatch.StartNew();
         private TransferMode m_eTransferMode;
         private bool m_bIsWarehouseMaterial = false;
+        private bool m_bApplyUnlimited = false;
 
         // -------------------------------------------------------------------------------------------
         public CustomTransferManager()
@@ -47,44 +48,16 @@ namespace TransferManagerCE.CustomManager
             m_transferRestrictions = new TransferRestrictions();
         }
 
-        // -------------------------------------------------------------------------------------------
-        [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public void MatchOffers(CustomTransferReason.Reason material)
+        private void SetMaterial(CustomTransferReason.Reason material)
         {
-            // guard: ignore transferreason.none
-            if (material == CustomTransferReason.Reason.None)
-            {
-                return;
-            }
-
-            if (job is null)
-            {
-                return;
-            }
-
-            // Setup match logging if requested
-            CustomTransferReason.Reason logReason = (CustomTransferReason.Reason) ModSettings.GetSettings().MatchLogReason;
-            if (logReason != CustomTransferReason.Reason.None && logReason == material)
-            {
-                m_logFile = new MatchJobLogFile(material);
-                m_logFile.LogHeader(job);
-            }
-            else
-            {
-                m_logFile = null;
-            }
-
-            long startTimeTicks = m_watch.ElapsedTicks;
-            TransferManagerStats.UpdateLargestMatch(job);
-
-            // Reset members as we re-use the match jobs.
             m_material = material;
             m_transferRestrictions.SetMaterial(material);
             m_iMatches = 0;
             m_bIsWarehouseMaterial = IsWarehouseMaterial(material);
+            m_bApplyUnlimited = SaveGameSettings.GetSettings().ApplyUnlimited;
 
             // Pathing support
-            m_DistanceAlgorithm = PathDistanceTypes.GetDistanceAlgorithm((CustomTransferReason.Reason) material);
+            m_DistanceAlgorithm = PathDistanceTypes.GetDistanceAlgorithm((CustomTransferReason.Reason)material);
 
             // Check we can actually use path distance and set up the path distance object
             if (m_DistanceAlgorithm == PathDistanceAlgorithm.PathDistance)
@@ -111,6 +84,40 @@ namespace TransferManagerCE.CustomManager
                     m_pathDistance.SetMaterial(material);
                 }
             }
+        }
+
+        // -------------------------------------------------------------------------------------------
+        [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public void MatchOffers(CustomTransferReason.Reason material)
+        {
+            // guard: ignore transferreason.none
+            if (material == CustomTransferReason.Reason.None)
+            {
+                return;
+            }
+
+            if (job is null)
+            {
+                return;
+            }
+
+            // Setup match logging first if requested
+            CustomTransferReason.Reason logReason = (CustomTransferReason.Reason) ModSettings.GetSettings().MatchLogReason;
+            if (logReason != CustomTransferReason.Reason.None && logReason == material)
+            {
+                m_logFile = new MatchJobLogFile(material);
+                m_logFile.LogHeader(job);
+            }
+            else
+            {
+                m_logFile = null;
+            }
+
+            long startTimeTicks = m_watch.ElapsedTicks;
+            TransferManagerStats.UpdateLargestMatch(job);
+
+            // Reset members as we re-use the match jobs.
+            SetMaterial(material);
 
             if (TransferJobQueue.Instance.Count() > 100)
             {
@@ -1084,28 +1091,34 @@ namespace TransferManagerCE.CustomManager
                 // By default delta is min of 2 amounts, new Unlimited flag may change this later.
                 int deltaamount = Math.Min(incomingOffer.Amount, outgoingOffer.Amount);
 
-                if (m_bIsWarehouseMaterial)
+                // Apply Unlimited flag
+                if (m_bApplyUnlimited)
                 {
-                    /*
-                    // Unlimited flag, we only apply when transport type is not road so we dont end up
-                    // with hundreds of trucks driving in from outside connection.
+                    //int iOldDelta = deltaamount;
                     if (incomingOffer.Unlimited && outgoingOffer.Unlimited)
                     {
                         deltaamount = Math.Max(incomingOffer.Amount, outgoingOffer.Amount);
-                        Debug.Log($"IN|OUT {m_material} {incomingOffer.GetBuildingType()}|{outgoingOffer.GetBuildingType()} Unlimited {incomingOffer.Amount}/{outgoingOffer.Amount}|{deltaamount} Transport:{incomingOffer.GetTransportType()}");
                     }
-                    if (incomingOffer.Unlimited && incomingOffer.IsMassTransit())
+                    else if (incomingOffer.Unlimited)
                     {
                         deltaamount = outgoingOffer.Amount;
-                        Debug.Log($"IN {m_material} {incomingOffer.GetBuildingType()}|{outgoingOffer.GetBuildingType()} Unlimited {incomingOffer.Amount}/{outgoingOffer.Amount}|{deltaamount} Transport:{incomingOffer.GetTransportType()}");
                     }
-                    else if (outgoingOffer.Unlimited && outgoingOffer.IsMassTransit())
+                    else if (outgoingOffer.Unlimited)
                     {
                         deltaamount = incomingOffer.Amount;
-                        Debug.Log($"OUT {m_material} {incomingOffer.GetBuildingType()}|{outgoingOffer.GetBuildingType()} Unlimited {incomingOffer.Amount}/{outgoingOffer.Amount}|{deltaamount} Transport:{outgoingOffer.GetTransportType()}");
+                    }
+                    
+                    // DEBUGGING
+                    /*
+                    if (deltaamount != iOldDelta)
+                    {
+                        Debug.Log($"{m_material} IN:{incomingOffer.GetBuildingType()}({incomingOffer.GetTransportType()})|OUT:{outgoingOffer.GetBuildingType()}({outgoingOffer.GetTransportType()}) Amount:{incomingOffer.Amount}{(incomingOffer.Unlimited ? "*" : "")}/{outgoingOffer.Amount}{(outgoingOffer.Unlimited ? "*" : "")} Delta:{deltaamount}");
                     }
                     */
+                }
 
+                if (m_bIsWarehouseMaterial)
+                {
                     // If it is a warehouse station we do some more processing
                     HandleWarehouseStation(ref incomingOffer, ref outgoingOffer, ref deltaamount);
                 }

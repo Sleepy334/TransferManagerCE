@@ -1,8 +1,5 @@
 ﻿using ColossalFramework;
 using System.Collections.Generic;
-using TransferManagerCE.CustomManager;
-using UnityEngine;
-using static TransferManager;
 using static TransferManagerCE.PathQueue;
 
 namespace TransferManagerCE

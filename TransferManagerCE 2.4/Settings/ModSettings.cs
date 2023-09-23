@@ -148,11 +148,18 @@ namespace TransferManagerCE.Settings
             set;
         } = true;
 
+        public bool ForceCargoTrainDespawnOutsideConnections
+        {
+            get;
+            set;
+        } = true;
+
         public bool FixCargoTrucksDisappearingOutsideConnections
         {
             get;
             set;
         } = true;
+
         public bool ResetStopMaxWaitTimeWhenNoPasengers
         {
             get;
@@ -202,6 +209,12 @@ namespace TransferManagerCE.Settings
         } = true;
 
         public bool FixCargoWarehouseExcludeFlag
+        {
+            get;
+            set;
+        } = true;
+
+        public bool FixCargoWarehouseOfferRatio
         {
             get;
             set;

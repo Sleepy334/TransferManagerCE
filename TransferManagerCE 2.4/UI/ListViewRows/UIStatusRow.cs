@@ -16,8 +16,8 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblDistance = null;
         private UILabel? m_lblOwner = null;
         private UIButton? m_btnDelete = null;
-
         private StatusData? m_data = null;
+        private UIComponent? m_MouseEnterComponent = null;
 
         public override void Start()
         {
@@ -222,6 +222,15 @@ namespace TransferManagerCE.UI
                 {
                     m_btnDelete.isVisible = m_data.m_targetVehicle != 0;
                 }
+
+                // Update text color
+                foreach (UIComponent component in components)
+                {
+                    if (component is UILabel label)
+                    {
+                        label.textColor = GetTextColor(label);
+                    }
+                }
             }
         }
 
@@ -285,19 +294,39 @@ namespace TransferManagerCE.UI
 
         protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
         {
+            m_MouseEnterComponent = component;
+
             UILabel? txtLabel = component as UILabel;
             if (txtLabel is not null)
             {
-                txtLabel.textColor = Color.yellow;
+                txtLabel.textColor = GetTextColor(component);
             }
         }
 
         protected void OnMouseLeave(UIComponent component, UIMouseEventParameter eventParam)
         {
+            m_MouseEnterComponent = null;
+
             UILabel? txtLabel = component as UILabel;
             if (txtLabel is not null)
             {
-                txtLabel.textColor = Color.white;
+                txtLabel.textColor = GetTextColor(component); 
+            }
+        }
+
+        public virtual Color GetTextColor(UIComponent component)
+        {
+            if (m_MouseEnterComponent == component)
+            {
+                return Color.yellow;
+            }
+            else if (m_data is not null)
+            {
+                return m_data.GetTextColor();
+            }
+            else
+            {
+                return Color.white;
             }
         }
     }

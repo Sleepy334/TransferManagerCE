@@ -1,8 +1,5 @@
 ﻿using ColossalFramework.UI;
-using HarmonyLib;
 using ICities;
-using System.Collections;
-using System.Reflection;
 using TransferManagerCE.Common;
 using TransferManagerCE.CustomManager;
 using TransferManagerCE.Settings;
@@ -100,6 +97,10 @@ namespace TransferManagerCE
 
                 InfoPanelButtons.AddInfoPanelButtons();
                 SelectionTool.AddSelectionTool();
+
+                // Used to draw path connection graph
+                SimulationManager.RegisterManager((UnityEngine.Object)ColossalFramework.Singleton<PathConnectionRenderer>.instance);
+
             }
         }
 
@@ -135,10 +136,10 @@ namespace TransferManagerCE
                 BuildingPanel.Instance = null;
             }
 
-            if (DistrictPanel.Instance is not null)
+            if (DistrictSelectionPanel.Instance is not null)
             {
-                DistrictPanel.Instance.OnDestroy();
-                DistrictPanel.Instance = null;
+                DistrictSelectionPanel.Instance.OnDestroy();
+                DistrictSelectionPanel.Instance = null;
             }
 
             if (OutsideConnectionPanel.Instance is not null)

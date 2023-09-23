@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TransferManagerCE.Settings;
 using TransferManagerCE.TransferRules;
 using UnityEngine;
 using static TransferManager;
@@ -46,18 +47,18 @@ namespace TransferManagerCE.CustomManager
             if (SaveGameSettings.GetSettings().PreferLocalService && IsGlobalDistrictRestrictionsSupported(material))
             {
                 // Check if the offers pass the priority test
-                if (IsMatchAllowed(RestrictionSettings.PreferLocal.PreferLocalDistrict, offerIn, offerOut, material, mode))
+                if (IsMatchAllowed(DistrictRestrictionSettings.PreferLocal.PreferLocalDistrict, offerIn, offerOut, material, mode))
                 {
                     return true;
                 }
 
                 // When it's the global setting we allow matching service buildings that are outside any district or if the active building has local district settings
-                if (offerIn.Active && ((offerIn.GetArea() == 0 && offerIn.GetDistrict() == 0) || offerIn.GetDistrictRestriction(material) != RestrictionSettings.PreferLocal.AllDistricts))
+                if (offerIn.Active && ((offerIn.GetArea() == 0 && offerIn.GetDistrict() == 0) || offerIn.GetDistrictRestriction(material) != DistrictRestrictionSettings.PreferLocal.AllDistricts))
                 {
                     // Active side is outside any district so allow it
                     return true;
                 }
-                else if (offerOut.Active && ((offerOut.GetArea() == 0 && offerOut.GetDistrict() == 0) || offerOut.GetDistrictRestriction(material) != RestrictionSettings.PreferLocal.AllDistricts))
+                else if (offerOut.Active && ((offerOut.GetArea() == 0 && offerOut.GetDistrict() == 0) || offerOut.GetDistrictRestriction(material) != DistrictRestrictionSettings.PreferLocal.AllDistricts))
                 {
                     // Active side is outside any district so allow it
                     return true;
@@ -91,11 +92,11 @@ namespace TransferManagerCE.CustomManager
             }
 
             // Find the maximum setting from both buildings
-            RestrictionSettings.PreferLocal eInBuildingLocalDistrict = offerIn.GetDistrictRestriction(material);
-            RestrictionSettings.PreferLocal eOutBuildingLocalDistrict = offerOut.GetDistrictRestriction(material);
+            DistrictRestrictionSettings.PreferLocal eInBuildingLocalDistrict = offerIn.GetDistrictRestriction(material);
+            DistrictRestrictionSettings.PreferLocal eOutBuildingLocalDistrict = offerOut.GetDistrictRestriction(material);
 
             // Check max priority of both buildings
-            RestrictionSettings.PreferLocal eMaxDistrictRestriction = (RestrictionSettings.PreferLocal)Math.Max((int)eInBuildingLocalDistrict, (int)eOutBuildingLocalDistrict);
+            DistrictRestrictionSettings.PreferLocal eMaxDistrictRestriction = (DistrictRestrictionSettings.PreferLocal)Math.Max((int)eInBuildingLocalDistrict, (int)eOutBuildingLocalDistrict);
             if (IsMatchAllowed(eMaxDistrictRestriction, offerIn, offerOut, material, mode))
             {
                 return true;
@@ -105,14 +106,14 @@ namespace TransferManagerCE.CustomManager
             bool bInIsValid = false;
             switch (eInBuildingLocalDistrict)
             {
-                case RestrictionSettings.PreferLocal.AllDistricts:
+                case DistrictRestrictionSettings.PreferLocal.AllDistricts:
                     {
                         bInIsValid = true;
                         break;
                     }
-                case RestrictionSettings.PreferLocal.PreferLocalDistrict:
-                case RestrictionSettings.PreferLocal.RestrictLocalDistrict:
-                case RestrictionSettings.PreferLocal.AllDistrictsExceptFor:
+                case DistrictRestrictionSettings.PreferLocal.PreferLocalDistrict:
+                case DistrictRestrictionSettings.PreferLocal.RestrictLocalDistrict:
+                case DistrictRestrictionSettings.PreferLocal.AllDistrictsExceptFor:
                     {
                         // Do the district arrays intersect
                         if (offerOut.GetActualDistrictList().Count > 0 && offerIn.GetAllowedDistrictList(material).Count > 0)
@@ -125,7 +126,7 @@ namespace TransferManagerCE.CustomManager
                         }
 
                         // Valid if they DON'T intersect
-                        if (eInBuildingLocalDistrict == RestrictionSettings.PreferLocal.AllDistrictsExceptFor)
+                        if (eInBuildingLocalDistrict == DistrictRestrictionSettings.PreferLocal.AllDistrictsExceptFor)
                         {
                             bInIsValid = !bInIsValid; 
                         }
@@ -140,14 +141,14 @@ namespace TransferManagerCE.CustomManager
                 // Finally check outgoing district restrictions are fine
                 switch (eOutBuildingLocalDistrict)
                 {
-                    case RestrictionSettings.PreferLocal.AllDistricts:
+                    case DistrictRestrictionSettings.PreferLocal.AllDistricts:
                         {
                             bOutIsValid = true;
                             break;
                         }
-                    case RestrictionSettings.PreferLocal.PreferLocalDistrict:
-                    case RestrictionSettings.PreferLocal.RestrictLocalDistrict:
-                    case RestrictionSettings.PreferLocal.AllDistrictsExceptFor:
+                    case DistrictRestrictionSettings.PreferLocal.PreferLocalDistrict:
+                    case DistrictRestrictionSettings.PreferLocal.RestrictLocalDistrict:
+                    case DistrictRestrictionSettings.PreferLocal.AllDistrictsExceptFor:
                         {
                             // Do the district arrays intersect
                             if (offerIn.GetActualDistrictList().Count > 0 && offerOut.GetAllowedDistrictList(material).Count > 0)
@@ -160,7 +161,7 @@ namespace TransferManagerCE.CustomManager
                             }
 
                             // Valid if they DON'T intersect
-                            if (eOutBuildingLocalDistrict == RestrictionSettings.PreferLocal.AllDistrictsExceptFor)
+                            if (eOutBuildingLocalDistrict == DistrictRestrictionSettings.PreferLocal.AllDistrictsExceptFor)
                             {
                                 bOutIsValid = !bOutIsValid; 
                             }
@@ -173,18 +174,18 @@ namespace TransferManagerCE.CustomManager
             return (bInIsValid && bOutIsValid);
         }
 
-        private static bool IsMatchAllowed(RestrictionSettings.PreferLocal restriction, CustomTransferOffer offerIn, CustomTransferOffer offerOut, CustomTransferReason.Reason material, TransferMode mode)
+        private static bool IsMatchAllowed(DistrictRestrictionSettings.PreferLocal restriction, CustomTransferOffer offerIn, CustomTransferOffer offerOut, CustomTransferReason.Reason material, TransferMode mode)
         {
             // We only allow transfers outside district when priority climbs to this value
             const int PREFER_LOCAL_DISTRICT_THRESHOLD = 4;
 
             switch (restriction)
             {
-                case RestrictionSettings.PreferLocal.AllDistricts:
+                case DistrictRestrictionSettings.PreferLocal.AllDistricts:
                     {
                         return true;// Any match is fine
                     }
-                case RestrictionSettings.PreferLocal.PreferLocalDistrict:
+                case DistrictRestrictionSettings.PreferLocal.PreferLocalDistrict:
                     {
                         // We use match mode to determine which side needs to be high priority
                         switch (mode)
@@ -230,17 +231,17 @@ namespace TransferManagerCE.CustomManager
                         }
                         break;
                     }
-                case RestrictionSettings.PreferLocal.RestrictLocalDistrict:
+                case DistrictRestrictionSettings.PreferLocal.RestrictLocalDistrict:
                     {
                         // Not allowed to match unless in same allowed districts
                         break;
                     }
-                case RestrictionSettings.PreferLocal.AllDistrictsExceptFor:
+                case DistrictRestrictionSettings.PreferLocal.AllDistrictsExceptFor:
                     {
                         // Not allowed to match unless in same allowed districts
                         break;
                     }
-                case RestrictionSettings.PreferLocal.Unknown:
+                case DistrictRestrictionSettings.PreferLocal.Unknown:
                     {
                         Debug.Log("Error district restriction unknown");
                         return true;

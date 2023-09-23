@@ -1,6 +1,8 @@
+using ColossalFramework;
 using ColossalFramework.UI;
 using System;
 using TransferManagerCE;
+using TransferManagerCE.UI;
 using UnityEngine;
 
 namespace SleepyCommon
@@ -50,25 +52,27 @@ namespace SleepyCommon
 
         public void OnItemCheckChanged(bool bChecked)
         {
-            if (!m_bUpdating && TransferManagerCE.DistrictPanel.Instance is not null)
+            if (!m_bUpdating && DistrictSelectionPanel.Instance is not null)
             {
-                ushort buildingId = TransferManagerCE.DistrictPanel.Instance.m_buildingId;
-                int iRestrictionId = TransferManagerCE.DistrictPanel.Instance.m_iRestrictionId;
+                ushort buildingId = DistrictSelectionPanel.Instance.m_buildingId;
+                int iRestrictionId = DistrictSelectionPanel.Instance.m_iRestrictionId;
 
                 BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(buildingId);
                 RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(iRestrictionId);
 
                 if (m_data.m_bIncoming)
                 {
-                    restrictions.SetIncomingDistrictAllowed(m_data.m_eType, m_data.m_districtId, bChecked);
+                    restrictions.m_incomingDistrictSettings.SetDistrictAllowed(buildingId, m_data.m_eType, m_data.m_districtId, bChecked);
                 }
                 else
                 {
-                    restrictions.SetOutgoingDistrictAllowed(m_data.m_eType, m_data.m_districtId, bChecked);
+                    restrictions.m_outgoingDistrictSettings.SetDistrictAllowed(buildingId, m_data.m_eType, m_data.m_districtId, bChecked);
                 }
 
                 settings.SetRestrictions(iRestrictionId, restrictions);
                 BuildingSettingsStorage.SetSettings(buildingId, settings);
+
+                DistrictSelectionPatches.UpdateDistricts();
             }
         }
 

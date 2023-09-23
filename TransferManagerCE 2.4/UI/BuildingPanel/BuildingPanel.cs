@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using TransferManagerCE.Data;
 using TransferManagerCE.Settings;
-using TransferManagerCE.UI;
 using TransferManagerCE.Util;
 using UnityEngine;
 using static TransferManager;
@@ -496,9 +495,9 @@ namespace TransferManagerCE.UI
             {
                 SelectionTool.Instance.Disable();
             }
-            if (DistrictPanel.Instance is not null && DistrictPanel.Instance.isVisible)
+            if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
             {
-                DistrictPanel.Instance.Hide();
+                DistrictSelectionPanel.Instance.Hide();
             }
         }
 
@@ -609,9 +608,9 @@ namespace TransferManagerCE.UI
         public void OnTabChanged(int index)
         {
             // Close district panel
-            if (DistrictPanel.Instance is not null && DistrictPanel.Instance.isVisible)
+            if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
             {
-                DistrictPanel.Instance.Hide();
+                DistrictSelectionPanel.Instance.Hide();
             }
 
             // Turn off building selection mode

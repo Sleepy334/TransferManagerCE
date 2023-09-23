@@ -91,6 +91,7 @@ namespace TransferManagerCE
 
             data.m_waitCounter = 0;
             data.m_flags |= Vehicle.Flags.WaitingLoading;
+
             return false;
         }
     }

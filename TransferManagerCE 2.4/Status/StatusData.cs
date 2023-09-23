@@ -159,6 +159,11 @@ namespace TransferManagerCE.Data
             return 0;
         }
 
+        public virtual Color GetTextColor()
+        {
+            return Color.white;
+        }
+
         protected virtual string CalculateValue()
         {
             return "";

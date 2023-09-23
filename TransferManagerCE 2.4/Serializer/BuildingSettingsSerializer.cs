@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TransferManagerCE.Util;
 using static TransferManagerCE.BuildingSettings;
 using static TransferManagerCE.RestrictionSettings;
+using static TransferManagerCE.Settings.DistrictRestrictionSettings;
 
 namespace TransferManagerCE
 {
@@ -151,13 +152,13 @@ namespace TransferManagerCE
                             RestrictionSettings restrictionsOutgoing = new RestrictionSettings(restrictionsIncoming);
 
                             // Fix incoming
-                            restrictionsIncoming.ResetDistrictRestrictionsOutgoing();
+                            restrictionsIncoming.m_incomingDistrictSettings.Reset();
                             restrictionsIncoming.m_bAllowExport = true;
                             restrictionsIncoming.m_iServiceDistance = 0;
                             settings.SetRestrictionsDirect(0, restrictionsIncoming);
 
                             // Fix outgoing
-                            restrictionsOutgoing.ResetDistrictRestrictionsIncoming();
+                            restrictionsOutgoing.m_outgoingDistrictSettings.Reset();
                             restrictionsOutgoing.m_bAllowImport = true;
                             settings.SetRestrictionsDirect(1, restrictionsOutgoing);
 
@@ -170,7 +171,7 @@ namespace TransferManagerCE
                             RestrictionSettings restrictionsOutgoing = new RestrictionSettings(restrictionsIncoming);
 
                             // Fix incoming 1
-                            restrictionsIncoming.ResetDistrictRestrictionsOutgoing();
+                            restrictionsIncoming.m_incomingDistrictSettings.Reset();
                             restrictionsIncoming.m_bAllowExport = true;
                             restrictionsIncoming.m_iServiceDistance = 0;
                             settings.SetRestrictions(0, restrictionsIncoming);
@@ -179,7 +180,7 @@ namespace TransferManagerCE
                             settings.SetRestrictions(2, restrictionsIncoming);
 
                             // Fix outgoing
-                            restrictionsOutgoing.ResetDistrictRestrictionsIncoming();
+                            restrictionsOutgoing.m_outgoingDistrictSettings.Reset();
                             restrictionsOutgoing.m_bAllowImport = true;
                             settings.SetRestrictionsDirect(1, restrictionsOutgoing);
 
@@ -196,21 +197,21 @@ namespace TransferManagerCE
 
             restrictions.m_bAllowImport = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_bAllowExport = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_iPreferLocalDistrictsIncoming = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_iPreferLocalDistrictsOutgoing = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             restrictions.m_iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex); // No longer used
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
             settings.m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_bIncomingAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_bIncomingAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_bOutgoingAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_bOutgoingAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
 
             // Load arrays
-            restrictions.m_incomingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
-            restrictions.m_outgoingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_allowedDistricts = LoadDistrictAllowed(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_allowedDistricts = LoadDistrictAllowed(Data, ref iIndex);
 
             settings.SetRestrictionsDirect(0, restrictions);
 
@@ -224,21 +225,21 @@ namespace TransferManagerCE
 
             restrictions.m_bAllowImport = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_bAllowExport = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_iPreferLocalDistrictsIncoming = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_iPreferLocalDistrictsOutgoing = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             bool bDistrictAllowServicesNotUsed = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
             settings.m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_bIncomingAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_bIncomingAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_bOutgoingAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_bOutgoingAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
 
-            restrictions.m_incomingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
-            restrictions.m_outgoingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_allowedDistricts = LoadDistrictAllowed(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_allowedDistricts = LoadDistrictAllowed(Data, ref iIndex);
 
             settings.SetRestrictionsDirect(0, restrictions);
 
@@ -259,13 +260,12 @@ namespace TransferManagerCE
                 if (settings.m_restrictions.Count == 1)
                 {
                     RestrictionSettings restrictions = settings.m_restrictions[0];
-                    restrictions.m_bIncomingAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
-                    restrictions.m_bIncomingAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
-                    restrictions.m_bOutgoingAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
-                    restrictions.m_bOutgoingAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
-
-                    restrictions.m_incomingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
-                    restrictions.m_outgoingDistrictAllowed = LoadDistrictAllowed(Data, ref iIndex);
+                    restrictions.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
+                    restrictions.m_incomingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
+                    restrictions.m_outgoingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
+                    restrictions.m_outgoingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
+                    restrictions.m_incomingDistrictSettings.m_allowedDistricts = LoadDistrictAllowed(Data, ref iIndex);
+                    restrictions.m_outgoingDistrictSettings.m_allowedDistricts = LoadDistrictAllowed(Data, ref iIndex);
                     settings.m_restrictions[0] = restrictions;
                 }
                 else
@@ -293,8 +293,8 @@ namespace TransferManagerCE
 
             restrictions.m_bAllowImport = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_bAllowExport = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_iPreferLocalDistrictsIncoming = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_iPreferLocalDistrictsOutgoing = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             bool bDistrictAllowServicesNotUsed = StorageData.ReadBool(Data, ref iIndex);
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
@@ -324,8 +324,8 @@ namespace TransferManagerCE
             restrictions.m_bAllowImport = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_bAllowExport = StorageData.ReadBool(Data, ref iIndex);
             bool bReserveWarehouseTrucks = StorageData.ReadBool(Data, ref iIndex); // Ignore we no longer use
-            restrictions.m_iPreferLocalDistrictsIncoming = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_iPreferLocalDistrictsOutgoing = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
 
             settings.SetRestrictionsDirect(0, restrictions);
 
@@ -344,8 +344,8 @@ namespace TransferManagerCE
 
             // Convert 1 prefer local to 2
             PreferLocal ePreferLocal = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_iPreferLocalDistrictsIncoming = ePreferLocal;
-            restrictions.m_iPreferLocalDistrictsOutgoing = ePreferLocal;
+            restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = ePreferLocal;
+            restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = ePreferLocal;
 
             settings.SetRestrictionsDirect(0, restrictions);
 

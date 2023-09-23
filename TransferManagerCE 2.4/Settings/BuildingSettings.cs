@@ -187,21 +187,21 @@ namespace TransferManagerCE
                 RestrictionSettings settings = kvp.Value;
 
                 // Check incoming building restrictions
-                HashSet<ushort> incoming = settings.GetIncomingBuildingRestrictionsCopy();
+                HashSet<ushort> incoming = settings.m_incomingBuildingSettings.GetBuildingRestrictionsCopy();
                 if (incoming.Contains(buildingId))
                 {
                     bChanged = true;
                     incoming.Remove(buildingId);
-                    settings.SetIncomingBuildingRestrictions(incoming);
+                    settings.m_incomingBuildingSettings.SetBuildingRestrictions(incoming);
                 }
 
                 // Check outgoing building restrictions
-                HashSet<ushort> outgoing = settings.GetOutgoingBuildingRestrictionsCopy();
+                HashSet<ushort> outgoing = settings.m_outgoingBuildingSettings.GetBuildingRestrictionsCopy();
                 if (outgoing.Contains(buildingId))
                 {
                     bChanged = true;
                     outgoing.Remove(buildingId);
-                    settings.SetOutgoingBuildingRestrictions(outgoing);
+                    settings.m_outgoingBuildingSettings.SetBuildingRestrictions(outgoing);
                 }
             }
             return bChanged;

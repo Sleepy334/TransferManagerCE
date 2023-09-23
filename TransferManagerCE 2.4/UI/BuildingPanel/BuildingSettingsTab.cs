@@ -7,6 +7,7 @@ using System.Linq;
 using static TransferManagerCE.UITabStrip;
 using static TransferManagerCE.UI.BuildingPanel;
 using System.Data;
+using TransferManagerCE.Settings;
 
 namespace TransferManagerCE.UI
 {
@@ -79,9 +80,9 @@ namespace TransferManagerCE.UI
                 m_iRestrictionTabIndex = 0;
             }
 
-            if (DistrictPanel.Instance is not null && DistrictPanel.Instance.isVisible)
+            if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
             {
-                DistrictPanel.Instance.Hide();
+                DistrictSelectionPanel.Instance.Hide();
             }
             
             UpdateSettingsTab();
@@ -397,16 +398,16 @@ namespace TransferManagerCE.UI
                             if (m_dropPreferLocalIncoming is not null)
                             {
                                 m_dropPreferLocalIncoming.isVisible = currentRule.m_incomingDistrict;
-                                m_dropPreferLocalIncoming.selectedIndex = (int)restrictionSettings.m_iPreferLocalDistrictsIncoming;
+                                m_dropPreferLocalIncoming.selectedIndex = (int)restrictionSettings.m_incomingDistrictSettings.m_iPreferLocalDistricts;
                             }
                             if (m_btnIncomingSelectDistrict is not null)
                             {
                                 m_btnIncomingSelectDistrict.isVisible = currentRule.m_incomingDistrict;
-                                m_btnIncomingSelectDistrict.isEnabled = (restrictionSettings.m_iPreferLocalDistrictsIncoming != RestrictionSettings.PreferLocal.AllDistricts);
+                                m_btnIncomingSelectDistrict.isEnabled = (restrictionSettings.m_incomingDistrictSettings.m_iPreferLocalDistricts != DistrictRestrictionSettings.PreferLocal.AllDistricts);
                             }
                             if (m_btnDistrictRestrictionsIncomingClear is not null)
                             {
-                                m_btnDistrictRestrictionsIncomingClear.isEnabled = restrictionSettings.IsDistrictRestrictionsIncomingSet();
+                                m_btnDistrictRestrictionsIncomingClear.isEnabled = restrictionSettings.m_incomingDistrictSettings.IsSet();
                             }
                         }
 
@@ -418,16 +419,16 @@ namespace TransferManagerCE.UI
                             if (m_dropPreferLocalOutgoing is not null)
                             {
                                 m_dropPreferLocalOutgoing.isVisible = currentRule.m_outgoingDistrict;
-                                m_dropPreferLocalOutgoing.selectedIndex = (int)restrictionSettings.m_iPreferLocalDistrictsOutgoing;
+                                m_dropPreferLocalOutgoing.selectedIndex = (int)restrictionSettings.m_outgoingDistrictSettings.m_iPreferLocalDistricts;
                             }
                             if (m_btnOutgoingSelectDistrict is not null)
                             {
                                 m_btnOutgoingSelectDistrict.isVisible = currentRule.m_outgoingDistrict;
-                                m_btnOutgoingSelectDistrict.isEnabled = (restrictionSettings.m_iPreferLocalDistrictsOutgoing != RestrictionSettings.PreferLocal.AllDistricts);             
+                                m_btnOutgoingSelectDistrict.isEnabled = (restrictionSettings.m_outgoingDistrictSettings.m_iPreferLocalDistricts != DistrictRestrictionSettings.PreferLocal.AllDistricts);             
                             }
                             if (m_btnDistrictRestrictionsOutgoingClear is not null)
                             {
-                                m_btnDistrictRestrictionsOutgoingClear.isEnabled = restrictionSettings.IsDistrictRestrictionsOutgoingSet();
+                                m_btnDistrictRestrictionsOutgoingClear.isEnabled = restrictionSettings.m_outgoingDistrictSettings.IsSet();
                             }
                         }
 
@@ -467,7 +468,7 @@ namespace TransferManagerCE.UI
                                 {
                                     m_btnBuildingRestrictionsIncoming.text = Localization.Get("btnBuildingRestrictions");
                                 }
-                                HashSet<ushort> allowedBuildings = restrictionSettings.GetIncomingBuildingRestrictionsCopy();
+                                HashSet<ushort> allowedBuildings = restrictionSettings.m_incomingBuildingSettings.GetBuildingRestrictionsCopy();
                                 m_lblBuildingRestrictionsIncoming.text = GetBuildingRestrictionLabel(true, allowedBuildings);
                                 m_btnBuildingRestrictionsIncoming.tooltip = GetBuildingRestrictionTooltip(allowedBuildings);
                                 m_btnBuildingRestrictionsIncomingClear.isEnabled = allowedBuildings.Count > 0;
@@ -491,7 +492,7 @@ namespace TransferManagerCE.UI
                                 }
 
                                 // Update label
-                                HashSet<ushort> allowedBuildings = restrictionSettings.GetOutgoingBuildingRestrictionsCopy();
+                                HashSet<ushort> allowedBuildings = restrictionSettings.m_outgoingBuildingSettings.GetBuildingRestrictionsCopy();
                                 m_lblBuildingRestrictionsOutgoing.text = GetBuildingRestrictionLabel(false, allowedBuildings);
                                 m_btnBuildingRestrictionsOutgoing.tooltip = GetBuildingRestrictionTooltip(allowedBuildings);
                                 m_btnBuildingRestrictionsOutgoingClear.isEnabled = allowedBuildings.Count > 0;
@@ -636,10 +637,10 @@ namespace TransferManagerCE.UI
                 }
             }
 
-            if (DistrictPanel.Instance is not null && DistrictPanel.Instance.isVisible)
+            if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
             {
-                DistrictPanel.Instance.SetPanelBuilding(m_buildingId, GetRestrictionId());
-                DistrictPanel.Instance.UpdatePanel();
+                DistrictSelectionPanel.Instance.SetPanelBuilding(m_buildingId, GetRestrictionId());
+                DistrictSelectionPanel.Instance.UpdatePanel();
             }
 
             UpdateDistrictButtonTooltips();
@@ -724,9 +725,9 @@ namespace TransferManagerCE.UI
                 m_iRestrictionTabIndex = index;
 
                 // Close district panel
-                if (DistrictPanel.Instance is not null && DistrictPanel.Instance.isVisible)
+                if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
                 {
-                    DistrictPanel.Instance.Hide();
+                    DistrictSelectionPanel.Instance.Hide();
                 }
 
                 // Turn off building selection mode
@@ -743,10 +744,10 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            DistrictPanel.Init();
-            if (DistrictPanel.Instance is not null)
+            DistrictSelectionPanel.Init();
+            if (DistrictSelectionPanel.Instance is not null)
             {
-                DistrictPanel.Instance.ShowPanel(m_buildingId, GetRestrictionId(), true);
+                DistrictSelectionPanel.Instance.ShowPanel(m_buildingId, GetRestrictionId(), true);
             }
         }
 
@@ -754,10 +755,10 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            DistrictPanel.Init();
-            if (DistrictPanel.Instance is not null)
+            DistrictSelectionPanel.Init();
+            if (DistrictSelectionPanel.Instance is not null)
             {
-                DistrictPanel.Instance.ShowPanel(m_buildingId, GetRestrictionId(), false);
+                DistrictSelectionPanel.Instance.ShowPanel(m_buildingId, GetRestrictionId(), false);
             }
         }
 
@@ -767,11 +768,11 @@ namespace TransferManagerCE.UI
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
             if (m_btnIncomingSelectDistrict is not null)
             {
-                m_btnIncomingSelectDistrict.tooltip = restrictions.GetIncomingDistrictTooltip(m_buildingId);
+                m_btnIncomingSelectDistrict.tooltip = restrictions.m_incomingDistrictSettings.GetTooltip(m_buildingId);
             }
             if (m_btnOutgoingSelectDistrict is not null)
             {
-                m_btnOutgoingSelectDistrict.tooltip = restrictions.GetOutgoingDistrictTooltip(m_buildingId);
+                m_btnOutgoingSelectDistrict.tooltip = restrictions.m_outgoingDistrictSettings.GetTooltip(m_buildingId);
             }
         }
 
@@ -851,7 +852,7 @@ namespace TransferManagerCE.UI
             BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
-            restrictions.m_iPreferLocalDistrictsIncoming = (RestrictionSettings.PreferLocal) Value;
+            restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = (DistrictRestrictionSettings.PreferLocal) Value;
 
             settings.SetRestrictions(GetRestrictionId(), restrictions);
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
@@ -866,7 +867,7 @@ namespace TransferManagerCE.UI
             BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
-            restrictions.m_iPreferLocalDistrictsOutgoing = (RestrictionSettings.PreferLocal)Value;
+            restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (DistrictRestrictionSettings.PreferLocal)Value;
 
             settings.SetRestrictions(GetRestrictionId(), restrictions);
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
@@ -911,7 +912,7 @@ namespace TransferManagerCE.UI
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             // Clear district settings
-            restrictions.ResetDistrictRestrictionsIncoming();
+            restrictions.m_incomingDistrictSettings.Reset();
 
             settings.SetRestrictions(GetRestrictionId(), restrictions);
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
@@ -926,7 +927,7 @@ namespace TransferManagerCE.UI
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             // Clear district settings
-            restrictions.ResetDistrictRestrictionsOutgoing();
+            restrictions.m_outgoingDistrictSettings.Reset();
 
             settings.SetRestrictions(GetRestrictionId(), restrictions);
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
@@ -960,14 +961,14 @@ namespace TransferManagerCE.UI
                 RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
                 PathDistanceTest pd = new PathDistanceTest();
-                pd.FindNearestNeighbour(CustomTransferReason.Reason.Goods, m_buildingId, restrictions.GetIncomingBuildingRestrictionsCopy().ToArray());
+                pd.FindNearestNeighbour(CustomTransferReason.Reason.Goods, m_buildingId, restrictions.m_incomingBuildingSettings.GetBuildingRestrictionsCopy().ToArray());
             }
             else
             {
                 BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
                 RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
-                restrictions.ClearIncomingBuildingRestrictions();
+                restrictions.m_incomingBuildingSettings.ClearBuildingRestrictions();
 
                 settings.SetRestrictions(GetRestrictionId(), restrictions);
                 BuildingSettingsStorage.SetSettings(m_buildingId, settings);
@@ -999,7 +1000,7 @@ namespace TransferManagerCE.UI
             BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
-            restrictions.ClearOutgoingBuildingRestrictions();
+            restrictions.m_outgoingBuildingSettings.ClearBuildingRestrictions();
 
             settings.SetRestrictions(GetRestrictionId(), restrictions);
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);

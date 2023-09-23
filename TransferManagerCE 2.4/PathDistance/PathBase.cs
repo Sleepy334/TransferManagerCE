@@ -159,6 +159,30 @@ namespace TransferManagerCE
                 }
             }
 
+            // Also check connection class for objects like dams.
+            ItemClass connectionClass = info.GetConnectionClass();
+            if (connectionClass is not null && (connectionClass.m_service == m_service1 || connectionClass.m_service == m_service2 || connectionClass.m_service == m_service3))
+            {
+                // Cargo stations seem to label their connector nodes as Beautification for some reason so we need to check AI as well
+                // as we dont want to allow Quays and parks
+                if (m_bCargoPathAllowed && service == ItemClass.Service.Beautification)
+                {
+                    // Check it actually is a cargo path
+                    switch (info.GetAI())
+                    {
+                        case CargoPathAI:
+                        case CanalAI: // Canals have an embedded ferry path
+                            {
+                                return true;
+                            }
+                    }
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 

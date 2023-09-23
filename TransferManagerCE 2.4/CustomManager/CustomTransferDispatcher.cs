@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using TransferManagerCE.Data;
 using static TransferManager;
 
@@ -27,6 +28,9 @@ namespace TransferManagerCE.CustomManager
         // Which match cycle are we on
         private int m_cycle = 0;
         private int m_droppedReasonCount = 0;
+        private long m_cycleStartMilliseconds = 0;
+        private long m_lastCycleMilliseconds = 0;
+        private Stopwatch m_stopwatch = Stopwatch.StartNew();
 
         public static CustomTransferDispatcher Instance
         {
@@ -52,6 +56,11 @@ namespace TransferManagerCE.CustomManager
         public int Cycle
         {
             get { return m_cycle; }
+        }
+
+        public long LastCycleMilliseconds
+        {
+            get { return m_lastCycleMilliseconds; }
         }
 
         public int DroppedReasons
@@ -86,6 +95,8 @@ namespace TransferManagerCE.CustomManager
             if (material == TransferReason.Snow)
             {
                 m_cycle++;
+                m_lastCycleMilliseconds = m_stopwatch.ElapsedMilliseconds - m_cycleStartMilliseconds;
+                m_cycleStartMilliseconds = m_stopwatch.ElapsedMilliseconds;
             }
 
             // Don't submit with no amounts

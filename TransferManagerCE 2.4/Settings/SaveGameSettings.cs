@@ -14,7 +14,7 @@ namespace TransferManagerCE
             ConnectedLineOfSight = 1,
             PathDistance = 2
         }
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 24;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 25;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
@@ -28,6 +28,7 @@ namespace TransferManagerCE
         public bool EnablePathFailExclusion = true;
         public CustomTransferManager.BalancedMatchModeOption BalancedMatchMode = CustomTransferManager.BalancedMatchModeOption.MatchModeIncomingFirst; // Vanilla
         public bool DisableDummyTraffic = false;
+        public bool ApplyUnlimited = false;
 
         // Warehouse options
         public bool FactoryFirst = true; // ON by default
@@ -227,6 +228,7 @@ namespace TransferManagerCE
 
             StorageData.WriteBool(TaxiMove, Data); // Settings version 24
             StorageData.WriteInt32(TaxiStandDelay, Data); // Settings version 24
+            StorageData.WriteBool(ApplyUnlimited, Data); // 25
         }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
@@ -269,6 +271,8 @@ namespace TransferManagerCE
                         case 22: s_SaveGameSettings.LoadDataVersion22(Data, ref iIndex); break;
                         case 23: s_SaveGameSettings.LoadDataVersion23(Data, ref iIndex); break;
                         case 24: s_SaveGameSettings.LoadDataVersion24(Data, ref iIndex); break;
+                        case 25: s_SaveGameSettings.LoadDataVersion25(Data, ref iIndex); break;
+
                         default:
                             {
                                 Debug.Log("New data version, unable to load!");
@@ -280,6 +284,15 @@ namespace TransferManagerCE
 #endif
                 }
             }
+        }
+
+        private void LoadDataVersion25(byte[] Data, ref int iIndex)
+        {
+            // Load all previous versions settings
+            LoadDataVersion24(Data, ref iIndex);
+
+            // Added in version 25
+            ApplyUnlimited = StorageData.ReadBool(Data, ref iIndex);
         }
 
         private void LoadDataVersion24(byte[] Data, ref int iIndex)

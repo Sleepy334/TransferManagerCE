@@ -33,6 +33,7 @@ namespace TransferManagerCE
         private UITitleBar? m_title = null;
         private UITabStrip? m_tabStrip = null;
         private ListView? m_generalStats = null;
+        private ListView? m_transferManagerStats = null;
         private ListView? m_gameStats = null;
         private ListView? m_listStats = null;
         private Coroutine? m_coroutine = null;
@@ -40,8 +41,9 @@ namespace TransferManagerCE
         private enum Tabs
         {
             TAB_GENERAL = 0,
-            TAB_GAME = 1,
-            TAB_STATS = 2,
+            TAB_TRANSFER_MANAGER = 1,
+            TAB_GAME = 2,
+            TAB_STATS = 3,
         }
 
         public StatsPanel() : base()
@@ -99,6 +101,19 @@ namespace TransferManagerCE
                 {
                     m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", iCOLUMN_WIDTH_DESCRIPTION, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
                     m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", iCOLUMN_WIDTH_VALUE, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                }
+            }
+
+            // Transfer Manager
+            UIPanel? tabTransferManager = m_tabStrip.AddTab(Localization.Get("tabTransferManager"), 200f);
+            if (tabTransferManager is not null)
+            {
+                // Offer list
+                m_transferManagerStats = ListView.Create<UIGeneralStatsRow>(tabTransferManager, "ScrollbarTrack", 0.7f, width - 20f, tabTransferManager.height);
+                if (m_transferManagerStats is not null)
+                {
+                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", iCOLUMN_WIDTH_DESCRIPTION, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", iCOLUMN_WIDTH_VALUE, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                 }
             }
 
@@ -202,6 +217,7 @@ namespace TransferManagerCE
 
                 // Transfer manager match statistics
                 list.Add(new GeneralContainer("Match Cycle", $"{CustomTransferDispatcher.Instance.Cycle}"));
+                list.Add(new GeneralContainer("Match Cycle Time", $"{CustomTransferDispatcher.Instance.LastCycleMilliseconds} ms"));
                 list.Add(new GeneralContainer("Total Match Jobs", $"{TransferManagerStats.s_TotalMatchJobs}"));
                 if (bPathDistance)
                 {
@@ -223,6 +239,7 @@ namespace TransferManagerCE
                 {
                     list.Add(new GeneralContainer("Average Path Distance Match Job Time", $"{TransferManagerStats.GetAveragePathDistanceMatchTime().ToString("F")} ms"));
                 }
+                
                 list.Add(new GeneralContainer($"Longest Cycle Match Job Time (Cycle {TransferManagerStats.CycleData.m_cycle})", $"{((double)TransferManagerStats.CycleData.m_ticks * 0.0001).ToString("F")}ms ({TransferManagerStats.CycleData.m_material})"));
                 list.Add(new GeneralContainer("Longest Match Job Time", $"{((double)TransferManagerStats.s_longestMatchTicks * 0.0001).ToString("F")}ms ({TransferManagerStats.s_longestMaterial})"));
                 list.Add(new GeneralContainer("Largest Match Job", $"IN: {TransferManagerStats.s_largestIncoming} OUT: {TransferManagerStats.s_largestOutgoing} ({TransferManagerStats.s_largestMaterial})"));
@@ -243,10 +260,21 @@ namespace TransferManagerCE
                 {
                     list.Add(new GeneralContainer("No Road Access Fail Count", RoadAccessData.Count.ToString()));
                 }
+            }
+            else
+            {
+                list.Add(new GeneralContainer("Transfer Manager Disabled", "Please enable transfer manager to view statistics"));
+            }
 
-                // Add separator
-                list.Add(new GeneralContainer("", ""));
+            return list;
+        }
 
+        private List<GeneralContainer> GetTransferManagerStats() 
+        {
+            List<GeneralContainer> list = new List<GeneralContainer>();
+
+            if (SaveGameSettings.GetSettings().EnableNewTransferManager)
+            {
                 // Threads
                 list.Add(new GeneralContainer("Thread Count", $"{TransferManagerThread.ThreadCount}"));
                 list.Add(new GeneralContainer("Running Threads", $"{TransferManagerThread.RunningThreads()}"));
@@ -260,8 +288,6 @@ namespace TransferManagerCE
                 // Result queue
                 list.Add(new GeneralContainer("Current Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetCount().ToString()));
                 list.Add(new GeneralContainer("Max Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetMaxUsageCount().ToString()));
-
-                
             }
             else
             {
@@ -312,6 +338,17 @@ namespace TransferManagerCE
                         {
                             List<GeneralContainer> list = GetGeneralStats();
                             m_generalStats.GetList().rowsData = new FastList<object>
+                            {
+                                m_buffer = list.ToArray(),
+                                m_size = list.Count,
+                            };
+                            break;
+                        }
+
+                    case Tabs.TAB_TRANSFER_MANAGER:
+                        {
+                            List<GeneralContainer> list = GetTransferManagerStats();
+                            m_transferManagerStats.GetList().rowsData = new FastList<object>
                             {
                                 m_buffer = list.ToArray(),
                                 m_size = list.Count,

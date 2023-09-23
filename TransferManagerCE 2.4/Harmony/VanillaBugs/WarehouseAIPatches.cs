@@ -34,6 +34,7 @@ namespace TransferManagerCE
         {
             bool bRemoveEmptyWarehouseLimit = ModSettings.GetSettings().RemoveEmptyWarehouseLimit;
             bool bFixCargoWarehouseExcludeFlag = ModSettings.GetSettings().FixCargoWarehouseExcludeFlag;
+            bool bFixCargoWarehouseOfferRatio = ModSettings.GetSettings().FixCargoWarehouseOfferRatio;
 
             // We want to find the set_Exclude function of TransferOffer.
             PropertyInfo proertySetExclude = AccessTools.Property(typeof(TransferOffer), nameof(TransferOffer.Exclude));
@@ -51,9 +52,11 @@ namespace TransferManagerCE
                 CodeInstruction instruction = instructionsEnumerator.Current;
 
                 // Modify rate of warehouse station cargo calls to 50% / 50%
-                if (!bPatchedRandomizerCall && instruction.opcode == OpCodes.Call && instruction.operand == methodRandomizer)
+                if (!bPatchedRandomizerCall && 
+                    bFixCargoWarehouseOfferRatio && 
+                    instruction.opcode == OpCodes.Call && instruction.operand == methodRandomizer)
                 {
-                    Debug.Log($"Patched Randomizer call to 2U.");
+                    Debug.Log($"Patched Randomizer call to 2U (50/50).");
                     bPatchedRandomizerCall = true;
                     yield return new CodeInstruction(OpCodes.Pop); // Remove previous value
                     yield return new CodeInstruction(OpCodes.Ldc_I4_2); // Add 2U

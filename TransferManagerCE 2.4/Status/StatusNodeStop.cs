@@ -1,9 +1,7 @@
 using ColossalFramework;
 using ColossalFramework.Math;
 using System;
-using System.Data.SqlClient;
 using UnityEngine;
-using static RenderManager;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
@@ -12,7 +10,8 @@ namespace TransferManagerCE.Data
     public abstract class StatusNodeStop : StatusData
     {
         protected ushort m_nodeId;
-        
+        private Color m_color = Color.white;
+
         public StatusNodeStop(BuildingType eBuildingType, ushort m_buildingId, ushort nodeId, ushort targetVehicleId) :
             base(TransferReason.None, eBuildingType, m_buildingId, 0, targetVehicleId)
         {
@@ -23,6 +22,7 @@ namespace TransferManagerCE.Data
 
         protected override string CalculateValue()
         {
+            UpdateTextColor();
             return CalculatePassengerCount(m_nodeId, GetTransportType()).ToString();
         }
 
@@ -53,15 +53,12 @@ namespace TransferManagerCE.Data
                 sText = $"Node:{m_nodeId}";
             }
 
-            int iErrorCount = GetNodePathError(out string sError, out int iCount);
-            if (iErrorCount > 0)
-            {
-                return $"(PF:{iErrorCount}) | {sText}"; 
-            }
-            else
-            {
-                return sText;
-            }
+            return sText;
+        }
+
+        public override Color GetTextColor()
+        {
+            return m_color;
         }
 
         public override string GetValueTooltip()
@@ -228,6 +225,27 @@ namespace TransferManagerCE.Data
             }
 
             return iErrorCount;
+        }
+
+        private void UpdateTextColor()
+        {
+            // Update color
+            int iErrorCount = GetNodePathError(out string sError, out int iTotalCount);
+            if (iErrorCount > 0)
+            {
+                if (iErrorCount < iTotalCount)
+                {
+                    m_color = Color.magenta;
+                }
+                else
+                {
+                    m_color = Color.red;
+                }
+            }
+            else
+            {
+                m_color = Color.white;
+            }
         }
     }
 }
