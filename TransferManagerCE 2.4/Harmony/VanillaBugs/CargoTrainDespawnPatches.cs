@@ -5,9 +5,13 @@ using UnityEngine;
 
 namespace TransferManagerCE
 {
+    
+
     [HarmonyPatch]
     public class CargoTrainDespawnPatches
     {
+        private static ushort s_despawnVehicleId = 0;
+
         // This patch forces cargo trains to despawn at outside connections which increases outside connection throughput.
         [HarmonyPatch(typeof(CargoTrainAI), "SimulationStep",
             new Type[] { typeof(ushort), typeof(Vehicle), typeof(Vector3) },
@@ -33,21 +37,36 @@ namespace TransferManagerCE
             }
         }
 
-        // We need to despawn vehicle if __result is true.
+        // Check target before ArriveAtDestination is called
+        [HarmonyPatch(typeof(CargoTrainAI), "ArriveAtDestination")]
+        [HarmonyPrefix]
+        public static bool CargoTrainAIArriveAtDestinationPrefix(ushort vehicleID, ref Vehicle vehicleData)
+        {
+            if (ModSettings.GetSettings().ForceCargoTrainDespawnOutsideConnections &&
+                vehicleData.m_targetBuilding != 0 &&
+                BuildingTypeHelper.IsOutsideConnection(vehicleData.m_targetBuilding))
+            {
+                // Set flag so we despawn 
+                s_despawnVehicleId = vehicleID;
+            }
+
+            return true;
+        }
+
+        // We need to despawn vehicle if __result is false.
         [HarmonyPatch(typeof(CargoTrainAI), "ArriveAtDestination")]
         [HarmonyPostfix]
         public static void CargoTrainAIArriveAtDestinationPostfix(ushort vehicleID, ref Vehicle vehicleData, ref bool __result)
         {
-            // ArriveAtDestination returns true if despawned, so only apply if __result is false.
-            if (!__result && 
-                ModSettings.GetSettings().ForceCargoTrainDespawnOutsideConnections &&
-                vehicleData.m_targetBuilding != 0 &&
-                BuildingTypeHelper.IsOutsideConnection(vehicleData.m_targetBuilding))
+            if (!__result && s_despawnVehicleId != 0 && s_despawnVehicleId == vehicleID)
             {
                 // We release the train and then return true to ensure SimulationStep ends processing
                 VehicleManager.instance.ReleaseVehicle(vehicleID);
                 __result = true;
             }
+
+            // Reset flag
+            s_despawnVehicleId = 0;
         }
     }
 }
