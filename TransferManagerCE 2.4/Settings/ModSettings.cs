@@ -52,6 +52,7 @@ namespace TransferManagerCE.Settings
             set;
         } = (int) HighlightMode.Matches;
 
+        [XmlIgnore]
         public int MatchLogReason
         {
             get;
@@ -94,6 +95,7 @@ namespace TransferManagerCE.Settings
             set;
         } = "System Default";
 
+        [XmlIgnore]
         public int ShowConnectionGraph
         {
             get;

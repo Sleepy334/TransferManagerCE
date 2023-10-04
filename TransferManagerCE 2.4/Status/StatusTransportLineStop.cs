@@ -1,3 +1,4 @@
+using static RenderManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
 namespace TransferManagerCE.Data
@@ -59,5 +60,20 @@ namespace TransferManagerCE.Data
         {
             return CitiesUtils.GetSafeLineName(m_lineId);
         }
+
+        public override void OnClickResponder()
+        {
+            if (m_nodeId != 0)
+            {
+                // Select node
+                InstanceID node = new InstanceID { NetNode = m_nodeId };
+                InstanceHelper.ShowInstance(node);
+
+                // Show line details panel.
+                InstanceID line = new InstanceID { TransportLine = m_lineId };
+                WorldInfoPanel.Show<PublicTransportWorldInfoPanel>(InstanceHelper.GetPosition(node), line);
+            }
+        }
+        
     }
 }

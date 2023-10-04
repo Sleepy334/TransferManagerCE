@@ -65,6 +65,7 @@ namespace TransferManagerCE
                 patchList.Add(typeof(HumanAIPathfindFailure)); // MovingIn citizens should be released
                 patchList.Add(typeof(StartPathFindPatches)); // Cargo Station infinite loop bug
                 patchList.Add(typeof(CheckRoadAccessPatches)); // Override to set the train track as the access segemnt.
+                patchList.Add(typeof(AircraftSpawnPatches));
                 patchList.Add(typeof(ShipSpawnPatches));
                 patchList.Add(typeof(ArriveAtTargetPatches));
                 patchList.Add(typeof(CheckPassengersPatches));

@@ -345,3 +345,4 @@
 "txtApplyUnlimited","In a recent Cities Sylines update Colossal Order introduced an Unlimited flag to offers, usually for outside connections. This flag allows the offer to match any amount, enable this option to have this Transfer Manager apply this flag as well."
 "txtApplyUnlimitedWarning","Warning: This option can produce a large amount of traffic when say a new warehouse is matched with an outside connection."
 "optionApplyUnlimited","Apply Unlimited Offer Flag"
+"txtAdditionalDistricts","Additional Districts"

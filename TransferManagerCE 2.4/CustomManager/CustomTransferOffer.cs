@@ -129,7 +129,10 @@ namespace TransferManagerCE.CustomManager
 
             // Priority scaling
             m_priorityFactor = null;
+
+            // Cargo warehouse
             m_transportType = TransportType.None;
+            m_warehouseStationOfferType = WarehouseStationOffer.None;
         }
 
         // -------------------------------------------------------------------------------------------
@@ -149,6 +152,12 @@ namespace TransferManagerCE.CustomManager
         public bool IsIncoming()
         {
             return m_bIncoming;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        public bool IsOutgoing()
+        {
+            return !IsIncoming();
         }
 
         // -------------------------------------------------------------------------------------------
