@@ -1,5 +1,6 @@
 ﻿using ColossalFramework;
 using System;
+using UnityEngine;
 
 namespace TransferManagerCE
 {
@@ -13,7 +14,7 @@ namespace TransferManagerCE
         {
             Citizen[] Citizens = Singleton<CitizenManager>.instance.m_citizens.m_buffer;
             CitizenUnit[] CitizenUnits = Singleton<CitizenManager>.instance.m_units.m_buffer;
-
+            int iMaxLength = CitizenUnits.Length;
             int iLoopCount = 0;
             while (citizenUnitId != 0)
             {
@@ -36,9 +37,10 @@ namespace TransferManagerCE
                 citizenUnitId = citizenUnit.m_nextUnit;
 
                 // Check for bad list
-                if (++iLoopCount > 16384)
+                if (++iLoopCount > iMaxLength)
                 {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
+
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, $"Invalid list detected!\n" + Environment.StackTrace);
                     break;
                 }
             }
@@ -47,7 +49,7 @@ namespace TransferManagerCE
         public static void EnumerateCitizenUnits(uint citizenUnitId, CitizenUnitDelegate func)
         {
             CitizenUnit[] CitizenUnits = Singleton<CitizenManager>.instance.m_units.m_buffer;
-
+            int iMaxLength = CitizenUnits.Length;
             int iLoopCount = 0;
             while (citizenUnitId != 0)
             {
@@ -59,7 +61,7 @@ namespace TransferManagerCE
                 citizenUnitId = citizenUnit.m_nextUnit;
 
                 // Check for bad list
-                if (++iLoopCount > 16384)
+                if (++iLoopCount > iMaxLength)
                 {
                     CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
                     break;
