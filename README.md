@@ -7,3 +7,5 @@ Modifies the vanilla Transfer Manager to prefer closer transfers. ie Garbage tru
 [Transfer Manager CE (Stable)](https://steamcommunity.com/sharedfiles/filedetails/?id=2804719780)
 
 [Transfer Manager CE (Test)](https://steamcommunity.com/sharedfiles/filedetails/?id=2810557345)
+
+[Binaries for non Steam users](https://github.com/Sleepy334/TransferManagerCE/tree/main/Epic)
