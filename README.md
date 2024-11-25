@@ -5,4 +5,5 @@ Modifies the vanilla Transfer Manager to prefer closer transfers. ie Garbage tru
 
 ## Steam Workshop
 [Transfer Manager CE (Stable)](https://steamcommunity.com/sharedfiles/filedetails/?id=2804719780)
+
 [Transfer Manager CE (Test)](https://steamcommunity.com/sharedfiles/filedetails/?id=2810557345)
