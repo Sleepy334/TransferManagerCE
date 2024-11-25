@@ -440,6 +440,10 @@ namespace TransferManagerCE
             UIPanel panel = (group as UIHelper).self as UIPanel;
             AddDescription(panel, "txtAdvancedDescription", panel, 1.0f, Localization.Get("txtAdvancedDescription"));
 
+            UIHelper groupGeneral = (UIHelper)helper.AddGroup(Localization.Get("tabGeneral"));
+            groupGeneral.AddCheckbox(Localization.Get("optionFixFindHospital"), oSettings.FixFindHospital, (bChecked) => { oSettings.FixFindHospital = bChecked; oSettings.Save(); });
+            AddDescription((groupGeneral as UIHelper).self as UIPanel, "txtFindHospital", panel, 1.0f, Localization.Get("txtFindHospital"));
+
             UIHelper groupIntercityStops = (UIHelper) helper.AddGroup(Localization.Get("GROUP_INTERCITY_STOPS"));
             AddDescription((groupIntercityStops as UIHelper).self as UIPanel, "txtIntercityStopSpawnAtCount", panel, 1.0f, Localization.Get("txtIntercityStopSpawnAtCount"));
             groupIntercityStops.AddSpace(6);
@@ -475,7 +479,6 @@ namespace TransferManagerCE
             UIHelperBase groupVehiclePatches = helper.AddGroup(Localization.Get("GROUP_VEHICLE_PATCHES"));
             groupVehiclePatches.AddCheckbox(Localization.Get("optionFixBankVansStuckCargoStations"), oSettings.FixBankVansStuckCargoStations, (bChecked) => { oSettings.FixBankVansStuckCargoStations = bChecked; oSettings.Save(); });
             groupVehiclePatches.AddCheckbox(Localization.Get("optionFixPostVansStuckCargoStations"), oSettings.FixPostVansStuckCargoStations, (bChecked) => { oSettings.FixPostVansStuckCargoStations = bChecked; oSettings.Save(); });
-            groupVehiclePatches.AddCheckbox(Localization.Get("optionFixTransportStationNullReferenceException"), oSettings.FixTransportStationNullReferenceException, (bChecked) => { oSettings.FixTransportStationNullReferenceException = bChecked; oSettings.Save(); });
             groupVehiclePatches.AddCheckbox(Localization.Get("optionFixPostTruckCollectingMail"), oSettings.FixPostTruckCollectingMail, (bChecked) => { oSettings.FixPostTruckCollectingMail = bChecked; oSettings.Save(); });
 
             UIHelperBase groupWarehousePatches = helper.AddGroup(Localization.Get("GROUP_WAREHOUSE_PATCHES"));

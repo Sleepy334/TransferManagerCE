@@ -351,3 +351,5 @@
 "sliderForceShipSpawnAtCount","Αριθμός Επιβατών Αναμονής Πλοίου"
 "sliderForcePlaneSpawnAtCount","Αριθμός Επιβατών Αναμονής Αεροπλάνου"
 "sliderForceBusSpawnAtCount","Bus Waiting Passenger Count"
+"optionFixFindHospital","Patch ResidentAI.FindHospital (Requires restart)."
+"txtFindHospital","There is a bad vanilla bug in ResidentAI.FindHospital that breaks sick, eldercare and childcare services."

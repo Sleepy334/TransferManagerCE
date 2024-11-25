@@ -10,7 +10,7 @@ namespace TransferManagerCE
         {
             // Call our reverse patch,
             // but only if not a ResidentialBuildingAI as it is already called in ResidentialBuildingAI.SimulationStepActive
-            if (__instance is not ResidentialBuildingAI)
+            if (__instance is not ResidentialBuildingAI && __instance is not HospitalAI)
             {
                 Citizen.BehaviourData behaviour = default(Citizen.BehaviourData);
                 behaviour.m_sickCount = iSickCount; // The only value actually used

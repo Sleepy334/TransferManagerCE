@@ -351,3 +351,5 @@
 "sliderForceShipSpawnAtCount","船舶の待機人数"
 "sliderForcePlaneSpawnAtCount","飛行機の待機人数"
 "sliderForceBusSpawnAtCount","バスの待機人数"
+"optionFixFindHospital","Patch ResidentAI.FindHospital (Requires restart)."
+"txtFindHospital","There is a bad vanilla bug in ResidentAI.FindHospital that breaks sick, eldercare and childcare services."

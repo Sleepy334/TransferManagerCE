@@ -10,6 +10,12 @@ namespace TransferManagerCE
         // Copied from CommonBuildingAI.HandleSick
         public static void HandleSick(CommonBuildingAI __instance, ushort buildingID, ref Building buildingData, int iSickCount)
         {
+            // Do not put out a call for an ambulance from a hospital
+            if (__instance is HospitalAI)
+            {
+                return;
+            }
+
             // Call our reverse patch of CommonBuildingAI.HandleSick
             CommonBuildingAIHandleSickPatch.HandleSick(__instance, buildingID, ref buildingData, iSickCount);
 
@@ -87,6 +93,19 @@ namespace TransferManagerCE
                         int iCitizenIndex = random.Int32((uint)cimSick.Count);
                         uint citizenId = cimSick[iCitizenIndex];
 
+                        Citizen citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenId];
+                        if (citizen.m_vehicle != 0)
+                        {
+                            // Cim on the move so cant request ambulance
+                            return;
+                        }
+
+                        // Added support for the nursing home mod which also patches FindHospital
+                        if (IsInNursingHomeAndNotTooSick(citizenId, buildingID))
+                        {
+                            return;
+                        }
+
                         TransferOffer offer = default;
                         offer.Priority = buildingData.m_healthProblemTimer * 7 / 96; // 96 is major problem point
                         offer.Citizen = citizenId;
@@ -97,7 +116,7 @@ namespace TransferManagerCE
                         // but only when we arent on the timer.
                         if (buildingData.m_healthProblemTimer == 0 &&
                             random.Int32(2u) == 0 &&
-                            ResidentAIFindHospital.RequestEldercareChildcareService(citizenId, offer))
+                            RequestEldercareChildcareService(citizenId, offer))
                         {
                             return; // offer sent
                         }
@@ -139,13 +158,85 @@ namespace TransferManagerCE
                         else
                         {
                             // Most of the time we ask for an ambulance as it is more fun than walking to hospital
-                            // only occasionally offer walking incase their are no ambulances available
+                            // only occasionally offer walking incase there are no ambulances available
                             offer.Active = random.Int32(10u) == 0;
                             Singleton<TransferManager>.instance.AddOutgoingOffer(TransferReason.Sick, offer);
                         }
                     }
                 }
             } 
+        }
+
+        // Added support for the nursing home mod which tries to patch the same function
+        private static bool IsInNursingHomeAndNotTooSick(uint citizenID, ushort sourceBuilding)
+        {
+            if (DependencyUtils.IsSeniorCitizenCenterModRunning() &&
+                Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.HealthCare) &&
+                Singleton<CitizenManager>.exists &&
+                Singleton<CitizenManager>.instance is not null &&
+                IsSenior(citizenID))
+            {
+                Citizen citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID];
+                if (citizen.m_flags != 0 && sourceBuilding == citizen.m_homeBuilding && citizen.m_health >= 40)
+                {
+                    Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[citizen.m_homeBuilding];
+                    if (building.Info is not null)
+                    {
+                        return building.Info.GetAI().name.Equals("NursingHomeAI");
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static bool RequestEldercareChildcareService(uint citizenID, TransferManager.TransferOffer offer)
+        {
+            if (Singleton<CitizenManager>.exists &&
+                Singleton<CitizenManager>.instance is not null &&
+                Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID].m_health >= 40 &&
+                (IsChild(citizenID) || IsSenior(citizenID)))
+            {
+                TransferManager.TransferReason reason = TransferManager.TransferReason.None;
+                FastList<ushort> serviceBuildings = Singleton<BuildingManager>.instance.GetServiceBuildings(ItemClass.Service.HealthCare);
+                for (int i = 0; i < serviceBuildings.m_size; i++)
+                {
+                    BuildingInfo info = Singleton<BuildingManager>.instance.m_buildings.m_buffer[serviceBuildings[i]].Info;
+                    if ((object)info is not null)
+                    {
+                        if (IsChild(citizenID) && info.m_class.m_level == ItemClass.Level.Level4)
+                        {
+                            reason = TransferManager.TransferReason.ChildCare;
+                            break;
+                        }
+                        else if (IsSenior(citizenID) && info.m_class.m_level == ItemClass.Level.Level5)
+                        {
+                            reason = TransferManager.TransferReason.ElderCare;
+                            break;
+                        }
+                    }
+                }
+
+                // Send request if we found a Childcare/Eldercare facility
+                if (reason != TransferManager.TransferReason.None)
+                {
+                    // WARNING: Childcare and Eldercare need an IN offer
+                    offer.Active = true;
+                    Singleton<TransferManager>.instance.AddIncomingOffer(reason, offer);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsChild(uint citizenID)
+        {
+            return Citizen.GetAgeGroup(Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID].Age) == Citizen.AgeGroup.Child || Citizen.GetAgeGroup(Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID].Age) == Citizen.AgeGroup.Teen;
+        }
+
+        private static bool IsSenior(uint citizenID)
+        {
+            return Citizen.GetAgeGroup(Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID].Age) == Citizen.AgeGroup.Senior;
         }
     }
 }

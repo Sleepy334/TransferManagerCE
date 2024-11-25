@@ -227,7 +227,13 @@ namespace TransferManagerCE.Settings
             get;
             set;
         } = true;
-        
+
+        public bool FixFindHospital
+        {
+            get;
+            set;
+        } = true;
+
         public bool FixFishWarehouses
         {
             get;

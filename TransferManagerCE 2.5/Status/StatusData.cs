@@ -49,8 +49,9 @@ namespace TransferManagerCE.Data
             {
                 return 1;
             }
+
             StatusData oSecond = (StatusData)second;
-            return oSecond.GetMaterial().ToString().CompareTo(GetMaterial().ToString());
+            return GetMaterialDescription().CompareTo(oSecond.GetMaterialDescription());
         }
 
         public virtual bool IsSeparator()

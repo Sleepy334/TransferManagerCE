@@ -137,7 +137,6 @@ namespace TransferManagerCE
                 {
                     m_listServices.ForEach(item => item.Calculate());
                     m_listServices.Sort();
-                    m_listServices.Reverse();
                     list.AddRange(m_listServices);
                 }
 
@@ -149,7 +148,6 @@ namespace TransferManagerCE
                     }
                     m_listOutgoing.ForEach(item => item.Calculate());
                     m_listOutgoing.Sort();
-                    m_listOutgoing.Reverse();
                     list.AddRange(m_listOutgoing);
                 }
 
@@ -161,7 +159,6 @@ namespace TransferManagerCE
                     }
                     m_listIncoming.ForEach(item => item.Calculate());
                     m_listIncoming.Sort();
-                    m_listIncoming.Reverse();
                     list.AddRange(m_listIncoming);
                 }
 
@@ -500,6 +497,9 @@ namespace TransferManagerCE
 
         private void AddCommonServices(BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId)
         {
+            // Add citizen count for this building
+            m_listServices.Add(new StatusDataCitizens(TransferReason.None, eBuildingType, buildingId, 0, 0));
+
             // Common to all
             if (!m_setAddedReasons.Contains(TransferReason.Dead))
             {
