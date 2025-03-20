@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Reflection;
 using TransferManagerCE.Settings;
+using ColossalFramework;
+using UnityEngine;
+using static RenderManager;
+using System;
 
 namespace TransferManagerCE
 {
@@ -16,12 +20,12 @@ namespace TransferManagerCE
         {
             MethodInfo methodAddOutgoingOffer = AccessTools.Method(typeof(TransferManager), nameof(TransferManager.AddOutgoingOffer));
 
-            // Instruction enumerator.
-            IEnumerator<CodeInstruction> instructionsEnumerator = instructions.GetEnumerator();
             bool bPatchRequested = ModSettings.GetSettings().FixFindHospital;
             bool bPatched = false;
-
             int iAddOutgoingCount = 0;
+
+            // Instruction enumerator.
+            IEnumerator<CodeInstruction> instructionsEnumerator = instructions.GetEnumerator();
             while (instructionsEnumerator.MoveNext())
             {
                 // Get next instruction.
@@ -30,7 +34,7 @@ namespace TransferManagerCE
                 if (bPatchRequested && !bPatched)
                 {
                     // We want to patch after the second call to AddOutgoingOffer
-                    if (instruction.opcode == OpCodes.Callvirt && instruction.operand == methodAddOutgoingOffer)
+                    if (instruction.Calls(methodAddOutgoingOffer))
                     {
                         iAddOutgoingCount++;
                     }
@@ -41,7 +45,7 @@ namespace TransferManagerCE
                         // We want to change this to always use transfer reason Sick
                         yield return new CodeInstruction(OpCodes.Ldc_I4_S, (int)TransferManager.TransferReason.Sick) { labels = instruction.labels }; // Copy labels from Ldarg_3 instruction (if any)
                         bPatched = true;
-                        continue;
+                        continue; // Dont return original instruction
                     }
                 }
 
@@ -51,14 +55,7 @@ namespace TransferManagerCE
 
             if (bPatchRequested)
             {
-                if (bPatched)
-                {
-                    Debug.Log("Patching of ResidentAI.FindHospital succeeded.");
-                }
-                else
-                {
-                    Debug.LogError($"Patching of ResidentAI.FindHospital failed.");
-                }
+                Debug.Log($"FindHospitalTranspiler - Patching of ResidentAI.FindHospital {(bPatched ? "succeeded" : "failed")}.", false);
             }
         }
 
@@ -68,8 +65,8 @@ namespace TransferManagerCE
         public static bool Prefix(uint citizenID, ushort sourceBuilding, TransferManager.TransferReason reason, ref bool __result)
         {
             if (sourceBuilding != 0 &&
-                SaveGameSettings.GetSettings().EnableNewTransferManager && 
-                SaveGameSettings.GetSettings().OverrideResidentialSickHandler)
+                SaveGameSettings.GetSettings().EnableNewTransferManager &&
+                SaveGameSettings.GetSettings().OverrideSickHandler)
             {
                 // Bypass vanilla function as we will handle building collection ourselves
                 __result = true;
@@ -77,7 +74,7 @@ namespace TransferManagerCE
             }
 
             // Fall through to default ResidentAI.FindHospital
-            return true; 
+            return true;
         }
     }
 }

@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 using TransferManagerCE.CustomManager;
+using static RenderManager;
 using static TransferManager;
+using static TransferManagerCE.CustomTransferReason;
 
 namespace TransferManagerCE
 {
@@ -32,6 +35,7 @@ namespace TransferManagerCE
             ElementartySchool,
             HighSchool,
             University,
+            UniversityHospital,
             Library,
             Monument,
             CargoStation,
@@ -133,8 +137,6 @@ namespace TransferManagerCE
             Road
         }
 
-        private static MethodInfo? s_CargoFerriesGetActualTransferReasonMethod = null;
-
         public static BuildingType GetBuildingType(ushort buildingId)
         {
             if (buildingId != 0)
@@ -153,6 +155,8 @@ namespace TransferManagerCE
             {
                 return BuildingType.None;
             }
+
+            //Debug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
 
             switch (building.Info.GetService())
             {
@@ -296,21 +300,31 @@ namespace TransferManagerCE
                     }
                 case ItemClass.Service.HealthCare:
                     {
-                        switch (building.Info?.GetAI())
+                        if (building.Info is not null)
                         {
-                            case HospitalAI:
-                                return BuildingType.Hospital;
-                            case HelicopterDepotAI:
-                                return BuildingType.MedicalHelicopterDepot;
-                            case CemeteryAI:
-                                return BuildingType.Cemetery;
-                            case ChildcareAI:
-                                return BuildingType.Childcare;
-                            case EldercareAI:
-                                return BuildingType.Eldercare;
-                            default:
-                                return BuildingType.Healthcare;
+                            PrefabAI ai = building.Info.GetAI();
+                            switch (ai)
+                            {
+                                case HospitalAI:
+                                    return BuildingType.Hospital;
+                                case HelicopterDepotAI:
+                                    return BuildingType.MedicalHelicopterDepot;
+                                case CemeteryAI:
+                                    return BuildingType.Cemetery;
+                                case ChildcareAI:
+                                    return BuildingType.Childcare;
+                                case EldercareAI:
+                                    return BuildingType.Eldercare;
+                                case UniqueFacultyAI:
+                                    if (ai.GetType().ToString().Contains("UniversityHospitalAI"))
+                                    {
+                                        return BuildingType.UniversityHospital;
+                                    }
+                                    break;
+                            }
                         }
+
+                        return BuildingType.Healthcare;
                     }
                 case ItemClass.Service.PoliceDepartment:
                     {
@@ -571,6 +585,26 @@ namespace TransferManagerCE
                         {
                             switch (building.Info.m_buildingAI)
                             {
+                                case WarehouseStationAI: 
+                                    return BuildingType.WarehouseStation;
+                                case ExtractingFacilityAI: 
+                                    return BuildingType.ExtractionFacility;
+                                case UniqueFactoryAI: 
+                                    return BuildingType.UniqueFactory;
+                                case ProcessingFacilityAI: 
+                                    return BuildingType.ProcessingFacility;
+                                case MainIndustryBuildingAI: 
+                                    return BuildingType.MainIndustryBuilding;
+
+                                case CargoStationAI cargoStationAI:
+                                    {
+                                        if (cargoStationAI.GetType().ToString().Contains("CargoFerryWarehouseHarborAI"))
+                                        {
+                                            return BuildingType.CargoFerryWarehouseHarbor;
+                                        }
+                                        break;
+                                    }
+
                                 case WarehouseAI:
                                     {
                                         // Check if its the new warehouse with cargo station.
@@ -584,15 +618,6 @@ namespace TransferManagerCE
                                         }
                                         return BuildingType.Warehouse;
                                     }
-                                case WarehouseStationAI: return BuildingType.WarehouseStation;
-                                case ExtractingFacilityAI: return BuildingType.ExtractionFacility;
-                                case UniqueFactoryAI: return BuildingType.UniqueFactory;
-                                case ProcessingFacilityAI: return BuildingType.ProcessingFacility;
-                                case MainIndustryBuildingAI: return BuildingType.MainIndustryBuilding;
-                            }
-                            if (building.Info.m_buildingAI.GetType().ToString().Contains("CargoFerryWarehouseHarborAI"))
-                            {
-                                return BuildingType.Warehouse;
                             }
                         }
                         break;
@@ -797,58 +822,61 @@ namespace TransferManagerCE
             }
         }
 
-        public static CustomTransferReason.Reason GetCargoFerryWarehouseActualTransferReason(ushort buildingId)
-        {
-            if (buildingId != 0)
-            {
-                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                PrefabAI buildingAI = building.Info.GetAI();
-                if (buildingAI.GetType().ToString().Contains("CargoFerryWarehouseHarborAI"))
-                {
-                    if (s_CargoFerriesGetActualTransferReasonMethod is null)
-                    {
-                        try
-                        {
-                            Assembly? assembly = DependencyUtils.GetCargoFerriesAssembly();
-                            if (assembly is not null)
-                            {
-                                s_CargoFerriesGetActualTransferReasonMethod = assembly.GetType("CargoFerries.AI.CargoFerryWarehouseHarborAI").GetMethod("GetActualTransferReason", BindingFlags.Public | BindingFlags.Instance);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.Log(ex);
-                        }
-                    }
-                    if (s_CargoFerriesGetActualTransferReasonMethod is not null)
-                    {     
-                        return (CustomTransferReason.Reason) s_CargoFerriesGetActualTransferReasonMethod.Invoke(buildingAI, new object[] { buildingId, building });
-                    }
-                }
-            }
-            return CustomTransferReason.Reason.None;
-        }
-
         public static CustomTransferReason.Reason GetWarehouseTransferReason(ushort buildingId)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-            WarehouseAI? warehouseAI = building.Info.GetAI() as WarehouseAI;
-            if (warehouseAI is not null)
+
+            switch (building.Info.GetAI())
             {
-                return (CustomTransferReason.Reason) warehouseAI.GetTransferReason(buildingId, ref building);
+                case WarehouseAI warehouseAI:
+                    {
+                        return (CustomTransferReason.Reason) warehouseAI.GetTransferReason(buildingId, ref building);
+                    }
+
+                case CargoStationAI cargoStationAI:
+                    {
+                        Type buildingType = cargoStationAI.GetType();
+
+                        if (buildingType.ToString().Contains("CargoFerryWarehouseHarborAI"))
+                        {
+                            MethodInfo? methodGetTransferReason = buildingType.GetMethod("GetTransferReason", BindingFlags.Public | BindingFlags.Instance);
+                            return (CustomTransferReason.Reason)methodGetTransferReason.Invoke(cargoStationAI, new object[] { buildingId, building });
+                        }
+
+                        break;
+                    }
             }
+
             return CustomTransferReason.Reason.None;
         }
 
         public static TransferReason GetWarehouseActualTransferReason(ushort buildingId)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-            WarehouseAI? warehouseAI = building.Info.GetAI() as WarehouseAI;
-            if (warehouseAI is not null)
+
+            if (building.Info is not null)
             {
-                // Warehouses, just return the actual material they store
-                return warehouseAI.GetActualTransferReason(buildingId, ref building);
+                switch (building.Info.GetAI())
+                {
+                    case WarehouseAI warehouseAI:
+                        {
+                            return (TransferReason)warehouseAI.GetActualTransferReason(buildingId, ref building);
+                        }
+
+                    case CargoStationAI cargoStationAI:
+                        {
+                            Type buildingType = cargoStationAI.GetType();
+                            if (buildingType.ToString().Contains("CargoFerryWarehouseHarborAI"))
+                            {
+                                MethodInfo? methodGetActualTransferReason = buildingType.GetMethod("GetActualTransferReason", BindingFlags.Public | BindingFlags.Instance);
+                                return (TransferReason)methodGetActualTransferReason.Invoke(cargoStationAI, new object[] { buildingId, building });
+                            }
+
+                            break;
+                        }
+                }
             }
+
             return TransferReason.None;
         }
 
@@ -923,6 +951,7 @@ namespace TransferManagerCE
                 case BuildingType.Cemetery:
                 case BuildingType.Hospital:
                 case BuildingType.MedicalHelicopterDepot:
+                case BuildingType.UniversityHospital:
                 case BuildingType.Landfill:
                 case BuildingType.IncinerationPlant:
                 case BuildingType.Recycling:
@@ -969,5 +998,107 @@ namespace TransferManagerCE
             }
             return false;
         }    
+
+        public static CustomTransferReason.Reason GetGlobalDistanceReason(BuildingType eType)
+        {
+            CustomTransferReason.Reason reason = Reason.None;
+
+            switch (eType)
+            {
+                case BuildingType.Cemetery:
+                    {
+                        reason = CustomTransferReason.Reason.Dead;
+                        break;
+                    }
+                case BuildingType.UniversityHospital:
+                case BuildingType.Hospital:
+                    {
+                        reason = CustomTransferReason.Reason.Sick;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.FireStation:
+                    {
+                        reason = CustomTransferReason.Reason.Fire;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.Landfill:
+                case BuildingTypeHelper.BuildingType.IncinerationPlant:
+                case BuildingTypeHelper.BuildingType.WasteProcessing:
+                case BuildingTypeHelper.BuildingType.WasteTransfer:
+                case BuildingTypeHelper.BuildingType.Recycling:
+                    {
+                        reason = CustomTransferReason.Reason.Garbage;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.PoliceStation:
+                    {
+                        reason = CustomTransferReason.Reason.Crime;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.PostOffice:
+                    {
+                        reason = CustomTransferReason.Reason.Mail;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.ElementartySchool:
+                    {
+                        reason = CustomTransferReason.Reason.StudentES;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.HighSchool:
+                    {
+                        reason = CustomTransferReason.Reason.StudentHS;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.University:
+                    {
+                        reason = CustomTransferReason.Reason.StudentUni;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.SnowDump:
+                    {
+                        reason = CustomTransferReason.Reason.Snow;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.RoadMaintenanceDepot:
+                    {
+                        reason = CustomTransferReason.Reason.RoadMaintenance;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.ParkMaintenanceDepot:
+                    {
+                        reason = CustomTransferReason.Reason.ParkMaintenance;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.TaxiDepot:
+                case BuildingTypeHelper.BuildingType.TaxiStand:
+                    {
+                        reason = CustomTransferReason.Reason.Taxi;
+                        break;
+                    }
+                case BuildingTypeHelper.BuildingType.Bank:
+                    {
+                        reason = CustomTransferReason.Reason.Cash;
+                        break;
+                    }
+            }
+
+            return reason;
+        }
+
+        // Comparing as string is slow so check each level so we only use string comparisons if absolutely necessary.
+        public static bool IsUniversityHospital(Building building)
+        {
+            if (building.Info is not null && building.Info.GetService() == ItemClass.Service.HealthCare)
+            {
+                UniqueFacultyAI? ai = building.Info.GetAI() as UniqueFacultyAI;
+                if (ai is not null)
+                {
+                    return ai.GetType().ToString().Contains("UniversityHospitalAI");
+                }
+            }
+
+            return false;
+        }
     }
 }

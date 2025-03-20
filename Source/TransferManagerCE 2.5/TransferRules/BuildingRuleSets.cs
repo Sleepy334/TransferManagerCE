@@ -41,7 +41,7 @@ namespace TransferManagerCE.TransferRules
             return s_buildingReasons.Contains(material);
         }
 
-        public static bool IsDistanceRestrictionsSupported(CustomTransferReason.Reason material)
+        public static bool IsLocalDistanceRestrictionsSupported(CustomTransferReason.Reason material)
         {
             if (s_initNeeded)
             {
@@ -71,6 +71,26 @@ namespace TransferManagerCE.TransferRules
                     }
                 }
                 return -1;
+            }
+        }
+
+        public static HashSet<CustomTransferReason.Reason>? GetRestrictionReasons(BuildingType eBuildingType, int iId)
+        {
+            lock (s_dictionaryLock)
+            {
+                Init();
+
+                if (BuildingRules.ContainsKey(eBuildingType))
+                {
+                    foreach (ReasonRule rule in BuildingRules[eBuildingType])
+                    {
+                        if (rule.m_id == iId)
+                        {
+                            return rule.m_reasons;
+                        }
+                    }
+                }
+                return null;
             }
         }
 
@@ -168,6 +188,7 @@ namespace TransferManagerCE.TransferRules
                     {
                         case BuildingType.Warehouse:
                         case BuildingType.WarehouseStation:
+                        case BuildingType.CargoFerryWarehouseHarbor:
                             {
                                 // Warehouses, just return the actual material they store
                                 List<ReasonRule> rules = new List<ReasonRule>();
@@ -185,26 +206,6 @@ namespace TransferManagerCE.TransferRules
                                     }
                                 }
 
-                                return rules;
-                            }
-                        case BuildingType.CargoFerryWarehouseHarbor:
-                            {
-                                // Warehouses, just return the actual material they store
-                                List<ReasonRule> rules = new List<ReasonRule>();
-
-                                CustomTransferReason.Reason material = GetCargoFerryWarehouseActualTransferReason(buildingId);
-                                if (material != CustomTransferReason.Reason.None)
-                                {
-                                    foreach (ReasonRule rule in buildingRules)
-                                    {
-                                        if (rule is not null && rule.m_reasons.Contains(material))
-                                        {
-                                            rules.Add(rule);
-                                            break;
-                                        }
-                                    }
-                                }
-                                
                                 return rules;
                             }
                         case BuildingType.UniqueFactory:
@@ -244,6 +245,7 @@ namespace TransferManagerCE.TransferRules
                 // Services
                 Cemetery();
                 Hospital();
+                UniversityHospital();
                 MedicalHelicopterDepot();
                 PoliceStation();
                 PoliceHelicopterDepot();
@@ -470,6 +472,46 @@ namespace TransferManagerCE.TransferRules
 
             BuildingRules[BuildingType.Hospital] = list;
         }
+
+        private static void UniversityHospital()
+        {
+            List<ReasonRule> list = new List<ReasonRule>();
+
+            // Sick
+            {
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 0;
+                rule.m_name = Localization.Get("reasonSick"); //"Collecting Sick";
+                rule.AddReason(CustomTransferReason.Reason.Sick);
+                rule.m_incomingDistrict = true;
+                rule.m_distance = true;
+                list.Add(rule);
+            }
+
+            // SickMove, IN from medical helicopters
+            {
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 1;
+                rule.m_name = Localization.Get("reasonSickMove"); //"Moving Sick";
+                rule.AddReason(CustomTransferReason.Reason.SickMove);
+                rule.m_incomingDistrict = true;
+                rule.m_incomingBuilding = true;
+                list.Add(rule);
+            }
+
+            {
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 2;
+                rule.m_name = Localization.Get("reasonStudent3"); //"Students";
+                rule.AddReason(CustomTransferReason.Reason.StudentUni);
+                rule.m_incomingDistrict = true;
+                rule.m_distance = true;
+                list.Add(rule);
+            }
+
+            BuildingRules[BuildingType.UniversityHospital] = list;
+        }
+
         private static void MedicalHelicopterDepot()
         {
             List<ReasonRule> list = new List<ReasonRule>();

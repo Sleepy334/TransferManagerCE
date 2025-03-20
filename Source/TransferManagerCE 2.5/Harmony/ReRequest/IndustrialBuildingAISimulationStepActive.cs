@@ -42,7 +42,7 @@ namespace TransferManagerCE
         // This transpiler patches SimulationStepActive to skip over the AddIncomingOffer and AddOutgoingOffer calls so we can add our own instead in AddOffers
         [HarmonyPatch(typeof(IndustrialBuildingAI), "SimulationStepActive")]
         [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> SimulationStepActiveTranspiler(ILGenerator generator, IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> IndustrialBuildingSimulationStepActiveTranspiler(ILGenerator generator, IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo methodAddOffers = AccessTools.Method(typeof(IndustrialBuildingAISimulationStepActive), nameof(AddOffers));
             MethodInfo methodAddOutgoingOffer = AccessTools.Method(typeof(TransferManager), nameof(TransferManager.AddOutgoingOffer));
@@ -95,7 +95,7 @@ namespace TransferManagerCE
                     // Look for the following:
                     // Singleton<TransferManager>.instance.AddOutgoingOffer(outgoingTransferReason, offer2);
                     // IL_0BF1: callvirt   System.Void TransferManager::AddOutgoingOffer(TransferReason material, TransferOffer offer)
-                    if (bAddedBranch && !bAddedLabel && instruction.opcode == OpCodes.Callvirt && instruction.operand == methodAddOutgoingOffer)
+                    if (bAddedBranch && !bAddedLabel && instruction.Calls(methodAddOutgoingOffer))
                     {
                         bAddedLabel = true;
 
@@ -135,14 +135,7 @@ namespace TransferManagerCE
                 yield return instruction;
             }
 
-            if (s_bPatched)
-            {
-                Debug.Log("Patching of IndustrialBuildingAI.SimulationStepActive succeeded");
-            }
-            else
-            {
-                Debug.LogError($"Patching of IndustrialBuildingAI.SimulationStepActive failed bAddedBranch: {bAddedBranch} bAddedLabel: {bAddedLabel} s_bPatched: {s_bPatched}");
-            }
+            Debug.Log($"IndustrialBuildingSimulationStepActiveTranspiler - Patching of IndustrialBuildingAI.SimulationStepActive {(s_bPatched ? "succeeded" : "failed")}", false);
         }
 
         // Generic processing buildings behave badly, they ask twice in one round and with really high priority due to a bug in IndustrialBuildingAI.SimulationStepActive

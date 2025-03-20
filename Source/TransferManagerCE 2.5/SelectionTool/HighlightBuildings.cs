@@ -1,12 +1,16 @@
-﻿using ColossalFramework.Math;
+﻿using ColossalFramework;
+using ColossalFramework.Math;
 using HarmonyLib;
+using ICities;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using TransferManagerCE.CustomManager;
 using TransferManagerCE.Data;
 using TransferManagerCE.Settings;
 using TransferManagerCE.UI;
 using UnityEngine;
+using static TransferManagerCE.BuildingTypeHelper;
 
 namespace TransferManagerCE
 {
@@ -28,6 +32,9 @@ namespace TransferManagerCE
 
         public void LoadMatches()
         {
+            //LoadBuildingsWorkers(BuildingPanel.Instance.GetBuildingId());
+            //return;
+
             switch ((ModSettings.HighlightMode) ModSettings.GetSettings().HighlightMatchesState)
             {
                 case ModSettings.HighlightMode.None:
@@ -45,13 +52,17 @@ namespace TransferManagerCE
                     {
                         // Alternate mode load buildings depending on selected building type.
                         ushort buildingId = BuildingPanel.Instance.GetBuildingId();
+
                         BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType(buildingId);
                         switch (eType)
                         {
-                            case BuildingTypeHelper.BuildingType.Hospital:
-                            case BuildingTypeHelper.BuildingType.MedicalHelicopterDepot:
+                            case BuildingType.Hospital:
+                            case BuildingType.MedicalHelicopterDepot:
+                            case BuildingType.UniversityHospital:
+                            case BuildingType.Eldercare:
+                            case BuildingType.Childcare:
                                 {
-                                    LoadBuildingsWithSickCitizens(buildingId);
+                                    LoadBuildingsWithSick(buildingId);
                                     break;
                                 }
                             case BuildingTypeHelper.BuildingType.Cemetery:
@@ -163,7 +174,7 @@ namespace TransferManagerCE
             }
         }
 
-        private void LoadBuildingsWithSickCitizens(ushort usSourceBuildingId)
+        private void LoadBuildingsWithSick(ushort usSourceBuildingId)
         {
             // Highlight sick citizens
             Building[] BuildingBuffer = BuildingManager.instance.m_buildings.m_buffer;
@@ -180,29 +191,24 @@ namespace TransferManagerCE
                 Building building = BuildingBuffer[i];
                 if (building.m_flags != 0)
                 {
-                    switch (building.Info.GetAI())
+                    if (building.Info.GetService() == ItemClass.Service.HealthCare && building.Info.GetAI() is not CemeteryAI)
                     {
-                        case HospitalAI:
-                            {
-                                m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.green));
-                                break;
-                            }
-                        default:
-                            {
-                                if (BuildingUtils.GetSickCount((ushort)i, building) > 0)
-                                {
-                                    int Priority = building.m_healthProblemTimer * 8 / 128;
-                                    if (Priority >= 2)
-                                    {
-                                        m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.blue));
-                                    }
-                                    else
-                                    {
-                                        m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.cyan));
-                                    }
-                                }
-                                break;
-                            }
+                        m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.green));
+                    }
+                    else if (BuildingUtils.GetSickCount((ushort)i, building) > 0)
+                    {
+                        if (building.m_healthProblemTimer >= SickHandler.iSICK_MAJOR_PROBLEM_TIMER_VALUE)
+                        {
+                            m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, orange));
+                        }
+                        else if (building.m_healthProblemTimer >= SickHandler.iSICK_MINOR_PROBLEM_TIMER_VALUE)
+                        {
+                            m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.blue));
+                        }
+                        else
+                        {
+                            m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.cyan));
+                        }
                     }
                 }
             }
@@ -310,43 +316,38 @@ namespace TransferManagerCE
                 Building building = BuildingBuffer[i];
                 if (building.m_flags != 0)
                 {
-                    switch (building.Info.GetService())
+                    if (building.Info.GetService() == ItemClass.Service.PoliceDepartment)
                     {
-                        case ItemClass.Service.PoliceDepartment:
-                            { 
-                                m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.green));
-                                break;
-                            }
-                        default:
+                        m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.green));
+                    }
+                    else
+                    {
+                        if (building.m_citizenCount > 0)
+                        {
+                            // Show high priority buildings first
+                            if (building.m_crimeBuffer > 0)
                             {
-                                if (building.m_citizenCount > 0)
+                                int Priority = building.m_crimeBuffer / Mathf.Max(1, building.m_citizenCount * 10);
+                                if (Priority >= 2)
                                 {
-                                    // Show high priority buildings first
-                                    if (building.m_crimeBuffer > 0)
-                                    {
-                                        int Priority = building.m_crimeBuffer / Mathf.Max(1, building.m_citizenCount * 10);
-                                        if (Priority >= 2)
-                                        {
-                                            m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.blue));
-                                            continue;
-                                        }
-                                        else if (Priority == 1)
-                                        {
-                                            m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.cyan));
-                                            continue;
-                                        }
-                                    }
-                                    
- 
-                                    // Then highlight any buildings with more than 1 criminals in them
-                                    int iCriminalCount = BuildingUtils.GetCriminalCount((ushort)i, building);
-                                    if (iCriminalCount > 1)
-                                    {
-                                        m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, orange));
-                                    }
+                                    m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.blue));
+                                    continue;
                                 }
-                                break;
+                                else if (Priority == 1)
+                                {
+                                    m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.cyan));
+                                    continue;
+                                }
                             }
+
+
+                            // Then highlight any buildings with more than 1 criminals in them
+                            int iCriminalCount = BuildingUtils.GetCriminalCount((ushort)i, building);
+                            if (iCriminalCount > 1)
+                            {
+                                m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, orange));
+                            }
+                        }
                     }
                 }
             }
@@ -620,6 +621,35 @@ namespace TransferManagerCE
                 }
             }
         }
-        
+
+        private void LoadBuildingsWorkers(ushort usSourceBuildingId)
+        {
+            // Highlight workers
+            Building[] BuildingBuffer = BuildingManager.instance.m_buildings.m_buffer;
+
+            m_highlightBuildings.Clear();
+            for (int i = 0; i < BuildingBuffer.Length; i++)
+            {
+                // Dont highlight current building
+                if (i == usSourceBuildingId)
+                {
+                    continue;
+                }
+
+                Building building = BuildingBuffer[i];
+                if (building.m_flags != 0)
+                {
+                    int iTotalWokders = BuildingUtils.GetTotalWorkerCount((ushort) i, building, out int workPlaces0, out int workPlaces1, out int workPlaces2, out int workPlaces3);
+                    if (iTotalWokders > 0)
+                    {
+                        int iWorkerCount = BuildingUtils.GetCurrentWorkerCount((ushort)i, building, out int worker0, out int worker1, out int worker2, out int worker3);
+                        if (iWorkerCount < iTotalWokders)
+                        {
+                            m_highlightBuildings.Add(new KeyValuePair<ushort, Color>((ushort)i, Color.blue));
+                        }
+                    }
+                }
+            }
+        }
     }
 }

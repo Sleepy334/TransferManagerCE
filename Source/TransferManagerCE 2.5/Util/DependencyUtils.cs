@@ -123,43 +123,16 @@ namespace TransferManagerCE
         {
             return IsPluginRunning(1674732053, "EmployOvereducatedWorkers");
         }
-        
-        public static Assembly? GetCallAgainAssembly()
+
+        public static bool IsEmployOverEducatedWorkersByAkiraRunning()
         {
-            // Iterate through each loaded plugin assembly.
-            foreach (PluginManager.PluginInfo plugin in PluginManager.instance.GetPluginsInfo())
-            {
-                if (plugin is not null)
-                {
-                    foreach (Assembly assembly in plugin.GetAssemblies())
-                    {
-                        if (assembly is not null && assembly.GetName().Name.Equals("CallAgain") && plugin.isEnabled)
-                        {
-                            return assembly;
-                        }
-                    }
-                }
-            }
-            return null;
+            // Don't check string name as it is the same as pcfantasy's mod name which does work.
+            return IsPluginRunning(569008960, "");
         }
 
-        public static Assembly? GetCargoFerriesAssembly()
+        public static bool IsCombinedAISRunning()
         {
-            // Iterate through each loaded plugin assembly.
-            foreach (PluginManager.PluginInfo plugin in PluginManager.instance.GetPluginsInfo())
-            {
-                if (plugin is not null)
-                {
-                    foreach (Assembly assembly in plugin.GetAssemblies())
-                    {
-                        if (assembly is not null && assembly.GetName().Name.Equals("CargoFerries") && plugin.isEnabled)
-                        {
-                            return assembly;
-                        }
-                    }
-                }
-            }
-            return null;
+            return IsPluginRunning(3158078540, "CombinedAIS");
         }
 
         public static bool IsNaturalDisastersDLC()

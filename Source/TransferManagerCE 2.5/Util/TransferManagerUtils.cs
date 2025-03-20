@@ -1,3 +1,4 @@
+using ColossalFramework;
 using System;
 using System.Text;
 using TransferManagerCE.CustomManager;
@@ -64,26 +65,59 @@ namespace TransferManagerCE
                     case CustomTransferReason.Reason.Sick2:
                     case CustomTransferReason.Reason.SickMove:
                         {
-                            if (offer.GetBuilding() != 0 && building.m_flags != 0 && building.m_healthProblemTimer > 0)
+                            if (offer.IsOutgoing())
                             {
-                                stringBuilder.Append($" | ST:{building.m_healthProblemTimer.ToString("000")}");
+                                // Add sick timer
+                                if (offer.GetBuilding() != 0 && building.m_flags != 0)
+                                {
+                                    stringBuilder.Append($" | ST:{building.m_healthProblemTimer.ToString("000")}");
+                                }
+                                else
+                                {
+                                    stringBuilder.Append($" | ST:   ");
+                                }
+
+                                // Add citizen health
+                                if (offer.Citizen != 0)
+                                {
+                                    int iHealth = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_health;
+                                    stringBuilder.Append($" | Health:{iHealth.ToString("000")}");
+                                }
+                                else
+                                {
+                                    stringBuilder.Append($" | Health:   ");
+                                }
                             }
-                            else if (bAlign)
-                            {
-                                stringBuilder.Append($" | ST:   ");
-                            }
+                            
                             break;
                         }
                     case CustomTransferReason.Reason.Dead:
                     case CustomTransferReason.Reason.DeadMove:
                         {
-                            if (offer.GetBuilding() != 0 && building.m_flags != 0 && building.m_deathProblemTimer > 0)
+                            if (building.m_flags != 0)
                             {
                                 stringBuilder.Append($" | DT:{building.m_deathProblemTimer.ToString("000")}");
                             }
-                            else if (bAlign)
+                            else
                             {
                                 stringBuilder.Append($" | DT:   ");
+                            }
+                            break;
+                        }
+                    case CustomTransferReason.Reason.ChildCare:
+                    case CustomTransferReason.Reason.ElderCare:
+                        {
+                            if (offer.IsIncoming())
+                            {
+                                if (offer.Citizen != 0)
+                                {
+                                    int iHealth = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_health;
+                                    stringBuilder.Append($" | Health:{iHealth.ToString("000")}");
+                                }
+                                else
+                                {
+                                    stringBuilder.Append($" | Health:   ");
+                                }
                             }
                             break;
                         }
@@ -104,14 +138,39 @@ namespace TransferManagerCE
                     case CustomTransferReason.Reason.Worker2:
                     case CustomTransferReason.Reason.Worker3:
                         {
-                            if (offer.GetBuilding() != 0 && building.m_flags != 0 && offer.IsIncoming())
+                            if (offer.IsIncoming())
                             {
-                                stringBuilder.Append($" | WT:{building.m_workerProblemTimer.ToString("000")}");
-                            }
-                            else
+                                if (offer.GetBuilding() != 0 && building.m_flags != 0)
+                                {
+                                    stringBuilder.Append($" | WT:{building.m_workerProblemTimer.ToString("000")}");
+                                }
+                                else
+                                {
+                                    stringBuilder.Append($" | WT:   ");
+                                }
+
+                                if (offer.GetBuilding() != 0)
+                                {
+                                    int iWorkers = BuildingUtils.GetCurrentWorkerCount(offer.GetBuilding(), building, out int worker0, out int worker1, out int worker2, out int worker3);
+                                    int iPlaces = BuildingUtils.GetTotalWorkerCount(offer.GetBuilding(), building, out int workPlaces0, out int workPlaces1, out int workPlaces2, out int workPlaces3);
+                                    float fPercent = ((float)iWorkers / (float)iPlaces) * 100.0f;
+
+                                    // Workers
+                                    stringBuilder.Append(SleepyCommon.Utils.PadToWidth($" | Workers:{iWorkers}/{iPlaces} ({fPercent.ToString("00")}%)", 30));
+
+                                    // Worker Levels
+                                    stringBuilder.Append(SleepyCommon.Utils.PadToWidth($"| W0:{worker0}/{workPlaces0} W1:{worker1}/{workPlaces1} W2:{worker2}/{workPlaces2} W3:{worker3}/{workPlaces3}", 36));
+                                }
+                            } 
+                            else if (offer.IsOutgoing())                     
                             {
-                                stringBuilder.Append($" | WT:   ");
+                                if (offer.Citizen != 0)
+                                {
+                                    Citizen citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen];
+                                    stringBuilder.Append(SleepyCommon.Utils.PadToWidth($" | Education: {citizen.EducationLevel}", 26));
+                                }
                             }
+
                             break;
                         }
                 }

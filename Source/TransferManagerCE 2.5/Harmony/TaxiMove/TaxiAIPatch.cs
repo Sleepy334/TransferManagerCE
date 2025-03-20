@@ -16,15 +16,16 @@ namespace TransferManagerCE
             new Type[] { typeof(ushort), typeof(Vehicle), typeof(Vehicle.Frame), typeof(ushort), typeof(Vehicle), typeof(int) }, 
             new ArgumentType[] { ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Normal })]
         [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> SimulationStepTranspiler(IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> TaxiAISimulationStepTranspiler(IEnumerable<CodeInstruction> instructions)
         {
             FieldInfo fieldTransferSize = AccessTools.DeclaredField(typeof(Vehicle), nameof(Vehicle.m_transferSize));
             MethodInfo methodAddTaxiOffers = AccessTools.Method(typeof(TaxiAIPatch), nameof(TaxiAIPatch.AddTaxiOffers));
 
+            bool bFoundLocation = false;
+            bool bPatched = false;
+
             // Instruction enumerator.
             IEnumerator<CodeInstruction> instructionsEnumerator = instructions.GetEnumerator();
-
-            bool bFoundLocation = false;
             while (instructionsEnumerator.MoveNext())
             {
                 // Get next instruction.
@@ -51,8 +52,7 @@ namespace TransferManagerCE
 
                             // Clear labels from old instruction
                             instruction1.labels = new List<Label>();
-
-                            Debug.Log("TaxiAI.SimulationStep patched");
+                            bPatched = true;
                         }
 
                         yield return instruction1;
@@ -64,6 +64,8 @@ namespace TransferManagerCE
                 // Return normal instruction
                 yield return instruction1;
             }
+
+            Debug.Log($"TaxiAISimulationStepTranspiler - Patching of TaxiAI.SimulationStep {(bPatched ? "succeeded" : "failed")}.", false);
         }
 
         public static void AddTaxiOffers(TaxiAI __instance, ushort vehicleID, ref Vehicle vehicleData)

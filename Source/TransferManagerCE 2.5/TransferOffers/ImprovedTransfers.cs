@@ -172,27 +172,33 @@ namespace TransferManagerCE
 
         private static bool HandleIncomingSickOffer(Building[] Buildings, ref TransferOffer offer)
         {
-            if (offer.Building != 0 && SaveGameSettings.GetSettings().OverrideResidentialSickHandler)
+            if (offer.Building != 0 && SaveGameSettings.GetSettings().OverrideSickHandler)
             {
                 Building building = Buildings[offer.Building];
-                if (building.m_flags != 0)
+                if (building.m_flags != 0 && building.Info != null && building.Info.GetService() == ItemClass.Service.HealthCare)
                 {
-                    HospitalAI? buildingAI = building.Info?.m_buildingAI as HospitalAI;
-                    if (buildingAI is not null)
+                    BuildingTypeHelper.BuildingType eBuildingType = BuildingTypeHelper.GetBuildingType(building);
+                    switch (eBuildingType)
                     {
-                        // Get total vehicle count, Factor in budget
-                        int iTotalVehicles = BuildingVehicleCount.GetMaxVehicleCount(BuildingTypeHelper.BuildingType.Hospital, offer.Building, building, 0);
+                        case BuildingTypeHelper.BuildingType.Hospital:
+                        case BuildingTypeHelper.BuildingType.UniversityHospital:
+                            {
+                                // Get total vehicle count, Factor in budget
+                                int iTotalVehicles = BuildingVehicleCount.GetMaxVehicleCount(eBuildingType, offer.Building, building, 0);
 
-                        // Determine how many free vehicles it has
-                        int iCurrentCount = BuildingUtils.GetOwnVehicleCount(building, TransferReason.Sick);
+                                // Determine how many free vehicles it has
+                                int iCurrentCount = BuildingUtils.GetOwnVehicleCount(building, TransferReason.Sick);
 
-                        // Lower offer priority when more than 1/2 of vehicles are in use
-                        int iHalfCount = Math.Max(1, (int)Math.Floor(iTotalVehicles * 0.5));
-                        if (iCurrentCount >= iHalfCount)
-                        {
-                            offer.Priority = 0;
-                        }
+                                // Lower offer priority when more than 1/2 of vehicles are in use
+                                int iHalfCount = Math.Max(1, (int)Math.Floor(iTotalVehicles * 0.5));
+                                if (iCurrentCount >= iHalfCount)
+                                {
+                                    offer.Priority = 0;
+                                }
+                            }
+                            break;
                     }
+                    
                 }
             }
 

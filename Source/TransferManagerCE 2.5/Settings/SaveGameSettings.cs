@@ -14,15 +14,15 @@ namespace TransferManagerCE
             ConnectedLineOfSight = 1,
             PathDistance = 2
         }
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 25;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 30;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
         public bool EnableNewTransferManager = true;
 
         // General tab
-        public int PathDistanceServices = (int) PathDistanceAlgorithm.LineOfSight;
-        public int PathDistanceGoods = (int)PathDistanceAlgorithm.LineOfSight;
+        public int PathDistanceServices = (int) PathDistanceAlgorithm.PathDistance;
+        public int PathDistanceGoods = (int)PathDistanceAlgorithm.PathDistance;
         public int PathDistanceHeuristic = 80; // 0 = Accurate, 100 = Fastest
         public int PathDistanceTravelTimeBaseValue = 3000;
         public bool EnablePathFailExclusion = true;
@@ -56,11 +56,16 @@ namespace TransferManagerCE
         public int TaxiStandDelay = 5;
 
         // Sick Collection
-        public bool OverrideResidentialSickHandler = true;
-        public bool CollectSickFromOtherBuildings = false;
+        public bool OverrideSickHandler = false; 
+        public uint RandomSickRate = 0;
+        public uint SickWalkRate = 20; // 20%
+        public uint SickHelicopterRate = 5; // 5%
+        public bool DisplaySickNotification = true;
 
         // Generic Industries
         public bool OverrideGenericIndustriesHandler = true;
+
+        public bool EmployOverEducatedWorkers = true;
 
         // VehicleAI
         public bool FireTruckAI = true;
@@ -86,6 +91,11 @@ namespace TransferManagerCE
         public static void SetSettings(SaveGameSettings settings)
         {
             s_SaveGameSettings = settings;
+        }
+
+        public int GetDistanceRestrictionCount()
+        {
+            return m_ActiveDistanceRestrictions.Count;
         }
 
         public float GetActiveDistanceRestrictionKm(CustomTransferReason.Reason material)
@@ -114,6 +124,7 @@ namespace TransferManagerCE
             {
                 return m_ActiveDistanceRestrictions[material];
             }
+
             return 0f;
         }
 
@@ -184,8 +195,6 @@ namespace TransferManagerCE
             StorageData.WriteBool(ImprovedCrimeMatching, Data);
             StorageData.WriteBool(ImprovedDeathcareMatching, Data);
             StorageData.WriteBool(ImprovedGarbageMatching, Data);
-            StorageData.WriteBool(OverrideResidentialSickHandler, Data); // Version 15
-            StorageData.WriteBool(CollectSickFromOtherBuildings, Data); // Version 15
 
             // Vehicle AI
             StorageData.WriteBool(FireTruckAI, Data);
@@ -225,10 +234,15 @@ namespace TransferManagerCE
             StorageData.WriteInt32(PathDistanceServices, Data); // Version 23
             StorageData.WriteInt32(PathDistanceGoods, Data); // Version 23
             StorageData.WriteInt32(PathDistanceTravelTimeBaseValue, Data); // 23
-
             StorageData.WriteBool(TaxiMove, Data); // Settings version 24
             StorageData.WriteInt32(TaxiStandDelay, Data); // Settings version 24
             StorageData.WriteBool(ApplyUnlimited, Data); // 25
+            StorageData.WriteBool(EmployOverEducatedWorkers, Data); // 26
+            StorageData.WriteUInt32(RandomSickRate, Data); // 27
+            StorageData.WriteBool(OverrideSickHandler, Data); // Version 28
+            StorageData.WriteUInt32(SickHelicopterRate, Data); // Version 29
+            StorageData.WriteUInt32(SickWalkRate, Data); // Version 29
+            StorageData.WriteBool(DisplaySickNotification, Data); // version 30
         }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
@@ -245,40 +259,8 @@ namespace TransferManagerCE
 #endif
                 if (s_SaveGameSettings is not null)
                 {
-                    switch (iSaveGameSettingVersion)
-                    {
-                        case 1: s_SaveGameSettings.LoadDataVersion1(Data, ref iIndex); break;
-                        case 2: s_SaveGameSettings.LoadDataVersion2(Data, ref iIndex); break;
-                        case 3: s_SaveGameSettings.LoadDataVersion3(Data, ref iIndex); break;
-                        case 4: s_SaveGameSettings.LoadDataVersion4(Data, ref iIndex); break;
-                        case 5: s_SaveGameSettings.LoadDataVersion5(Data, ref iIndex); break;
-                        case 6: s_SaveGameSettings.LoadDataVersion6(Data, ref iIndex); break;
-                        case 7: s_SaveGameSettings.LoadDataVersion7(Data, ref iIndex); break;
-                        case 8: s_SaveGameSettings.LoadDataVersion8(Data, ref iIndex); break;
-                        case 9: s_SaveGameSettings.LoadDataVersion9(Data, ref iIndex); break;
-                        case 10: s_SaveGameSettings.LoadDataVersion10(Data, ref iIndex); break;
-                        case 11: s_SaveGameSettings.LoadDataVersion11(Data, ref iIndex); break;
-                        case 12: s_SaveGameSettings.LoadDataVersion12(Data, ref iIndex); break;
-                        case 13: s_SaveGameSettings.LoadDataVersion13(Data, ref iIndex); break;
-                        case 14: s_SaveGameSettings.LoadDataVersion14(Data, ref iIndex); break;
-                        case 15: s_SaveGameSettings.LoadDataVersion15(Data, ref iIndex); break;
-                        case 16: s_SaveGameSettings.LoadDataVersion16(Data, ref iIndex); break;
-                        case 17: s_SaveGameSettings.LoadDataVersion17(Data, ref iIndex); break;
-                        case 18: s_SaveGameSettings.LoadDataVersion18(Data, ref iIndex); break;
-                        case 19: s_SaveGameSettings.LoadDataVersion19(Data, ref iIndex); break;
-                        case 20: s_SaveGameSettings.LoadDataVersion20(Data, ref iIndex); break;
-                        case 21: s_SaveGameSettings.LoadDataVersion21(Data, ref iIndex); break;
-                        case 22: s_SaveGameSettings.LoadDataVersion22(Data, ref iIndex); break;
-                        case 23: s_SaveGameSettings.LoadDataVersion23(Data, ref iIndex); break;
-                        case 24: s_SaveGameSettings.LoadDataVersion24(Data, ref iIndex); break;
-                        case 25: s_SaveGameSettings.LoadDataVersion25(Data, ref iIndex); break;
+                    s_SaveGameSettings.LoadDataInternal(iSaveGameSettingVersion, Data, ref iIndex);
 
-                        default:
-                            {
-                                Debug.Log("New data version, unable to load!");
-                                break;
-                            }
-                    }
 #if DEBUG
                     Debug.Log("Settings:\r\n" + s_SaveGameSettings.DebugSettings());
 #endif
@@ -286,99 +268,56 @@ namespace TransferManagerCE
             }
         }
 
-        private void LoadDataVersion25(byte[] Data, ref int iIndex)
+        private void LoadDataInternal(int iDataVersion, byte[] Data, ref int iIndex)
         {
-            // Load all previous versions settings
-            LoadDataVersion24(Data, ref iIndex);
-
-            // Added in version 25
-            ApplyUnlimited = StorageData.ReadBool(Data, ref iIndex);
+            if (iDataVersion < 16)
+            {
+                // Load old versions
+                switch (iDataVersion)
+                {
+                    case 1: LoadDataVersion1(Data, ref iIndex); break;
+                    case 2: LoadDataVersion2(Data, ref iIndex); break;
+                    case 3: LoadDataVersion3(Data, ref iIndex); break;
+                    case 4: LoadDataVersion4(Data, ref iIndex); break;
+                    case 5: LoadDataVersion5(Data, ref iIndex); break;
+                    case 6: LoadDataVersion6(Data, ref iIndex); break;
+                    case 7: LoadDataVersion7(Data, ref iIndex); break;
+                    case 8: LoadDataVersion8(Data, ref iIndex); break;
+                    case 9: LoadDataVersion9(Data, ref iIndex); break;
+                    case 10: LoadDataVersion10(Data, ref iIndex); break;
+                    case 11: LoadDataVersion11(Data, ref iIndex); break;
+                    case 12: LoadDataVersion12(Data, ref iIndex); break;
+                    case 13: LoadDataVersion13(Data, ref iIndex); break;
+                    case 14: LoadDataVersion14(Data, ref iIndex); break;
+                    case 15: LoadDataVersion15(Data, ref iIndex); break;
+                }
+            }
+            else
+            {
+                // Load current save data
+                LoadDataCurrentVersion(iDataVersion, Data, ref iIndex);
+            }
         }
 
-        private void LoadDataVersion24(byte[] Data, ref int iIndex)
-        {
-            // Load all previous versions settings
-            LoadDataVersion23(Data, ref iIndex);
-
-            // Added in version 24
-            TaxiMove = StorageData.ReadBool(Data, ref iIndex);
-            TaxiStandDelay = StorageData.ReadInt32(Data, ref iIndex);
-        }
-
-        private void LoadDataVersion23(byte[] Data, ref int iIndex)
-        {
-            // Load all previous versions settings
-            LoadDataVersion22(Data, ref iIndex);
-
-            // Added in version 23
-            PathDistanceTravelTimeBaseValue = StorageData.ReadInt32(Data, ref iIndex);
-        }
-        private void LoadDataVersion22(byte[] Data, ref int iIndex)
-        {
-            // Load all previous versions settings
-            LoadDataVersion21(Data, ref iIndex);
-
-            // Added in version 22
-            PathDistanceHeuristic = StorageData.ReadInt32(Data, ref iIndex);
-            PathDistanceServices = StorageData.ReadInt32(Data, ref iIndex);
-            PathDistanceGoods = StorageData.ReadInt32(Data, ref iIndex);
-        }
-        private void LoadDataVersion21(byte[] Data, ref int iIndex)
-        {
-            // Load all previous versions settings
-            LoadDataVersion20(Data, ref iIndex);
-
-            // Added in version 21
-            ImprovedMailTransfers = StorageData.ReadBool(Data, ref iIndex);
-        }
-        private void LoadDataVersion20(byte[] Data, ref int iIndex)
-        {
-            // Load all previous versions settings
-            LoadDataVersion19(Data, ref iIndex);
-
-            // Added in version 20
-            EnablePathFailExclusion = StorageData.ReadBool(Data, ref iIndex);
-        }
-        private void LoadDataVersion19(byte[] Data, ref int iIndex)
-        {
-            // Load all previous versions settings
-            LoadDataVersion18(Data, ref iIndex);
-
-            // Override industrial handler added in 19
-            OverrideGenericIndustriesHandler = StorageData.ReadBool(Data, ref iIndex);
-        }
-        private void LoadDataVersion18(byte[] Data, ref int iIndex)
-        {
-            // Load all previous versions settings
-            LoadDataVersion17(Data, ref iIndex);
-
-            // Load the Inter-warehouse setting, shouldn't have removed it :-(
-            NewInterWarehouseTransfer = StorageData.ReadBool(Data, ref iIndex); // Re-introduced in 18
-        }
-        private void LoadDataVersion17(byte[] Data, ref int iIndex)
-        {
-            // Load all previous versions settings
-            LoadDataVersion16(Data, ref iIndex);
-
-            // New in version 17
-            ExportVehicleLimit = StorageData.ReadInt32(Data, ref iIndex); 
-        }
-        private void LoadDataVersion16(byte[] Data, ref int iIndex)
+        private void LoadDataCurrentVersion(int iDataVersion, byte[] Data, ref int iIndex)
         {
             EnableNewTransferManager = StorageData.ReadBool(Data, ref iIndex);
 
             // General
             BalancedMatchMode = (CustomTransferManager.BalancedMatchModeOption)StorageData.ReadInt32(Data, ref iIndex);
+            
             bool bUsePathDistanceServices = StorageData.ReadBool(Data, ref iIndex);
             if (bUsePathDistanceServices)
             {
                 PathDistanceServices = (int)PathDistanceAlgorithm.PathDistance;
             }
+
             bool bUsePathDistanceGoods = StorageData.ReadBool(Data, ref iIndex);
             if (bUsePathDistanceGoods)
             {
                 PathDistanceGoods = (int)PathDistanceAlgorithm.PathDistance;
             }
+
             DisableDummyTraffic = StorageData.ReadBool(Data, ref iIndex);
 
             // Goods delivery
@@ -398,8 +337,16 @@ namespace TransferManagerCE
             ImprovedCrimeMatching = StorageData.ReadBool(Data, ref iIndex);
             ImprovedDeathcareMatching = StorageData.ReadBool(Data, ref iIndex);
             ImprovedGarbageMatching = StorageData.ReadBool(Data, ref iIndex);
-            OverrideResidentialSickHandler = StorageData.ReadBool(Data, ref iIndex);
-            CollectSickFromOtherBuildings = StorageData.ReadBool(Data, ref iIndex);
+
+
+            // CollectSickFromOtherBuildings and OverrideResidentialSickHandler are no longer used and was removed in version 28.
+            if (iDataVersion < 28)
+            {
+                // No longer used
+                bool OverrideResidentialSickHandler = StorageData.ReadBool(Data, ref iIndex);
+                bool bCollectSickFromOtherBuildings = StorageData.ReadBool(Data, ref iIndex);
+            }
+            
 
             // VehicleAI
             FireTruckAI = StorageData.ReadBool(Data, ref iIndex);
@@ -412,15 +359,78 @@ namespace TransferManagerCE
             LoadDistanceRestrictions(Data, ref iIndex);
             LoadImportRestrictions(Data, ref iIndex);
             LoadWarehouseImportRestrictions(Data, ref iIndex);
+
+            if (iDataVersion >= 17)
+            {
+                ExportVehicleLimit = StorageData.ReadInt32(Data, ref iIndex);
+            }
+            if (iDataVersion >= 18)
+            {
+                NewInterWarehouseTransfer = StorageData.ReadBool(Data, ref iIndex); // Re-introduced in 18
+            }
+            if (iDataVersion >= 19)
+            {
+                OverrideGenericIndustriesHandler = StorageData.ReadBool(Data, ref iIndex);
+            }
+            if (iDataVersion >= 20)
+            {
+                EnablePathFailExclusion = StorageData.ReadBool(Data, ref iIndex);
+            }
+            if (iDataVersion >= 21)
+            {
+                ImprovedMailTransfers = StorageData.ReadBool(Data, ref iIndex);
+            }
+            if (iDataVersion >= 22)
+            {
+                PathDistanceHeuristic = StorageData.ReadInt32(Data, ref iIndex);
+                PathDistanceServices = StorageData.ReadInt32(Data, ref iIndex);
+                PathDistanceGoods = StorageData.ReadInt32(Data, ref iIndex);
+            }
+            if (iDataVersion >= 23)
+            {
+                PathDistanceTravelTimeBaseValue = StorageData.ReadInt32(Data, ref iIndex);
+            }
+            if (iDataVersion >= 24)
+            {
+                // Added in version 24
+                TaxiMove = StorageData.ReadBool(Data, ref iIndex);
+                TaxiStandDelay = StorageData.ReadInt32(Data, ref iIndex);
+            }
+            if (iDataVersion >= 25)
+            {
+                ApplyUnlimited = StorageData.ReadBool(Data, ref iIndex);
+            }
+            if (iDataVersion >= 26)
+            {
+                EmployOverEducatedWorkers = StorageData.ReadBool(Data, ref iIndex);
+            }
+            if (iDataVersion >= 27)
+            {
+                RandomSickRate = StorageData.ReadUInt32(Data, ref iIndex);
+            }
+            if (iDataVersion >= 28)
+            {
+                OverrideSickHandler = StorageData.ReadBool(Data, ref iIndex);
+            }
+            if (iDataVersion >= 29)
+            {
+                SickHelicopterRate = StorageData.ReadUInt32(Data, ref iIndex);
+                SickWalkRate = StorageData.ReadUInt32(Data, ref iIndex);
+            }
+            if (iDataVersion >= 30)
+            {
+                DisplaySickNotification = StorageData.ReadBool(Data, ref iIndex);
+            }
         }
+
         private void LoadDataVersion15(byte[] Data, ref int iIndex)
         {
             // Specifically skip LoadDataVersion14 as the settings were changed in 15
             LoadDataVersion13(Data, ref iIndex);
 
             // Load the new Sick options, skipping the version 14 options.
-            OverrideResidentialSickHandler = StorageData.ReadBool(Data, ref iIndex); // New in version 15
-            CollectSickFromOtherBuildings = StorageData.ReadBool(Data, ref iIndex); // New in version 15
+            bool OverrideResidentialSickHandler = StorageData.ReadBool(Data, ref iIndex); // New in version 15
+            bool CollectSickFromOtherBuildings = StorageData.ReadBool(Data, ref iIndex); // New in version 15
         }
         private void LoadDataVersion14(byte[] Data, ref int iIndex)
         {

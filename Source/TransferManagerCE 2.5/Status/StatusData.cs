@@ -69,6 +69,11 @@ namespace TransferManagerCE.Data
             return m_material;
         }
 
+        public virtual string GetTooltip()
+        {
+            return "";
+        }
+
         public virtual string GetValue()
         {
             return m_value;
@@ -91,12 +96,27 @@ namespace TransferManagerCE.Data
 
         public virtual string GetResponderTooltip()
         {
-            return GetResponder();
+            if (GetResponderId() != 0)
+            {
+                return $"#{GetResponderId()}:{GetResponder()}";
+            }
+
+            return "";
         }
 
         public virtual string GetTarget()
         {
             return m_target;
+        }
+
+        public virtual string GetTargetTooltip()
+        {
+            if (GetTargetId() != 0)
+            {
+                return $"#{GetTargetId()}:{GetTarget()}";
+            }
+
+            return "";
         }
 
         public virtual string GetLoad()

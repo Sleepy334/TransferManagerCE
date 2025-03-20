@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
@@ -14,15 +16,30 @@ namespace TransferManagerCE.Data
         protected override string CalculateValue()
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            WarehouseAI? warehouseAI = building.Info?.m_buildingAI as WarehouseAI;
-            if (warehouseAI is not null)
+
+            if (building.Info is not null)
             {
-                return (building.m_customBuffer1 * 0.1).ToString("N0") + "/" + (warehouseAI.m_storageCapacity * 0.001).ToString("N0");
+                switch (building.Info.GetAI())
+                {
+                    case WarehouseAI warehouseAI:
+                        {
+                            return (building.m_customBuffer1 * 0.1).ToString("N0") + "/" + (warehouseAI.m_storageCapacity * 0.001).ToString("N0");
+                        }
+                    case CargoStationAI cargoStationAI:
+                        {
+                            // CargoFerryWarehouseHarborAI also has a built in warehouse
+                            Type buildingType = cargoStationAI.GetType();
+                            FieldInfo? storageCapacity = buildingType.GetField("m_storageCapacity");
+                            if (storageCapacity is not null)
+                            {
+                                return (building.m_customBuffer1 * 0.1).ToString("N0") + "/" + ((int)storageCapacity.GetValue(cargoStationAI) * 0.001).ToString("N0");
+                            }
+                            break;
+                        }
+                }
             }
-            else
-            {
-                return (building.m_customBuffer1 * 0.1).ToString("N0");
-            }
+
+            return (building.m_customBuffer1 * 0.1).ToString("N0");
         }
     }
 }

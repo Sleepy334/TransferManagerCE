@@ -10,7 +10,7 @@ namespace TransferManagerCE
         // Three underscores ___ in front of variable name allow you to have private members injected.
         [HarmonyPrefix]
         [HarmonyPatch(typeof(TransferManager), "MatchOffers")]
-        public static bool Prefix(TransferReason material, 
+        public static bool MatchOffersPrefix(TransferReason material, 
                                     ref ushort[] ___m_incomingCount, 
                                     ref ushort[] ___m_outgoingCount, 
                                     TransferOffer[] ___m_incomingOffers, 
@@ -51,7 +51,7 @@ namespace TransferManagerCE
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(TransferManager), "MatchOffers")]
-        public static void Postfix()
+        public static void MatchOffersPostfix()
         {
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {

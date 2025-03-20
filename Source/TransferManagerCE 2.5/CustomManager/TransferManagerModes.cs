@@ -78,7 +78,6 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Fire2:          // We always want the closest fire station to respond
                 case CustomTransferReason.Reason.ForestFire:     // We always want the closest fire station to respond
                 case CustomTransferReason.Reason.Sick:           // Always match patient with closest hospital
-                case CustomTransferReason.Reason.Sick2:          // Always match patient with closest hospital
                 case CustomTransferReason.Reason.SickMove:       // outgoing(active) from medcopter, incoming(passive) from hospitals -> moved to outgoing first so closest clinic is used
                 case CustomTransferReason.Reason.StudentES:       // Match elementary student to closest school
                 case CustomTransferReason.Reason.StudentHS:       // Match high school student to closest school
@@ -102,6 +101,12 @@ namespace TransferManagerCE.CustomManager
                     }
 
                 // ---------------------------------------------------------------------------------
+                case CustomTransferReason.Reason.Sick2:          // We usually don't have many Sick2 offers so match them with the closest patient so we see them doing things
+                    {
+                        return TransferMode.IncomingFirst;
+                    }
+
+                // ---------------------------------------------------------------------------------
                 case CustomTransferReason.Reason.Taxi:            // Taxi is OUT from Taxi Depot, IncomingFirst will match Cim with closest Taxi/Taxi Depot
                 case CustomTransferReason.Reason.TaxiMove:        // TaxiMove is IN to Taxi stands
                 case CustomTransferReason.Reason.Goods:           // We match commercial first then factories OUT offers after
@@ -109,16 +114,16 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.ElderCare:       // Citizen is IN, Eldercare Center is OUT, IncomingFirst will match Cim with closest ElderCare facility
                 case CustomTransferReason.Reason.ChildCare:       // Citizen is IN, Childcare Center is OUT, IncomingFirst will match Cim with closest ChildCare facility
 
-                // Workers we match job to Cim so we can find close by workers
+                // ---------------------------------------------------------------------------------
+                // We match workers down to 1/1 but use a user defined distance restriction
                 case CustomTransferReason.Reason.Worker0:
                 case CustomTransferReason.Reason.Worker1:
                 case CustomTransferReason.Reason.Worker2:
                 case CustomTransferReason.Reason.Worker3:
                     {
-                        return TransferMode.IncomingFirst;
+                        return TransferMode.Balanced;
                     }
 
-                // ---------------------------------------------------------------------------------
                 case CustomTransferReason.Reason.SnowMove:        // SnowMove - Balanced and Priority scaled.
                 case CustomTransferReason.Reason.RoadMaintenance: // RoadMaintenance - We want trucks (P:7) to be matched with closest segment, and Depot (P:1) to be matched with highest priority segment
                 case CustomTransferReason.Reason.DeadMove:        // Match Priority and Distance so Cemeteries match to Crematoriums first
@@ -401,7 +406,7 @@ namespace TransferManagerCE.CustomManager
 
         // To reproduce vanilla behaviour we choose an offer if within "acceptable" distance, which allows us to exit early
         // instead of having to find the closest possible match that may be lower priority
-        public static float GetAcceptableDistance(CustomTransferReason.Reason material)
+        public static float GetAcceptableDistanceSquared(CustomTransferReason.Reason material)
         {
             switch (material)
             {
@@ -409,8 +414,6 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.EntertainmentB:
                 case CustomTransferReason.Reason.EntertainmentC:
                 case CustomTransferReason.Reason.EntertainmentD:
-                    return 1000000f; // Accept offer if within 1km
-
                 case CustomTransferReason.Reason.Shopping:
                 case CustomTransferReason.Reason.ShoppingB:
                 case CustomTransferReason.Reason.ShoppingC:
@@ -423,7 +426,7 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Worker1:
                 case CustomTransferReason.Reason.Worker2:
                 case CustomTransferReason.Reason.Worker3:
-                    return 250000f; // Accept offer if within 500m
+                    return 1000000f; // Accept offer if within 1km
 
                 default:
                     return 0.0f; // Match closest

@@ -35,6 +35,7 @@ namespace TransferManagerCE.UI
             autoLayoutPadding = new RectOffset(2, 2, 2, 2);
             autoLayout = true;
             clipChildren = true;
+            eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
 
             m_lblMaterial = AddUIComponent<UILabel>();
             if (m_lblMaterial is not null)
@@ -275,21 +276,38 @@ namespace TransferManagerCE.UI
 
         private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
         {
-            if (m_lblValue is null || m_lblOwner is null)
+            if (m_lblValue is null || m_lblOwner is null || m_lblTarget is null)
             {
                 return;
             }
 
             if (enabled && m_data is not null)
             {
-                m_lblValue.tooltip = m_data.GetValueTooltip();
-                m_lblOwner.tooltip = m_data.GetResponderTooltip();
+                tooltip = m_data.GetTooltip();
+
+                // Don't load other tooltips if we get a global tooltip.
+                if (tooltip.Length > 0)
+                {
+                    m_lblValue.tooltip = "";
+                    m_lblOwner.tooltip = "";
+                    m_lblTarget.tooltip = "";
+                }
+                else
+                {
+                    m_lblValue.tooltip = m_data.GetValueTooltip();
+                    m_lblOwner.tooltip = m_data.GetResponderTooltip();
+                    m_lblTarget.tooltip = m_data.GetTargetTooltip();
+                }
             }
             else
             {
+                tooltip = "";
                 m_lblValue.tooltip = "";
                 m_lblOwner.tooltip = "";
+                m_lblTarget.tooltip = "";
             }
+
+            
         }
 
         protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)

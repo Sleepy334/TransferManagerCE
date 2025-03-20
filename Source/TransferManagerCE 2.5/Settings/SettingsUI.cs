@@ -36,7 +36,10 @@ namespace TransferManagerCE
 
         // Collect sick
         private UICheckBox? m_chkOverrideSickCollection = null;
-        private UICheckBox? m_chkSickCollectionOtherBuildings = null;
+        private SettingsSlider? m_sliderSickWalkRate = null;
+        private SettingsSlider? m_sliderSickHelicopterRate = null;
+        private SettingsSlider? m_sliderSickGenerationRate = null;
+        private UICheckBox? m_chkDisplaySickNotification = null;
 
         //Taxi Stand
         private UICheckBox? m_chkTaxiMove = null;
@@ -67,6 +70,7 @@ namespace TransferManagerCE
         private UIDropDown? m_dropdownBalanced = null;
         private UICheckBox? m_chkDisableDummyTraffic = null;
         private UICheckBox? m_chkApplyUnlimited = null;
+        private UICheckBox? m_chkEmployOvereducatedWorkers = null;
 
         // Maintenance tab
         private UILabel? m_lblGhostVehicleCount = null;
@@ -128,9 +132,9 @@ namespace TransferManagerCE
             UIPanel panel = (UIPanel)groupTransferIssue.self;
             UIKeymappingsPanel keymappingsTransferIssue = panel.gameObject.AddComponent<UIKeymappingsPanel>();
             keymappingsTransferIssue.AddKeymapping(Localization.Get("keyOpenTransferIssuePanel"), ModSettings.GetSettings().TransferIssueHotkey, OnShortcutKeyChanged);
-            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueDeadTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.DeadTimerValue, OnDeadValueChanged);
-            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueSickTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.SickTimerValue, OnSickValueChanged);
-            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueGoodsTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.GoodsTimerValue, OnGoodsValueChanged);
+            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueDeadTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.DeadTimerValue, 0, OnDeadValueChanged);
+            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueSickTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.SickTimerValue, 0, OnSickValueChanged);
+            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueGoodsTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.GoodsTimerValue, 0, OnGoodsValueChanged);
 
             // Building Panel
             UIHelper groupBuildingPanel = (UIHelper)helper.AddGroup(Localization.Get("GROUP_BUILDING_PANEL"));
@@ -177,11 +181,13 @@ namespace TransferManagerCE
                 UIHelper tabWarehouses = tabStripTransferManager.AddTabPage(Localization.Get("tabWarehouses"), true);
                 UIHelper tabImportExport = tabStripTransferManager.AddTabPage(Localization.Get("tabImportExport"), true);
                 UIHelper tabServices = tabStripTransferManager.AddTabPage(Localization.Get("tabServices"), true);
+                UIHelper tabDistances = tabStripTransferManager.AddTabPage(Localization.Get("tabDistanceRestrictions"), true);
 
                 SetupTransferGeneralTab(tabGeneral);
                 SetupWarehousesTab(tabWarehouses);
                 SetupImportExportTab(tabImportExport);
-                SetupServicesTab(tabServices);
+                SetupTransferServicesTab(tabServices);
+                SetupTransferDistancesTab(tabDistances);
             }
         }
 
@@ -212,7 +218,7 @@ namespace TransferManagerCE
 
             // Accuracy slider
             AddDescription(groupPathDistance, "txtPathDistanceHeuristic", 1.0f, Localization.Get("txtPathDistanceHeuristic"));
-            m_sliderPathDistanceHeuristic = SettingsSlider.Create(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceHeuristic"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.PathDistanceHeuristic, OnPathDistanceHeuristicChanged);
+            m_sliderPathDistanceHeuristic = SettingsSlider.Create(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceHeuristic"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.PathDistanceHeuristic, 0, OnPathDistanceHeuristicChanged);
             m_sliderPathDistanceHeuristic.Percent = true;
             AddDescription(groupPathDistance, "txtPathDistanceHeuristicKey", 1.0f, Localization.Get("txtPathDistanceHeuristicKey"));
 
@@ -220,7 +226,7 @@ namespace TransferManagerCE
 
             // Travel Time shift
             AddDescription(groupPathDistance, "txtPathDistanceShift", 1.0f, Localization.Get("txtPathDistanceShift"));
-            m_sliderPathDistanceShift = SettingsSlider.Create(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceShift"), 1.0f, 400, 200, 1000f, 20000f, 100f, (float)oSettings.PathDistanceTravelTimeBaseValue, OnPathDistanceShiftChanged);
+            m_sliderPathDistanceShift = SettingsSlider.Create(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceShift"), 1.0f, 400, 200, 1000f, 20000f, 100f, (float)oSettings.PathDistanceTravelTimeBaseValue, 0, OnPathDistanceShiftChanged);
            
             // Balanced match mode setting
             string[] itemsBalancedMode = {
@@ -245,6 +251,12 @@ namespace TransferManagerCE
             UIHelper groupDummyTraffic = (UIHelper)helper.AddGroup(Localization.Get("GROUP_DUMMY_TRAFFIC"));
             AddDescription(groupDummyTraffic, "txtDummyTraffic", 1.0f, Localization.Get("txtDummyTraffic"));
             m_chkDisableDummyTraffic = (UICheckBox)groupDummyTraffic.AddCheckbox(Localization.Get("optionDummyTraffic"), oSettings.DisableDummyTraffic, OnDisableDummyTraffic);
+
+            // Employ over-educated workers
+            UIHelper groupOveredcuatedWorkers = (UIHelper)helper.AddGroup(Localization.Get("GROUP_OVEREDUCATED_WORKERS"));
+            AddDescription(groupOveredcuatedWorkers, "txtEmployOvereducatedWorkers", 1.0f, Localization.Get("txtEmployOvereducatedWorkers"));
+            m_chkEmployOvereducatedWorkers = (UICheckBox)groupOveredcuatedWorkers.AddCheckbox(Localization.Get("optionEmployOverEducatedWorkers"), oSettings.EmployOverEducatedWorkers, OnEmployOvereducatedWOrkers);
+
         }
 
         public void SetupWarehousesTab(UIHelper helper)
@@ -275,7 +287,7 @@ namespace TransferManagerCE
 
             // Reserve trucks
             AddDescription(panelGroupWarehouse, "txtNewWarehouseReserveTrucks", panelGroupWarehouse, 1.0f, Localization.Get("txtNewWarehouseReserveTrucks"));
-            m_sliderWarehouseReservePercent = SettingsSlider.Create(groupWarehouse, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercent"), 1.0f, 400, 200, 0f, 100f, 5f, (float)oSettings.WarehouseReserveTrucksPercent, OnWarehouseFirstPercentChanged);
+            m_sliderWarehouseReservePercent = SettingsSlider.Create(groupWarehouse, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercent"), 1.0f, 400, 200, 0f, 100f, 5f, (float)oSettings.WarehouseReserveTrucksPercent, 0, OnWarehouseFirstPercentChanged);
             m_sliderWarehouseReservePercent.Percent = true;
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
@@ -298,17 +310,17 @@ namespace TransferManagerCE
             UIHelper groupImportExport = (UIHelper) helper.AddGroup(Localization.Get("GROUP_EXPORTIMPORT_OPTIONS"));
             UIPanel txtPanel3 = groupImportExport.self as UIPanel;
             AddDescription(txtPanel3, "OutsideMultiplierDescription1", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription1"));
-            m_sliderShipMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderShipMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideShipMultiplier, OnOutsideShipMultiplier);
-            m_sliderPlaneMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderPlaneMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsidePlaneMultiplier, OnOutsidePlaneMultiplier);
-            m_sliderTrainMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderTrainMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideTrainMultiplier, OnOutsideTrainMultiplier);
-            m_sliderRoadMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderRoadMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideRoadMultiplier, OnOutsideRoadMultiplier);
+            m_sliderShipMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderShipMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideShipMultiplier, 0, OnOutsideShipMultiplier);
+            m_sliderPlaneMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderPlaneMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsidePlaneMultiplier, 0, OnOutsidePlaneMultiplier);
+            m_sliderTrainMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderTrainMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideTrainMultiplier, 0, OnOutsideTrainMultiplier);
+            m_sliderRoadMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderRoadMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideRoadMultiplier, 0, OnOutsideRoadMultiplier);
             AddDescription(txtPanel3, "OutsideMultiplierDescription2", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription2"));
             AddDescription(txtPanel3, "OutsideMultiplierDescription3", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription3"));
 
             // Export vehicle limit
             UIHelper groupExportLimits = (UIHelper)helper.AddGroup(Localization.Get("GROUP_EXPORT_LIMITS"));
             UIPanel panelExportLimit = groupExportLimits.self as UIPanel;
-            m_sliderExportVehicleLimitPercent = SettingsSlider.Create(groupExportLimits, LayoutDirection.Horizontal, Localization.Get("sliderExportVehicleLimit"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.ExportVehicleLimit, OnExportVehicleLimit);
+            m_sliderExportVehicleLimitPercent = SettingsSlider.Create(groupExportLimits, LayoutDirection.Horizontal, Localization.Get("sliderExportVehicleLimit"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.ExportVehicleLimit, 0, OnExportVehicleLimit);
             m_sliderExportVehicleLimitPercent.Percent = true;
             AddDescription(panelExportLimit, "txtExportVehicleLimit", panelExportLimit, 1.0f, Localization.Get("txtExportVehicleLimit"));
 
@@ -364,7 +376,7 @@ namespace TransferManagerCE
             }  
         }
 
-        public void SetupServicesTab(UIHelper helper)
+        public void SetupTransferServicesTab(UIHelper helper)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
 
@@ -379,14 +391,27 @@ namespace TransferManagerCE
 
             // Sick Collection
             UIHelper groupSick = (UIHelper)helper.AddGroup(Localization.Get("GROUP_SICK_COLLECTION"));
-            AddDescription(groupSick, "txtOverrideSickCollection", 1.0f, Localization.Get("txtOverrideSickCollection"));
-            m_chkOverrideSickCollection = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionOverrideResidentialSick"), oSettings.OverrideResidentialSickHandler, OnOverrideResidentialSick);
-            UIPanel panelSick = (groupSick as UIHelper).self as UIPanel;
+            AddDescription(groupSick, "txtOverrideSickHandler", 1.0f, Localization.Get("txtOverrideSickHandler"));
+            m_chkOverrideSickCollection = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionOverrideSickHandler"), oSettings.OverrideSickHandler, OnOverrideResidentialSick);
             groupSick.AddSpace(iSEPARATOR_HEIGHT);
-            AddDescription(groupSick, "txtSickCollectionOtherBuildings", 1.0f, Localization.Get("txtSickCollectionOtherBuildings"));
-            m_chkSickCollectionOtherBuildings = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionCollectionOtherBuildings"), oSettings.CollectSickFromOtherBuildings, OnCollectSickFromOtherBuildings);
+            
+            AddDescription(groupSick, "txtSickSadNotification", 1.0f, Localization.Get("txtSickSadNotification"));
+            m_chkDisplaySickNotification = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionDisplaySickNotification"), oSettings.DisplaySickNotification, OnDisplaySadNotification);
             groupSick.AddSpace(iSEPARATOR_HEIGHT);
-            AddDescription(groupSick, "txtSickCollectionWarning", 1.0f, Localization.Get("txtSickCollectionWarning"));
+
+            AddDescription(groupSick, "txtSickHelicopterRate", 1.0f, Localization.Get("txtSickHelicopterRate"));
+            m_sliderSickHelicopterRate = SettingsSlider.Create(groupSick, LayoutDirection.Horizontal, Localization.Get("optionSickHelicopterRate"), 1.0f, 400, 200, 0f, 100f, 1.0f, (float)oSettings.SickHelicopterRate, 0, OnSickHelicopterRate);
+            m_sliderSickHelicopterRate.Percent = true;
+
+            AddDescription(groupSick, "txtSickWalkRate", 1.0f, Localization.Get("txtSickWalkRate"));
+            m_sliderSickWalkRate = SettingsSlider.Create(groupSick, LayoutDirection.Horizontal, Localization.Get("optionSickWalkRate"), 1.0f, 400, 200, 0f, 100f, 1.0f, (float)oSettings.SickWalkRate, 0, OnSickWalkRate);
+            m_sliderSickWalkRate.Percent = true;
+
+            // Sick Generation
+            UIHelper groupSickGeneration = (UIHelper)helper.AddGroup(Localization.Get("GROUP_SICK_GENERATE")); 
+            AddDescription(groupSickGeneration, "txtRandomSick", 1.0f, Localization.Get("txtRandomSick"));
+            m_sliderSickGenerationRate = SettingsSlider.Create(groupSickGeneration, LayoutDirection.Horizontal, Localization.Get("txtRandomSickRate"), 1.0f, 400, 200, 0f, 10000f, 100.0f, (float)oSettings.RandomSickRate, 0, OnRandomSickRate);
+            AddDescription(groupSickGeneration, "txtRandomSickRateScale", 1.0f, Localization.Get("txtRandomSickRateScale"));
 
             // Taxi Move
             UIHelper groupTaxiMove = (UIHelper)helper.AddGroup(Localization.Get("GROUP_TAXI_MOVE"));
@@ -394,26 +419,64 @@ namespace TransferManagerCE
             m_chkTaxiMove = (UICheckBox)groupTaxiMove.AddCheckbox(Localization.Get("optionTaxiMove"), oSettings.TaxiMove, OnTaxiMove);
             groupTaxiMove.AddSpace(iSEPARATOR_HEIGHT);
             AddDescription(groupTaxiMove, "txtTaxiStandDelay", 1.0f, Localization.Get("txtTaxiStandDelay"));
-            m_sliderTaxiStandDelay = SettingsSlider.Create(groupTaxiMove, LayoutDirection.Horizontal, Localization.Get("sliderTaxiStandDelay"), 1.0f, 400, 200, 0f, 20f, 1.0f, (float) oSettings.TaxiStandDelay, OnTaxiStandDelay);
-            
-                // Prefer local
+            m_sliderTaxiStandDelay = SettingsSlider.Create(groupTaxiMove, LayoutDirection.Horizontal, Localization.Get("sliderTaxiStandDelay"), 1.0f, 400, 200, 0f, 20f, 1.0f, (float)oSettings.TaxiStandDelay, 0, OnTaxiStandDelay);
+
+            // Prefer local
             UIHelperBase group1 = helper.AddGroup(Localization.Get("GROUP_SERVICE_DISTRICT_OPTIONS"));
             UIPanel txtPanel1 = (group1 as UIHelper).self as UIPanel;
             AddDescription(txtPanel1, "txtPreferLocalService", txtPanel1, 1.0f, Localization.Get("txtPreferLocalService"));
             m_chkPreferLocal = (UICheckBox)group1.AddCheckbox(Localization.Get("optionPreferLocalService"), oSettings.PreferLocalService, (index) => setOptionPreferLocalService(index));
             group1.AddSpace(iSEPARATOR_HEIGHT);
             AddDescription(txtPanel1, "txtPreferLocalServiceWarning", txtPanel1, 1.0f, Localization.Get("txtPreferLocalServiceWarning"));
+        }
+
+        public void SetupTransferDistancesTab(UIHelper helper)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
 
             // Distance limits section
-            UIHelper groupDistanceLimits = (UIHelper) helper.AddGroup(Localization.Get("GROUP_DISTANCE_LIMITS"));
+            UIHelper groupDistanceLimits = (UIHelper)helper.AddGroup(Localization.Get("GROUP_DISTANCE_LIMITS"));
             UIPanel panelDistanceLimits = (groupDistanceLimits as UIHelper).self as UIPanel;
             AddDescription(panelDistanceLimits, "txtDistanceLimits", panelDistanceLimits, 1.0f, Localization.Get("txtDistanceLimits"));
-            m_sliderLimits[CustomTransferReason.Reason.Dead] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderDeathcareDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Dead), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Dead, value));
-            m_sliderLimits[CustomTransferReason.Reason.Sick] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderHealthcareDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Sick), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Sick, value));
-            m_sliderLimits[CustomTransferReason.Reason.Garbage] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderGarbageDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Garbage), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Garbage, value));
-            m_sliderLimits[CustomTransferReason.Reason.Crime] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderPoliceDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Crime), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Crime, value));
-            m_sliderLimits[CustomTransferReason.Reason.Fire] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderFireDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Fire), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Fire, value));
-            m_sliderLimits[CustomTransferReason.Reason.Mail] = SettingsSlider.Create(groupDistanceLimits, LayoutDirection.Horizontal, Localization.Get("sliderMailDistanceLimits"), 1.0f, 400, 200, 0f, 20f, 0.1f, (float)oSettings.GetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Mail), (float value) => OnDistanceLimit(CustomTransferReason.Reason.Mail, value)); 
+            groupDistanceLimits.AddSpace(iSEPARATOR_HEIGHT);
+
+            // Services
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Cash);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Crime);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Dead);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Fire);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Garbage);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Mail);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.ParkMaintenance);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.RoadMaintenance);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Sick);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Snow);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Taxi);
+            groupDistanceLimits.AddSpace(iSEPARATOR_HEIGHT);
+
+            // School
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.StudentES);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.StudentHS);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.StudentUni);
+            groupDistanceLimits.AddSpace(iSEPARATOR_HEIGHT);
+
+            // Workers
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Worker0);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Worker1);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Worker2);
+            AddDistanceSlider(groupDistanceLimits, CustomTransferReason.Reason.Worker3);
+            groupDistanceLimits.AddSpace(iSEPARATOR_HEIGHT);
+        }
+
+        private void AddDistanceSlider(UIHelper helper, CustomTransferReason.Reason reason)
+        {
+            AddDistanceSlider(helper, reason, $"{reason} (km)");
+        }
+
+        private void AddDistanceSlider(UIHelper helper, CustomTransferReason.Reason reason, string strLabel)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            m_sliderLimits[reason] = SettingsSlider.Create(helper, LayoutDirection.Horizontal, strLabel, 1.0f, 400, 200, 0f, 20f, 0.5f, (float)oSettings.GetActiveDistanceRestrictionKm(reason), 1, (float value) => OnDistanceLimit(reason, value));
         }
 
         public void SetupVehicleAITab(UIHelper helper)
@@ -447,10 +510,10 @@ namespace TransferManagerCE
             UIHelper groupIntercityStops = (UIHelper) helper.AddGroup(Localization.Get("GROUP_INTERCITY_STOPS"));
             AddDescription((groupIntercityStops as UIHelper).self as UIPanel, "txtIntercityStopSpawnAtCount", panel, 1.0f, Localization.Get("txtIntercityStopSpawnAtCount"));
             groupIntercityStops.AddSpace(6);
-            SettingsSlider sliderForceTrainSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceTrainSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceTrainSpawnAtCount, (float value) => { oSettings.ForceTrainSpawnAtCount = (int)value; oSettings.Save(); });
-            SettingsSlider sliderForceShipSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceShipSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceShipSpawnAtCount, (float value) => { oSettings.ForceShipSpawnAtCount = (int)value; oSettings.Save(); });
-            SettingsSlider sliderForcePlaneSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForcePlaneSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForcePlaneSpawnAtCount, (float value) => { oSettings.ForcePlaneSpawnAtCount = (int)value; oSettings.Save(); });
-            SettingsSlider sliderForceBusSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceBusSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceBusSpawnAtCount, (float value) => { oSettings.ForceBusSpawnAtCount = (int)value; oSettings.Save(); });
+            SettingsSlider sliderForceTrainSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceTrainSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceTrainSpawnAtCount, 0, (float value) => { oSettings.ForceTrainSpawnAtCount = (int)value; oSettings.Save(); });
+            SettingsSlider sliderForceShipSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceShipSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceShipSpawnAtCount, 0, (float value) => { oSettings.ForceShipSpawnAtCount = (int)value; oSettings.Save(); });
+            SettingsSlider sliderForcePlaneSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForcePlaneSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForcePlaneSpawnAtCount, 0, (float value) => { oSettings.ForcePlaneSpawnAtCount = (int)value; oSettings.Save(); });
+            SettingsSlider sliderForceBusSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceBusSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceBusSpawnAtCount, 0, (float value) => { oSettings.ForceBusSpawnAtCount = (int)value; oSettings.Save(); });
             
             // Reset button
             groupIntercityStops.AddButton(Localization.Get("btnOutsideReset"), () =>
@@ -699,13 +762,42 @@ namespace TransferManagerCE
         public void OnOverrideResidentialSick(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.OverrideResidentialSickHandler = bChecked;
+            oSettings.OverrideSickHandler = bChecked;
+
+            // Update rate fields
+            m_sliderSickHelicopterRate.Enable(bChecked);
+            m_sliderSickWalkRate.Enable(bChecked);
+            m_chkDisplaySickNotification.isEnabled = bChecked;
+
+            // Clear sick timers for non residential buildings when transistioning to vanilla handler.
+            if (!bChecked)
+            {
+                SickHandler.ClearSickTimerForNonResidential();
+            }
         }
 
-        public void OnCollectSickFromOtherBuildings(bool bChecked)
+        public void OnSickWalkRate(float fValue)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.CollectSickFromOtherBuildings = bChecked;
+            oSettings.SickWalkRate = (uint)fValue;
+        }
+
+        public void OnSickHelicopterRate(float fValue)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.SickHelicopterRate = (uint)fValue;
+        }
+
+        public void OnDisplaySadNotification(bool bChecked)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.DisplaySickNotification = bChecked;
+        }
+
+        public void OnRandomSickRate(float fValue)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.RandomSickRate = (uint) fValue;
         }
 
         public void OnTaxiMove(bool bChecked)
@@ -727,7 +819,13 @@ namespace TransferManagerCE
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.DisableDummyTraffic = bChecked;
         }
-        
+
+        public void OnEmployOvereducatedWOrkers(bool bChecked)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.EmployOverEducatedWorkers = bChecked;
+        }
+
         public void OnOverrideGenericIndustriesHandlerChanged(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
@@ -995,6 +1093,7 @@ namespace TransferManagerCE
                 m_sliderPathDistanceShift.SetValue(oSettings.PathDistanceTravelTimeBaseValue);
                 m_chkDisableDummyTraffic.isChecked = oSettings.DisableDummyTraffic;
                 m_chkApplyUnlimited.isChecked = oSettings.ApplyUnlimited;
+                m_chkEmployOvereducatedWorkers.isChecked = oSettings.EmployOverEducatedWorkers;
 
                 // Goods delivery
                 m_chkFactoryFirst.isChecked = oSettings.FactoryFirst;
@@ -1018,8 +1117,13 @@ namespace TransferManagerCE
                 m_chkGarbageExperimental.isChecked = oSettings.ImprovedGarbageMatching;
                 m_chkPoliceExperimental.isChecked = oSettings.ImprovedCrimeMatching;
                 m_chkImprovedMailTransfers.isChecked = oSettings.ImprovedMailTransfers;
-                m_chkOverrideSickCollection.isChecked = oSettings.OverrideResidentialSickHandler;
-                m_chkSickCollectionOtherBuildings.isChecked = oSettings.CollectSickFromOtherBuildings;
+                
+                // Sick collection
+                m_chkOverrideSickCollection.isChecked = oSettings.OverrideSickHandler;
+                m_sliderSickGenerationRate.SetValue(oSettings.RandomSickRate);
+                m_sliderSickHelicopterRate.SetValue(oSettings.SickHelicopterRate);
+                m_chkDisplaySickNotification.isChecked = oSettings.DisplaySickNotification;
+                m_sliderSickWalkRate.SetValue(oSettings.SickWalkRate);
 
                 //Taxi Move
                 m_chkTaxiMove.isChecked = oSettings.TaxiMove;
@@ -1083,7 +1187,8 @@ namespace TransferManagerCE
             EnableCheckbox(m_chkEnablePathFailExclusion, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkDisableDummyTraffic, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkApplyUnlimited, bLoaded && oSettings.EnableNewTransferManager);
-            
+            EnableCheckbox(m_chkEmployOvereducatedWorkers, bLoaded && oSettings.EnableNewTransferManager); 
+
             if (bLoaded && oSettings.EnableNewTransferManager)
             {
                 m_dropdownBalanced.Enable();
@@ -1111,9 +1216,15 @@ namespace TransferManagerCE
             EnableCheckbox(m_chkGarbageExperimental, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkPoliceExperimental, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkImprovedMailTransfers, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkOverrideSickCollection, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkSickCollectionOtherBuildings, bLoaded && oSettings.EnableNewTransferManager);
 
+
+            // Sick collection
+            EnableCheckbox(m_chkOverrideSickCollection, bLoaded && oSettings.EnableNewTransferManager);
+            m_sliderSickHelicopterRate.Enable(m_chkOverrideSickCollection.isEnabled && m_chkOverrideSickCollection.isChecked);
+            m_sliderSickWalkRate.Enable(m_chkOverrideSickCollection.isEnabled && m_chkOverrideSickCollection.isChecked);
+            EnableCheckbox(m_chkDisplaySickNotification, m_chkOverrideSickCollection.isChecked);
+            m_sliderSickGenerationRate.Enable(bLoaded && oSettings.EnableNewTransferManager);
+            
             // Taxi Move
             EnableCheckbox(m_chkTaxiMove, bLoaded && oSettings.EnableNewTransferManager);
             m_sliderTaxiStandDelay.Enable(bLoaded && oSettings.EnableNewTransferManager);

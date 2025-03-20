@@ -59,6 +59,12 @@ namespace TransferManagerCE
                 }
             }
 
+            // Also check for Akira's Employ Overeducated Workers as it completely overrides TMCE.
+            if (DependencyUtils.IsEmployOverEducatedWorkersByAkiraRunning())
+            {
+                sConflictingMods += "Employ Overeducated Workers (By Akira)\r\n";
+            }
+
             if (string.IsNullOrEmpty(sConflictingMods))
             {
                 return false;

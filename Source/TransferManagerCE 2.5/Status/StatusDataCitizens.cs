@@ -26,7 +26,8 @@ namespace TransferManagerCE.Data
                 Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
                 if (building.m_flags != 0)
                 {
-                    return $"{BuildingUtils.GetCitizenCountInBuilding(m_buildingId, building, 0)}";
+                    BuildingUtils.GetCitizenCount(m_buildingId, building, out int iInBuildingCount, out int iTotalCount);
+                    return $"{iInBuildingCount} / {iTotalCount}";
                 }
             }
 
@@ -51,6 +52,11 @@ namespace TransferManagerCE.Data
         public static TransferReason GetOutgoingTransferReason(Building building)
         {
             return TransferReason.None;
+        }
+
+        public override string GetValueTooltip()
+        {
+            return "Citizens in building / Total citizens allocated to building";
         }
     }
 }

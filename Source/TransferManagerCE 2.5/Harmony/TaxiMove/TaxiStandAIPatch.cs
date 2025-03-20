@@ -17,14 +17,15 @@ namespace TransferManagerCE
             new Type[] { typeof(ushort), typeof(Building), typeof(Building.Frame), typeof(int), typeof(int), typeof(Citizen.BehaviourData), typeof(int), typeof(int), typeof(int), typeof(int), typeof(int), typeof(int) },
             new ArgumentType[] { ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal })]
         [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> ProduceGoodsTranspiler(ILGenerator generator, IEnumerable<CodeInstruction> instructions)
+        public static IEnumerable<CodeInstruction> TaxiStandAIProduceGoodsTranspiler(ILGenerator generator, IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo methodAddTaxiOffers = AccessTools.Method(typeof(TaxiStandAIPatch), nameof(TaxiStandAIPatch.AddTaxiStandOffers));
 
+            bool bFoundBranch = false;
+            bool bPatched = false;
+
             // Instruction enumerator.
             IEnumerator<CodeInstruction> instructionsEnumerator = instructions.GetEnumerator();
-
-            bool bFoundBranch = false;
             while (instructionsEnumerator.MoveNext())
             {
                 // Get next instruction.
@@ -51,13 +52,15 @@ namespace TransferManagerCE
                     // Clear labels from old instruction
                     instruction1.labels = new List<Label>();
 
-                    Debug.Log($"Transpiled TaxiStandAI.ProduceGoods");
+                    bPatched = true;
                     continue;
                 }
 
                 // Return normal instruction
                 yield return instruction1;
             }
+
+            Debug.Log($"TaxiStandAIProduceGoodsTranspiler - Patching of TaxiStandAI.ProduceGoods {(bPatched ? "succeeded" : "failed")}.", false);
         }
 
         // Override StartTransfer to dispatch a taxi at the stand (if any) rather than creating one to send.

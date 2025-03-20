@@ -21,7 +21,8 @@ namespace TransferManagerCE.CustomManager
             Import,
             Export,
             ActivePassive,
-            DistanceRestriction,
+            DistanceRestrictionLocal,
+            DistanceRestrictionGlobal,
             DistrictRestriction,
             BuildingRestriction,
             SameObject,
@@ -41,28 +42,31 @@ namespace TransferManagerCE.CustomManager
             WarehouseStationType,
         };
 
-
         private bool m_bDistrictRestrictionsSupported = false;
         private bool m_bBuildingRestrictionsSupported = false;
-        private bool m_bDistanceRestrictionsSupported = false;
+        private bool m_bLocalDistanceRestrictionsSupported = false;
         private bool m_bEnablePathFailExclusion = false;
         private bool m_bIsImportRestrictionsSupported = false;
         private bool m_bIsExportRestrictionsSupported = false;
         private bool m_bIsWarehouseMaterial = false;
         private bool m_bIsHelicopterReason = false;
         private bool m_bIsFactoryFirst = false;
+        private float m_fGlobalDistanceRestriction = 0;
 
         public void SetMaterial(CustomTransferReason.Reason material)
         {
             // Cache these for better performance
             m_bDistrictRestrictionsSupported = DistrictRestrictions.IsGlobalDistrictRestrictionsSupported(material) || BuildingRuleSets.IsDistrictRestrictionsSupported(material);
             m_bBuildingRestrictionsSupported = BuildingRuleSets.IsBuildingRestrictionsSupported(material);
-            m_bDistanceRestrictionsSupported = BuildingRuleSets.IsDistanceRestrictionsSupported(material);
             m_bEnablePathFailExclusion = SaveGameSettings.GetSettings().EnablePathFailExclusion;
             m_bIsImportRestrictionsSupported = TransferManagerModes.IsImportRestrictionsSupported(material);
             m_bIsExportRestrictionsSupported = TransferManagerModes.IsExportRestrictionsSupported(material);
             m_bIsWarehouseMaterial = TransferManagerModes.IsWarehouseMaterial(material);
             m_bIsHelicopterReason = TransferManagerModes.IsHelicopterReason(material);
+            
+            // Distance restrictions
+            m_bLocalDistanceRestrictionsSupported = BuildingRuleSets.IsLocalDistanceRestrictionsSupported(material);
+            m_fGlobalDistanceRestriction = SaveGameSettings.GetSettings().GetActiveDistanceRestrictionSquaredMeters(material);
         }
 
         public void SetFactoryFirst(bool bFactoryFirst)
@@ -117,6 +121,8 @@ namespace TransferManagerCE.CustomManager
 
             if (!TransferManagerModes.IsFastChecksOnly(material))
             {
+                // Order calls by speed of execution!
+
                 //temporary exclusion due to pathfinding issues?
                 if (m_bEnablePathFailExclusion && PathfindExclusion(material, ref incomingOffer, ref outgoingOffer))
                 {
@@ -148,10 +154,11 @@ namespace TransferManagerCE.CustomManager
                     return ExclusionReason.GlobalPreferLocal;
                 }
 
-                // Check distance restrictions
-                if (m_bDistanceRestrictionsSupported && !DistanceCanTransfer(incomingOffer, outgoingOffer, material))
+                // Check distance restrictions, only check global if local not supported as we overwrite global with local setting.
+                ExclusionReason reason = DistanceCanTransfer(incomingOffer, outgoingOffer, material);
+                if (reason != ExclusionReason.None)
                 {
-                    return ExclusionReason.DistanceRestriction;
+                    return reason;
                 }
 
                 // Check building restrictions
@@ -215,46 +222,67 @@ namespace TransferManagerCE.CustomManager
             return result;
         }
 
-        private bool DistanceCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
+        private ExclusionReason DistanceCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
-            if (!m_bDistanceRestrictionsSupported)
-            {
-                return true;
-            }
-
             // Don't limit import/export, that gets restricted elsewhere.
             if (incomingOffer.IsOutside() || outgoingOffer.IsOutside())
             {
-                return true;
+                return ExclusionReason.None;
             }
 
-            float fDistanceLimit = 0.0f;
+            if (m_bLocalDistanceRestrictionsSupported)
+            {
+                // Local distance restriction
+                float fDistanceLimit = 0.0f;
 
-            // Only apply distance restriction to active side.
-            if (incomingOffer.Active)
-            {
-                ushort buildingId = incomingOffer.GetBuilding();
-                if (buildingId != 0)
+                // Only apply distance restriction to active side.
+                if (incomingOffer.Active)
                 {
-                    fDistanceLimit = incomingOffer.GetDistanceRestrictionSquaredMeters(material);
-                }                
-            }
-            else if (outgoingOffer.Active)
-            {
-                ushort buildingId = outgoingOffer.GetBuilding();
-                if (buildingId != 0)
+                    ushort buildingId = incomingOffer.GetBuilding();
+                    if (buildingId != 0)
+                    {
+                        fDistanceLimit = incomingOffer.GetDistanceRestrictionSquaredMeters(material);
+                    }
+                }
+                else if (outgoingOffer.Active)
                 {
-                    fDistanceLimit = outgoingOffer.GetDistanceRestrictionSquaredMeters(material);
+                    ushort buildingId = outgoingOffer.GetBuilding();
+                    if (buildingId != 0)
+                    {
+                        fDistanceLimit = outgoingOffer.GetDistanceRestrictionSquaredMeters(material);
+                    }
+                }
+
+                if (fDistanceLimit > 0.0f)
+                {
+                    // Local setting found, use it instead of global value.
+                    float squaredDistance = Vector3.SqrMagnitude(outgoingOffer.Position - incomingOffer.Position);
+                    if (squaredDistance > fDistanceLimit)
+                    {
+                        return ExclusionReason.DistanceRestrictionLocal;
+                    }
+                }
+                else if (m_fGlobalDistanceRestriction > 0.0f)
+                {
+                    // No local setting so check global setting instead.
+                    float squaredDistance = Vector3.SqrMagnitude(outgoingOffer.Position - incomingOffer.Position);
+                    if (squaredDistance > m_fGlobalDistanceRestriction)
+                    {
+                        return ExclusionReason.DistanceRestrictionGlobal;
+                    }
                 }
             }
-            
-            if (fDistanceLimit > 0.0f)
+            else if (m_fGlobalDistanceRestriction > 0.0f)
             {
+                // Global distance restriction
                 float squaredDistance = Vector3.SqrMagnitude(outgoingOffer.Position - incomingOffer.Position);
-                return squaredDistance <= fDistanceLimit;
+                if (squaredDistance > m_fGlobalDistanceRestriction)
+                {
+                    return ExclusionReason.DistanceRestrictionGlobal;
+                }
             }
 
-            return true;
+            return ExclusionReason.None;
         }
 
         private bool BuildingCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)

@@ -154,7 +154,7 @@ namespace TransferManagerCE
                             // Fix incoming
                             restrictionsIncoming.m_incomingDistrictSettings.Reset();
                             restrictionsIncoming.m_bAllowExport = true;
-                            restrictionsIncoming.m_iServiceDistance = 0;
+                            restrictionsIncoming.m_iServiceDistanceMeters = 0;
                             settings.SetRestrictionsDirect(0, restrictionsIncoming);
 
                             // Fix outgoing
@@ -173,7 +173,7 @@ namespace TransferManagerCE
                             // Fix incoming 1
                             restrictionsIncoming.m_incomingDistrictSettings.Reset();
                             restrictionsIncoming.m_bAllowExport = true;
-                            restrictionsIncoming.m_iServiceDistance = 0;
+                            restrictionsIncoming.m_iServiceDistanceMeters = 0;
                             settings.SetRestrictions(0, restrictionsIncoming);
 
                             // Insert a copy for Incoming 2
@@ -199,7 +199,11 @@ namespace TransferManagerCE
             restrictions.m_bAllowExport = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
+
+            // Service distance is now stored as meters instead of km
+            int iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_iServiceDistanceMeters = iServiceDistance * 1000;
+
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex); // No longer used
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
@@ -228,7 +232,11 @@ namespace TransferManagerCE
             restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             bool bDistrictAllowServicesNotUsed = StorageData.ReadBool(Data, ref iIndex);
-            restrictions.m_iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
+
+            // Service distance is now stored as meters instead of km
+            int iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
+            restrictions.m_iServiceDistanceMeters = iServiceDistance * 1000;
+
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);

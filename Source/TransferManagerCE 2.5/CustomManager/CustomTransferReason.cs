@@ -154,14 +154,14 @@ namespace TransferManagerCE
             m_material = (Reason) reason;
         }
 
-        public Reason ToReason()
-        {
-            return m_material;
-        }
-
-        public static implicit operator TransferReason(CustomTransferReason reason)
+        public static implicit operator TransferReason (CustomTransferReason reason)
         {
             return (TransferReason) reason.m_material;
+        }
+
+        public static implicit operator Reason (CustomTransferReason reason)
+        { 
+            return reason.m_material;
         }
 
         public static implicit operator CustomTransferReason(TransferReason reason)

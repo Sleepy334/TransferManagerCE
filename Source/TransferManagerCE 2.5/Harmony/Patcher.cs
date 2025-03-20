@@ -46,7 +46,10 @@ namespace TransferManagerCE
                 patchList.Add(typeof(CommonBuildingAIHandleSickPatch));
                 patchList.Add(typeof(PrivateBuildingAISimulationStepPatch)); 
                 patchList.Add(typeof(PlayerBuildingAISimulationStepActivePatch));
+                patchList.Add(typeof(ResidentAITryMoveFamily));
                 patchList.Add(typeof(ResidentAIFindHospital)); // ResidentAI.FindHospital bug
+                patchList.Add(typeof(ResidentAIUpdateHealth));
+                patchList.Add(typeof(BuildingRenderInstancePatch)); 
 
                 // Path failures
                 patchList.Add(typeof(CarAIPathfindFailurePatch));
@@ -110,11 +113,16 @@ namespace TransferManagerCE
                     patchList.Add(typeof(FireTruckAISimulationStepPatch));
                 }
 
+                // Improved Employ Overeducated Workers
+                patchList.Add(typeof(EmployOvereducatedWorkersPatch));
+
                 // General patches
                 patchList.Add(typeof(Patch.EscapePatch));
 
                 // Perform the patching
                 PatchAll(patchList);
+
+
 
                 // Generic industries handler is handled separately as we need to be able to unpatch it as well
                 // as it uses a transpiler
@@ -125,6 +133,8 @@ namespace TransferManagerCE
 
                 // Improved taxi stand support
                 PatchTaxiStandHandler();
+
+                
             }
         }
 

@@ -284,7 +284,6 @@ namespace TransferManagerCE.CustomManager
             }
 
             // 1: Match INCOMING offers by descending priority first,
-            // stop at 2/0 as 1/1 matches are usually not very close by
             MatchIncomingOffers(MatchOfferAlgorithm.Distance, 2, false, false, bCloseByOnlyIncoming);
 
             // 2: Now match OUTGOING offers by descending priority,
@@ -722,7 +721,7 @@ namespace TransferManagerCE.CustomManager
                 return MatchOfferPriority(ref offer, offerCandidates, iCandidateCount, bCloseByOnly);
             }
 
-            if (IsITZoneOfficeOffer(ref offer))
+            if (IsITZoneOfficeGoodsOffer(ref offer))
             {
                 // No need for distance support as it is an IT-zone office offer which teleports magically
                 if (m_logFile is not null)
@@ -924,7 +923,7 @@ namespace TransferManagerCE.CustomManager
                 return MatchOfferPriority(ref offer, offerCandidates, iCandidateCount, bCloseByOnly);
             }
 
-            if (IsITZoneOfficeOffer(ref offer))
+            if (IsITZoneOfficeGoodsOffer(ref offer))
             {
                 // No need for distance support as it is an IT-zone office offer which teleports magically
                 if (m_logFile is not null)
@@ -943,7 +942,7 @@ namespace TransferManagerCE.CustomManager
 
             int bestmatch_position = -1;
             float bestmatch_distance = float.MaxValue;
-            float fAcceptableDistance = GetAcceptableDistance(job.material);
+            float fAcceptableDistance = GetAcceptableDistanceSquared(job.material);
 
             // loop through all matching counterpart offers and find closest one
             for (int counterpart_index = 0; counterpart_index < iCandidateCount; counterpart_index++)
@@ -1037,11 +1036,18 @@ namespace TransferManagerCE.CustomManager
                         bestmatch_position = counterpart_index;
                         bestmatch_distance = scaledSquaredDistance;
                     }
-                }
+                } 
+                
 
                 if (m_logFile is not null)
                 {
                     m_logFile.LogCandidateDistanceLOS(counterpart_index, offer, candidateOffer, reason, bConnectedMode, distanceOutsideFactor);
+                }
+
+                // If we are too low priority then no need to check any further as they will all be too low from here.
+                if (reason == ExclusionReason.LowPriority)
+                {
+                    break;
                 }
             }
 
@@ -1340,7 +1346,7 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        private bool IsITZoneOfficeOffer(ref CustomTransferOffer offer)
+        private bool IsITZoneOfficeGoodsOffer(ref CustomTransferOffer offer)
         {
             return (m_material == CustomTransferReason.Reason.Goods &&
                     offer.IsOutgoing() &&

@@ -76,17 +76,16 @@ namespace TransferManagerCE.Settings
                     RestrictionSettings? restrictions = settings.GetRestrictions(iRestrictionId);
                     if (restrictions is not null)
                     {
-                        int iDistance = restrictions.m_iServiceDistance;
-                        if (iDistance > 0)
+                        int iDistanceMeters = restrictions.m_iServiceDistanceMeters;
+                        if (iDistanceMeters > 0)
                         {
-                            return (float)Math.Pow(iDistance * 1000, 2);
+                            return (float)Math.Pow(iDistanceMeters, 2);
                         }
                     }
                 }
             }
 
-            // Load global setting if we didnt get a local one.
-            return SaveGameSettings.GetSettings().GetActiveDistanceRestrictionSquaredMeters(material);
+            return 0.0f;
         }
 
         public static int GetEffectiveOutsideMultiplier(ushort buildingId)

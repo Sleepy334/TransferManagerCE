@@ -1,4 +1,5 @@
 ﻿using ColossalFramework.UI;
+using System;
 using UnityEngine;
 
 namespace TransferManagerCE
@@ -9,6 +10,8 @@ namespace TransferManagerCE
 
 		public UIPanel? m_panel = null;
 		public UILabel? m_label = null;
+		public int m_iDecimalPlaces = 0;
+
 		private UISlider? m_slider = null;
 		private string m_sText = "";
 		private float m_fValue;
@@ -28,15 +31,17 @@ namespace TransferManagerCE
 			}
 		}
 
-        public static SettingsSlider Create(UIHelper helper, LayoutDirection direction, string sText, float fTextScale, int iLabelWidth, int iSliderWidth, float fMin, float fMax, float fStep, float fDefault, ICities.OnValueChanged eventCallback)
+        public static SettingsSlider Create(UIHelper helper, LayoutDirection direction, string sText, float fTextScale, int iLabelWidth, int iSliderWidth, float fMin, float fMax, float fStep, float fDefault, int iDecimalPlaces, ICities.OnValueChanged eventCallback)
 		{
 			SettingsSlider oSlider = new SettingsSlider();
 			oSlider.m_fValue = fDefault;
 			oSlider.m_eventCallback = eventCallback;
-			oSlider.m_sText = sText;
+            oSlider.m_iDecimalPlaces = iDecimalPlaces;
+            oSlider.m_sText = sText;
+            
 
-			// Panel
-			oSlider.m_panel = ((UIPanel) helper.self).AddUIComponent<UIPanel>();
+            // Panel
+            oSlider.m_panel = ((UIPanel) helper.self).AddUIComponent<UIPanel>();
 			oSlider.m_panel.autoLayout = true;
 			oSlider.m_panel.autoLayoutDirection = direction;
 			oSlider.m_panel.autoSize = false;
@@ -60,7 +65,7 @@ namespace TransferManagerCE
 
 			// Slider
 			oSlider.m_slider = CreateSlider(oSlider.m_panel, (direction == LayoutDirection.Vertical) ? oSlider.m_panel.width : iSliderWidth, 30, fMin, fMax);
-			oSlider.m_slider.value = fDefault;
+			oSlider.m_slider.value = (float) Math.Round(fDefault, oSlider.m_iDecimalPlaces);
 			oSlider.m_slider.stepSize = fStep;
             oSlider.m_slider.eventValueChanged += delegate (UIComponent c, float val)
 			{
@@ -134,7 +139,8 @@ namespace TransferManagerCE
 		{
             if (m_label is not null)
             {
-                m_label.text = $"{m_sText}: {m_fValue}{(Percent ? "%" : "")}";
+
+                m_label.text = $"{m_sText}: {m_fValue.ToString($"N{m_iDecimalPlaces}")}{(Percent ? "%" : "")}";
             }
         }
 

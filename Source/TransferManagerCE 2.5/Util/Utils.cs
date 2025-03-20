@@ -161,7 +161,7 @@ namespace SleepyCommon
             return result;
         }
 
-        public static string PadToWidth(string sText, int iWidth, bool bFront)
+        public static string PadToWidth(string sText, int iWidth, bool bFront = false)
         {
             while (sText.Length < iWidth)
             {

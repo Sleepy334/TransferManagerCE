@@ -93,7 +93,7 @@ namespace TransferManagerCE
                     // Look for the following:
                     // This line: Singleton<TransferManager>.instance.AddOutgoingOffer(TransferManager.TransferReason.Crime, offer);
                     // IL_0BF1: callvirt   System.Void TransferManager::AddOutgoingOffer(TransferManager.TransferReason.Crime, TransferOffer offer)
-                    if (bAddedBranch && !bAddedLabel && instruction.opcode == OpCodes.Callvirt && instruction.operand == methodAddOutgoingOffer)
+                    if (bAddedBranch && !bAddedLabel && instruction.Calls(methodAddOutgoingOffer))
                     {
                         bAddedLabel = true;
 
@@ -134,19 +134,13 @@ namespace TransferManagerCE
                 yield return instruction;
             }
 
-            if (s_bPatched)
-            {
-                Debug.Log("Patching of CommonBuildingAI.HandleCrimeTranspiler succeeded");
-            }
-            else
-            {
-                Debug.LogError($"Patching of CommonBuildingAI.HandleCrimeTranspiler failed bAddedBranch: {bAddedBranch} bAddedLabel: {bAddedLabel} s_bPatched: {s_bPatched}");
-            }
+            Debug.Log($"HandleCrimeTranspiler - Patching of CommonBuildingAI.HandleCrime {(s_bPatched ? "succeeded" : "failed")}", false);
         }
 
         private static void AddCrimeOffer(ushort buildingID, ref Building buildingData, int iCitizenCount)
         {
-            if (iCitizenCount == 0 || (buildingData.Info is not null && buildingData.Info.GetAI() is PoliceStationAI))
+            // Dont request police when at a police station or prison.
+            if (iCitizenCount == 0 || (buildingData.Info is not null && buildingData.Info.GetService() == ItemClass.Service.PoliceDepartment))
             {
                 return;
             }

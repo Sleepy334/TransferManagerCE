@@ -7,7 +7,7 @@ namespace TransferManagerCE
     {
         // Increment this every time the settings change
         // Also increment Serializer.DataVersion
-        public const int iBUILDING_SETTINGS_DATA_VERSION = 14;
+        public const int iBUILDING_SETTINGS_DATA_VERSION = 15;
 
         // Stores a restrictions setting object for each different type of restriction supported by the building
         // eg Dead, DeadMove etc...

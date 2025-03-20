@@ -6,14 +6,29 @@ namespace TransferManagerCE
 {
     public static class Debug
     {
-        public static void Log(string sText)
+        public static void Log(string sText, bool bAddCallingFunction = true)
         {
-            UnityEngine.Debug.Log($"[{TransferManagerMain.Title}] {GetCallingFunction()}: {sText}");
+            if (bAddCallingFunction)
+            {
+                UnityEngine.Debug.Log($"[{TransferManagerMain.Title}] {GetCallingFunction()}: {sText}");
+            }
+            else
+            {
+                UnityEngine.Debug.Log($"[{TransferManagerMain.Title}]: {sText}");
+            }
         }
 
-        public static void LogError(string sText)
+        public static void LogError(string sText, bool bAddCallingFunction = true)
         {
-            UnityEngine.Debug.LogError($"[{TransferManagerMain.Title}] {GetCallingFunction()}: {sText}");
+            if (bAddCallingFunction)
+            {
+                UnityEngine.Debug.LogError($"[{TransferManagerMain.Title}] {GetCallingFunction()}: {sText}");
+            }
+            else
+            {
+                UnityEngine.Debug.LogError($"[{TransferManagerMain.Title}]: {sText}");
+            }
+            
         }
 
         public static void Log(Exception ex)

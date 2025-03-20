@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using static TransferManager;
 using UnityEngine;
 using ColossalFramework.Math;
+using System.Reflection;
+using ICities;
+using System.Collections;
+using static Notification;
 
 namespace TransferManagerCE
 {
@@ -200,6 +204,26 @@ namespace TransferManagerCE
             return GetCitizensInBuilding(usBuildingId, building, Citizen.Flags.Sick);
         }
 
+        public static List<uint> GetSickWithoutVehicles(ushort usBuildingId, Building building)
+        {
+            Vehicle[] vehicles = VehicleManager.instance.m_vehicles.m_buffer;
+
+            List<uint> cimList = new List<uint>();
+            CitizenUtils.EnumerateCitizens(new InstanceID { Building = usBuildingId }, building.m_citizenUnits, (citizendId, citizen) =>
+            {
+                // Check if this citizen has an ambulance on the way. It's assigned to the citizen as it's vehicle.
+                if (citizen.Sick && citizen.GetBuildingByLocation() == usBuildingId && citizen.m_vehicle == 0)
+                {
+                    // No assigned vehicle add cim
+                    cimList.Add(citizendId);
+                }
+
+                return true; // continue loop
+            });
+
+            return cimList;
+        }
+
         public static int GetCitizenCountInBuilding(ushort usBuildingId, Building building, Citizen.Flags flags)
         {
             int iTotal = 0;
@@ -215,6 +239,27 @@ namespace TransferManagerCE
             });
 
             return iTotal;
+        }
+
+        public static void GetCitizenCount(ushort usBuildingId, Building building, out int iInBuildingCount, out int iTotalCount)
+        {
+            int iTotal = 0;
+            int iInBuilding = 0;
+
+            CitizenUtils.EnumerateCitizens(new InstanceID { Building = usBuildingId }, building.m_citizenUnits, (citizenId, citizen) =>
+            {
+                iTotal++;
+
+                if (citizen.GetBuildingByLocation() == usBuildingId)
+                {
+                    iInBuilding++;
+                }
+
+                return true; // continue loop
+            });
+
+            iInBuildingCount = iInBuilding;
+            iTotalCount = iTotal;
         }
 
         public static int GetDeadCount(ushort usBuildingId, Building building)
@@ -435,6 +480,194 @@ namespace TransferManagerCE
             }
 
             return iTransferSize;
+        }
+
+        public static int GetTotalWorkerCount(ushort buildingId, Building building, out int workPlaceCount0, out int workPlaceCount1, out int workPlaceCount2, out int workPlaceCount3)
+        {
+            workPlaceCount0 = 0;
+            workPlaceCount1 = 0;
+            workPlaceCount2 = 0;
+            workPlaceCount3 = 0;
+
+            if (building.m_flags != 0 && building.Info is not null)
+            {
+                switch (building.Info.GetAI())
+                {
+                    case ParkGateAI:
+                    case ParkBuildingAI:
+                        {
+                            PlayerBuildingAI buildingAI = building.Info.GetAI() as PlayerBuildingAI;
+                            Type buildingType = buildingAI.GetType();
+
+                            MethodInfo? methodTargetWorkers = buildingType.GetMethod("TargetWorkers", BindingFlags.Instance | BindingFlags.NonPublic);
+                            if (methodTargetWorkers is not null)
+                            {
+                                workPlaceCount0 = (int)methodTargetWorkers.Invoke(buildingAI, new object[] { buildingId, building });
+                            }
+
+                            break;
+                        }
+                    case PlayerBuildingAI:
+                        {
+                            PlayerBuildingAI buildingAI = building.Info.GetAI() as PlayerBuildingAI;
+
+                            // Get worker count
+                            Type buildingType = buildingAI.GetType();
+
+                            FieldInfo? field0 = buildingType.GetField("m_workPlaceCount0");
+                            if (field0 is not null)
+                            {
+                                workPlaceCount0 = (int)field0.GetValue(buildingAI);
+                            }
+                            FieldInfo? field1 = buildingType.GetField("m_workPlaceCount1");
+                            if (field1 is not null)
+                            {
+                                workPlaceCount1 = (int)field1.GetValue(buildingAI);
+                            }
+                            FieldInfo? field2 = buildingType.GetField("m_workPlaceCount2");
+                            if (field2 is not null)
+                            {
+                                workPlaceCount2 = (int)field2.GetValue(buildingAI);
+                            }
+                            FieldInfo? field3 = buildingType.GetField("m_workPlaceCount3");
+                            if (field3 is not null)
+                            {
+                                workPlaceCount3 = (int)field3.GetValue(buildingAI);
+                            }
+
+                            break;
+                        }
+                    case PrivateBuildingAI:
+                        {
+                            PrivateBuildingAI buildingAI = building.Info.GetAI() as PrivateBuildingAI;
+
+                            buildingAI.CalculateWorkplaceCount((ItemClass.Level)building.m_level, new Randomizer(buildingId), building.Width, building.Length, out var level1, out var level2, out var level3, out var level4);
+                            buildingAI.AdjustWorkplaceCount((ushort)buildingId, ref building, ref level1, ref level2, ref level3, ref level4);
+
+                            workPlaceCount0 = level1;
+                            workPlaceCount1 = level2;
+                            workPlaceCount2 = level3;
+                            workPlaceCount3 = level4;
+                            break;
+                        }
+                }
+            }
+
+            return workPlaceCount0 + workPlaceCount1 + workPlaceCount2 + workPlaceCount3;
+        }
+
+        public static int GetCurrentWorkerCount(ushort buildingId, Building buildingData, out int worker0, out int worker1, out int worker2, out int worker3)
+        {
+            int totalCount = 0;
+            worker0 = 0;
+            worker1 = 0;
+            worker2 = 0;
+            worker3 = 0;
+
+            if (buildingData.Info is not null)
+            {
+                switch (buildingData.Info.GetAI())
+                {
+                    case ParkGateAI:
+                    case ParkBuildingAI:
+                        {
+                            PlayerBuildingAI buildingAI = buildingData.Info.GetAI() as PlayerBuildingAI;
+                            Type buildingType = buildingAI.GetType();
+
+                            MethodInfo? methodCountWorkers = buildingType.GetMethod("CountWorkers", BindingFlags.Instance | BindingFlags.NonPublic);
+                            if (methodCountWorkers is not null)
+                            {
+                                totalCount = (int)methodCountWorkers.Invoke(buildingAI, new object[] { buildingId, buildingData });
+                                worker0 = totalCount;
+                            }
+
+                            break;
+                        }
+                    default:
+                        {
+                            Citizen.BehaviourData behaviour = default(Citizen.BehaviourData);
+                            int aliveCount = 0;
+
+                            CitizenManager instance = Singleton<CitizenManager>.instance;
+                            uint num = buildingData.m_citizenUnits;
+                            int num2 = 0;
+                            while (num != 0)
+                            {
+                                if ((instance.m_units.m_buffer[num].m_flags & CitizenUnit.Flags.Work) != 0)
+                                {
+                                    instance.m_units.m_buffer[num].GetCitizenWorkBehaviour(ref behaviour, ref aliveCount, ref totalCount);
+                                }
+                                num = instance.m_units.m_buffer[num].m_nextUnit;
+                                if (++num2 > 524288)
+                                {
+                                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
+                                    break;
+                                }
+                            }
+
+                            worker0 = behaviour.m_educated0Count;
+                            worker1 = behaviour.m_educated1Count;
+                            worker2 = behaviour.m_educated2Count;
+                            worker3 = behaviour.m_educated3Count;
+
+                            break;
+                        }
+                }
+                
+            }
+
+            return totalCount;
+        }
+
+        public static bool IsSickOnlyMajorProblem(ProblemStruct problems)
+        {
+            // Remove all the Sick problems
+            problems = RemoveProblems(problems, Problem1.DirtyWater | Notification.Problem1.Pollution | Problem1.Noise);
+
+            // Check there is nothing else set
+            return ((problems & ProblemStruct.Mask).IsNone);
+        }
+
+        public static int GetChildCount(ushort buildingID, Building data)
+        {
+            return GetCitizenAgedCount(buildingID, data, Citizen.AgeGroup.Child);
+        }
+
+        public static int GetSeniorCount(ushort buildingID, Building data)
+        {
+            return GetCitizenAgedCount(buildingID, data, Citizen.AgeGroup.Senior);
+        }
+
+        public static int GetCitizenAgedCount(ushort buildingID, Building data, Citizen.AgeGroup groupType)
+        {
+            CitizenManager instance = Singleton<CitizenManager>.instance;
+            uint num = data.m_citizenUnits;
+            int iLoopCount = 0;
+            int iCitizenCount = 0;
+            while (num != 0)
+            {
+                uint nextUnit = instance.m_units.m_buffer[num].m_nextUnit;
+                if ((instance.m_units.m_buffer[num].m_flags & CitizenUnit.Flags.Visit) != 0)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        uint citizen = instance.m_units.m_buffer[num].GetCitizen(i);
+                        if (citizen != 0 && instance.m_citizens.m_buffer[citizen].CurrentLocation == Citizen.Location.Visit && 
+                            Citizen.GetAgeGroup(instance.m_citizens.m_buffer[citizen].Age) == groupType)
+                        {
+                            iCitizenCount++;
+                        }
+                    }
+                }
+                num = nextUnit;
+                if (++iLoopCount > 524288)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
+                    break;
+                }
+            }
+
+            return iCitizenCount;
         }
     }
 }

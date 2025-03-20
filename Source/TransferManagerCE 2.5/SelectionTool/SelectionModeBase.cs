@@ -1,16 +1,28 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
 using System;
-using TransferManagerCE.UI;
 using UnityEngine;
+using TransferManagerCE.UI;
 using static RenderManager;
 using static ToolBase;
 using static TransferManagerCE.SelectionTool;
+using System.Collections.Generic;
+using TransferManagerCE.TransferRules;
 
 namespace TransferManagerCE
 {
     public class SelectionModeBase
     {
+        private Color[] s_distanceColors = 
+        { 
+            Color.green, 
+            Color.magenta, 
+            Color.blue,
+            Color.red,
+            Color.white,
+            Color.cyan,
+        };
+
         protected SelectionTool m_tool;
 
         public SelectionModeBase(SelectionTool tool)
@@ -102,14 +114,68 @@ namespace TransferManagerCE
                             }
                         }
 
+                        BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType(building);
+                        HashSet<CustomTransferReason.Reason> localReasons = new HashSet<CustomTransferReason.Reason>();
+
                         // Highlight currently selected building
                         if (BuildingSettingsStorage.HasSettings(usSourceBuildingId))
                         {
                             HighlightBuilding(toolManager, BuildingBuffer, usSourceBuildingId, cameraInfo, Color.red);
+
+                            // If building has distance restriction then draw the distance as a circle
+                            BuildingSettings settings = BuildingSettingsStorage.GetSettings(usSourceBuildingId);
+                            if (settings is not null)
+                            {
+                                foreach (KeyValuePair<int, RestrictionSettings> kvp in settings.m_restrictions)
+                                {
+                                    if (kvp.Value.m_iServiceDistanceMeters > 0)
+                                    {
+                                        // Add reasons for restriction
+                                        localReasons.UnionWith(BuildingRuleSets.GetRestrictionReasons(eType, kvp.Key));
+
+                                        // Change color so we can see them if more than one (eg. Recycling Center).
+                                        Color color = s_distanceColors[kvp.Key];
+
+                                        RenderManager.instance.OverlayEffect.DrawCircle(
+                                                cameraInfo,
+                                                color,
+                                                building.m_position,
+                                                kvp.Value.m_iServiceDistanceMeters * 2.0f, // Range of service matching, we need diameter not radius
+                                                building.m_position.y - 1f,
+                                                building.m_position.y + 1f,
+                                                true,
+                                                true);
+                                    }
+                                }
+                            }
                         }
                         else
                         {
                             HighlightBuilding(toolManager, BuildingBuffer, usSourceBuildingId, cameraInfo, Color.white);
+                        }
+
+                        // Draw global distance setting if any
+                        if (SaveGameSettings.GetSettings().GetDistanceRestrictionCount() > 0)
+                        {
+                            CustomTransferReason.Reason reason = BuildingTypeHelper.GetGlobalDistanceReason(eType);
+
+                            // Don't display global restrictiohn if we have a local one as it overrides the global one.
+                            if (reason != CustomTransferReason.Reason.None && !localReasons.Contains(reason))
+                            {
+                                double dDistance = SaveGameSettings.GetSettings().GetActiveDistanceRestrictionSquaredMeters(reason);
+                                if (dDistance > 0.0)
+                                {
+                                    RenderManager.instance.OverlayEffect.DrawCircle(
+                                            cameraInfo,
+                                            Color.yellow,
+                                            building.m_position,
+                                            (float)Math.Sqrt(dDistance) * 2.0f, // Range of service matching, we need diameter not radius
+                                            building.m_position.y - 1f,
+                                            building.m_position.y + 1f,
+                                            true,
+                                            true);
+                                }
+                            }
                         }
                     }
 
@@ -118,7 +184,7 @@ namespace TransferManagerCE
             }
         }
 
-        public static void HighlightBuilding(ToolManager toolManager, Building[] BuildingBuffer, ushort usBuildingId, RenderManager.CameraInfo cameraInfo, Color color)
+        public static void HighlightBuilding(ToolManager toolManager, Building[] BuildingBuffer, ushort usBuildingId, RenderManager.CameraInfo cameraInfo, UnityEngine.Color color)
         {
             ref Building building = ref BuildingBuffer[usBuildingId];
             if (building.m_flags != 0)

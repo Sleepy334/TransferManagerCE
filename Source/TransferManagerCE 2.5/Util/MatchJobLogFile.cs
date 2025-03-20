@@ -221,10 +221,11 @@ namespace TransferManagerCE.Util
             LogSeparator();
             LogInfo($"Match Job Complete - IN Remaining: {job.m_incomingCountRemaining}/{job.m_incomingAmount} OUT Remaining: {job.m_outgoingCountRemaining}/{job.m_outgoingAmount} Matches: {iMatches} Elapsed time: {((double)jobMatchTime * 0.0001).ToString("F")}ms");
             LogInfo("\r\nKey:");
+            LogInfo("DT = Death Timer");
             LogInfo("IT = Incoming Timer");
             LogInfo("OT = Outgoing Timer");
             LogInfo("ST = Sick Timer");
-            LogInfo("DT = Death Timer");
+            LogInfo("WT = Worker Timer");
             LogInfo("DistanceLOS = Distance Line Of Sight");
             LogInfo("DistrictR = District Restrictions");
             LogInfo("BuildingR = Building Restrictions");

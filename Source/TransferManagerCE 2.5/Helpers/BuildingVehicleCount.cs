@@ -1,5 +1,6 @@
 using ColossalFramework;
 using ColossalFramework.Math;
+using System.Reflection;
 using UnityEngine;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
@@ -78,6 +79,7 @@ namespace TransferManagerCE
                     case BuildingType.WarehouseStation:
                     case BuildingType.FishHarbor:
                     case BuildingType.Hospital:
+                    case BuildingType.UniversityHospital:
                     case BuildingType.PostOffice:
                         return 2;
 
@@ -169,6 +171,7 @@ namespace TransferManagerCE
                         return GetVehicleCount(TransferReason.Garbage, buildingId, building, iType);
                     }
                 case BuildingType.Hospital:
+                case BuildingType.UniversityHospital:
                     {
                         return GetVehicleCount(TransferReason.Sick, buildingId, building, iType);
                     }
@@ -306,6 +309,22 @@ namespace TransferManagerCE
                                 int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
                                 int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
                                 return (productionRate * buildingAI.AmbulanceCount + 99) / 100;
+                            }
+                        }
+                        break;
+                    }
+                case BuildingType.UniversityHospital:
+                    {
+                        if (iVehicleType == 0 && building.m_flags != 0 && building.Info is not null)
+                        {
+                            PrefabAI buildingAI = building.Info.GetAI();
+                            if (buildingAI is not null)
+                            {
+                                PropertyInfo property = buildingAI.GetType().GetProperty("AmbulanceCount");
+                                int iAmbulanceCount = (int)property.GetValue(buildingAI, new object[] { });
+                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
+                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
+                                return (productionRate * iAmbulanceCount + 99) / 100;
                             }
                         }
                         break;

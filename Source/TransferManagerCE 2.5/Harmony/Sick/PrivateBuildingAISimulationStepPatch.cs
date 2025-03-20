@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using ColossalFramework;
+using HarmonyLib;
+using System;
 
 namespace TransferManagerCE
 {
@@ -7,26 +9,21 @@ namespace TransferManagerCE
     {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PrivateBuildingAI), "SimulationStep")]
-        public static void PostFix(PrivateBuildingAI __instance, ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
+        public static void SimulationStepPostFix(PrivateBuildingAI __instance, ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager)
+            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
+                SaveGameSettings.GetSettings().OverrideSickHandler &&
+                Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.HealthCare))
             {
-                if (buildingData.Info.GetAI() is ResidentialBuildingAI)
-                {
-                    if (SaveGameSettings.GetSettings().OverrideResidentialSickHandler)
-                    {
-                        // Residential always have sick collected so we don't need to clear timer if turned off.
-                        SickHandler.HandleSick(__instance, buildingID, ref buildingData, BuildingUtils.GetSickCount(buildingID, buildingData));
-                    }
+                // If we are using our sick handler, we disable the major problem timer so
+                // that we can run the sick timer all the way to 255.
+                if (buildingData.m_healthProblemTimer > 0)
+                { 
+                    buildingData.m_majorProblemTimer = 0;
                 }
-                else
-                {
-                    if (SaveGameSettings.GetSettings().CollectSickFromOtherBuildings || buildingData.m_healthProblemTimer > 0)
-                    {
-                        // Commercial and Industrial buildings don't put out transfer offers to remove their sick, so they just hang around forever.
-                        SickHandler.HandleSick(__instance, buildingID, ref buildingData, BuildingUtils.GetSickCount(buildingID, buildingData));
-                    }
-                }
+
+                // Call our sick handler
+                SickHandler.HandleSick(__instance, buildingID, ref buildingData, BuildingUtils.GetSickCount(buildingID, buildingData));
             }
         }
     }

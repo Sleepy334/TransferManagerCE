@@ -13,6 +13,7 @@ using ICities;
 using UnityEngine.Networking.Types;
 using Epic.OnlineServices.Presence;
 using static TransferManagerCE.StatusHelper;
+using System.Linq;
 
 namespace TransferManagerCE
 {
@@ -27,6 +28,7 @@ namespace TransferManagerCE
             Evacuation,
         };
 
+        List<StatusData> m_listGeneral;
         List<StatusData> m_listServices;
         List<StatusData> m_listIncoming;
         List<StatusData> m_listOutgoing;
@@ -41,6 +43,7 @@ namespace TransferManagerCE
 
         public StatusHelper()
         {
+            m_listGeneral = new List<StatusData>();
             m_listServices = new List<StatusData>();
             m_listIncoming = new List<StatusData>();
             m_listOutgoing = new List<StatusData>();
@@ -48,7 +51,7 @@ namespace TransferManagerCE
             m_listLineStops = new List<StatusData>();
             m_setAddedReasons = new HashSet<TransferReason>();
             m_setAddedVehicles = new HashSet<ushort>();
-        }
+        } 
 
         public List<StatusData> GetStatusList(ushort buildingId, out int iVehicleCount)
         {
@@ -57,6 +60,7 @@ namespace TransferManagerCE
 
             if (buildingId != 0)
             {
+                m_listGeneral.Clear();
                 m_listServices.Clear();
                 m_listIncoming.Clear();
                 m_listOutgoing.Clear();
@@ -104,7 +108,8 @@ namespace TransferManagerCE
                     // Common to all (Services)
                     if (m_eParentBuildingType != BuildingType.OutsideConnection)
                     {
-                        AddCommonServices(m_eParentBuildingType, buildingId);
+                        AddGeneral(m_eParentBuildingType, buildingId, building);
+                        AddCommonServices(m_eParentBuildingType, buildingId, building);
                     }
 
                     // Add building specific values
@@ -133,58 +138,35 @@ namespace TransferManagerCE
                     }
                 }
 
-                if (m_listServices.Count > 0)
-                {
-                    m_listServices.ForEach(item => item.Calculate());
-                    m_listServices.Sort();
-                    list.AddRange(m_listServices);
-                }
-
-                if (m_listOutgoing.Count > 0)
-                {
-                    if (list.Count > 0)
-                    {
-                        list.Add(new StatusDataSeparator());
-                    }
-                    m_listOutgoing.ForEach(item => item.Calculate());
-                    m_listOutgoing.Sort();
-                    list.AddRange(m_listOutgoing);
-                }
-
-                if (m_listIncoming.Count > 0)
-                {
-                    if (list.Count > 0)
-                    {
-                        list.Add(new StatusDataSeparator());
-                    }
-                    m_listIncoming.ForEach(item => item.Calculate());
-                    m_listIncoming.Sort();
-                    list.AddRange(m_listIncoming);
-                }
-
-                if (m_listLineStops.Count > 0)
-                {
-                    if (list.Count > 0)
-                    {
-                        list.Add(new StatusDataSeparator());
-                    }
-                    m_listLineStops.ForEach(item => item.Calculate());
-                    list.AddRange(m_listLineStops);
-                }
-
-                if (m_listIntercityStops.Count > 0)
-                {
-                    if (list.Count > 0)
-                    {
-                        list.Add(new StatusDataSeparator());
-                    }
-                    m_listIntercityStops.ForEach(item => item.Calculate());
-                    list.AddRange(m_listIntercityStops);
-                }
+                AddList(list, m_listServices);
+                AddList(list, m_listGeneral, false);
+                AddList(list, m_listOutgoing);
+                AddList(list, m_listIncoming);
+                AddList(list, m_listLineStops);
+                AddList(list, m_listIntercityStops);
             }
 
             iVehicleCount = m_setAddedVehicles.Count;
             return list;
+        }
+
+        private void AddList(List<StatusData> list, List<StatusData> listToAdd, bool bSort = true)
+        {
+            if (listToAdd.Count > 0)
+            {
+                if (list.Count > 0)
+                {
+                    list.Add(new StatusDataSeparator());
+                }
+                listToAdd.ForEach(item => item.Calculate());
+                
+                if (bSort)
+                {
+                    listToAdd.Sort();
+                }
+                
+                list.AddRange(listToAdd);
+            }
         }
 
         private void AddVehicles(BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId, Building building)
@@ -230,13 +212,14 @@ namespace TransferManagerCE
                                     {
                                         case BuildingType.Hospital:
                                         case BuildingType.MedicalHelicopterDepot:
-                                            m_listIncoming.Add(new StatusDataSick(eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                        case BuildingType.UniversityHospital:
+                                            m_listIncoming.Add(new StatusDataSick((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                             break;
                                         default:
-                                            m_listServices.Add(new StatusDataSick(eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            m_listServices.Add(new StatusDataSick((TransferReason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                             break;
                                     }
-                                    m_setAddedReasons.Add(TransferReason.Sick);
+                                    m_setAddedReasons.Add((TransferReason)vehicle.m_transferType);
                                     m_setAddedVehicles.Add(actualVehicleId);
                                     break;
                                 }
@@ -361,13 +344,13 @@ namespace TransferManagerCE
                                             }
                                         case BuildingType.Warehouse:
                                         case BuildingType.WarehouseStation:
+                                        case BuildingType.CargoFerryWarehouseHarbor:
                                             {
-                                                WarehouseAI? warehouseAI = building.Info?.m_buildingAI as WarehouseAI;
-                                                if (warehouseAI is not null)
+                                                TransferReason reason = BuildingTypeHelper.GetWarehouseActualTransferReason(buildingId);
+                                                if (reason != TransferReason.None)
                                                 {
-                                                    TransferReason actualTransferReason = warehouseAI.GetActualTransferReason(buildingId, ref building);
-                                                    m_listIncoming.Add(new StatusDataWarehouse(actualTransferReason, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
-                                                    m_setAddedReasons.Add(actualTransferReason);
+                                                    m_listIncoming.Add(new StatusDataWarehouse(reason, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                    m_setAddedReasons.Add(reason);
                                                     m_setAddedVehicles.Add(actualVehicleId);
                                                 }
                                                 break;
@@ -495,11 +478,24 @@ namespace TransferManagerCE
             });
         }
 
-        private void AddCommonServices(BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId)
+        private void AddGeneral(BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId, Building building)
         {
             // Add citizen count for this building
-            m_listServices.Add(new StatusDataCitizens(TransferReason.None, eBuildingType, buildingId, 0, 0));
+            m_listGeneral.Add(new StatusDataCitizens(TransferReason.None, eBuildingType, buildingId, 0, 0));
 
+            int iTotalWorker = BuildingUtils.GetTotalWorkerCount(buildingId, building, out int worker0, out int worker1, out int worker2, out int worker3);
+            if (iTotalWorker > 0)
+            {
+                m_listGeneral.Add(new StatusDataWorkers(TransferReason.None, eBuildingType, buildingId, 0, 0));
+                m_listGeneral.Add(new StatusDataWorkers(TransferReason.Worker0, eBuildingType, buildingId, 0, 0));
+                m_listGeneral.Add(new StatusDataWorkers(TransferReason.Worker1, eBuildingType, buildingId, 0, 0));
+                m_listGeneral.Add(new StatusDataWorkers(TransferReason.Worker2, eBuildingType, buildingId, 0, 0));
+                m_listGeneral.Add(new StatusDataWorkers(TransferReason.Worker3, eBuildingType, buildingId, 0, 0));
+            }
+        }
+
+        private void AddCommonServices(BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId, Building building)
+        {
             // Common to all
             if (!m_setAddedReasons.Contains(TransferReason.Dead))
             {
@@ -514,20 +510,24 @@ namespace TransferManagerCE
                 }
                 m_setAddedReasons.Add(TransferReason.Dead);
             }
+
             if (!(m_setAddedReasons.Contains(TransferReason.Sick) || m_setAddedReasons.Contains(TransferReason.Sick2)))
             {
                 switch (eBuildingType)
                 {
                     case BuildingType.Hospital:
-                    case BuildingType.MedicalHelicopterDepot:
-                        m_listIncoming.Add(new StatusDataSick(eBuildingType, buildingId, 0, 0));
+                    case BuildingType.UniversityHospital:
+                    case BuildingType.Eldercare:
+                    case BuildingType.Childcare:
+                        m_listIncoming.Add(new StatusDataSick(TransferReason.Sick, eBuildingType, buildingId, 0, 0));
                         break;
                     default:
-                        m_listServices.Add(new StatusDataSick(eBuildingType, buildingId, 0, 0));
+                        m_listServices.Add(new StatusDataSick(TransferReason.Sick, eBuildingType, buildingId, 0, 0));
                         break;
                 }
                 m_setAddedReasons.Add(TransferReason.Sick);
             }
+
             if (!m_setAddedReasons.Contains(TransferReason.Garbage))
             {
                 switch (eBuildingType)
@@ -548,6 +548,7 @@ namespace TransferManagerCE
                 }
                 m_setAddedReasons.Add(TransferReason.Garbage);
             }
+
             if (!m_setAddedReasons.Contains(TransferReason.Fire))
             {
                 switch (eBuildingType)
@@ -562,6 +563,7 @@ namespace TransferManagerCE
                 }
                 m_setAddedReasons.Add(TransferReason.Fire);
             }
+
             if (!(m_setAddedReasons.Contains(TransferReason.Crime) || m_setAddedReasons.Contains((TransferReason)CustomTransferReason.Reason.Crime2)))
             {
                 switch (eBuildingType)
@@ -582,6 +584,7 @@ namespace TransferManagerCE
                 }
 
             }
+
             if (!m_setAddedReasons.Contains(TransferReason.Cash))
             {
                 switch (eBuildingType)
@@ -598,6 +601,7 @@ namespace TransferManagerCE
                 }
                 m_setAddedReasons.Add(TransferReason.Cash);
             }
+
             if (!m_setAddedReasons.Contains(TransferReason.Mail))
             {
                 switch (eBuildingType)
@@ -621,15 +625,12 @@ namespace TransferManagerCE
             {
                 case BuildingType.Warehouse:
                 case BuildingType.WarehouseStation:
+                case BuildingType.CargoFerryWarehouseHarbor:
                     {
-                        WarehouseAI? warehouseAI = building.Info?.m_buildingAI as WarehouseAI;
-                        if (warehouseAI is not null)
+                        TransferReason reason = BuildingTypeHelper.GetWarehouseActualTransferReason(buildingId);
+                        if (reason != TransferReason.None && !m_setAddedReasons.Contains(reason))
                         {
-                            TransferReason actualTransferReason = warehouseAI.GetActualTransferReason(buildingId, ref building);
-                            if (!m_setAddedReasons.Contains(actualTransferReason))
-                            {
-                                m_listIncoming.Add(new StatusDataWarehouse(actualTransferReason, eBuildingType, buildingId, 0, 0));
-                            }
+                            m_listIncoming.Add(new StatusDataWarehouse(reason, eBuildingType, buildingId, 0, 0));
                         }
                         break;
                     }
@@ -839,6 +840,7 @@ namespace TransferManagerCE
                         break;
                     }
                 case BuildingType.University:
+                case BuildingType.UniversityHospital:
                     {
                         m_listIncoming.Add(new StatusDataSchool(TransferReason.Student3, eBuildingType, buildingId, 0, 0));
                         break;

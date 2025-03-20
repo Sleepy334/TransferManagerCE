@@ -7,7 +7,7 @@ namespace TransferManagerCE
 {
     public class RestrictionSettings
     {
-        public const int iRESTRICTION_SETTINGS_DATA_VERSION = 2;
+        public const int iRESTRICTION_SETTINGS_DATA_VERSION = 3;
         private static RestrictionSettings s_defaultSettings = new RestrictionSettings();
 
         public enum ImportExport
@@ -26,13 +26,13 @@ namespace TransferManagerCE
         public DistrictRestrictionSettings m_outgoingDistrictSettings;
         public BuildingRestrictionSettings m_incomingBuildingSettings;
         public BuildingRestrictionSettings m_outgoingBuildingSettings;
-        public int m_iServiceDistance;
+        public int m_iServiceDistanceMeters;
 
         public RestrictionSettings()
         {
             m_bAllowImport = true;
             m_bAllowExport = true;
-            m_iServiceDistance = 0;
+            m_iServiceDistanceMeters = 0;
             m_incomingDistrictSettings = new DistrictRestrictionSettings();
             m_outgoingDistrictSettings = new DistrictRestrictionSettings();
             m_incomingBuildingSettings = new BuildingRestrictionSettings();
@@ -43,7 +43,7 @@ namespace TransferManagerCE
         {
             m_bAllowImport = oSecond.m_bAllowImport;
             m_bAllowExport = oSecond.m_bAllowExport;
-            m_iServiceDistance = oSecond.m_iServiceDistance;
+            m_iServiceDistanceMeters = oSecond.m_iServiceDistanceMeters;
             m_incomingDistrictSettings = new DistrictRestrictionSettings(oSecond.m_incomingDistrictSettings);
             m_outgoingDistrictSettings = new DistrictRestrictionSettings(oSecond.m_outgoingDistrictSettings);
             m_incomingBuildingSettings = new BuildingRestrictionSettings(oSecond.m_incomingBuildingSettings);
@@ -61,7 +61,7 @@ namespace TransferManagerCE
         {
             return m_bAllowImport == s_defaultSettings.m_bAllowImport &&
                     m_bAllowExport == s_defaultSettings.m_bAllowExport &&
-                    m_iServiceDistance == s_defaultSettings.m_iServiceDistance &&
+                    m_iServiceDistanceMeters == s_defaultSettings.m_iServiceDistanceMeters &&
                     m_incomingDistrictSettings.Equals(s_defaultSettings.m_incomingDistrictSettings) &&
                     m_outgoingDistrictSettings.Equals(s_defaultSettings.m_outgoingDistrictSettings) &&
                     m_incomingBuildingSettings.Equals(s_defaultSettings.m_incomingBuildingSettings) &&
@@ -74,7 +74,7 @@ namespace TransferManagerCE
             StorageData.WriteBool(m_bAllowExport, Data);
             StorageData.WriteInt32((int)m_incomingDistrictSettings.m_iPreferLocalDistricts, Data);
             StorageData.WriteInt32((int)m_outgoingDistrictSettings.m_iPreferLocalDistricts, Data);
-            StorageData.WriteInt32(m_iServiceDistance, Data);
+            StorageData.WriteInt32(m_iServiceDistanceMeters, Data);
             StorageData.WriteBool(m_incomingDistrictSettings.m_bAllowLocalDistrict, Data);
             StorageData.WriteBool(m_incomingDistrictSettings.m_bAllowLocalPark, Data);
             StorageData.WriteBool(m_outgoingDistrictSettings.m_bAllowLocalDistrict, Data);
@@ -106,7 +106,18 @@ namespace TransferManagerCE
             settings.m_bAllowExport = StorageData.ReadBool(Data, ref iIndex);
             settings.m_incomingDistrictSettings.m_iPreferLocalDistricts = (DistrictRestrictionSettings.PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             settings.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (DistrictRestrictionSettings.PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
-            settings.m_iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
+
+            // Distance used to be stored as km, now stored as meters
+            if (RestrictionSettingsVersion <= 2)
+            {
+                int iDistanceKm = StorageData.ReadInt32(Data,ref iIndex);
+                settings.m_iServiceDistanceMeters = iDistanceKm * 1000;
+            }
+            else
+            {
+                settings.m_iServiceDistanceMeters = StorageData.ReadInt32(Data, ref iIndex);
+            }
+            
             settings.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
             settings.m_incomingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
             settings.m_outgoingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
@@ -151,7 +162,7 @@ namespace TransferManagerCE
             sMessage += "\nExport:" + m_bAllowExport;
             sMessage += "\nPreferIn:" + m_incomingDistrictSettings.m_iPreferLocalDistricts;
             sMessage += "\nPreferOut:" + m_outgoingDistrictSettings.m_iPreferLocalDistricts;
-            sMessage += "\nServiceDistance:" + m_iServiceDistance;
+            sMessage += "\nServiceDistance(m):" + m_iServiceDistanceMeters;
             sMessage += "\nIncomingAllowLocalDistrict:" + m_incomingDistrictSettings.m_bAllowLocalDistrict;
             sMessage += "\nIncomingAllowLocalPark:" + m_incomingDistrictSettings.m_bAllowLocalPark;
             sMessage += "\nOutgoingAllowLocalDistrict:" + m_outgoingDistrictSettings.m_bAllowLocalDistrict;

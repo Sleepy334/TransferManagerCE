@@ -259,7 +259,7 @@ namespace TransferManagerCE.UI
                 if (m_panelServiceDistance is not null)
                 {
                     UIHelper helperDistance = new UIHelper(m_panelServiceDistance.m_content);
-                    m_sliderServiceDistance = SettingsSlider.Create(helperDistance, LayoutDirection.Horizontal, Localization.Get("sliderDistanceRestriction"), fTEXT_SCALE, 400, 280, 0f, 20f, 1f, 0f, OnServiceDistanceChanged);
+                    m_sliderServiceDistance = SettingsSlider.Create(helperDistance, LayoutDirection.Horizontal, Localization.Get("sliderDistanceRestriction"), fTEXT_SCALE, 400, 280, 0f, 20f, 0.5f, 0f, 1, OnServiceDistanceChanged);
                     m_sliderServiceDistance.SetTooltip(Localization.Get("sliderDistanceRestrictionTooltip"));
                 }
 
@@ -278,14 +278,14 @@ namespace TransferManagerCE.UI
                     m_chkWarehouseOverride = UIUtils.AddCheckbox(m_panelGoodsDelivery.m_content, Localization.Get("optionWarehouseOverride"), fTEXT_SCALE, false, OnWarehouseOverrideChanged);
                     m_chkImprovedWarehouseMatching = UIUtils.AddCheckbox(m_panelGoodsDelivery.m_content, Localization.Get("optionImprovedWarehouseTransfer"), fTEXT_SCALE, false, OnImprovedWarehouseMatchingChanged);
                     UIHelper helperGoodsDelivery = new UIHelper(m_panelGoodsDelivery.m_content);
-                    m_sliderReserveCargoTrucks = SettingsSlider.Create(helperGoodsDelivery, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercentLocal"), fTEXT_SCALE, 400, 280, 0f, 100f, 1f, 0f, OnReserveCargoTrucksChanged);
+                    m_sliderReserveCargoTrucks = SettingsSlider.Create(helperGoodsDelivery, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercentLocal"), fTEXT_SCALE, 400, 280, 0f, 100f, 1f, 0f, 0, OnReserveCargoTrucksChanged);
                 }
 
                 m_panelOutsideDistanceMultiplier = UIGroup.AddGroup(m_pnlMain, Localization.Get("GROUP_BUILDINGPANEL_OUTSIDE_DISTANCE_MULTIPLIER"), fTEXT_SCALE, m_pnlMain.width, 60);
                 if (m_panelOutsideDistanceMultiplier is not null)
                 {
                     UIHelper helperDistanceMultiplier = new UIHelper(m_panelOutsideDistanceMultiplier.m_content);
-                    m_sliderOutsideDistanceMultiplier = SettingsSlider.Create(helperDistanceMultiplier, LayoutDirection.Horizontal, Localization.Get("sliderOutsideDistanceMultiplier"), fTEXT_SCALE, 460, 280, 0f, 10, 1f, 0f, OnOutsideDistanceMultiplierChanged);
+                    m_sliderOutsideDistanceMultiplier = SettingsSlider.Create(helperDistanceMultiplier, LayoutDirection.Horizontal, Localization.Get("sliderOutsideDistanceMultiplier"), fTEXT_SCALE, 460, 280, 0f, 10, 1f, 0f, 0, OnOutsideDistanceMultiplierChanged);
                     m_sliderOutsideDistanceMultiplier.SetTooltip(Localization.Get("sliderOutsideDistanceMultiplierTooltip"));
                 }
 
@@ -336,16 +336,10 @@ namespace TransferManagerCE.UI
                         string sName = rule.m_name;
 
                         // For warehouses we add the actual material to the tab name.
-                        Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-                        if (building.m_flags != 0)
+                        CustomTransferReason actualTransferReason = BuildingTypeHelper.GetWarehouseActualTransferReason(m_buildingId);
+                        if (actualTransferReason != CustomTransferReason.Reason.None)
                         {
-                            WarehouseAI? warehouseAI = building.Info.GetAI() as WarehouseAI;
-                            if (warehouseAI is not null)
-                            {
-                                
-                                CustomTransferReason actualTransferReason = warehouseAI.GetActualTransferReason(m_buildingId, ref building);
-                                sName += $" ({actualTransferReason})";
-                            }
+                            sName += $" ({actualTransferReason})";
                         }
 
                         m_tabStripTransferReason.SetTabText(iTabIndex, sName);
@@ -522,7 +516,7 @@ namespace TransferManagerCE.UI
                         if (m_sliderServiceDistance is not null)
                         {
                             m_panelServiceDistance.Text = Localization.Get("GROUP_BUILDINGPANEL_DISTANCE_RESTRICTIONS");
-                            m_sliderServiceDistance.SetValue(restrictionSettings.m_iServiceDistance);
+                            m_sliderServiceDistance.SetValue(restrictionSettings.m_iServiceDistanceMeters / 1000.0f);
                         }
                     }
                     else
@@ -654,12 +648,13 @@ namespace TransferManagerCE.UI
             if (m_buildingId != 0)
             {
                 Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-                WarehouseAI? warehouseAI = building.Info.GetAI() as WarehouseAI;
-                if (warehouseAI is not null)
+                if (IsWarehouse(BuildingTypeHelper.GetBuildingType(building)))
                 {
-                    // Warehouses, just return the actual material they store
-                    CustomTransferReason actualTransferReason = warehouseAI.GetActualTransferReason(m_buildingId, ref building);
-                    sTooltip += $"\r\n- {actualTransferReason}";
+                    CustomTransferReason actualTransferReason = BuildingTypeHelper.GetWarehouseActualTransferReason(m_buildingId);
+                    if (actualTransferReason != CustomTransferReason.Reason.None)
+                    {
+                        sTooltip += $"\r\n- {actualTransferReason}";
+                    }
                 }
                 else
                 {
@@ -667,7 +662,6 @@ namespace TransferManagerCE.UI
                     {
                         sTooltip += $"\r\n- {reason}";
                     }
-                    
                 }
             }
 
@@ -783,7 +777,7 @@ namespace TransferManagerCE.UI
             BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
-            restrictions.m_iServiceDistance = (int)Value;
+            restrictions.m_iServiceDistanceMeters = (int) (Value * 1000.0f); // eg 3.5km = 3500
 
             settings.SetRestrictions(GetRestrictionId(), restrictions);
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
