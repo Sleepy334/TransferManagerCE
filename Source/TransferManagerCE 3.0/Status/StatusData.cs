@@ -1,0 +1,238 @@
+﻿using ColossalFramework;
+using System;
+using System.Reflection;
+using TransferManagerCE.UI;
+using UnityEngine;
+using static TransferManager;
+using static TransferManagerCE.BuildingTypeHelper;
+
+namespace TransferManagerCE.Data
+{
+    public abstract class StatusData : IComparable
+    {
+        public TransferReason m_material;
+        public BuildingType m_eBuildingType;
+        public ushort m_buildingId;
+
+        protected Color m_color;
+
+        private string? m_value = null;
+        private string? m_target = null;
+        private string? m_responder = null;
+        private string? m_timer = null;
+        private double? m_distance = null;
+
+        private string m_valueTooltip = null;
+        private string m_targetTooltip = null;
+        private string m_responderTooltip = null;
+        private string m_timerTooltip = null;
+
+        public StatusData(TransferReason reason, BuildingType eBuildingType, ushort buildingId)
+        {
+            m_material = reason;
+            m_eBuildingType = eBuildingType;
+            m_buildingId = buildingId;
+            m_color = Color.white;
+        }
+
+        public bool HasBuildingReason(CustomTransferReason reason)
+        {
+            return BuildingPanel.Instance.GetStatusHelper().HasBuildingReason(reason);
+        }
+
+        public int CompareTo(object second)
+        {
+            if (second is null)
+            {
+                return 1;
+            }
+
+            StatusData oSecond = (StatusData)second;
+
+            // If material is the same then sort by distance
+            if (GetMaterialDescription() == oSecond.GetMaterialDescription())
+            {
+                // Put the building entry first for each material type
+                if (IsBuildingData() != oSecond.IsBuildingData())
+                {
+                    if (IsBuildingData())
+                    {
+                        return -1;
+                    }
+                    else
+                    {
+                        return 1;
+                    }
+                } 
+                else if (GetDistance() < oSecond.GetDistance())
+                {
+                    return -1;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
+            
+            return GetMaterialDescription().CompareTo(oSecond.GetMaterialDescription());
+        }
+
+        public virtual bool IsSeparator()
+        {
+            return false;
+        }
+
+        public abstract string GetMaterialDisplay();
+
+        // Building support
+        public abstract bool IsBuildingData();
+
+        // Vehicle support
+        public abstract bool IsVehicleData();
+        public abstract bool HasVehicle();
+        public abstract ushort GetVehicleId();
+
+        protected abstract string CalculateValue(out string tooltip);
+        protected abstract string CalculateTarget(out string tooltip);
+        protected abstract string CalculateResponder(out string tooltip);
+        protected abstract string CalculateTimer(out string tooltip);
+        protected abstract double CalculateDistance();
+
+        public virtual string GetMaterialDescription()
+        {
+            return GetMaterial().ToString();
+        }
+
+        public virtual CustomTransferReason GetMaterial()
+        {
+            return m_material;
+        }
+
+        public virtual string GetTooltip()
+        {
+            return "";
+        }
+
+        public string GetValue()
+        {
+            if (m_value is null)
+            {
+                m_value = CalculateValue(out m_valueTooltip);
+            }
+            return m_value;
+        }
+
+        public string GetValueTooltip()
+        {
+            return m_valueTooltip;
+        }
+
+        public virtual string GetTimer()
+        {
+            if (m_timer is null)
+            {
+                m_timer = CalculateTimer(out string m_timerTooltip);
+            }
+            return m_timer;
+        }
+
+        public string GetTimerTooltip()
+        {
+            return m_timerTooltip;
+        }
+
+        public virtual string GetResponder()
+        {
+            if (m_responder is null)
+            {
+                m_responder = CalculateResponder(out m_responderTooltip);
+            }
+            return m_responder;
+        }
+
+        public string GetResponderTooltip()
+        {
+            return m_responderTooltip;
+        }
+
+        public virtual string GetTarget()
+        {
+            if (m_target is null)
+            {
+                m_target = CalculateTarget(out m_targetTooltip);
+            }
+            return m_target;
+        }
+
+        public string GetTargetTooltip()
+        {
+            return m_targetTooltip;
+        }
+
+        public virtual double GetDistance()
+        {
+            if (m_distance is null)
+            {
+                m_distance = CalculateDistance();
+            }
+            return m_distance.Value;
+        }
+
+        public virtual string GetDistanceAsString()
+        {
+            if (GetVehicleId() != 0)
+            {
+                return GetDistance().ToString("0.00");
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        public virtual ushort GetResponderId()
+        {
+            return 0;
+        }
+
+        public Color GetTextColor()
+        {
+            return m_color;
+        }
+
+        public virtual void OnClickTarget()
+        {
+            ushort vehicleId = GetVehicleId();
+            if (vehicleId != 0)
+            {
+                InstanceHelper.ShowInstance(new InstanceID { Vehicle = vehicleId });
+            }
+        }
+
+        public virtual void OnClickResponder()
+        {
+            ushort buildingId = GetResponderId();
+            if (buildingId != 0)
+            {
+                InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
+            }
+        }
+
+        public static string DisplayBuffer(int iBuffer)
+        {
+            if (iBuffer > 10000)
+            {
+                return $"{((int)(iBuffer * 0.001)).ToString("N0")}k";
+            }
+            else
+            {
+                return $"{iBuffer.ToString("N0")}";
+            }
+        }
+
+        public static string DisplayBufferLong(int iBuffer)
+        {
+            return $"{iBuffer.ToString("N0")}";
+        }
+    }
+}
