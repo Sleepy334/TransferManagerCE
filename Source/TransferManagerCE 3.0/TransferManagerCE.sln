@@ -5,6 +5,8 @@ VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransferManagerCE", "TransferManagerCE.csproj", "{FC3BE7F8-408C-4F8B-9160-008F29BCFCBB}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SleepyCommon", "..\..\SleepyCommon\SleepyCommon.shproj", "{C3EB1037-8F93-4EEE-AD86-57B0AEB83819}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,5 +29,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0CDBB8F1-614C-40CD-BE19-CBAE28D94A11}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\..\SleepyCommon\SleepyCommon.projitems*{c3eb1037-8f93-4eee-ad86-57b0aeb83819}*SharedItemsImports = 13
+		..\..\SleepyCommon\SleepyCommon.projitems*{fc3be7f8-408c-4f8b-9160-008f29bcfcbb}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

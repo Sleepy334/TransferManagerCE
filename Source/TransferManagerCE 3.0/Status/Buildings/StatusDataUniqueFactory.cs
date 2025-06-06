@@ -6,7 +6,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataUniqueFactory : StatusDataProcessingFacility
     {
-        public StatusDataUniqueFactory(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataUniqueFactory(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }

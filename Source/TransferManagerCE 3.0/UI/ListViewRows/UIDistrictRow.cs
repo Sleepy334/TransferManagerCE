@@ -1,5 +1,5 @@
-using ColossalFramework;
 using ColossalFramework.UI;
+using SleepyCommon;
 using UnityEngine;
 
 namespace TransferManagerCE.UI
@@ -76,6 +76,7 @@ namespace TransferManagerCE.UI
             if (m_data is not null)
             {
                 m_lblDescription.text = m_data.GetDistrictName();
+                m_lblDescription.textColor = GetTextColor();
             }
             else
             {
@@ -121,7 +122,6 @@ namespace TransferManagerCE.UI
                     InstanceHelper.ShowInstance(new InstanceID { Park = (byte)m_data.m_iDistrictId });
                 }
             }
-            
         }
 
         protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
@@ -141,7 +141,7 @@ namespace TransferManagerCE.UI
             {
                 if (c is UILabel label)
                 {
-                    label.textColor = Color.white;
+                    label.textColor = GetTextColor();
                 }
             }
         }
@@ -170,8 +170,25 @@ namespace TransferManagerCE.UI
                 BuildingSettingsStorage.SetSettings(buildingId, settings);
 
                 // Update panel to reflect the change
-                DistrictSelectionPanel.Instance.UpdatePanel();
+                DistrictSelectionPanel.Instance.InvalidatePanel();
             }
+        }
+
+        private Color GetTextColor()
+        {
+            if (m_data != null)
+            {
+                if (m_data.IsDistrict())
+                {
+                    return KnownColor.white;
+                }
+                else
+                {
+                    return KnownColor.cyan;
+                }
+            }
+
+            return KnownColor.white;
         }
     }
 }

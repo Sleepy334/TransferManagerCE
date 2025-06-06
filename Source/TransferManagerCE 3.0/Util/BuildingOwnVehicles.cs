@@ -1,6 +1,8 @@
 ﻿using ColossalFramework;
+using SleepyCommon;
 using System.Collections.Generic;
 using TransferManagerCE.Data;
+using static RenderManager;
 
 namespace TransferManagerCE.Util
 {
@@ -45,11 +47,17 @@ namespace TransferManagerCE.Util
 
                 // Now produce output list
                 // Internal first
-                m_listInternal.Sort();
-                foreach (VehicleData vehicleData in m_listInternal)
+                if (m_listInternal.Count > 0)
                 {
-                    list.Add(vehicleData);
+                    list.Add(new VehicleDataHeading(Localization.Get("txtLocalVehicles")));
+
+                    m_listInternal.Sort();
+                    foreach (VehicleData vehicleData in m_listInternal)
+                    {
+                        list.Add(vehicleData);
+                    }
                 }
+                    
 
                 if (m_listExternal.Count > 0)
                 {
@@ -57,6 +65,8 @@ namespace TransferManagerCE.Util
                     {
                         list.Add(new VehicleDataSeparator());
                     }
+
+                    list.Add(new VehicleDataHeading(Localization.Get("txtExternalVehicles")));
 
                     // External
                     m_listExternal.Sort();
@@ -72,6 +82,8 @@ namespace TransferManagerCE.Util
                     {
                         list.Add(new VehicleDataSeparator());
                     }
+
+                    list.Add(new VehicleDataHeading(Localization.Get("txtReturningVehicles")));
 
                     // Returning
                     m_listReturning.Sort();
@@ -91,10 +103,33 @@ namespace TransferManagerCE.Util
             {
                 BuildingUtils.EnumerateOwnVehicles(building, (vehicleId, vehicle) =>
                 {
+                    // Construct vehicle data object of correct type
+                    VehicleData vehicleData;
+
+                    switch (BuildingTypeHelper.GetBuildingType(building))
+                    {
+                        case BuildingTypeHelper.BuildingType.PostOffice:
+                        case BuildingTypeHelper.BuildingType.PostSortingFacility:
+                            {
+                                vehicleData = new VehicleDataMail(building.m_position, vehicleId);
+                                break;
+                            }
+                        default:
+                            {
+                                vehicleData = new VehicleData(building.m_position, vehicleId);
+                                break;
+                            }
+                    }
+
+                    // Add to correct list
                     InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
                     if (target.IsEmpty || (target.Building != 0 && target.Building == vehicle.m_sourceBuilding))
                     {
-                        m_listReturning.Add(new VehicleData(building.m_position, vehicleId));
+                        m_listReturning.Add(vehicleData);
+                    }
+                    else if ((vehicle.m_flags & Vehicle.Flags.Exporting) != 0 || (vehicle.m_flags & Vehicle.Flags.Importing) != 0)
+                    {
+                        m_listExternal.Add(vehicleData);
                     }
                     else
                     {
@@ -104,30 +139,28 @@ namespace TransferManagerCE.Util
                                 {
                                     if (BuildingTypeHelper.IsOutsideConnection(target.Building))
                                     {
-                                        m_listExternal.Add(new VehicleData(building.m_position, vehicleId));
+                                        m_listExternal.Add(vehicleData);
                                     }
                                     else
                                     {
-                                        m_listInternal.Add(new VehicleData(building.m_position, vehicleId));
+                                        m_listInternal.Add(vehicleData);
                                     }
                                     break;
                                 }
                             case InstanceType.NetNode:
                                 {
-                                    NetNode node = NetManager.instance.m_nodes.m_buffer[target.NetNode];
-                                    if ((node.m_flags & NetNode.Flags.Outside) != 0)
+                                    if (OutsideConnectionCache.IsOutsideConnectionNode(target.NetNode))
                                     {
-                                        m_listExternal.Add(new VehicleData(building.m_position, vehicleId));
+                                        m_listExternal.Add(vehicleData);
+                                        break;
                                     }
-                                    else
-                                    {
-                                        m_listInternal.Add(new VehicleData(building.m_position, vehicleId));
-                                    }
+
+                                    m_listInternal.Add(vehicleData);
                                     break;
                                 }
                             default:
                                 {
-                                    m_listInternal.Add(new VehicleData(building.m_position, vehicleId));
+                                    m_listInternal.Add(vehicleData);
                                     break;
                                 }
                         }

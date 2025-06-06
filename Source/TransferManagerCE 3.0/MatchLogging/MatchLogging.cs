@@ -41,8 +41,12 @@ namespace TransferManagerCE
         public void SetBuildingId(ushort buildingId, List<ushort> subBuildingIds)
         {
             m_buildingIds.Clear();
-            m_buildingIds.Add(buildingId); // Parent building
-            m_buildingIds.AddRange(subBuildingIds); // Any sub buildings
+
+            if (buildingId != 0)
+            {
+                m_buildingIds.Add(buildingId); // Parent building
+                m_buildingIds.AddRange(subBuildingIds); // Any sub buildings
+            }
         }
 
         public void StartTransfer(TransferReason material, TransferOffer outgoingOffer, TransferOffer incomingOffer)
@@ -50,8 +54,8 @@ namespace TransferManagerCE
             if (m_MatchQueue is not null)
             {
                 MatchData match = new MatchData(material, outgoingOffer, incomingOffer);
-                List<ushort> incomingBuildings = match.m_incoming.GetBuildings();
-                List<ushort> outgoingBuildings = match.m_outgoing.GetBuildings();
+                HashSet<ushort> incomingBuildings = match.m_incoming.GetBuildings();
+                HashSet<ushort> outgoingBuildings = match.m_outgoing.GetBuildings();
 
                 if (incomingBuildings.Count > 0 || outgoingBuildings.Count > 0)
                 {
@@ -69,7 +73,7 @@ namespace TransferManagerCE
                     }
 
                     // Add to current building matches if open
-                    if (BuildingPanel.Instance is not null && BuildingPanel.Instance.isVisible)
+                    if (BuildingPanel.IsVisible())
                     {
                         if (m_buildingIds.Count > 0)
                         {
@@ -78,7 +82,7 @@ namespace TransferManagerCE
                                 if (incomingBuildings.Contains(buildingId) || outgoingBuildings.Contains(buildingId))
                                 {
                                     BuildingMatchData? buildingMatch = GetBuildingMatch(buildingId, match);
-                                    if (buildingMatch is not null)
+                                    if (buildingMatch is not null && BuildingPanel.IsVisible())
                                     {
                                         BuildingPanel.Instance.GetBuildingMatches().AddMatch(buildingId, buildingMatch);
                                     }

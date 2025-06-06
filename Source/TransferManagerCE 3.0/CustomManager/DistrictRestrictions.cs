@@ -1,3 +1,4 @@
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using TransferManagerCE.Settings;
@@ -243,7 +244,7 @@ namespace TransferManagerCE.CustomManager
                     }
                 case DistrictRestrictionSettings.PreferLocal.Unknown:
                     {
-                        Debug.Log("Error district restriction unknown");
+                        CDebug.Log("Error district restriction unknown");
                         return true;
                     }
             }

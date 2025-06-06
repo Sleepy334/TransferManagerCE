@@ -5,19 +5,19 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataVehicleMail : StatusDataVehicle
     {
-        public StatusDataVehicleMail(TransferReason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
+        public StatusDataVehicleMail(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
             base(reason, eBuildingType, BuildingId, responder, target)
         {
         }
 
-        public override CustomTransferReason GetMaterial()
+        public override CustomTransferReason.Reason GetMaterial()
         {
             switch (m_material)
             {
                 // IncomingMail and OutgoingMail are both actually SortedMail
-                case TransferReason.IncomingMail:
-                case TransferReason.OutgoingMail:
-                    return TransferReason.SortedMail;
+                case CustomTransferReason.Reason.IncomingMail:
+                case CustomTransferReason.Reason.OutgoingMail:
+                    return CustomTransferReason.Reason.SortedMail;
 
                 default:
                     return base.GetMaterial();

@@ -1,3 +1,4 @@
+using SleepyCommon;
 using System;
 using UnityEngine;
 
@@ -13,6 +14,11 @@ namespace TransferManagerCE
         {
             m_description = sDescription;
             m_value = sValue;
+        }
+
+        public virtual bool IsHeader()
+        {
+            return false;
         }
 
         public int CompareTo(object second)

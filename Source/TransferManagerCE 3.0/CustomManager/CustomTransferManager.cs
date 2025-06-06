@@ -4,13 +4,13 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using ColossalFramework.Math;
 using TransferManagerCE.Util;
-using TransferManagerCE.Data;
 using TransferManagerCE.Settings;
 using static TransferManagerCE.CustomManager.TransferRestrictions;
 using static TransferManagerCE.CustomManager.TransferManagerModes;
 using static TransferManagerCE.CustomManager.PathDistanceTypes;
 using System.Text;
-using static TransferManagerCE.CustomTransferReason;
+using static TransferManagerCE.NetworkModeHelper;
+using TransferManagerCE.CustomManager.Stats;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -31,6 +31,7 @@ namespace TransferManagerCE.CustomManager
         // Current transfer job from workqueue
         public TransferJob? job = null;
         private CustomTransferReason.Reason m_material;
+        private NetworkMode m_mode = NetworkMode.None;
         private PathDistance? m_pathDistance = null;
         private TransferRestrictions m_transferRestrictions;
         private PathDistanceAlgorithm m_DistanceAlgorithm;
@@ -59,6 +60,7 @@ namespace TransferManagerCE.CustomManager
             m_bApplyUnlimited = SaveGameSettings.GetSettings().ApplyUnlimited;
 
             // Pathing support
+            m_mode = NetworkModeHelper.GetNetwokMode(material);
             m_DistanceAlgorithm = PathDistanceTypes.GetDistanceAlgorithm((CustomTransferReason.Reason)material);
 
             // Check we can actually use path distance and set up the path distance object
@@ -79,11 +81,13 @@ namespace TransferManagerCE.CustomManager
                     // Create path distance object if needed.
                     if (m_pathDistance is null)
                     {
-                        m_pathDistance = new PathDistance();
+                        m_pathDistance = new PathDistance(false, true);
                     }
 
                     // Set up lane requirements
-                    m_pathDistance.SetMaterial(material);
+                    m_pathDistance.SetNetworkMode(m_mode);
+
+                    PathDistanceCache.UpdateCache(m_mode);
                 }
             }
         }
@@ -721,7 +725,7 @@ namespace TransferManagerCE.CustomManager
             }
 
             // Reset candidate array
-            m_pathDistance.ClearCandidates();
+            m_pathDistance.Candidates.Clear();
 
             // loop through all matching counterpart offers to determine possible candidates
             for (int counterpart_index = 0; counterpart_index < iCandidateCount; counterpart_index++)
@@ -747,31 +751,31 @@ namespace TransferManagerCE.CustomManager
                 {
                     if (offer.IsIncoming())
                     {
-                        reason = m_transferRestrictions.CanTransfer(job.material, m_eTransferMode, ref offer, ref candidateOffer, bCloseByOnly);
+                        reason = m_transferRestrictions.CanTransfer(m_material, m_eTransferMode, ref offer, ref candidateOffer, bCloseByOnly);
                     }
                     else
                     {
-                        reason = m_transferRestrictions.CanTransfer(job.material, m_eTransferMode, ref candidateOffer, ref offer, bCloseByOnly);
+                        reason = m_transferRestrictions.CanTransfer(m_material, m_eTransferMode, ref candidateOffer, ref offer, bCloseByOnly);
                     }
                 }
 
                 if (reason == ExclusionReason.None)
                 {
-                    ushort candidateNodeId = candidateOffer.GetNearestNode(job.material);
+                    ushort candidateNodeId = candidateOffer.GetNearestNode(m_material);
                     if (candidateNodeId != 0)
                     {
                         // Check nodes are connected
-                        if (PathConnectedCache.IsConnected(job.material, offerNodeId, candidateNodeId))
+                        if (PathConnectedCache.IsConnected(m_mode, offerNodeId, candidateNodeId))
                         {
                             // Check if node already exists as we want the higher priority item to remain
-                            if (m_pathDistance.ContainsNode(candidateNodeId))
+                            if (m_pathDistance.Candidates.Contains(candidateNodeId, out _))
                             {
                                 reason = ExclusionReason.DuplicateNode;
                             }
                             else
                             {
                                 // Add to candidate list
-                                m_pathDistance.AddCandidate(candidateNodeId, counterpart_index);
+                                m_pathDistance.Candidates.Add(candidateNodeId, counterpart_index);
                             }
                         }
                         else
@@ -799,14 +803,14 @@ namespace TransferManagerCE.CustomManager
 
             // Now select closest candidate based on path distance
             int iBestCandidate = -1;
-            if (m_pathDistance.CandidateCount() > 0)
+            if (m_pathDistance.Candidates.Count > 0)
             {
-                iBestCandidate = m_pathDistance.FindNearestNeighborId(offer.Active, offerNodeId, out float fTravelTime, out long ticks, out int iNodesExamined);
+                iBestCandidate = m_pathDistance.FindNearestNeighborId(offer.Active, offerNodeId, out ushort nodeId, out float fTravelTime, out long ticks, out int iNodesExamined);
                 if (iBestCandidate == -1)
                 {
                     if (m_logFile is not null)
                     {
-                        m_logFile.LogInfo($"       Path Distance Match - Failed, no candidate found. StartNode {offerNodeId} CandidateCount: {m_pathDistance.CandidateCount()} NodesExamined:{iNodesExamined}");
+                        m_logFile.LogInfo($"       Path Distance Match - Failed, no candidate found. StartNode {offerNodeId} CandidateCount: {m_pathDistance.Candidates.Count} NodesExamined:{iNodesExamined}");
                     }
                 }
                 else
@@ -935,7 +939,7 @@ namespace TransferManagerCE.CustomManager
                     ushort candidateNodeId = candidateOffer.GetNearestNode(job.material);
                     if (candidateNodeId != 0)
                     {
-                        if (!PathConnectedCache.IsConnected(job.material, offerNodeId, candidateNodeId))
+                        if (!PathConnectedCache.IsConnected(m_mode, offerNodeId, candidateNodeId))
                         {
                             reason = ExclusionReason.NotConnected;
                         }
@@ -1143,12 +1147,12 @@ namespace TransferManagerCE.CustomManager
                     {
                         deltaamount = incomingOffer.Amount;
                     }
-                    
+
                     // DEBUGGING
                     /*
                     if (deltaamount != iOldDelta)
                     {
-                        Debug.Log($"{m_material} IN:{incomingOffer.GetBuildingType()}({incomingOffer.GetTransportType()})|OUT:{outgoingOffer.GetBuildingType()}({outgoingOffer.GetTransportType()}) Amount:{incomingOffer.Amount}{(incomingOffer.Unlimited ? "*" : "")}/{outgoingOffer.Amount}{(outgoingOffer.Unlimited ? "*" : "")} Delta:{deltaamount}");
+                        CDebug.Log($"{m_material} IN:{incomingOffer.GetBuildingType()}({incomingOffer.GetTransportType()})|OUT:{outgoingOffer.GetBuildingType()}({outgoingOffer.GetTransportType()}) Amount:{incomingOffer.Amount}{(incomingOffer.Unlimited ? "*" : "")}/{outgoingOffer.Amount}{(outgoingOffer.Unlimited ? "*" : "")} Delta:{deltaamount}");
                     }
                     */
                 }

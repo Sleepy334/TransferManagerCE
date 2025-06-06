@@ -1,55 +1,24 @@
 using ColossalFramework;
 using ColossalFramework.UI;
-using System;
+using SleepyCommon;
 using TransferManagerCE.Data;
 using UnityEngine;
 
 namespace TransferManagerCE.UI
 {
-    public class UIStatusRow : UIPanel, IUIFastListRow
+    public class UIStatusRow : UIListRow<StatusData>
     {
-        enum TooltipElement
-        {
-            None,
-            Full,
-            Value,
-            Timer,
-            Target,
-            Responder,
-        }
-
         private UILabel? m_lblMaterial = null;
         private UILabel? m_lblValue = null;
         private UILabel? m_lblTimer = null;
-        private UITruncateLabel? m_lblTarget = null;
+        private UILabelLiveTooltip? m_lblVehicle = null;
         private UILabel? m_lblDistance = null;
         private UITruncateLabel? m_lblResponder = null;
         private UIButton? m_btnDelete = null;
-        private StatusData? m_data = null;
-        private UIComponent? m_MouseEnterComponent = null;
-
-        // Live toltip support
-        private TooltipElement m_iTooltipElement = TooltipElement.None;
-        private bool m_bShowingTooltip = false;
 
         public override void Start()
         {
             base.Start();
-
-            isVisible = true;
-            canFocus = true;
-            isInteractive = true;
-            width = parent.width - ListView.iSCROLL_BAR_WIDTH;
-            height = ListView.iROW_HEIGHT;
-            //backgroundSprite = "InfoviewPanel";
-            //color = new Color32(255, 0, 0, 225);
-            autoLayoutDirection = LayoutDirection.Horizontal;
-            autoLayoutStart = LayoutStart.TopLeft;
-            autoLayoutPadding = new RectOffset(2, 2, 2, 2);
-            autoLayout = true;
-            clipChildren = true;
-            eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-            eventTooltipLeave += new MouseEventHandler(OnTooltipLeave); 
 
             m_lblMaterial = AddUIComponent<UILabel>();
             if (m_lblMaterial is not null)
@@ -63,8 +32,6 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
                 m_lblMaterial.width = BuildingPanel.iCOLUMN_WIDTH_LARGE;
-                m_lblMaterial.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-                m_lblMaterial.eventTooltipLeave += new MouseEventHandler(OnTooltipLeave);
             }
 
             m_lblValue = AddUIComponent<UILabel>();
@@ -79,8 +46,6 @@ namespace TransferManagerCE.UI
                 m_lblValue.autoSize = false;
                 m_lblValue.height = height;
                 m_lblValue.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
-                m_lblValue.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-                m_lblValue.eventTooltipLeave += new MouseEventHandler(OnTooltipLeave);
             }
 
             m_lblTimer = AddUIComponent<UILabel>();
@@ -95,8 +60,6 @@ namespace TransferManagerCE.UI
                 m_lblTimer.autoSize = false;
                 m_lblTimer.height = height;
                 m_lblTimer.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
-                m_lblTimer.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-                m_lblTimer.eventTooltipLeave += new MouseEventHandler(OnTooltipLeave);
             }
 
             m_lblDistance = AddUIComponent<UILabel>();
@@ -111,27 +74,22 @@ namespace TransferManagerCE.UI
                 m_lblDistance.autoSize = false;
                 m_lblDistance.height = height;
                 m_lblDistance.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
-                m_lblDistance.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-                m_lblDistance.eventTooltipLeave += new MouseEventHandler(OnTooltipLeave);
             }
 
-            m_lblTarget = AddUIComponent<UITruncateLabel>();
-            if (m_lblTarget is not null)
+            m_lblVehicle = AddUIComponent<UILabelLiveTooltip>();
+            if (m_lblVehicle is not null)
             {
-                m_lblTarget.name = "m_lblTarget";
-                m_lblTarget.text = "";
-                m_lblTarget.textScale = BuildingPanel.fTEXT_SCALE;
-                m_lblTarget.tooltip = "";
-                m_lblTarget.textAlignment = UIHorizontalAlignment.Left;
-                m_lblTarget.verticalAlignment = UIVerticalAlignment.Middle;
-                m_lblTarget.autoSize = false;
-                m_lblTarget.height = height;
-                m_lblTarget.width = BuildingPanel.iCOLUMN_WIDTH_XLARGE;
-                m_lblTarget.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblTarget.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-                m_lblTarget.eventTooltipLeave += new MouseEventHandler(OnTooltipLeave);
-                m_lblTarget.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
-                m_lblTarget.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
+                m_lblVehicle.name = "m_lblVehicle";
+                m_lblVehicle.text = "";
+                m_lblVehicle.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblVehicle.tooltip = "";
+                m_lblVehicle.textAlignment = UIHorizontalAlignment.Left;
+                m_lblVehicle.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblVehicle.autoSize = false;
+                m_lblVehicle.height = height;
+                m_lblVehicle.width = BuildingPanel.iCOLUMN_WIDTH_XLARGE;
+                m_lblVehicle.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
+                m_lblVehicle.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
             m_lblResponder = AddUIComponent<UITruncateLabel>();
@@ -146,9 +104,6 @@ namespace TransferManagerCE.UI
                 m_lblResponder.autoSize = false;
                 m_lblResponder.height = height;
                 m_lblResponder.width = BuildingPanel.iCOLUMN_WIDTH_XLARGE;
-                m_lblResponder.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblResponder.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-                m_lblResponder.eventTooltipLeave += new MouseEventHandler(OnTooltipLeave);
                 m_lblResponder.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblResponder.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -166,9 +121,9 @@ namespace TransferManagerCE.UI
                 m_btnDelete.tooltip = Localization.Get("btnDeleteVehicle");
                 m_btnDelete.eventClick += (component, param) =>
                 {
-                    if (m_data is not null && m_data.HasVehicle())
+                    if (data is not null && data.HasVehicle())
                     {
-                        ushort vehicleId = m_data.GetVehicleId();
+                        ushort vehicleId = data.GetVehicleId();
                         if (vehicleId != 0)
                         {
                             // Clear tooltip
@@ -194,270 +149,100 @@ namespace TransferManagerCE.UI
                 };
             }
 
-            if (m_data is not null)
-            {
-                Display(-1, m_data, false);
-            }
+            AfterStart();
         }
 
 
-        public void Display(int index, object data, bool isRowOdd)
+        protected override void Display()
         {
-            m_data = (StatusData?) data;
+            // Update row
+            m_lblMaterial.text = data.GetMaterialDisplay();
+            m_lblValue.text = data.GetValue();
+            m_lblTimer.text = data.GetTimer();
+            m_lblVehicle.text = data.GetVehicle();
+            m_lblDistance.text = data.GetDistanceAsString();
+            m_lblResponder.text = data.GetResponder();
 
-            if (m_lblResponder is null)
+            if (data.GetVehicleId() != 0)
             {
-                return;
-            }
-
-            // The components will have valid positions now, set width of last label
-            m_lblResponder.width = width - m_lblResponder.position.x - m_btnDelete.width;
-
-            if (m_data is not null)
-            {
-                // Update row
-                m_lblMaterial.text = m_data.GetMaterialDisplay();
-                m_lblValue.text = m_data.GetValue();
-                m_lblTimer.text = m_data.GetTimer();
-                m_lblTarget.text = m_data.GetTarget();
-                m_lblDistance.text = m_data.GetDistanceAsString();
-                m_lblResponder.text = m_data.GetResponder();
-
-                // Update live tooltips
-                if (m_bShowingTooltip)
-                {
-                    switch (m_iTooltipElement)
-                    {
-                        case TooltipElement.Value:
-                            {
-                                m_lblValue.tooltip = m_data.GetValueTooltip();
-                                UpdateLiveTooltip(m_lblValue);
-                                break;
-                            }
-                        case TooltipElement.Timer:
-                            {
-                                m_lblTimer.tooltip = m_data.GetTimerTooltip();
-                                UpdateLiveTooltip(m_lblTimer);
-                                break;
-                            }
-                        case TooltipElement.Target:
-                            {
-                                m_lblTarget.tooltip = m_data.GetTargetTooltip();
-                                UpdateLiveTooltip(m_lblTarget);
-                                break;
-                            }
-                        case TooltipElement.Responder:
-                            {
-                                m_lblResponder.tooltip = m_data.GetResponderTooltip();
-                                UpdateLiveTooltip(m_lblResponder);
-                                break;
-                            }
-                    }
-                }
-
-                if (m_data.GetVehicleId() != 0)
-                {
-                    m_btnDelete.isVisible = true;
-                    m_btnDelete.tooltip = $"{Localization.Get("btnDeleteVehicle")} #{m_data.GetVehicleId()}";
-                }
-                else
-                {
-                    m_btnDelete.isVisible = false;
-                }
-
-                // Update text color
-                foreach (UIComponent component in components)
-                {
-                    if (component is UILabel label)
-                    {
-                        label.textColor = GetTextColor(label);
-                    }
-                }
+                m_btnDelete.isVisible = true;
+                m_btnDelete.tooltip = $"{Localization.Get("btnDeleteVehicle")} #{data.GetVehicleId()}";
             }
             else
             {
-                Clear();
+                m_btnDelete.isVisible = false;
             }
         }
 
-        private void UpdateLiveTooltip(UILabel lbl)
+        protected override void Clear()
         {
-            if (lbl.tooltipBox is not null && 
-                lbl.tooltipBox.isVisible)
+            m_lblMaterial.text = "";
+            m_lblValue.text = "";
+            m_lblTimer.text = "";
+            m_lblVehicle.text = "";
+            m_lblDistance.text = "";
+            m_lblResponder.text = "";
+            m_btnDelete.text = "";
+        }
+
+        protected override void ClearTooltips()
+        {
+            m_lblMaterial.tooltip = "";
+            m_lblValue.tooltip = "";
+            m_lblTimer.tooltip = "";
+            m_lblVehicle.tooltip = "";
+            m_lblDistance.tooltip = "";
+            m_lblResponder.tooltip = "";
+            m_btnDelete.tooltip = "";
+        }
+
+        protected override void OnClicked(UIComponent component)
+        {
+            if (component == m_lblResponder)
             {
-                if (lbl.tooltip.Length > 0)
-                {
-                    lbl.RefreshTooltip();
-                }
-                else
-                {
-                    lbl.tooltipBox.Hide();
-                }
+                data.OnClickResponder();
+            }
+            else if (component == m_lblVehicle)
+            {
+                data.OnClickTarget();
             }
         }
 
-        public void Disabled()
+        protected override string GetTooltipText(UIComponent component)
         {
-            Clear();
-        }
-
-        public void Clear()
-        {
-            m_data = null;
-
-            if (m_lblMaterial is not null)
+            string sTooltip = data.GetTooltip();
+            if (sTooltip.Length == 0)
             {
-                m_lblMaterial.text = "";
-                m_lblValue.text = "";
-                m_lblTimer.text = "";
-                m_lblTarget.text = "";
-                m_lblDistance.text = "";
-                m_lblResponder.text = "";
-                m_btnDelete.text = "";
-
-                m_lblMaterial.tooltip = "";
-                m_lblValue.tooltip = "";
-                m_lblTimer.tooltip = "";
-                m_lblTarget.tooltip = "";
-                m_lblDistance.tooltip = "";
-                m_lblResponder.tooltip = "";
-                m_btnDelete.tooltip = "";
-
-                if (m_bShowingTooltip &&
-                    tooltipBox is not null &&
-                    tooltipBox.isVisible)
+                if (component == m_lblValue)
                 {
-                    tooltipBox.Hide();
-                    m_bShowingTooltip = false;
+                    sTooltip = data.GetValueTooltip();
                 }
-            }
-        }
-
-        public void Select(bool isRowOdd)
-        {
-        }
-
-        public void Deselect(bool isRowOdd)
-        {
-        }
-
-        private void OnItemClicked(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_data is not null)
-            {
-                if (component == m_lblResponder)
+                else if (component == m_lblTimer)
                 {
-                    m_data.OnClickResponder();
+                    sTooltip = data.GetTimerTooltip();
                 }
-                else if (component == m_lblTarget)
+                else if (component == m_lblVehicle)
                 {
-                    m_data.OnClickTarget();
+                    sTooltip = data.GetVehicleTooltip();
+                }
+                else if (component == m_lblResponder)
+                {
+                    sTooltip = data.GetResponderTooltip();
                 }
             }
+
+            return sTooltip;
         }
 
-        private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_lblValue is null || m_lblResponder is null || m_lblTarget is null || m_lblTimer is null)
-            {
-                return;
-            }
-
-            if (enabled && m_data is not null)
-            {
-                m_bShowingTooltip = true;
-
-                // Don't load other tooltips if we get a global tooltip.
-                tooltip = m_data.GetTooltip();
-                if (tooltip.Length > 0)
-                {
-                    m_lblValue.tooltip = "";
-                    m_lblTimer.tooltip = "";
-                    m_lblResponder.tooltip = "";
-                    m_lblTarget.tooltip = "";
-                    m_iTooltipElement = TooltipElement.Full;
-                }
-                else
-                {
-                    m_lblValue.tooltip = m_data.GetValueTooltip();
-                    m_lblTimer.tooltip = m_data.GetTimerTooltip();
-                    m_lblResponder.tooltip = m_data.GetResponderTooltip();
-                    m_lblTarget.tooltip = m_data.GetTargetTooltip();
-
-                    if (component == m_lblValue)
-                    {
-                        m_iTooltipElement = TooltipElement.Value;
-                    }
-                    else if (component == m_lblTimer)
-                    {
-                        m_iTooltipElement = TooltipElement.Timer;
-                    }
-                    else if (component == m_lblTarget)
-                    {
-                        m_iTooltipElement = TooltipElement.Target;
-                    }
-                    else if (component == m_lblResponder)
-                    {
-                        m_iTooltipElement = TooltipElement.Responder;
-                    }
-                    
-                }
-            }
-            else
-            {
-                tooltip = "";
-                m_lblValue.tooltip = "";
-                m_lblTimer.tooltip = "";
-                m_lblResponder.tooltip = "";
-                m_lblTarget.tooltip = "";
-
-                if (m_bShowingTooltip &&
-                    tooltipBox is not null &&
-                    tooltipBox.isVisible)
-                {
-                    tooltipBox.Hide();
-                    m_bShowingTooltip = false;
-                }
-            }
-        }
-
-        private void OnTooltipLeave(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            m_bShowingTooltip = false;
-            m_iTooltipElement = TooltipElement.None;
-        }
-
-        protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            m_MouseEnterComponent = component;
-
-            UILabel? txtLabel = component as UILabel;
-            if (txtLabel is not null)
-            {
-                txtLabel.textColor = GetTextColor(component);
-            }
-        }
-
-        protected void OnMouseLeave(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            m_MouseEnterComponent = null;
-
-            UILabel? txtLabel = component as UILabel;
-            if (txtLabel is not null)
-            {
-                txtLabel.textColor = GetTextColor(component); 
-            }
-        }
-
-        public virtual Color GetTextColor(UIComponent component)
+        protected override Color GetTextColor(UIComponent component, bool hightlightRow)
         {
             if (m_MouseEnterComponent == component)
             {
                 return Color.yellow;
             }
-            else if (m_data is not null)
+            else if (data is not null)
             {
-                return m_data.GetTextColor();
+                return data.GetTextColor();
             }
             else
             {

@@ -160,7 +160,7 @@ namespace TransferManagerCE
                 return BuildingType.None;
             }
 
-            //Debug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
+            //CDebug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
 
             switch (building.Info.GetService())
             {
@@ -687,7 +687,7 @@ namespace TransferManagerCE
             }
 
 #if DEBUG
-            //Debug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
+            //CDebug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
 #endif
 
             return BuildingType.None;
@@ -873,7 +873,7 @@ namespace TransferManagerCE
             return CustomTransferReason.Reason.None;
         }
 
-        public static TransferReason GetWarehouseActualTransferReason(ushort buildingId)
+        public static CustomTransferReason.Reason GetWarehouseActualTransferReason(ushort buildingId)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
 
@@ -883,7 +883,7 @@ namespace TransferManagerCE
                 {
                     case WarehouseAI warehouseAI:
                         {
-                            return (TransferReason)warehouseAI.GetActualTransferReason(buildingId, ref building);
+                            return (CustomTransferReason.Reason)warehouseAI.GetActualTransferReason(buildingId, ref building);
                         }
 
                     case CargoStationAI cargoStationAI:
@@ -892,7 +892,7 @@ namespace TransferManagerCE
                             if (buildingType.ToString().Contains("CargoFerryWarehouseHarborAI"))
                             {
                                 MethodInfo? methodGetActualTransferReason = buildingType.GetMethod("GetActualTransferReason", BindingFlags.Public | BindingFlags.Instance);
-                                return (TransferReason)methodGetActualTransferReason.Invoke(cargoStationAI, new object[] { buildingId, building });
+                                return (CustomTransferReason.Reason)methodGetActualTransferReason.Invoke(cargoStationAI, new object[] { buildingId, building });
                             }
 
                             break;
@@ -900,7 +900,7 @@ namespace TransferManagerCE
                 }
             }
 
-            return TransferReason.None;
+            return CustomTransferReason.Reason.None;
         }
 
         public static HashSet<CustomTransferReason.Reason> GetIncomingTransferReasons(ushort m_buildingId) 
@@ -1282,6 +1282,14 @@ namespace TransferManagerCE
             }
 
             return false;
+        }
+
+        public static bool IsPostSortingFacility(Building building)
+        {
+            return building.Info is not null &&
+                   building.Info.GetService() == ItemClass.Service.PublicTransport &&
+                   building.Info.GetSubService() == ItemClass.SubService.PublicTransportPost &&
+                   building.Info.GetClassLevel() == ItemClass.Level.Level5;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SleepyCommon;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -58,7 +59,7 @@ namespace TransferManagerCE.Settings
         {
             if (string.IsNullOrEmpty(m_name))
             {
-                return CitiesUtils.GetBuildingName(buildingId); 
+                return CitiesUtils.GetBuildingName(buildingId, InstanceID.Empty); 
             }
             else
             {
@@ -191,7 +192,7 @@ namespace TransferManagerCE.Settings
             {
                 int iOutsideConnectionSettingsVersion = StorageData.ReadInt32(Data, ref iIndex);
 #if DEBUG
-                Debug.Log("Global: " + iGlobalVersion + " OutsideConnectionSettingsVersion: " + iOutsideConnectionSettingsVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
+                CDebug.Log("Global: " + iGlobalVersion + " OutsideConnectionSettingsVersion: " + iOutsideConnectionSettingsVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
 #endif
                 OutsideConnectionSettings defaultSettings = new OutsideConnectionSettings();
 
@@ -208,7 +209,7 @@ namespace TransferManagerCE.Settings
                             case 1: settings = LoadDataVersion1(Data, ref iIndex); break;
                             default:
                                 {
-                                    Debug.Log("New data version, unable to load!");
+                                    CDebug.Log("New data version, unable to load!");
                                     break;
                                 }
                         }

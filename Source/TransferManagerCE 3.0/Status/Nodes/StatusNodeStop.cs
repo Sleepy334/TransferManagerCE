@@ -1,5 +1,6 @@
 using ColossalFramework;
 using ColossalFramework.Math;
+using SleepyCommon;
 using System;
 using UnityEngine;
 using static TransferManager;
@@ -13,11 +14,16 @@ namespace TransferManagerCE.Data
         protected ushort m_vehicleId;
 
         public StatusNodeStop(BuildingType eBuildingType, ushort m_buildingId, ushort nodeId, ushort vehicleId) :
-            base(TransferReason.None, eBuildingType, m_buildingId)
+            base(CustomTransferReason.Reason.None, eBuildingType, m_buildingId)
         {
             m_nodeId = nodeId;
             m_vehicleId = vehicleId;
             m_color = KnownColor.lightGrey;
+        }
+
+        public override string GetMaterialDisplay()
+        {
+            return GetTransportType().ToString();
         }
 
         public override bool IsBuildingData()
@@ -27,17 +33,12 @@ namespace TransferManagerCE.Data
 
         public override bool IsVehicleData()
         {
-            return false;
-        }
-
-        public override string GetMaterialDisplay()
-        {
-            return GetTransportType().ToString();
+            return true;
         }
 
         public override bool HasVehicle()
         {
-            return true;
+            return m_vehicleId != 0;
         }
 
         public override ushort GetVehicleId()
@@ -50,7 +51,7 @@ namespace TransferManagerCE.Data
         protected override string CalculateValue(out string tooltip)
         {
             UpdateTextColor();
-            tooltip = "Passengers";
+            tooltip = "Waiting Passengers";
             return CalculatePassengerCount(m_nodeId, GetTransportType()).ToString();
         }
 
@@ -85,12 +86,12 @@ namespace TransferManagerCE.Data
             return double.MaxValue;
         }
 
-        protected override string CalculateTarget(out string tooltip) 
+        protected override string CalculateVehicle(out string tooltip) 
         { 
             ushort vehicleId = GetVehicleId();
             if (vehicleId != 0)
             {
-                tooltip = InstanceHelper.DescribeInstance(new InstanceID { Vehicle = vehicleId }, true);
+                tooltip = InstanceHelper.DescribeInstance(new InstanceID { Vehicle = vehicleId }, InstanceID.Empty, true);
                 return CitiesUtils.GetVehicleName(vehicleId);
             }
 
@@ -108,8 +109,8 @@ namespace TransferManagerCE.Data
             ushort buildingId = FindConnectionBuilding(m_nodeId);
             if (buildingId != 0)
             {
-                sText = InstanceHelper.DescribeInstance(new InstanceID {  Building =  buildingId });
-                tooltip = InstanceHelper.DescribeInstance(new InstanceID { Building = buildingId }, true);
+                sText = InstanceHelper.DescribeInstance(new InstanceID {  Building =  buildingId }, InstanceID.Empty);
+                tooltip = InstanceHelper.DescribeInstance(new InstanceID { Building = buildingId }, InstanceID.Empty, true);
             }
             else
             {
@@ -197,7 +198,7 @@ namespace TransferManagerCE.Data
                         num7 = nextGridInstance;
                         if (++num8 > 65536)
                         {
-                            Debug.Log("Invalid list detected!\n" + Environment.StackTrace);
+                            CDebug.Log("Invalid list detected!\n" + Environment.StackTrace);
                             break;
                         }
                     }

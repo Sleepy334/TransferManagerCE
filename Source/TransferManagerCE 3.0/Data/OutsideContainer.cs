@@ -1,9 +1,5 @@
-using ColossalFramework.UI;
 using SleepyCommon;
 using System;
-using TransferManagerCE.Settings;
-using TransferManagerCE.UI;
-using static TransferManager;
 
 namespace TransferManagerCE
 {
@@ -30,17 +26,18 @@ namespace TransferManagerCE
 
         public string GetName()
         {
+            InstanceID caller = new InstanceID { Building = m_buildingId };
 #if DEBUG
-            return $"{CitiesUtils.GetBuildingName(m_buildingId)} ({PathNodeCache.FindCachedOutsideNode(m_buildingId)})";
+            return $"{CitiesUtils.GetBuildingName(m_buildingId, caller)} ({OutsideConnectionCache.FindCachedOutsideNode(m_buildingId)})";
 #else
-            return CitiesUtils.GetBuildingName(m_buildingId);
-#endif
 
+            return CitiesUtils.GetBuildingName(m_buildingId, caller);
+#endif
         }
 
         public void Show()
         {
-            InstanceHelper.ShowInstanceSetBuildingPanel(new InstanceID { Building = m_buildingId });
+            BuildingUtils.ShowInstanceSetBuildingPanel(new InstanceID { Building = m_buildingId });
         }
     }
 }

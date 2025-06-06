@@ -6,7 +6,7 @@ namespace TransferManagerCE.Data
     public class StatusDataSeparator : StatusData
     {
         public StatusDataSeparator() :
-            base(TransferReason.None, BuildingType.None, 0)
+            base(CustomTransferReason.Reason.None, BuildingType.None, 0)
         {
         }
 
@@ -62,7 +62,7 @@ namespace TransferManagerCE.Data
             return "";
         }
 
-        protected override string CalculateTarget(out string tooltip)
+        protected override string CalculateVehicle(out string tooltip)
         {
             tooltip = "";
             return "";

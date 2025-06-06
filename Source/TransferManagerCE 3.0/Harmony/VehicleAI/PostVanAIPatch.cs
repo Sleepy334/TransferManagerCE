@@ -28,7 +28,7 @@ namespace TransferManagerCE
                     Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
                     if (building.m_mailBuffer == 0)
                     {
-                        //Debug.Log($"Clearing Target - Vehicle: #{vehicleID} Building: #{vehicleData.m_targetBuilding} BuildingType: {building.Info.GetAI().GetType()} MailBuffer: {building.m_mailBuffer}");
+                        //CDebug.Log($"Clearing Target - Vehicle: #{vehicleID} Building: #{vehicleData.m_targetBuilding} BuildingType: {building.Info.GetAI().GetType()} MailBuffer: {building.m_mailBuffer}");
 
                         //need to change target because problem already solved
                         vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, 0); //clear target

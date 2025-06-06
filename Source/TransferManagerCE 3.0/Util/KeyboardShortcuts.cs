@@ -1,4 +1,5 @@
 ﻿using ColossalFramework.UI;
+using SleepyCommon;
 using System;
 using System.Collections;
 using TransferManagerCE.Settings;
@@ -22,7 +23,7 @@ namespace TransferManagerCE.Util
             }
             catch (Exception e)
             {
-                Debug.Log("Exception: " + e.Message);
+                CDebug.Log("Exception: " + e.Message);
             }
         }
 
@@ -38,7 +39,7 @@ namespace TransferManagerCE.Util
             }
             catch (Exception e)
             {
-                Debug.Log("Exception: " + e.Message);
+                CDebug.Log("Exception: " + e.Message);
             }
         }
 
@@ -48,7 +49,8 @@ namespace TransferManagerCE.Util
                     ModSettings.GetSettings().SelectionToolHotkey.IsPressed() ||
                     ModSettings.GetSettings().StatsPanelHotkey.IsPressed() ||
                     ModSettings.GetSettings().OutsideConnectionPanelHotkey.IsPressed() ||
-                    ModSettings.GetSettings().SettingsPanelHotkey.IsPressed();
+                    ModSettings.GetSettings().SettingsPanelHotkey.IsPressed() ||
+                    ModSettings.GetSettings().PathDistancePanelHotkey.IsPressed();
         }
 
         private IEnumerator WaitForShortcutHotkeyCoroutine()
@@ -66,70 +68,43 @@ namespace TransferManagerCE.Util
                     continue;
                 }
 
-                if (ModSettings.GetSettings().TransferIssueHotkey.IsPressed())
+                if (ModSettings.GetSettings().PathDistancePanelHotkey.IsPressed())
                 {
                     // Create panel if needed
-                    TransferIssuePanel.Init();
-                    if (TransferIssuePanel.Instance is not null)
-                    {
-                        TransferIssuePanel.Instance.TogglePanel();
-                    }
-                }
-                else if (!SelectionTool.HasUnifiedUIButtonBeenAdded() && ModSettings.GetSettings().SelectionToolHotkey.IsPressed())
-                {
-                    // Create panel if needed
-                    if (BuildingPanel.Instance is null)
-                    {
-                        BuildingPanel.Init();
-                    }
-
-                    if (SelectionTool.Instance is not null)
-                    {
-                        SelectionTool.Instance.ToogleSelectionTool();
-                    }
-                    else if (BuildingPanel.Instance is not null)
-                    {
-                        // Select current building in the building details panel and show.
-                        if (WorldInfoPanel.GetCurrentInstanceID().Building != 0)
-                        {
-                            BuildingPanel.Instance.ShowPanel(WorldInfoPanel.GetCurrentInstanceID().Building);
-                        }
-
-                        // Open panel
-                        BuildingPanel.Instance.TogglePanel();
-                    }
+                    PathDistancePanel.TogglePanel();
                 }
                 else if (ModSettings.GetSettings().StatsPanelHotkey.IsPressed())
                 {
                     // Create panel if needed
-                    StatsPanel.Init();
-                    if (StatsPanel.Instance is not null)
+                    StatsPanel.TogglePanel();
+                }
+                else if (ModSettings.GetSettings().SelectionToolHotkey.IsPressed())
+                {
+                    if (!BuildingPanel.IsVisible() && InstanceHelper.GetTargetInstance().Building != 0)
                     {
-                        StatsPanel.Instance.TogglePanel();
+                        BuildingPanel.Instance.ShowPanel(InstanceHelper.GetTargetInstance().Building);
                     }
+                    else
+                    {
+                        BuildingPanel.TogglePanel();
+                    }
+                }
+                else if (ModSettings.GetSettings().TransferIssueHotkey.IsPressed())
+                {
+                    // Create panel if needed
+                    TransferIssuePanel.TogglePanel();
                 }
                 else if (ModSettings.GetSettings().OutsideConnectionPanelHotkey.IsPressed())
                 {
                     // Create panel if needed
-                    OutsideConnectionPanel.Init();
-                    if (OutsideConnectionPanel.Instance is not null)
-                    {
-                        // Open panel
-                        OutsideConnectionPanel.Instance.TogglePanel();
-                    }
-                    
+                    OutsideConnectionPanel.TogglePanel();
                 }
                 else if (ModSettings.GetSettings().SettingsPanelHotkey.IsPressed())
                 {
                     // Create panel if needed
-                    SettingsPanel.Init();
-                    if (SettingsPanel.Instance is not null)
-                    {
-                        // Open panel
-                        SettingsPanel.Instance.TogglePanel();
-                    }
-
+                    SettingsPanel.TogglePanel();
                 }
+                
             }
         }
     }

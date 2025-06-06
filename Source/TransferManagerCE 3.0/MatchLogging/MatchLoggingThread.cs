@@ -114,7 +114,7 @@ namespace TransferManagerCE
                             foreach (ushort buildingId in requestedMatchIds)
                             {
                                 List<BuildingMatchData> matches = ReadMatchesFromFile(buildingId, fs);
-                                if (BuildingPanel.Instance is not null && BuildingPanel.Instance.isVisible)
+                                if (BuildingPanel.IsVisible())
                                 {
                                     BuildingPanel.Instance.GetBuildingMatches().AddMatches(buildingId, matches);
                                 }

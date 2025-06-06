@@ -10,7 +10,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataBuildingSick : StatusDataBuilding
     {
-        public StatusDataBuildingSick(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataBuildingSick(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }

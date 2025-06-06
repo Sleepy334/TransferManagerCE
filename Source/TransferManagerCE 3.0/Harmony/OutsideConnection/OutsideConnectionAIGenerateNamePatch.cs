@@ -7,29 +7,30 @@ namespace TransferManagerCE
     public static class OutsideConnectionAIGenerateNamePatch
     {
         [HarmonyPatch(typeof(OutsideConnectionAI), "GenerateName")]
-        [HarmonyPostfix]
-        public static void GenerateNamePostfix(ushort buildingID, InstanceID caller, ref string __result)
+        [HarmonyPrefix]
+        public static bool GenerateNamePrefix(ushort buildingID, ref InstanceID caller, ref string __result)
         {
-            if (!DependencyUtils.IsAdvancedOutsideConnectionsRunning())
+            // Has the user overriden the default name
+            if (OutsideConnectionSettings.HasSettings(buildingID))
             {
-                if (OutsideConnectionSettings.HasSettings(buildingID))
+                OutsideConnectionSettings settings = OutsideConnectionSettings.GetSettings(buildingID);
+                if (!string.IsNullOrEmpty(settings.m_name))
                 {
-                    OutsideConnectionSettings settings = OutsideConnectionSettings.GetSettings(buildingID);
-
-                    // DO NOT CALL GetName here as it will stack overflow!
-                    if (!string.IsNullOrEmpty(settings.m_name))
-                    {
-                        __result = settings.m_name;
-                        return;
-                    }
+                    __result = settings.m_name;
+                    return false; // Do not call vanilla
                 }
-
-                // Add the outside connection number on the end to help differentiate
-                __result = $"{__result} #{GetIndex(buildingID)}";
             }
+
+            // We change the caller(seed) to always be the outside connections index. This way the connection
+            // will always have the same name which makes it easier to see what is happening with the matches.
+            // Note: When we use the buildingId we seem to gtet more name repeats.
+            caller = new InstanceID { Building = (ushort) GetIndex(buildingID) };
+
+            // Call base function
+            return true;
         }
 
-        private static int GetIndex(ushort buildingId)
+        public static int GetIndex(ushort buildingId)
         {
             int iPosition = 0;
             foreach (ushort outsideId in BuildingManager.instance.GetOutsideConnections())

@@ -1,5 +1,6 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
+using SleepyCommon;
 using System;
 using TransferManagerCE.Settings;
 using UnityEngine;
@@ -33,7 +34,7 @@ namespace TransferManagerCE
             if (bForceSpawn && CitiesUtils.IsNearOutsideConnection(pos, ItemClass.SubService.PublicTransportShip))
             {
 #if DEBUG
-                Debug.Log($"Force spawn: {__instance}");
+                CDebug.Log($"Force spawn: {__instance}");
 #endif
                 __result = true;
                 
@@ -72,7 +73,7 @@ namespace TransferManagerCE
                 CitiesUtils.IsNearOutsideConnection(vehicleData.GetLastFramePosition(), ItemClass.SubService.PublicTransportShip))
             {
 #if DEBUG
-                Debug.Log($"Force spawn: {__instance}");
+                CDebug.Log($"Force spawn: {__instance}");
 #endif
                 // Force spawn at outside connection
                 vehicleData.Spawn(vehicleID);
@@ -133,7 +134,7 @@ namespace TransferManagerCE
         public static void ShipAITrySpawnPostfix(ShipAI __instance, ushort vehicleID, ref Vehicle vehicleData, ref bool __result)
         {
             if (vehicleData.m_sourceBuilding == 11925)
-                Debug.Log($"Vehicle: {vehicleID} Result: {__result}");
+                CDebug.Log($"Vehicle: {vehicleID} Result: {__result}");
         }
 
         public static bool TrySpawn(ShipAI __instance, ushort vehicleID, ref Vehicle vehicleData)
@@ -141,18 +142,18 @@ namespace TransferManagerCE
             if ((vehicleData.m_flags & Vehicle.Flags.Spawned) != 0)
             {
                 if (vehicleData.m_sourceBuilding == 11925)
-                    Debug.Log($"1. Vehicle: {vehicleID}");
+                    CDebug.Log($"1. Vehicle: {vehicleID}");
                 return true;
             }
 
             if (vehicleData.m_sourceBuilding == 11925)
-                Debug.Log($"2. Vehicle: {vehicleID}");
+                CDebug.Log($"2. Vehicle: {vehicleID}");
             if (CheckOverlap(__instance, vehicleData.m_segment, 0))
             {
                 vehicleData.m_flags |= Vehicle.Flags.WaitingSpace;
 
                 if (vehicleData.m_sourceBuilding == 11925)
-                    Debug.Log($"3. Vehicle: {vehicleID}");
+                    CDebug.Log($"3. Vehicle: {vehicleID}");
                 return false;
             }
 
@@ -167,7 +168,7 @@ namespace TransferManagerCE
                         vehicleData.m_flags |= Vehicle.Flags.WaitingSpace;
 
                         if (vehicleData.m_sourceBuilding == 11925)
-                            Debug.Log($"4. Vehicle: {vehicleID}");
+                            CDebug.Log($"4. Vehicle: {vehicleID}");
                         return false;
                     }
                 }
@@ -216,7 +217,7 @@ namespace TransferManagerCE
         {
             if ((ignoreVehicle == 0 || (otherID != ignoreVehicle && otherData.m_leadingVehicle != ignoreVehicle && otherData.m_trailingVehicle != ignoreVehicle)) && segment.DistanceSqr(otherData.m_segment, out var _, out var _) < 400f)
             {
-                Debug.Log($"Overlap found - Vehicle: {otherID}");
+                CDebug.Log($"Overlap found - Vehicle: {otherID}");
                 overlap = true;
             }
 

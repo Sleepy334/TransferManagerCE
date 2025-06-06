@@ -42,12 +42,12 @@ namespace TransferManagerCE
                 {
                     case InOut.In:
                         {
-                            m_displayMatch = m_outgoing.DisplayOffer();
+                            m_displayMatch = m_outgoing.DescribeOfferObject();
                             break;
                         }
                     case InOut.Out:
                         {
-                            m_displayMatch = m_incoming.DisplayOffer();
+                            m_displayMatch = m_incoming.DescribeOfferObject();
                             break;
                         }
                     default:
@@ -59,11 +59,6 @@ namespace TransferManagerCE
             }
             
             return m_displayMatch;
-        }
-
-        public string ToolTip()
-        {
-            return Describe();
         }
 
         public override double GetDistance()

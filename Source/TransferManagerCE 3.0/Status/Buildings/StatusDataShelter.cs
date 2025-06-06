@@ -8,7 +8,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataShelter : StatusDataBuilding
     {
-        public StatusDataShelter(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataShelter(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }
@@ -21,7 +21,7 @@ namespace TransferManagerCE.Data
             {
                 int amount;
                 int max;
-                if (m_material == TransferReason.Food || m_material == TransferReason.Goods)
+                if (m_material == CustomTransferReason.Reason.Food || m_material == CustomTransferReason.Reason.Goods)
                 {
                     buildingAI.GetFoodStatus(m_buildingId, ref building, out amount, out max);
                     tooltip = MakeTooltip(true, amount, max);

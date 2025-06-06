@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using static ColossalFramework.Packaging.Package;
+﻿using SleepyCommon;
+using System.Collections.Generic;
 
 namespace TransferManagerCE.Settings
 {
@@ -78,7 +78,7 @@ namespace TransferManagerCE.Settings
             {
                 foreach (ushort id in m_buildingsAllowed)
                 {
-                    sTooltip += "\n- " + CitiesUtils.GetBuildingName(id);
+                    sTooltip += "\n- " + CitiesUtils.GetBuildingName(id, InstanceID.Empty);
                 }
             }
             else

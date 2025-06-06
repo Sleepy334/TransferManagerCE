@@ -1,34 +1,20 @@
 using ColossalFramework.UI;
-using UnityEngine;
+using SleepyCommon;
 
 namespace TransferManagerCE.UI
 {
-    public class UIRoadAccessRow : UIPanel, IUIFastListRow
+    public class UIRoadAccessRow : UIListRow<RoadAccessData>
     {
         private UILabel? m_lblId = null;
         private UITruncateLabel? m_lblOwner = null;
         private UILabel? m_lblSourceFailCount = null;
 
-        private RoadAccessData? m_data = null;
-
+        // ----------------------------------------------------------------------------------------
         public override void Start()
         {
             base.Start();
 
-            isVisible = true;
-            canFocus = true;
-            isInteractive = true;
-            width = parent.width - ListView.iSCROLL_BAR_WIDTH;
-            height = ListView.iROW_HEIGHT;
-            //backgroundSprite = "InfoviewPanel";
-            //color = new Color32(255, 0, 0, 225);
-            autoLayoutDirection = LayoutDirection.Horizontal;
-            autoLayoutStart = LayoutStart.TopLeft;
-            autoLayoutPadding = new RectOffset(2, 2, 2, 2);
-            autoLayout = true;
-            clipChildren = true;
-            eventMouseEnter += new MouseEventHandler(OnMouseEnter);
-            eventMouseLeave += new MouseEventHandler(OnMouseLeave);
+            fullRowSelect = true;
 
             m_lblId = AddUIComponent<UILabel>();
             if (m_lblId is not null)
@@ -42,8 +28,6 @@ namespace TransferManagerCE.UI
                 m_lblId.autoSize = false;
                 m_lblId.height = height;
                 m_lblId.width = TransferIssuePanel.iCOLUMN_WIDTH_VALUE;
-                m_lblId.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblId.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblSourceFailCount = AddUIComponent<UILabel>();
@@ -58,8 +42,6 @@ namespace TransferManagerCE.UI
                 m_lblSourceFailCount.autoSize = false;
                 m_lblSourceFailCount.height = height;
                 m_lblSourceFailCount.width = TransferIssuePanel.iCOLUMN_WIDTH_PATH_FAIL;
-                m_lblSourceFailCount.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblSourceFailCount.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblOwner = AddUIComponent<UITruncateLabel>();
@@ -74,101 +56,50 @@ namespace TransferManagerCE.UI
                 m_lblOwner.autoSize = false;
                 m_lblOwner.height = height;
                 m_lblOwner.width = TransferIssuePanel.iCOLUMN_WIDTH_DESCRIPTION;
-                m_lblOwner.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblOwner.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
-            if (m_data is not null)
+            base.AfterStart();
+        }
+
+        protected override void Display()
+        {
+            if (data is not null)
             {
-                Display(-1, m_data, false);
+                m_lblId.text = data.m_source.Building.ToString();
+                m_lblOwner.text = data.GetDescription();
+                m_lblSourceFailCount.text = data.m_iCount.ToString();
             }
         }
 
-        public void Display(int index, object data, bool isRowOdd)
+        protected override void Clear()
         {
-            m_data = (RoadAccessData?) data;
+            m_lblOwner.text = "";
+            m_lblSourceFailCount.text = "";
+        }
 
-            if (m_lblOwner is null)
+        protected override void ClearTooltips()
+        {
+            tooltip = "";
+            m_lblOwner.tooltip = "";
+            m_lblSourceFailCount.tooltip = "";
+        }
+
+        protected override void OnClicked(UIComponent component)
+        {
+            if (data is not null)
             {
-                return;
+                BuildingUtils.ShowInstanceSetBuildingPanel(data.m_source);
             }
+        }
 
-            if (m_data is not null)
+        protected override string GetTooltipText(UIComponent component)
+        {
+            if (data is not null)
             {
-                m_lblId.text = m_data.m_source.Building.ToString();
-                m_lblOwner.text = m_data.GetDescription();
-                m_lblSourceFailCount.text = m_data.m_iCount.ToString();
+                return InstanceHelper.DescribeInstance(data.m_source, InstanceID.Empty, true);
             }
-            else
-            {
-                Clear();
-            }
-        }
 
-        public void Disabled()
-        {
-            Clear();
-        }
-
-        public void Clear()
-        {
-            m_data = null;
-
-            if (m_lblId is not null)
-            {
-                m_lblId.text = "";
-                m_lblOwner.text = "";
-                m_lblSourceFailCount.text = "";
-
-                m_lblId.tooltip = "";
-                m_lblOwner.tooltip = "";
-                m_lblSourceFailCount.tooltip = "";
-            }
-        }
-
-        public void Select(bool isRowOdd)
-        {
-        }
-
-        public void Deselect(bool isRowOdd)
-        {
-        }
-
-        private void OnItemClicked(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_data is not null)
-            {
-                if (component == m_lblOwner)
-                {
-                    InstanceHelper.ShowInstanceSetBuildingPanel(m_data.m_source);
-                }
-            }
-        }
-
-        private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-        }
-
-        protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            foreach (UILabel? label in components)
-            {
-                if (label is not null)
-                {
-                    label.textColor = Color.yellow;
-                }
-            }
-        }
-
-        protected void OnMouseLeave(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            foreach (UILabel? label in components)
-            {
-                if (label is not null)
-                {
-                    label.textColor = Color.white;
-                }
-            }
+            return "";
         }
     }
 }

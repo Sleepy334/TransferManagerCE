@@ -1,3 +1,4 @@
+using SleepyCommon;
 using System;
 using TransferManagerCE.UI;
 using static TransferManagerCE.BuildingTypeHelper;
@@ -101,7 +102,7 @@ namespace TransferManagerCE
         {
             if (m_description is null)
             {
-                m_description = InstanceHelper.DescribeInstance(new InstanceID { Building = GetBuildingId() });
+                m_description = InstanceHelper.DescribeInstance(new InstanceID { Building = GetBuildingId() }, InstanceID.Empty);
             }
             return m_description;
         }
@@ -171,7 +172,7 @@ namespace TransferManagerCE
 
         public void ShowInstance()
         {
-            InstanceHelper.ShowInstanceSetBuildingPanel(new InstanceID { Building = GetBuildingId() });
+            BuildingUtils.ShowInstanceSetBuildingPanel(new InstanceID { Building = GetBuildingId() });
         }
 
         public string DescribeSettings()

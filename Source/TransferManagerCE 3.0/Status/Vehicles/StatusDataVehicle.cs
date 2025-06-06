@@ -1,7 +1,7 @@
 using ColossalFramework;
+using SleepyCommon;
 using System;
 using TransferManagerCE.Settings;
-using TransferManagerCE.UI;
 using UnityEngine;
 using static RenderManager;
 using static TransferManager;
@@ -14,7 +14,7 @@ namespace TransferManagerCE.Data
         public ushort m_responderBuilding;
         public ushort m_vehicleId;
 
-        public StatusDataVehicle(TransferReason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
+        public StatusDataVehicle(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
             base(reason, eBuildingType, BuildingId)
         {
             m_responderBuilding = responder;
@@ -112,14 +112,16 @@ namespace TransferManagerCE.Data
             return double.MaxValue;
         }
 
-        protected override string CalculateTarget(out string tooltip)
+        protected override string CalculateVehicle(out string tooltip)
         {
             ushort vehicleId = GetVehicleId();
             if (vehicleId != 0)
             {
+                // Get expanded tooltip
+                tooltip = VehicleUtils.GetVehicleTooltip(vehicleId);
+
                 InstanceID instance = new InstanceID { Vehicle = vehicleId };
-                tooltip = $"{GetMaterialDescription()} | {InstanceHelper.DescribeInstance(instance, true)}";
-                return InstanceHelper.DescribeInstance(instance, false);
+                return InstanceHelper.DescribeInstance(instance, InstanceID.Empty, false);
             }
 
             tooltip = "";
@@ -132,8 +134,8 @@ namespace TransferManagerCE.Data
             if (buildingId != 0)
             {
                 InstanceID instance = new InstanceID { Building = buildingId };
-                tooltip = $"{GetMaterialDescription()} | {InstanceHelper.DescribeInstance(instance, true)}";
-                return InstanceHelper.DescribeInstance(instance, false);
+                tooltip = $"{InstanceHelper.DescribeInstance(instance, InstanceID.Empty, true)}";
+                return InstanceHelper.DescribeInstance(instance, InstanceID.Empty, false);
             }
 
             tooltip = "";

@@ -7,7 +7,7 @@ namespace TransferManagerCE.Data
     public class StatusDataDead : StatusDataBuilding
     {
         public StatusDataDead(BuildingType eBuildingType, ushort BuildingId) : 
-            base(TransferReason.Dead, eBuildingType, BuildingId)
+            base(CustomTransferReason.Reason.Dead, eBuildingType, BuildingId)
         {
         }
 

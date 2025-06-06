@@ -1,25 +1,22 @@
 using ColossalFramework.UI;
-using HarmonyLib;
 using SleepyCommon;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using TransferManagerCE.Common;
 using TransferManagerCE.CustomManager;
-using TransferManagerCE.Data;
+using TransferManagerCE.CustomManager.Stats;
 using TransferManagerCE.Data.StatsPanel;
 using TransferManagerCE.Settings;
 using TransferManagerCE.UI;
 using TransferManagerCE.Util;
 using UnityEngine;
-using static TransferIssueContainer;
 using static TransferManager;
 using static TransferManagerCE.CustomTransferReason;
 using static TransferManagerCE.UITabStrip;
 
 namespace TransferManagerCE
 {
-    public class StatsPanel : UIPanel
+    public class StatsPanel : UIMainPanel<StatsPanel>
     {
         const int iMARGIN = 8;
         public const int iHEADER_HEIGHT = 20;
@@ -33,8 +30,6 @@ namespace TransferManagerCE
         public const int iCOLUMN_WIDTH = 80;
         public const int iCOLUMN_BIGGER_WIDTH = 100;
 
-        public static StatsPanel? Instance = null;
-
         private UITitleBar? m_title = null;
         private UITabStrip? m_tabStrip = null;
         private ListView? m_generalStats = null;
@@ -42,7 +37,6 @@ namespace TransferManagerCE
         private ListView? m_gameStats = null;
         private ListView? m_panelStats = null;
         private ListView? m_listStats = null;
-        private Coroutine? m_coroutine = null;
 
         private enum Tabs
         {
@@ -55,19 +49,7 @@ namespace TransferManagerCE
 
         public StatsPanel() : base()
         {
-            m_coroutine = StartCoroutine(UpdatePanelCoroutine(1));
-        }
-
-        public static void Init()
-        {
-            if (Instance is null)
-            {
-                Instance = UIView.GetAView().AddUIComponent(typeof(StatsPanel)) as StatsPanel;
-                if (Instance is null)
-                {
-                    Prompt.Info("Transfer Manager CE", "Error creating Statistics Panel.");
-                }
-            }
+            PanelUpdateRate = 1000; // 1 second
         }
 
         public override void Start()
@@ -91,9 +73,11 @@ namespace TransferManagerCE
             CenterTo(parent);
 
             // Title Bar
-            m_title = AddUIComponent<UITitleBar>();
-            m_title.SetOnclickHandler(OnCloseClick);
-            m_title.title = Localization.Get("titleTransferStatsPanel"); ;
+            m_title = UITitleBar.Create(this, Localization.Get("titleTransferStatsPanel"), "Transfer", TransferManagerMod.Instance.LoadResources(), OnCloseClick);
+            if (m_title != null)
+            {
+                m_title.SetupButtons();
+            }
 
             m_tabStrip = UITabStrip.Create(TabStyle.Generic, this, width - 20f, height - m_title.height - 10, OnTabChanged);
             m_tabStrip.padding = new RectOffset(iMARGIN, iMARGIN, 4, iMARGIN);
@@ -183,28 +167,6 @@ namespace TransferManagerCE
             UpdatePanel();
         }
 
-        public bool HandleEscape()
-        {
-            if (isVisible)
-            {
-                Hide();
-                return true;
-            }
-            return false;
-        }
-
-        public void TogglePanel()
-        {
-            if (isVisible)
-            {
-                Hide();
-            }
-            else
-            {
-                Show();
-            }
-        }
-
         public void OnTabChanged(int index)
         {
             UpdatePanel();
@@ -212,7 +174,6 @@ namespace TransferManagerCE
 
         new public void Show()
         {
-            UpdatePanel();
             base.Show();
             UpdatePanel();
         }
@@ -268,10 +229,9 @@ namespace TransferManagerCE
                                      SaveGameSettings.GetSettings().PathDistanceGoods == (int)SaveGameSettings.PathDistanceAlgorithm.PathDistance;
 
                 // Transfer manager match statistics
-                list.Add(new StatsHeader("Match Statistics"));
-                list.Add(new StatsGroup("Match Cycle", $"{CustomTransferDispatcher.Instance.Cycle}"));
-                list.Add(new StatsGroup("Match Cycle Time", $"{CustomTransferDispatcher.Instance.LastCycleMilliseconds} ms"));
+                list.Add(new StatsHeader("Match Totals"));
                 list.Add(new StatsGroup("Total Match Jobs", $"{TransferManagerStats.s_TotalMatchJobs}"));
+                list.Add(new StatsGroup("Total Match Time", $"{Utils.DisplayTicks(TransferManagerStats.s_TotalMatchTimeTicks)} ms"));
                 if (bPathDistance)
                 {
                     list.Add(new StatsGroup("Total Path Distance Match Jobs", $"{TransferManagerStats.s_TotalPathDistanceMatchJobs}"));
@@ -284,15 +244,24 @@ namespace TransferManagerCE
                 }
                 list.Add(new StatsSeparator());
 
+                // Cycle
+                CycleJobData cycleData = TransferManagerStats.CycleData.GetLatestCompletedCopy();
+
+                list.Add(new StatsHeader("Latest Match Cycle"));
+                list.Add(new StatsGroup("Cycle Number", $"{cycleData.m_cycle}"));
+                list.Add(new StatsGroup("Cycle Match Job Count", $"{cycleData.m_jobsCompleted}"));
+                list.Add(new StatsGroup("Cycle Simulation Time", $"{Utils.DisplayTicks(cycleData.DurationTicks())} ms"));
+                list.Add(new StatsGroup("Cycle Calculation Time", $"{Utils.DisplayTicks(cycleData.m_totalTicks)} ms"));
+                list.Add(new StatsGroup($"Longest Cycle Match Job Time", $"{Utils.DisplayTicks(cycleData.m_ticks)}ms ({cycleData.m_material})"));
+                list.Add(new StatsSeparator());
+
                 // Job stats
                 list.Add(new StatsHeader("Job Statistics"));
                 list.Add(new StatsGroup("Average Match Job Time", $"{TransferManagerStats.GetAverageMatchTime().ToString("F")} ms"));
                 if (bPathDistance)
                 {
                     list.Add(new StatsGroup("Average Path Distance Match Job Time", $"{TransferManagerStats.GetAveragePathDistanceMatchTime().ToString("F")} ms"));
-                }
-
-                list.Add(new StatsGroup($"Longest Cycle Match Job Time (Cycle {TransferManagerStats.CycleData.m_cycle})", $"{((double)TransferManagerStats.CycleData.m_ticks * 0.0001).ToString("F")}ms ({TransferManagerStats.CycleData.m_material})"));
+                }                
                 list.Add(new StatsGroup("Longest Match Job Time", $"{((double)TransferManagerStats.s_longestMatchTicks * 0.0001).ToString("F")}ms ({TransferManagerStats.s_longestMaterial})"));
                 list.Add(new StatsGroup("Largest Match Job", $"IN: {TransferManagerStats.s_largestIncoming} OUT: {TransferManagerStats.s_largestOutgoing} ({TransferManagerStats.s_largestMaterial})"));
                 list.Add(new StatsSeparator());
@@ -322,6 +291,7 @@ namespace TransferManagerCE
 
             if (SaveGameSettings.GetSettings().EnableNewTransferManager)
             {
+                // ------------------------------------------------------------
                 // Dropped reasons indicate performance issues.
                 list.Add(new StatsHeader("General"));
                 list.Add(new StatsGroup("Dropped Reason Count", CustomTransferDispatcher.Instance.DroppedReasons.ToString()));
@@ -330,6 +300,7 @@ namespace TransferManagerCE
                 list.Add(new StatsGroup("Invalid Citizen Objects", $"{TransferManagerStats.s_iInvalidCitizenObjects}"));
                 list.Add(new StatsSeparator());
 
+                // ------------------------------------------------------------
                 // Threads
                 list.Add(new StatsHeader("Threads"));
                 list.Add(new StatsGroup("Thread Count", $"{TransferManagerThread.ThreadCount}"));
@@ -337,6 +308,7 @@ namespace TransferManagerCE
                 list.Add(new StatsGroup("Max Running Threads", $"{TransferManagerThread.MaxRunningThreads()}"));
                 list.Add(new StatsSeparator());
 
+                // ------------------------------------------------------------
                 // Job queue
                 list.Add(new StatsHeader("Job Queue"));
                 list.Add(new StatsGroup("Current Job Queue Depth", TransferJobQueue.Instance.Count().ToString()));
@@ -344,10 +316,37 @@ namespace TransferManagerCE
                 list.Add(new StatsGroup("Max Job Pool Usage", TransferJobPool.Instance.GetMaxUsageCount().ToString()));
                 list.Add(new StatsSeparator());
 
+                // ------------------------------------------------------------
                 // Result queue
                 list.Add(new StatsHeader("Result Queue"));
                 list.Add(new StatsGroup("Current Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetCount().ToString()));
                 list.Add(new StatsGroup("Max Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetMaxUsageCount().ToString()));
+                list.Add(new StatsSeparator());
+
+                // ------------------------------------------------------------
+                // Cache
+                list.Add(new StatsHeader("Cache"));
+
+                // Node Links
+                list.Add(new StatsGroup("Graph Generation Count", NodeLinkGraph.s_totalGenerations.ToString()));
+                if (NodeLinkGraph.s_totalGenerations > 0)
+                {
+                    list.Add(new StatsGroup("Graph Average Time", $"{Utils.DisplayTicks(NodeLinkGraph.s_totalGenerationTicks / NodeLinkGraph.s_totalGenerations)}ms"));
+                }
+
+                // Path connected
+                list.Add(new StatsGroup("Path Connection Generation Count", PathConnected.s_totalGenerations.ToString()));
+                if (PathConnected.s_totalGenerations > 0)
+                {
+                    list.Add(new StatsGroup("Path Connection Average Time", $"{Utils.DisplayTicks(PathConnected.s_totalGenerationTicks / PathConnected.s_totalGenerations)}ms"));
+                }
+
+                // Outside connections
+                list.Add(new StatsGroup("Outside Connection Generation Count", OutsideConnectionCache.s_totalGenerations.ToString()));
+                if (OutsideConnectionCache.s_totalGenerations > 0)
+                {
+                    list.Add(new StatsGroup("Outside Connection Average Time", $"{Utils.DisplayTicks(OutsideConnectionCache.s_totalGenerationTicks / OutsideConnectionCache.s_totalGenerations)}ms"));
+                }
             }
             else
             {
@@ -362,7 +361,7 @@ namespace TransferManagerCE
             List<StatsBase> list = new List<StatsBase>();
 
             // Issue Panel
-            list.Add(new StatsHeader("Issue Panel"));
+            list.Add(new StatsHeader("Issue Detector"));
             list.Add(new StatsGroup("Update Count", $"{TransferIssueHelper.s_totalUpdates}"));
             list.Add(new StatsGroup("Update Last", $"{(TransferIssueHelper.s_lastUpdateTicks * 0.0001).ToString("F")}ms"));
             list.Add(new StatsGroup("Update Peak", $"{(TransferIssueHelper.s_maxUpdateTicks * 0.0001).ToString("F")}ms"));
@@ -395,16 +394,7 @@ namespace TransferManagerCE
             return list;
         }
 
-        IEnumerator UpdatePanelCoroutine(int seconds)
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(seconds);
-                UpdatePanel();
-            }
-        }
-
-        public void UpdatePanel()
+        protected override void UpdatePanel()
         {
             if (!isVisible)
             {
@@ -504,10 +494,6 @@ namespace TransferManagerCE
 
         public override void OnDestroy()
         {
-            if (m_coroutine is not null)
-            {
-                StopCoroutine(m_coroutine);
-            }
             if (m_listStats is not null)
             {
                 Destroy(m_listStats.gameObject);
@@ -522,11 +508,6 @@ namespace TransferManagerCE
             {
                 Destroy(m_tabStrip.gameObject);
                 m_tabStrip = null;
-            }
-            if (Instance is not null)
-            {
-                Destroy(Instance.gameObject);
-                Instance = null;
             }
         }
     }

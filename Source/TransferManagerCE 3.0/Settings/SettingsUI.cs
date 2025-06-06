@@ -1,20 +1,14 @@
-﻿using AlgernonCommons.UI;
-using ColossalFramework.UI;
+﻿using ColossalFramework.UI;
 using ICities;
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Xml.Linq;
-using TransferManagerCE.Common;
 using TransferManagerCE.CustomManager;
-using TransferManagerCE.Data;
+using TransferManagerCE.CustomManager.Stats;
 using TransferManagerCE.Settings;
-using TransferManagerCE.TransferRules;
 using TransferManagerCE.UI;
 using TransferManagerCE.Util;
-using UnityEngine;
-using static TransferManager;
-using static TransferManagerCE.PathQueue;
 
 namespace TransferManagerCE
 {
@@ -67,6 +61,7 @@ namespace TransferManagerCE
         private UIDropDown? m_dropdownPathDistanceServices = null;
         private UIDropDown? m_dropdownPathDistanceGoods = null;
         private SettingsSlider? m_sliderPathDistanceHeuristic = null;
+        private SettingsSlider? m_sliderCargoStationDelay = null;
         private SettingsSlider? m_sliderPathDistanceShift = null;
         private UIDropDown? m_dropdownBalanced = null;
         private UICheckBox? m_chkDisableDummyTraffic = null;
@@ -76,7 +71,6 @@ namespace TransferManagerCE
         // Maintenance tab
         private UILabel? m_lblGhostVehicleCount = null;
         private UILabel? m_lblPathUnitCount = null;
-        private UIDropDown? m_dropdownConnectionGraph = null;
         private UIDropDown? m_dropdownLogReason = null;
         private UIDropDown? m_dropdownCandidates = null;
         private UIButton? m_btnResetTransferManagerSettings = null;
@@ -95,7 +89,7 @@ namespace TransferManagerCE
         {
             // Title
             UIComponent pnlMain = (UIComponent)helper.self;
-            UILabel txtTitle = AddDescription(pnlMain, "title", pnlMain, 1.0f, TransferManagerMain.Title);
+            UILabel txtTitle = UISettings.AddDescription(pnlMain, "title", pnlMain, 1.0f, TransferManagerMod.Instance.Name);
             txtTitle.textScale = 1.2f;
 
             // Add tabstrip.
@@ -121,47 +115,68 @@ namespace TransferManagerCE
         {
             ModSettings oSettings = ModSettings.GetSettings();
 
+            // ----------------------------------------------------------------
             UIHelper groupLocalisation = (UIHelper)helper.AddGroup(Localization.Get("GROUP_LOCALISATION"));
             groupLocalisation.AddDropdown(Localization.Get("dropdownLocalization"), Localization.GetLoadedLanguages(), Localization.GetLanguageIndexFromCode(oSettings.PreferredLanguage), OnLocalizationDropDownChanged);
 
+            // ----------------------------------------------------------------
             // Behaviour
             UIHelper groupVisuals = (UIHelper)helper.AddGroup(Localization.Get("GROUP_VISUALS"));
             groupVisuals.AddCheckbox(Localization.Get("optionEnablePanelTransparency"), oSettings.EnablePanelTransparency, OnEnablePanelTransparencyChanged);
+            groupVisuals.AddCheckbox(Localization.Get("optionAddUnifiedUIbutton"), oSettings.AddUnifiedUIButton, (value) =>
+            {
+                ModSettings.GetSettings().AddUnifiedUIButton = value;
+                ModSettings.GetSettings().Save();
 
+                if (value)
+                {
+                    UnifiedUIButton.Add();
+                }
+                else
+                {
+                    UnifiedUIButton.Remove();
+                }
+            });
+
+            // ----------------------------------------------------------------
             // Transfer Issue Panel
             UIHelper groupTransferIssue = (UIHelper)helper.AddGroup(Localization.Get("GROUP_TRANSFERISSUE_PANEL"));
             UIPanel panel = (UIPanel)groupTransferIssue.self;
             UIKeymappingsPanel keymappingsTransferIssue = panel.gameObject.AddComponent<UIKeymappingsPanel>();
             keymappingsTransferIssue.AddKeymapping(Localization.Get("keyOpenTransferIssuePanel"), ModSettings.GetSettings().TransferIssueHotkey, OnShortcutKeyChanged);
-            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueDeadTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.DeadTimerValue, 0, OnDeadValueChanged);
-            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueSickTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.SickTimerValue, 0, OnSickValueChanged);
-            SettingsSlider.Create(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueGoodsTimerValue"), 1.0f, 400, 200, 0f, 255f, 1f, (float)oSettings.GoodsTimerValue, 0, OnGoodsValueChanged);
+            SettingsSlider.CreateSettingsStyle(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueDeadTimerValue"), 400, 200, 0f, 255f, 1f, (float)oSettings.DeadTimerValue, 0, OnDeadValueChanged);
+            SettingsSlider.CreateSettingsStyle(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueSickTimerValue"), 400, 200, 0f, 255f, 1f, (float)oSettings.SickTimerValue, 0, OnSickValueChanged);
+            SettingsSlider.CreateSettingsStyle(groupTransferIssue, LayoutDirection.Horizontal, Localization.Get("sliderTransferIssueGoodsTimerValue"), 400, 200, 0f, 255f, 1f, (float)oSettings.GoodsTimerValue, 0, OnGoodsValueChanged);
 
+            // ----------------------------------------------------------------
             // Building Panel
             UIHelper groupBuildingPanel = (UIHelper)helper.AddGroup(Localization.Get("GROUP_BUILDING_PANEL"));
             UIPanel panelBuilding = (UIPanel)groupBuildingPanel.self;
             UIKeymappingsPanel keymappingsBuildingPanel = panelBuilding.gameObject.AddComponent<UIKeymappingsPanel>();
             keymappingsBuildingPanel.AddKeymapping(Localization.Get("keyOpenBuildingPanel"), ModSettings.GetSettings().SelectionToolHotkey, OnShortcutKeyChanged); // Automatically saved
 
+            // ----------------------------------------------------------------
             // Show id's in building title
             groupBuildingPanel.AddSpace(iSEPARATOR_HEIGHT);
-            groupBuildingPanel.AddCheckbox(Localization.Get("optionShowBuildingId"), oSettings.ShowBuildingId, OnShowBuildingId);
+            UICheckBox check = (UICheckBox) groupBuildingPanel.AddCheckbox(Localization.Get("optionShowBuildingId"), oSettings.ShowBuildingId, OnShowBuildingId);
 
+            // ----------------------------------------------------------------
             // Building Panel - Status tab
-            groupBuildingPanel.AddSpace(iSEPARATOR_HEIGHT); 
-            AddDescription(groupBuildingPanel, "txtStatusHideVehicleReason", 1.0f, Localization.Get("txtStatusHideVehicleReason"));
+            groupBuildingPanel.AddSpace(iSEPARATOR_HEIGHT);
+            UISettings.AddDescription(groupBuildingPanel, "txtStatusHideVehicleReason", 1.0f, Localization.Get("txtStatusHideVehicleReason"));
             groupBuildingPanel.AddCheckbox(Localization.Get("optionStatusHideVehicleReason"), oSettings.StatusHideVehicleReason, (bChecked) =>
             {
                 ModSettings.GetSettings().StatusHideVehicleReason = bChecked;
                 ModSettings.GetSettings().Save();
             });
 
+            // ----------------------------------------------------------------
             // Reset panel location
             groupBuildingPanel.AddSpace(iSEPARATOR_HEIGHT);
             groupBuildingPanel.AddButton(Localization.Get("buttonResetPanelPosition"), () =>
             {
                 // Move panel if created
-                if (BuildingPanel.Instance != null)
+                if (BuildingPanel.Exists)
                 {
                     // Center panel to screen
                     BuildingPanel.Instance.CenterTo(null);
@@ -173,6 +188,7 @@ namespace TransferManagerCE
                 }
             });
 
+            // ----------------------------------------------------------------
             // Statistics group
             UIHelper groupStats = (UIHelper)helper.AddGroup(Localization.Get("GROUP_STATISTICS_PANEL"));
             groupStats.AddCheckbox(Localization.Get("StatisticsPanelEnabled"), oSettings.StatisticsEnabled, OnStatisticsEnabledChanged);
@@ -180,12 +196,14 @@ namespace TransferManagerCE
             UIKeymappingsPanel keymappingsStatsPanel = panelStats.gameObject.AddComponent<UIKeymappingsPanel>();
             keymappingsStatsPanel.AddKeymapping(Localization.Get("keyOpenStatisticsPanel"), ModSettings.GetSettings().StatsPanelHotkey, OnShortcutKeyChanged); // Automatically saved
 
+            // ----------------------------------------------------------------
             // Outside Connections group
             UIHelper groupOutside = (UIHelper)helper.AddGroup(Localization.Get("GROUP_OUTSIDE_CONNECTIONS_PANEL"));
             UIPanel panelOutside = (UIPanel)groupOutside.self;
             UIKeymappingsPanel keymappingsOutsidePanel = panelOutside.gameObject.AddComponent<UIKeymappingsPanel>();
             keymappingsOutsidePanel.AddKeymapping(Localization.Get("keyOpenOutsidePanel"), ModSettings.GetSettings().OutsideConnectionPanelHotkey, OnShortcutKeyChanged); // Automatically saved
 
+            // ----------------------------------------------------------------
             // Settings panel
             UIHelper groupSettings = (UIHelper)helper.AddGroup(Localization.Get("GROUP_SETTINGS_PANEL"));
             UIPanel panelSettings = (UIPanel)groupSettings.self;
@@ -197,7 +215,7 @@ namespace TransferManagerCE
             groupSettings.AddButton(Localization.Get("buttonResetPanelPosition"), () =>
             {
                 // Move panel if created
-                if (SettingsPanel.Instance != null)
+                if (SettingsPanel.Exists)
                 {
                     // Center panel to screen
                     SettingsPanel.Instance.CenterTo(null);
@@ -208,6 +226,13 @@ namespace TransferManagerCE
                     oSettings.Save();
                 }
             });
+
+            // ----------------------------------------------------------------
+            // Path Distance Panel panel
+            UIHelper groupPathDistance = (UIHelper)helper.AddGroup(Localization.Get("GROUP_PATH_DISTANCE_PANEL"));
+            UIPanel panelPathDistance = (UIPanel)groupPathDistance.self;
+            UIKeymappingsPanel keymappingsPathDistancePanel = panelPathDistance.gameObject.AddComponent<UIKeymappingsPanel>();
+            keymappingsPathDistancePanel.AddKeymapping(Localization.Get("keyOpenPathDistancePanel"), ModSettings.GetSettings().PathDistancePanelHotkey, OnShortcutKeyChanged); // Automatically saved
         }
 
         public void SetupTransferManagerTab(UIHelper helper)
@@ -249,9 +274,16 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
 
+            // ----------------------------------------------------------------
+            // Path Failure Exclusion
+            UIHelper groupPathFailure = (UIHelper)helper.AddGroup(Localization.Get("GROUP_PATH_FAIL_EXCLUSION"));
+            UISettings.AddDescription(groupPathFailure, "txtPathFailExclusion", 1.0f, Localization.Get("txtPathFailExclusion"));
+            m_chkEnablePathFailExclusion = (UICheckBox)groupPathFailure.AddCheckbox(Localization.Get("optionPathFailExclusion"), oSettings.EnablePathFailExclusion, OnPathFailExclusion);
+
+            // ----------------------------------------------------------------
             // Path distance
             UIHelper groupPathDistance = (UIHelper)helper.AddGroup(Localization.Get("GROUP_PATH_DISTANCE"));
-            AddDescription(groupPathDistance, "txtPathDistance", 1.0f, Localization.Get("txtPathDistance"));
+            UISettings.AddDescription(groupPathDistance, "txtPathDistance", 1.0f, Localization.Get("txtPathDistance"));
             // Balanced match mode setting
             string[] itemsPathDistance = {
                 Localization.Get("dropdownPathDistanceLOS"),
@@ -262,26 +294,25 @@ namespace TransferManagerCE
             m_dropdownPathDistanceServices.width = 400;
             m_dropdownPathDistanceGoods = (UIDropDown)groupPathDistance.AddDropdown(Localization.Get("dropdownPathDistanceAlgorithmGoods"), itemsPathDistance, (int)oSettings.PathDistanceGoods, OnPathDistanceGoods);
             m_dropdownPathDistanceGoods.width = 400;
-
             groupPathDistance.AddSpace(iSEPARATOR_HEIGHT);
 
-            // Path Failure Exclusion
-            UIHelper groupPathFailure = (UIHelper)helper.AddGroup(Localization.Get("GROUP_PATH_FAIL_EXCLUSION"));
-            AddDescription(groupPathFailure, "txtPathFailExclusion", 1.0f, Localization.Get("txtPathFailExclusion"));
-            m_chkEnablePathFailExclusion = (UICheckBox)groupPathFailure.AddCheckbox(Localization.Get("optionPathFailExclusion"), oSettings.EnablePathFailExclusion, OnPathFailExclusion);
-
             // Accuracy slider
-            AddDescription(groupPathDistance, "txtPathDistanceHeuristic", 1.0f, Localization.Get("txtPathDistanceHeuristic"));
-            m_sliderPathDistanceHeuristic = SettingsSlider.Create(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceHeuristic"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.PathDistanceHeuristic, 0, OnPathDistanceHeuristicChanged);
+            UISettings.AddDescription(groupPathDistance, "txtPathDistanceHeuristic", 1.0f, Localization.Get("txtPathDistanceHeuristic"));
+            m_sliderPathDistanceHeuristic = SettingsSlider.CreateSettingsStyle(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceHeuristic"), 400, 200, 0f, 100f, 10f, (float)oSettings.PathDistanceHeuristic, 0, OnPathDistanceHeuristicChanged);
             m_sliderPathDistanceHeuristic.Percent = true;
-            AddDescription(groupPathDistance, "txtPathDistanceHeuristicKey", 1.0f, Localization.Get("txtPathDistanceHeuristicKey"));
+            UISettings.AddDescription(groupPathDistance, "txtPathDistanceHeuristicKey", 1.0f, Localization.Get("txtPathDistanceHeuristicKey"));
+            groupPathDistance.AddSpace(iSEPARATOR_HEIGHT);
 
+            // Cargo Station Travel Time Delay
+            UISettings.AddDescription(groupPathDistance, "txtPathDistanceCargoStationDelay", 1.0f, Localization.Get("txtPathDistanceCargoStationDelay"));
+            m_sliderCargoStationDelay = SettingsSlider.CreateSettingsStyle(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderCargoStationDelay"), 400, 200, 0f, 2000f, 100f, (float)oSettings.PathDistanceCargoStationDelay, 0, OnPathDistanceCargoDelay);
             groupPathDistance.AddSpace(iSEPARATOR_HEIGHT);
 
             // Travel Time shift
-            AddDescription(groupPathDistance, "txtPathDistanceShift", 1.0f, Localization.Get("txtPathDistanceShift"));
-            m_sliderPathDistanceShift = SettingsSlider.Create(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceShift"), 1.0f, 400, 200, 1000f, 20000f, 100f, (float)oSettings.PathDistanceTravelTimeBaseValue, 0, OnPathDistanceShiftChanged);
-           
+            UISettings.AddDescription(groupPathDistance, "txtPathDistanceShift", 1.0f, Localization.Get("txtPathDistanceShift"));
+            m_sliderPathDistanceShift = SettingsSlider.CreateSettingsStyle(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceShift"), 400, 200, 1000f, 20000f, 100f, (float)oSettings.PathDistanceTravelTimeBaseValue, 0, OnPathDistanceShiftChanged);
+            
+            // ----------------------------------------------------------------
             // Balanced match mode setting
             string[] itemsBalancedMode = {
                 Localization.Get("dropdownBalancedModeIncomingFirst"),
@@ -292,25 +323,27 @@ namespace TransferManagerCE
             UIHelper groupBalanced = (UIHelper)helper.AddGroup(Localization.Get("GROUP_BALANCED_MATCH_MODE"));
             m_dropdownBalanced = (UIDropDown)groupBalanced.AddDropdown(Localization.Get("dropdownBalancedTitle"), itemsBalancedMode, (int)oSettings.BalancedMatchMode, OnBalancedMatchModeChanged);
             m_dropdownBalanced.width = 400;
-            AddDescription(groupBalanced, "txtBalancedMatch", 1.0f, Localization.Get("txtBalancedMatch"));
+            UISettings.AddDescription(groupBalanced, "txtBalancedMatch", 1.0f, Localization.Get("txtBalancedMatch"));
 
-            // Unlimited flag
-            UIHelper groupUnlimited = (UIHelper)helper.AddGroup(Localization.Get("GROUP_UNLIMITED"));
-            AddDescription(groupUnlimited, "txtApplyUnlimited", 1.0f, Localization.Get("txtApplyUnlimited"));
-            m_chkApplyUnlimited = (UICheckBox)groupUnlimited.AddCheckbox(Localization.Get("optionApplyUnlimited"), oSettings.ApplyUnlimited, (bCheck) => SaveGameSettings.GetSettings().ApplyUnlimited = bCheck);
-            groupUnlimited.AddSpace(iSEPARATOR_HEIGHT);
-            AddDescription(groupUnlimited, "txtApplyUnlimitedWarning", 1.0f, Localization.Get("txtApplyUnlimitedWarning"));
-
-            // Dummy traffic
-            UIHelper groupDummyTraffic = (UIHelper)helper.AddGroup(Localization.Get("GROUP_DUMMY_TRAFFIC"));
-            AddDescription(groupDummyTraffic, "txtDummyTraffic", 1.0f, Localization.Get("txtDummyTraffic"));
-            m_chkDisableDummyTraffic = (UICheckBox)groupDummyTraffic.AddCheckbox(Localization.Get("optionDummyTraffic"), oSettings.DisableDummyTraffic, OnDisableDummyTraffic);
-
+            // ----------------------------------------------------------------
             // Employ over-educated workers
             UIHelper groupOveredcuatedWorkers = (UIHelper)helper.AddGroup(Localization.Get("GROUP_OVEREDUCATED_WORKERS"));
-            AddDescription(groupOveredcuatedWorkers, "txtEmployOvereducatedWorkers", 1.0f, Localization.Get("txtEmployOvereducatedWorkers"));
+            UISettings.AddDescription(groupOveredcuatedWorkers, "txtEmployOvereducatedWorkers", 1.0f, Localization.Get("txtEmployOvereducatedWorkers"));
             m_chkEmployOvereducatedWorkers = (UICheckBox)groupOveredcuatedWorkers.AddCheckbox(Localization.Get("optionEmployOverEducatedWorkers"), oSettings.EmployOverEducatedWorkers, OnEmployOvereducatedWOrkers);
 
+            // ----------------------------------------------------------------
+            // Unlimited flag
+            UIHelper groupUnlimited = (UIHelper)helper.AddGroup(Localization.Get("GROUP_UNLIMITED"));
+            UISettings.AddDescription(groupUnlimited, "txtApplyUnlimited", 1.0f, Localization.Get("txtApplyUnlimited"));
+            m_chkApplyUnlimited = (UICheckBox)groupUnlimited.AddCheckbox(Localization.Get("optionApplyUnlimited"), oSettings.ApplyUnlimited, (bCheck) => SaveGameSettings.GetSettings().ApplyUnlimited = bCheck);
+            groupUnlimited.AddSpace(iSEPARATOR_HEIGHT);
+            UISettings.AddDescription(groupUnlimited, "txtApplyUnlimitedWarning", 1.0f, Localization.Get("txtApplyUnlimitedWarning"));
+
+            // ----------------------------------------------------------------
+            // Dummy traffic
+            UIHelper groupDummyTraffic = (UIHelper)helper.AddGroup(Localization.Get("GROUP_DUMMY_TRAFFIC"));
+            UISettings.AddDescription(groupDummyTraffic, "txtDummyTraffic", 1.0f, Localization.Get("txtDummyTraffic"));
+            m_chkDisableDummyTraffic = (UICheckBox)groupDummyTraffic.AddCheckbox(Localization.Get("optionDummyTraffic"), oSettings.DisableDummyTraffic, OnDisableDummyTraffic);
         }
 
         public void SetupWarehousesTab(UIHelper helper)
@@ -322,12 +355,12 @@ namespace TransferManagerCE
             UIPanel panelFactory = (groupFactory as UIHelper).self as UIPanel;
 
             // Factory First
-            AddDescription(panelFactory, "optionFactoryFirstText", panelFactory, 1.0f, Localization.Get("optionFactoryFirstText"));
+            UISettings.AddDescription(panelFactory, "optionFactoryFirstText", panelFactory, 1.0f, Localization.Get("optionFactoryFirstText"));
             m_chkFactoryFirst = (UICheckBox)groupFactory.AddCheckbox(Localization.Get("optionFactoryFirst"), oSettings.FactoryFirst, (index) => setOptionFactoryFirst(index));
             groupFactory.AddSpace(iSEPARATOR_HEIGHT);
 
             // Override generic industries handler
-            AddDescription(panelFactory, "txtOverrideGenericIndustriesHandler", panelFactory, 1.0f, Localization.Get("txtOverrideGenericIndustriesHandler"));
+            UISettings.AddDescription(panelFactory, "txtOverrideGenericIndustriesHandler", panelFactory, 1.0f, Localization.Get("txtOverrideGenericIndustriesHandler"));
             m_chkOverrideGenericIndustriesHandler = (UICheckBox)groupFactory.AddCheckbox(Localization.Get("optionOverrideGenericIndustriesHandler"), oSettings.OverrideGenericIndustriesHandler, OnOverrideGenericIndustriesHandlerChanged);
 
             // WAREHOUSE GROUP
@@ -335,23 +368,23 @@ namespace TransferManagerCE
             UIPanel panelGroupWarehouse = (groupWarehouse as UIHelper).self as UIPanel;
 
             // Warehouse first
-            AddDescription(panelGroupWarehouse, "optionWarehouseFirst_txt", panelGroupWarehouse, 1.0f, Localization.Get("optionWarehouseFirst_txt"));
+            UISettings.AddDescription(panelGroupWarehouse, "optionWarehouseFirst_txt", panelGroupWarehouse, 1.0f, Localization.Get("optionWarehouseFirst_txt"));
             m_chkWarehouseFirst = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionWarehouseFirst"), oSettings.WarehouseFirst, (index) => setOptionWarehouseFirst(index));
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
             // Reserve trucks
-            AddDescription(panelGroupWarehouse, "txtNewWarehouseReserveTrucks", panelGroupWarehouse, 1.0f, Localization.Get("txtNewWarehouseReserveTrucks"));
-            m_sliderWarehouseReservePercent = SettingsSlider.Create(groupWarehouse, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercent"), 1.0f, 400, 200, 0f, 100f, 5f, (float)oSettings.WarehouseReserveTrucksPercent, 0, OnWarehouseFirstPercentChanged);
+            UISettings.AddDescription(panelGroupWarehouse, "txtNewWarehouseReserveTrucks", panelGroupWarehouse, 1.0f, Localization.Get("txtNewWarehouseReserveTrucks"));
+            m_sliderWarehouseReservePercent = SettingsSlider.CreateSettingsStyle(groupWarehouse, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercent"), 400, 200, 0f, 100f, 5f, (float)oSettings.WarehouseReserveTrucksPercent, 0, OnWarehouseFirstPercentChanged);
             m_sliderWarehouseReservePercent.Percent = true;
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
             // Improved Warehouse Matching
-            AddDescription(panelGroupWarehouse, "txtImprovedWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtImprovedWarehouseMatching"));
+            UISettings.AddDescription(panelGroupWarehouse, "txtImprovedWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtImprovedWarehouseMatching"));
             m_chkImprovedWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionImprovedWarehouseMatching"), oSettings.ImprovedWarehouseMatching, (index) => setOptionImprovedWarehouseMatching(index));
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
             // New warehouse matching
-            AddDescription(panelGroupWarehouse, "txtNewInterWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtNewInterWarehouseMatching"));
+            UISettings.AddDescription(panelGroupWarehouse, "txtNewInterWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtNewInterWarehouseMatching"));
             m_chkNewInterWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionNewWarehouseTransfer"), oSettings.NewInterWarehouseTransfer, OnNewWarehouseTransferChanged);
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
         }
@@ -363,25 +396,25 @@ namespace TransferManagerCE
             // Outside Multipliers
             UIHelper groupImportExport = (UIHelper) helper.AddGroup(Localization.Get("GROUP_EXPORTIMPORT_OPTIONS"));
             UIPanel txtPanel3 = groupImportExport.self as UIPanel;
-            AddDescription(txtPanel3, "OutsideMultiplierDescription1", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription1"));
-            m_sliderShipMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderShipMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideShipMultiplier, 0, OnOutsideShipMultiplier);
-            m_sliderPlaneMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderPlaneMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsidePlaneMultiplier, 0, OnOutsidePlaneMultiplier);
-            m_sliderTrainMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderTrainMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideTrainMultiplier, 0, OnOutsideTrainMultiplier);
-            m_sliderRoadMultiplier = SettingsSlider.Create(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderRoadMultiplier"), 1.0f, 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideRoadMultiplier, 0, OnOutsideRoadMultiplier);
-            AddDescription(txtPanel3, "OutsideMultiplierDescription2", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription2"));
-            AddDescription(txtPanel3, "OutsideMultiplierDescription3", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription3"));
+            UISettings.AddDescription(txtPanel3, "OutsideMultiplierDescription1", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription1"));
+            m_sliderShipMultiplier = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderShipMultiplier"), 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideShipMultiplier, 0, OnOutsideShipMultiplier);
+            m_sliderPlaneMultiplier = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderPlaneMultiplier"), 400, 200, 1f, 10f, 1f, (float)oSettings.OutsidePlaneMultiplier, 0, OnOutsidePlaneMultiplier);
+            m_sliderTrainMultiplier = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderTrainMultiplier"), 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideTrainMultiplier, 0, OnOutsideTrainMultiplier);
+            m_sliderRoadMultiplier = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderRoadMultiplier"), 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideRoadMultiplier, 0, OnOutsideRoadMultiplier);
+            UISettings.AddDescription(txtPanel3, "OutsideMultiplierDescription2", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription2"));
+            UISettings.AddDescription(txtPanel3, "OutsideMultiplierDescription3", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription3"));
 
             // Export vehicle limit
             UIHelper groupExportLimits = (UIHelper)helper.AddGroup(Localization.Get("GROUP_EXPORT_LIMITS"));
             UIPanel panelExportLimit = groupExportLimits.self as UIPanel;
-            m_sliderExportVehicleLimitPercent = SettingsSlider.Create(groupExportLimits, LayoutDirection.Horizontal, Localization.Get("sliderExportVehicleLimit"), 1.0f, 400, 200, 0f, 100f, 1f, (float)oSettings.ExportVehicleLimit, 0, OnExportVehicleLimit);
+            m_sliderExportVehicleLimitPercent = SettingsSlider.CreateSettingsStyle(groupExportLimits, LayoutDirection.Horizontal, Localization.Get("sliderExportVehicleLimit"), 400, 200, 0f, 100f, 1f, (float)oSettings.ExportVehicleLimit, 0, OnExportVehicleLimit);
             m_sliderExportVehicleLimitPercent.Percent = true;
-            AddDescription(panelExportLimit, "txtExportVehicleLimit", panelExportLimit, 1.0f, Localization.Get("txtExportVehicleLimit"));
+            UISettings.AddDescription(panelExportLimit, "txtExportVehicleLimit", panelExportLimit, 1.0f, Localization.Get("txtExportVehicleLimit"));
 
             // Import restrictions
             UIHelperBase groupImportRestrict = helper.AddGroup(Localization.Get("GROUP_IMPORT_RESTRICTIONS"));
             UIPanel panelImportRestrictions = (groupImportRestrict as UIHelper).self as UIPanel;
-            AddDescription(panelImportRestrictions, "txtImportRestrictions", panelImportRestrictions, 1.0f, Localization.Get("txtImportRestrictions"));
+            UISettings.AddDescription(panelImportRestrictions, "txtImportRestrictions", panelImportRestrictions, 1.0f, Localization.Get("txtImportRestrictions"));
 
             UIPanel paneRestrictionsHeadings = panelImportRestrictions.AddUIComponent<UIPanel>();
             paneRestrictionsHeadings.autoLayout = true;
@@ -410,7 +443,7 @@ namespace TransferManagerCE
                     panelMaterialRestrictions.width = panelImportRestrictions.width;
                     panelMaterialRestrictions.height = 20;
 
-                    UICheckBox? chkMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), UIFonts.SemiBold, 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterial(material, index));
+                    UICheckBox? chkMaterial = UIMyUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), UIFonts.SemiBold, 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterial(material, index));
                     if (chkMaterial is not null)
                     {
                         chkMaterial.width = 300;
@@ -419,7 +452,7 @@ namespace TransferManagerCE
 
                     if (TransferManagerModes.IsWarehouseMaterial(material))
                     {
-                        UICheckBox? chkWarehouseMaterial = UIUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), UIFonts.SemiBold, 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterialWarehouses(material, index));
+                        UICheckBox? chkWarehouseMaterial = UIMyUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), UIFonts.SemiBold, 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterialWarehouses(material, index));
                         if (chkWarehouseMaterial is not null)
                         {
                             chkWarehouseMaterial.width = 300;
@@ -437,7 +470,7 @@ namespace TransferManagerCE
             // Experimental services options
             UIHelperBase groupExperimental = helper.AddGroup(Localization.Get("GROUP_IMPROVED_SERVICES_MATCHING"));
             UIPanel panelExperimental = (groupExperimental as UIHelper).self as UIPanel;
-            UILabel txtDeathcareExperimental = AddDescription(panelExperimental, "txtDeathcareExperimental", panelExperimental, 1.0f, Localization.Get("txtDeathcareExperimental"));
+            UILabel txtDeathcareExperimental = UISettings.AddDescription(panelExperimental, "txtDeathcareExperimental", panelExperimental, 1.0f, Localization.Get("txtDeathcareExperimental"));
             m_chkDeathcareExperimental = (UICheckBox)groupExperimental.AddCheckbox(Localization.Get("optionDeathcareExperimental"), oSettings.ImprovedDeathcareMatching, OnExperimentalDeathcare);
             m_chkGarbageExperimental = (UICheckBox)groupExperimental.AddCheckbox(Localization.Get("optionGarbageExperimental"), oSettings.ImprovedGarbageMatching, OnExperimentalGarbage);
             m_chkPoliceExperimental = (UICheckBox)groupExperimental.AddCheckbox(Localization.Get("optionPoliceExperimental"), oSettings.ImprovedCrimeMatching, OnExperimentalCrime);
@@ -445,52 +478,52 @@ namespace TransferManagerCE
 
             // Sick Collection
             UIHelper groupSick = (UIHelper)helper.AddGroup(Localization.Get("GROUP_SICK_COLLECTION"));
-            AddDescription(groupSick, "txtOverrideSickHandler", 1.0f, Localization.Get("txtOverrideSickHandler"));
+            UISettings.AddDescription(groupSick, "txtOverrideSickHandler", 1.0f, Localization.Get("txtOverrideSickHandler"));
             m_chkOverrideSickCollection = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionOverrideSickHandler"), oSettings.OverrideSickHandler, OnOverrideResidentialSick);
             groupSick.AddSpace(iSEPARATOR_HEIGHT);
             
-            AddDescription(groupSick, "txtSickSadNotification", 1.0f, Localization.Get("txtSickSadNotification"));
+            UISettings.AddDescription(groupSick, "txtSickSadNotification", 1.0f, Localization.Get("txtSickSadNotification"));
             m_chkDisplaySickNotification = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionDisplaySickNotification"), oSettings.DisplaySickNotification, OnDisplaySadNotification);
             groupSick.AddSpace(iSEPARATOR_HEIGHT);
 
-            AddDescription(groupSick, "txtSickHelicopterRate", 1.0f, Localization.Get("txtSickHelicopterRate"));
-            m_sliderSickHelicopterRate = SettingsSlider.Create(groupSick, LayoutDirection.Horizontal, Localization.Get("optionSickHelicopterRate"), 1.0f, 400, 200, 0f, 100f, 1.0f, (float)oSettings.SickHelicopterRate, 0, OnSickHelicopterRate);
+            UISettings.AddDescription(groupSick, "txtSickHelicopterRate", 1.0f, Localization.Get("txtSickHelicopterRate"));
+            m_sliderSickHelicopterRate = SettingsSlider.CreateSettingsStyle(groupSick, LayoutDirection.Horizontal, Localization.Get("optionSickHelicopterRate"), 400, 200, 0f, 100f, 1.0f, (float)oSettings.SickHelicopterRate, 0, OnSickHelicopterRate);
             m_sliderSickHelicopterRate.Percent = true;
 
-            AddDescription(groupSick, "txtSickWalkRate", 1.0f, Localization.Get("txtSickWalkRate"));
-            m_sliderSickWalkRate = SettingsSlider.Create(groupSick, LayoutDirection.Horizontal, Localization.Get("optionSickWalkRate"), 1.0f, 400, 200, 0f, 100f, 1.0f, (float)oSettings.SickWalkRate, 0, OnSickWalkRate);
+            UISettings.AddDescription(groupSick, "txtSickWalkRate", 1.0f, Localization.Get("txtSickWalkRate"));
+            m_sliderSickWalkRate = SettingsSlider.CreateSettingsStyle(groupSick, LayoutDirection.Horizontal, Localization.Get("optionSickWalkRate"), 400, 200, 0f, 100f, 1.0f, (float)oSettings.SickWalkRate, 0, OnSickWalkRate);
             m_sliderSickWalkRate.Percent = true;
 
             // Sick Generation
             UIHelper groupSickGeneration = (UIHelper)helper.AddGroup(Localization.Get("GROUP_SICK_GENERATE")); 
-            AddDescription(groupSickGeneration, "txtRandomSick", 1.0f, Localization.Get("txtRandomSick"));
-            m_sliderSickGenerationRate = SettingsSlider.Create(groupSickGeneration, LayoutDirection.Horizontal, Localization.Get("txtRandomSickRate"), 1.0f, 400, 200, 0f, 10000f, 100.0f, (float)oSettings.RandomSickRate, 0, OnRandomSickRate);
-            AddDescription(groupSickGeneration, "txtRandomSickRateScale", 1.0f, Localization.Get("txtRandomSickRateScale"));
+            UISettings.AddDescription(groupSickGeneration, "txtRandomSick", 1.0f, Localization.Get("txtRandomSick"));
+            m_sliderSickGenerationRate = SettingsSlider.CreateSettingsStyle(groupSickGeneration, LayoutDirection.Horizontal, Localization.Get("txtRandomSickRate"), 400, 200, 0f, 10000f, 100.0f, (float)oSettings.RandomSickRate, 0, OnRandomSickRate);
+            UISettings.AddDescription(groupSickGeneration, "txtRandomSickRateScale", 1.0f, Localization.Get("txtRandomSickRateScale"));
 
             // Main area building mail
             UIHelper groupMail = (UIHelper)helper.AddGroup(Localization.Get("reasonMail"));
-            AddDescription(groupMail, "txtMainBuildingMaxMail", 1.0f, Localization.Get("txtMainBuildingMaxMail"));
+            UISettings.AddDescription(groupMail, "txtMainBuildingMaxMail", 1.0f, Localization.Get("txtMainBuildingMaxMail"));
             groupMail.AddSpace(iSEPARATOR_HEIGHT);
-            m_sliderMainBuildingMaxMail = SettingsSlider.Create(groupMail, LayoutDirection.Horizontal, Localization.Get("sliderMainBuildingMaxMail"), 1.0f, 320, 300, 2000f, 50000f, 1000f, (float)oSettings.MainBuildingMaxMail, 0, OnMainBuildingMaxMail);
-            AddDescription(groupMail, "txtMainBuildingPostTruck", 1.0f, Localization.Get("txtMainBuildingPostTruck"));
+            m_sliderMainBuildingMaxMail = SettingsSlider.CreateSettingsStyle(groupMail, LayoutDirection.Horizontal, Localization.Get("sliderMainBuildingMaxMail"), 320, 300, 2000f, 50000f, 1000f, (float)oSettings.MainBuildingMaxMail, 0, OnMainBuildingMaxMail);
+            UISettings.AddDescription(groupMail, "txtMainBuildingPostTruck", 1.0f, Localization.Get("txtMainBuildingPostTruck"));
             groupMail.AddSpace(iSEPARATOR_HEIGHT); 
             m_chkMainBuildingPostTruck = (UICheckBox)groupMail.AddCheckbox(Localization.Get("optionMainBuildingPostTruck"), oSettings.MainBuildingPostTruck, OnMainBuildingPostTruck);
 
             // Taxi Move
             UIHelper groupTaxiMove = (UIHelper)helper.AddGroup(Localization.Get("GROUP_TAXI_MOVE"));
-            AddDescription(groupTaxiMove, "txtTaxiMove", 1.0f, Localization.Get("txtTaxiMove"));
+            UISettings.AddDescription(groupTaxiMove, "txtTaxiMove", 1.0f, Localization.Get("txtTaxiMove"));
             m_chkTaxiMove = (UICheckBox)groupTaxiMove.AddCheckbox(Localization.Get("optionTaxiMove"), oSettings.TaxiMove, OnTaxiMove);
             groupTaxiMove.AddSpace(iSEPARATOR_HEIGHT);
-            AddDescription(groupTaxiMove, "txtTaxiStandDelay", 1.0f, Localization.Get("txtTaxiStandDelay"));
-            m_sliderTaxiStandDelay = SettingsSlider.Create(groupTaxiMove, LayoutDirection.Horizontal, Localization.Get("sliderTaxiStandDelay"), 1.0f, 400, 200, 0f, 20f, 1.0f, (float)oSettings.TaxiStandDelay, 0, OnTaxiStandDelay);
+            UISettings.AddDescription(groupTaxiMove, "txtTaxiStandDelay", 1.0f, Localization.Get("txtTaxiStandDelay"));
+            m_sliderTaxiStandDelay = SettingsSlider.CreateSettingsStyle(groupTaxiMove, LayoutDirection.Horizontal, Localization.Get("sliderTaxiStandDelay"), 400, 200, 0f, 20f, 1.0f, (float)oSettings.TaxiStandDelay, 0, OnTaxiStandDelay);
 
             // Prefer local
             UIHelperBase group1 = helper.AddGroup(Localization.Get("GROUP_SERVICE_DISTRICT_OPTIONS"));
             UIPanel txtPanel1 = (group1 as UIHelper).self as UIPanel;
-            AddDescription(txtPanel1, "txtPreferLocalService", txtPanel1, 1.0f, Localization.Get("txtPreferLocalService"));
+            UISettings.AddDescription(txtPanel1, "txtPreferLocalService", txtPanel1, 1.0f, Localization.Get("txtPreferLocalService"));
             m_chkPreferLocal = (UICheckBox)group1.AddCheckbox(Localization.Get("optionPreferLocalService"), oSettings.PreferLocalService, (index) => setOptionPreferLocalService(index));
             group1.AddSpace(iSEPARATOR_HEIGHT);
-            AddDescription(txtPanel1, "txtPreferLocalServiceWarning", txtPanel1, 1.0f, Localization.Get("txtPreferLocalServiceWarning"));
+            UISettings.AddDescription(txtPanel1, "txtPreferLocalServiceWarning", txtPanel1, 1.0f, Localization.Get("txtPreferLocalServiceWarning"));
         }
 
         public void SetupTransferDistancesTab(UIHelper helper)
@@ -500,7 +533,7 @@ namespace TransferManagerCE
             // Distance limits section
             UIHelper groupDistanceLimits = (UIHelper)helper.AddGroup(Localization.Get("GROUP_DISTANCE_LIMITS"));
             UIPanel panelDistanceLimits = (groupDistanceLimits as UIHelper).self as UIPanel;
-            AddDescription(panelDistanceLimits, "txtDistanceLimits", panelDistanceLimits, 1.0f, Localization.Get("txtDistanceLimits"));
+            UISettings.AddDescription(panelDistanceLimits, "txtDistanceLimits", panelDistanceLimits, 1.0f, Localization.Get("txtDistanceLimits"));
             groupDistanceLimits.AddSpace(iSEPARATOR_HEIGHT);
 
             // Load distance reasons
@@ -534,7 +567,7 @@ namespace TransferManagerCE
         private void AddDistanceSlider(UIHelper helper, CustomTransferReason.Reason reason, string strLabel)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            m_sliderLimits[reason] = SettingsSlider.Create(helper, LayoutDirection.Horizontal, strLabel, 1.0f, 400, 200, 0f, 20f, 0.5f, (float)oSettings.GetActiveDistanceRestrictionKm(reason), 1, (float value) => OnDistanceLimit(reason, value));
+            m_sliderLimits[reason] = SettingsSlider.CreateSettingsStyle(helper, LayoutDirection.Horizontal, strLabel, 400, 200, 0f, 20f, 0.5f, (float)oSettings.GetActiveDistanceRestrictionKm(reason), 1, (float value) => OnDistanceLimit(reason, value));
         }
 
         public void SetupVehicleAITab(UIHelper helper)
@@ -543,7 +576,7 @@ namespace TransferManagerCE
 
             // Experimental section
             UIHelper group = (UIHelper) helper.AddGroup(Localization.Get("GROUP_VEHICLE_AI"));
-            AddDescription(group, "txtVehicleAIDescription", 1.0f, Localization.Get("txtVehicleAIDescription"));
+            UISettings.AddDescription(group, "txtVehicleAIDescription", 1.0f, Localization.Get("txtVehicleAIDescription"));
             group.AddCheckbox(Localization.Get("optionFireTruckAI"), oSettings.FireTruckAI, OnFireTruckAI);
             group.AddCheckbox(Localization.Get("optionFireCopterAI"), oSettings.FireCopterAI, OnFireCopterAI);
             group.AddCheckbox(Localization.Get("optionPostVanAI"), oSettings.PostVanAI, OnPostVanAI); 
@@ -554,7 +587,7 @@ namespace TransferManagerCE
 
             // Fire Truck Extinguish Nearby Trees
             UIHelper groupFiretruckExtinguishTrees = (UIHelper)helper.AddGroup(Localization.Get("GROUP_FIRETRUCK"));
-            AddDescription(groupFiretruckExtinguishTrees, "txtFiretruckExtinguishTrees", 1.0f, Localization.Get("txtFiretruckExtinguishTrees"));
+            UISettings.AddDescription(groupFiretruckExtinguishTrees, "txtFiretruckExtinguishTrees", 1.0f, Localization.Get("txtFiretruckExtinguishTrees"));
             groupFiretruckExtinguishTrees.AddCheckbox(Localization.Get("optionFiretruckExtinguishTrees"), oSettings.FireTruckExtinguishTrees, (bool bChecked) => 
             { 
                 oSettings.FireTruckExtinguishTrees = bChecked; 
@@ -570,19 +603,19 @@ namespace TransferManagerCE
             // Experimental section
             UIHelperBase group = helper.AddGroup(Localization.Get("GROUP_PATCHES"));
             UIPanel panel = (group as UIHelper).self as UIPanel;
-            AddDescription(panel, "txtAdvancedDescription", panel, 1.0f, Localization.Get("txtAdvancedDescription"));
+            UISettings.AddDescription(panel, "txtAdvancedDescription", panel, 1.0f, Localization.Get("txtAdvancedDescription"));
 
             UIHelper groupGeneral = (UIHelper)helper.AddGroup(Localization.Get("tabGeneral"));
             groupGeneral.AddCheckbox(Localization.Get("optionFixFindHospital"), oSettings.FixFindHospital, (bChecked) => { oSettings.FixFindHospital = bChecked; oSettings.Save(); });
-            AddDescription((groupGeneral as UIHelper).self as UIPanel, "txtFindHospital", panel, 1.0f, Localization.Get("txtFindHospital"));
+            UISettings.AddDescription((groupGeneral as UIHelper).self as UIPanel, "txtFindHospital", panel, 1.0f, Localization.Get("txtFindHospital"));
 
             UIHelper groupIntercityStops = (UIHelper) helper.AddGroup(Localization.Get("GROUP_INTERCITY_STOPS"));
-            AddDescription((groupIntercityStops as UIHelper).self as UIPanel, "txtIntercityStopSpawnAtCount", panel, 1.0f, Localization.Get("txtIntercityStopSpawnAtCount"));
+            UISettings.AddDescription((groupIntercityStops as UIHelper).self as UIPanel, "txtIntercityStopSpawnAtCount", panel, 1.0f, Localization.Get("txtIntercityStopSpawnAtCount"));
             groupIntercityStops.AddSpace(6);
-            SettingsSlider sliderForceTrainSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceTrainSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceTrainSpawnAtCount, 0, (float value) => { oSettings.ForceTrainSpawnAtCount = (int)value; oSettings.Save(); });
-            SettingsSlider sliderForceShipSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceShipSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceShipSpawnAtCount, 0, (float value) => { oSettings.ForceShipSpawnAtCount = (int)value; oSettings.Save(); });
-            SettingsSlider sliderForcePlaneSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForcePlaneSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForcePlaneSpawnAtCount, 0, (float value) => { oSettings.ForcePlaneSpawnAtCount = (int)value; oSettings.Save(); });
-            SettingsSlider sliderForceBusSpawnAtCount = SettingsSlider.Create(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceBusSpawnAtCount"), 1.0f, 320, 300, 0f, 500f, 1f, (float)oSettings.ForceBusSpawnAtCount, 0, (float value) => { oSettings.ForceBusSpawnAtCount = (int)value; oSettings.Save(); });
+            SettingsSlider sliderForceTrainSpawnAtCount = SettingsSlider.CreateSettingsStyle(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceTrainSpawnAtCount"), 320, 300, 0f, 500f, 1f, (float)oSettings.ForceTrainSpawnAtCount, 0, (float value) => { oSettings.ForceTrainSpawnAtCount = (int)value; oSettings.Save(); });
+            SettingsSlider sliderForceShipSpawnAtCount = SettingsSlider.CreateSettingsStyle(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceShipSpawnAtCount"), 320, 300, 0f, 500f, 1f, (float)oSettings.ForceShipSpawnAtCount, 0, (float value) => { oSettings.ForceShipSpawnAtCount = (int)value; oSettings.Save(); });
+            SettingsSlider sliderForcePlaneSpawnAtCount = SettingsSlider.CreateSettingsStyle(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForcePlaneSpawnAtCount"), 320, 300, 0f, 500f, 1f, (float)oSettings.ForcePlaneSpawnAtCount, 0, (float value) => { oSettings.ForcePlaneSpawnAtCount = (int)value; oSettings.Save(); });
+            SettingsSlider sliderForceBusSpawnAtCount = SettingsSlider.CreateSettingsStyle(groupIntercityStops, LayoutDirection.Horizontal, Localization.Get("sliderForceBusSpawnAtCount"), 320, 300, 0f, 500f, 1f, (float)oSettings.ForceBusSpawnAtCount, 0, (float value) => { oSettings.ForceBusSpawnAtCount = (int)value; oSettings.Save(); });
             
             // Reset button
             groupIntercityStops.AddButton(Localization.Get("btnOutsideReset"), () =>
@@ -626,12 +659,13 @@ namespace TransferManagerCE
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             ModSettings oModSettings = ModSettings.GetSettings();
 
+            // ----------------------------------------------------------------
             // Maintenance section
             UIHelperBase groupMaintenance = helper.AddGroup(Localization.Get("GROUP_Maintenance"));
             UIPanel panelMaintenance = (groupMaintenance as UIHelper).self as UIPanel;
 
             // Release Broken pathing
-            AddDescription(panelMaintenance, "txtBrokenPathUnits", panelMaintenance, 1.0f, Localization.Get("txtBrokenPathUnits"));
+            UISettings.AddDescription(panelMaintenance, "txtBrokenPathUnits", panelMaintenance, 1.0f, Localization.Get("txtBrokenPathUnits"));
             groupMaintenance.AddButton(Localization.Get("btnReleaseBrokenPathing"), () =>
             {
                 int iReleased = PathUnitMaintenance.ReleaseBrokenPathUnits();
@@ -640,12 +674,12 @@ namespace TransferManagerCE
                     m_lblPathUnitCount.text = Localization.Get("txtPathUnitCount") + ": " + iReleased;
                 }
             });
-            m_lblPathUnitCount = AddDescription(panelMaintenance, "txtPathUnitCount", panelMaintenance, 1.0f, Localization.Get("txtPathUnitCount") + ": 0");
+            m_lblPathUnitCount = UISettings.AddDescription(panelMaintenance, "txtPathUnitCount", panelMaintenance, 1.0f, Localization.Get("txtPathUnitCount") + ": 0");
 
             groupMaintenance.AddSpace(iSEPARATOR_HEIGHT);
 
             // Release Ghost vehicles
-            AddDescription(panelMaintenance, "txtReleaseGhostVehicles", panelMaintenance, 1.0f, Localization.Get("txtReleaseGhostVehicles"));
+            UISettings.AddDescription(panelMaintenance, "txtReleaseGhostVehicles", panelMaintenance, 1.0f, Localization.Get("txtReleaseGhostVehicles"));
             groupMaintenance.AddButton(Localization.Get("btnReleaseGhostVehicles"), () => 
             {
                 int iReleased = StuckVehicles.ReleaseGhostVehicles();
@@ -654,15 +688,16 @@ namespace TransferManagerCE
                     m_lblGhostVehicleCount.text = Localization.Get("txtGhostVehiclesCount") + ": " + iReleased;
                 }
             });
-            m_lblGhostVehicleCount = AddDescription(panelMaintenance, "txtGhostVehiclesCount", panelMaintenance, 1.0f, Localization.Get("txtGhostVehiclesCount") + ": 0");
-            
+            m_lblGhostVehicleCount = UISettings.AddDescription(panelMaintenance, "txtGhostVehiclesCount", panelMaintenance, 1.0f, Localization.Get("txtGhostVehiclesCount") + ": 0");
+
+            // ----------------------------------------------------------------
             // Match Set Logging
             UIHelper groupLogging = (UIHelper)helper.AddGroup(Localization.Get("GROUP_MAINTENANCE_LOGGING"));
 
             // Log Material Dropdown
             LoadReasons();
             int iCurrentReason = GetReasonArrayIndex(oModSettings.MatchLogReason);
-            AddDescription(groupLogging, "txtMatchLogging", 1.0f, Localization.Get("txtMatchLogging"));
+            UISettings.AddDescription(groupLogging, "txtMatchLogging", 1.0f, Localization.Get("txtMatchLogging"));
             m_dropdownLogReason = (UIDropDown)groupLogging.AddDropdown(Localization.Get("dropdownLoggingReason"), m_reasonNames.ToArray(), iCurrentReason, OnLogReasonChanged);
             m_dropdownLogReason.width = 400;
 
@@ -676,26 +711,18 @@ namespace TransferManagerCE
             m_dropdownCandidates = (UIDropDown)groupLogging.AddDropdown(Localization.Get("dropdownCandidates"), itemsCandidates, ModSettings.GetSettings().MatchLogCandidates, OnLogCandidatesChanged);
             m_dropdownCandidates.width = 400;
 
+
             // Log file path
             groupLogging.AddSpace(iSEPARATOR_HEIGHT);
-            AddDescription(groupLogging, "txtMatchLoggingPath", 1.0f, Localization.Get("txtMatchLoggingPath") + " " + Path.Combine(ModSettings.UserSettingsDir, "TransferManagerCE"));
+            UISettings.AddDescription(groupLogging, "txtMatchLoggingPath", 1.0f, Localization.Get("txtMatchLoggingPath") + " " + Path.Combine(ModSettings.UserSettingsDir, "TransferManagerCE"));
 
-            // Pathing connection graph
-            string[] itemsConnectionGraph = {
-                Localization.Get("dropdownConnectionGraphNone"),
-                Localization.Get("dropdownConnectionGraphGoods"),
-                Localization.Get("dropdownConnectionGraphPedestrianZoneServices"),
-                Localization.Get("dropdownConnectionGraphOtherServices"),
-            };
+            // ----------------------------------------------------------------
             UIHelper groupPathing = (UIHelper)helper.AddGroup(Localization.Get("GROUP_MAINTENANCE_PATHING"));
-            m_dropdownConnectionGraph = (UIDropDown)groupPathing.AddDropdown(Localization.Get("dropdownConnectionGraph"), itemsConnectionGraph, oModSettings.ShowConnectionGraph, OnShowConnectionGraphChanged);
-            m_dropdownConnectionGraph.width = 400;
-            AddDescription(groupPathing, "txtShowConnectionGraph", 1.0f, Localization.Get("txtShowConnectionGraph"));
-            groupPathing.AddSpace(iSEPARATOR_HEIGHT); 
             groupPathing.AddCheckbox(Localization.Get("optionLogCitizenPathFailures"), oModSettings.LogCitizenPathFailures, OnLogCitizenPathFailuresChanged);
-            AddDescription(groupPathing, "txtLogCitizenPathFailureWarning", 1.0f, Localization.Get("txtLogCitizenPathFailureWarning"));
+            UISettings.AddDescription(groupPathing, "txtLogCitizenPathFailureWarning", 1.0f, Localization.Get("txtLogCitizenPathFailureWarning"));
 
-            UIHelperBase groupTransferManager = helper.AddGroup(Localization.Get("tabTransferManager"));
+            // ----------------------------------------------------------------
+            UIHelper groupTransferManager = (UIHelper) helper.AddGroup(Localization.Get("tabTransferManager"));
 
             // Reset settings
             m_btnResetTransferManagerSettings = (UIButton)groupTransferManager.AddButton(Localization.Get("btnResetTransferManagerSettings"), OnResetTransferManagerSettingsClicked);
@@ -707,6 +734,7 @@ namespace TransferManagerCE
 
             // Reset statistics
             groupTransferManager.AddButton(Localization.Get("buttonResetTransferStatistics"), OnResetTransferStatisticsClicked);
+            groupTransferManager.AddSpace(iSEPARATOR_HEIGHT);
         }
 
         public void OnTabVisibilityChanged(UIComponent component, bool bVisible)
@@ -717,41 +745,9 @@ namespace TransferManagerCE
             }
         }
 
-        /* 
-         * Code adapted from PropAnarchy under MIT license
-         */
-        private static readonly Color32 m_greyColor = new Color32(0xe6, 0xe6, 0xe6, 0xee);
-        private static UILabel AddDescription(UIHelper parent, string name, float fontScale, string text)
-        {
-            return AddDescription(parent.self as UIPanel, name, parent.self as UIPanel, fontScale, text);
-        }
-        private static UILabel AddDescription(UIComponent panel, string name, UIComponent alignTo, float fontScale, string text)
-        {
-            UILabel desc = panel.AddUIComponent<UILabel>();
-            desc.name = name;
-            desc.width = panel.width - 80;
-            desc.wordWrap = true;
-            desc.autoHeight = true;
-            desc.textScale = fontScale;
-            desc.textColor = m_greyColor;
-            desc.text = text;
-            desc.relativePosition = new Vector3(alignTo.relativePosition.x + 26f, alignTo.relativePosition.y + alignTo.height + 10);
-            return desc;
-        }
-
         public void OnShortcutKeyChanged(float mode)
         {
             ModSettings.GetSettings().Save();
-        }
-
-        public void OnShowConnectionGraphChanged(int mode)
-        {
-            ModSettings oSettings = ModSettings.GetSettings();
-            oSettings.ShowConnectionGraph = mode;
-            oSettings.Save();
-
-            // Register renderer if needed.
-            PathConnectionRenderer.RegisterRenderer();
         }
 
         public void OnLogCitizenPathFailuresChanged(bool bChecked)
@@ -803,15 +799,25 @@ namespace TransferManagerCE
             oSettings.PathDistanceHeuristic = (int) value;
 
             // Update scale values for this new setting
-            QueueData.UpdateHeuristicScale();
+            PathData.UpdateHeuristicScale();
+            PathDistanceCache.Invalidate();
         }
+        public void OnPathDistanceCargoDelay(float value)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.PathDistanceCargoStationDelay = (int)Math.Round(value);
+
+            // Invalidate Cache
+            PathDistanceCache.Invalidate();
+        }
+        
         public void OnPathDistanceShiftChanged(float value)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.PathDistanceTravelTimeBaseValue = (int)Math.Round(value);
 
             // Update outside connection shift
-            PathNodeCache.InvalidateOutsideConnections();
+            OutsideConnectionCache.Invalidate();
         }
         public void OnPathFailExclusion(bool bChecked)
         {
@@ -909,7 +915,7 @@ namespace TransferManagerCE
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.OverrideGenericIndustriesHandler = bChecked;
 
-            IndustrialBuildingAISimulationStepActive.PatchGenericIndustriesHandler();
+            IndustrialBuildingAIGoodsPatch.PatchGenericIndustriesHandler();
         }
 
         public void OnWarehouseFirstPercentChanged(float fValue)
@@ -1023,7 +1029,7 @@ namespace TransferManagerCE
 
         public void OnResetTransferManagerSettingsClicked()
         {
-            TransferManagerLoader.ClearSettings();
+            TransferManagerMod.Instance.ClearSettings();
 
             // Update global settings
             UpdateTransferManagerSettings();
@@ -1089,9 +1095,7 @@ namespace TransferManagerCE
             UpdateTransferManagerEnabled();
 
             // Remove transpiler patches
-            IndustrialBuildingAISimulationStepActive.PatchGenericIndustriesHandler();
-            CommonBuildingAIHandleCrime.PatchCrime2Handler();
-            Patcher.PatchTaxiStandHandler();
+            Patcher.PatchReversibleTranspilers();
         }
 
         public void setOptionPreferLocalService(bool index)
@@ -1134,19 +1138,19 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.OutsideShipMultiplier = (int)fValue;
-            PathNodeCache.InvalidateOutsideConnections();
+            OutsideConnectionCache.Invalidate();
         }
         public void OnOutsidePlaneMultiplier(float fValue)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.OutsidePlaneMultiplier = (int)fValue;
-            PathNodeCache.InvalidateOutsideConnections();
+            OutsideConnectionCache.Invalidate();
         }
         public void OnOutsideTrainMultiplier(float fValue)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.OutsideTrainMultiplier = (int)fValue;
-            PathNodeCache.InvalidateOutsideConnections();
+            OutsideConnectionCache.Invalidate();
         }
         public void OnOutsideRoadMultiplier(float fValue)
         {
@@ -1160,7 +1164,7 @@ namespace TransferManagerCE
         }
         public void UpdateTransferManagerSettings()
         {
-            if (TransferManagerLoader.IsLoaded())
+            if (TransferManagerMod.Instance.IsLoaded)
             {
                 SaveGameSettings oSettings = SaveGameSettings.GetSettings();
                 m_chkEnableTransferManager.isChecked = oSettings.EnableNewTransferManager;
@@ -1171,6 +1175,7 @@ namespace TransferManagerCE
                 m_dropdownPathDistanceGoods.selectedIndex = oSettings.PathDistanceGoods;
                 m_chkEnablePathFailExclusion.isChecked = oSettings.EnablePathFailExclusion;
                 m_sliderPathDistanceHeuristic.SetValue(oSettings.PathDistanceHeuristic);
+                m_sliderCargoStationDelay.SetValue(oSettings.PathDistanceCargoStationDelay);
                 m_sliderPathDistanceShift.SetValue(oSettings.PathDistanceTravelTimeBaseValue);
                 m_chkDisableDummyTraffic.isChecked = oSettings.DisableDummyTraffic;
                 m_chkApplyUnlimited.isChecked = oSettings.ApplyUnlimited;
@@ -1255,12 +1260,13 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
 
-            bool bLoaded = TransferManagerLoader.IsLoaded();
+            bool bLoaded = TransferManagerMod.Instance.IsLoaded;
 
             EnableCheckbox(m_chkEnableTransferManager, bLoaded);
 
             // General
             m_sliderPathDistanceHeuristic.Enable(bLoaded && oSettings.EnableNewTransferManager);
+            m_sliderCargoStationDelay.Enable(bLoaded && oSettings.EnableNewTransferManager);
             m_sliderPathDistanceShift.Enable(bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkEnablePathFailExclusion, bLoaded && oSettings.EnableNewTransferManager);
             EnableCheckbox(m_chkDisableDummyTraffic, bLoaded && oSettings.EnableNewTransferManager);

@@ -1,13 +1,13 @@
 using ColossalFramework.UI;
+using SleepyCommon;
 using System.Collections;
 using System.Collections.Generic;
-using TransferManagerCE.Common;
 using TransferManagerCE.Settings;
 using UnityEngine;
 
 namespace TransferManagerCE.UI
 {
-    public class OutsideConnectionPanel : UIPanel
+    public class OutsideConnectionPanel : UIMainPanel<OutsideConnectionPanel>
     {
         const int iMARGIN = 8;
 
@@ -18,27 +18,11 @@ namespace TransferManagerCE.UI
         public const int iCOLUMN_WIDTH_LARGE = 100;
         public const int iCOLUMN_WIDTH_XLARGE = 200;
 
-        public static OutsideConnectionPanel? Instance = null;
-
         private UITitleBar? m_title = null;
         private ListView? m_listConnections = null;
-        private Coroutine? m_coroutine = null;
 
         public OutsideConnectionPanel() : base()
         {
-            m_coroutine = StartCoroutine(UpdatePanelCoroutine(4));
-        }
-
-        public static void Init()
-        {
-            if (Instance is null)
-            {
-                Instance = UIView.GetAView().AddUIComponent(typeof(OutsideConnectionPanel)) as OutsideConnectionPanel;
-                if (Instance is null)
-                {
-                    Prompt.Info("Transfer Manager CE", "Error creating Outside Connection Panel.");
-                }
-            }
         }
 
         public override void Start()
@@ -62,11 +46,12 @@ namespace TransferManagerCE.UI
             eventVisibilityChanged += OnVisibilityChanged;
             CenterTo(parent);
 
-
             // Title Bar
-            m_title = AddUIComponent<UITitleBar>();
-            m_title.SetOnclickHandler(OnCloseClick);
-            m_title.title = Localization.Get("titleOutsideConnectionPanel");
+            m_title = UITitleBar.Create(this, Localization.Get("titleOutsideConnectionPanel"), "Transfer", TransferManagerMod.Instance.LoadResources(), OnCloseClick);
+            if (m_title != null)
+            {
+                m_title.SetupButtons();
+            }
             
             // Issue list
             m_listConnections = ListView.Create<UIOutsideRow>(this, "ScrollbarTrack", 0.8f, width - 20f, height - m_title.height - 10);
@@ -85,16 +70,6 @@ namespace TransferManagerCE.UI
             UpdatePanel();
         }
 
-        public bool HandleEscape()
-        {
-            if (isVisible)
-            {
-                Hide();
-                return true;
-            }
-            return false;
-        }
-
         public void OnVisibilityChanged(UIComponent component, bool bVisible)
         {
             if (bVisible)
@@ -106,18 +81,6 @@ namespace TransferManagerCE.UI
         public void OnCloseClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             Hide();
-        }
-
-        public void TogglePanel()
-        {
-            if (isVisible)
-            {
-                Hide();
-            }
-            else
-            {
-                Show();
-            }
         }
 
         public static List<OutsideContainer> GetOutsideConnections()
@@ -133,16 +96,7 @@ namespace TransferManagerCE.UI
             return result;
         }
 
-        IEnumerator UpdatePanelCoroutine(int seconds)
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(seconds);
-                UpdatePanel();
-            }
-        }
-
-        public void UpdatePanel()
+        protected override void UpdatePanel()
         {
             if (!isVisible)
             {
@@ -164,19 +118,10 @@ namespace TransferManagerCE.UI
 
         public override void OnDestroy()
         {
-            if (m_coroutine is not null)
-            {
-                StopCoroutine(m_coroutine);
-            }
             if (m_listConnections is not null)
             {
                 Destroy(m_listConnections.gameObject);
                 m_listConnections = null;
-            }
-            if (Instance is not null)
-            {
-                Destroy(Instance.gameObject);
-                Instance = null;
             }
         }
     }

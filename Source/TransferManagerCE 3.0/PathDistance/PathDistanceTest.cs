@@ -1,65 +1,135 @@
-﻿using ColossalFramework;
+﻿using System;
 using System.Collections.Generic;
-using static TransferManagerCE.PathQueue;
+using static TransferManagerCE.NetworkModeHelper;
 
 namespace TransferManagerCE
 {
-    internal class PathDistanceTest
+    public class PathDistanceTest
     {
-#if DEBUG
-        public const bool PATH_TESTING_ENABLED = false;
-#else
-        public const bool PATH_TESTING_ENABLED = false;
-#endif
-
-        public static List<QueueData> s_nodesExamined = new List<QueueData>();
-
         private PathDistance m_pathDistance = null;
+        private ushort m_startNodeId = 0;
+        private ushort m_chosenNodeId = 0;
+        private int m_chosenBuildingId = 0;
+        private Dictionary<ushort, PathData> m_nodesExamined = new Dictionary<ushort, PathData>();
+        private long m_ticks = 0;
+        private float m_travelTime = 0.0f;
 
+        // ----------------------------------------------------------------------------------------
         public PathDistanceTest()
         {
-            m_pathDistance = new PathDistance();
+            // Force path calculation even for 1 candidate
+            m_pathDistance = new PathDistance(true, false); 
         }
 
-        public void FindNearestNeighbour(CustomTransferReason.Reason material, ushort buildingId, ushort[] candidates)
+        public ushort StartNodeId
         {
-            s_nodesExamined.Clear();
+            get { return m_startNodeId; }
+        }
+
+        public int ChosenBuildingId
+        {
+            get { return m_chosenBuildingId; }
+        }
+
+        public long ChosenNodeId
+        {
+            get { return m_chosenNodeId; }
+        }
+
+        public long Ticks
+        {
+            get { return m_ticks; }
+        }
+
+        public float TravelTime
+        {
+            get { return m_travelTime; }
+        }
+
+        public void FindNearestNeighbour(NetworkMode mode, bool bStartActive, ushort buildingId, ushort[] candidates)
+        {
+            m_nodesExamined.Clear();
+            m_chosenBuildingId = 0;
+            m_chosenNodeId = 0;
 
             // Set up lane requirements
-            m_pathDistance.SetMaterial(material);
+            m_pathDistance.SetNetworkMode(mode);
 
-            ushort uiStartNode = FindBuildingNode(material, buildingId, true);
+            // Check it is still valid
+            PathDistanceCache.UpdateCache(mode);
+
+            ushort uiStartNode = FindBuildingNode(CustomTransferReason.Reason.Goods, buildingId, bStartActive);
             if (uiStartNode != 0)
             {
+                m_startNodeId = uiStartNode;
+
                 // Create a list of node candidates to send to the path distance algorithm
+                m_pathDistance.Candidates.Clear();
                 foreach (ushort candidateId in candidates)
                 {
-                    ushort nodeId = FindBuildingNode(material, candidateId, false);
-                    if (nodeId != 0)
+                    ushort nodeId = FindBuildingNode(CustomTransferReason.Reason.Goods, candidateId, !bStartActive);
+                    if (nodeId != 0 && PathConnectedCache.IsConnected(mode, m_startNodeId, nodeId))
                     {
-                        m_pathDistance.AddCandidate(nodeId, candidateId);
+                        m_pathDistance.Candidates.Add(nodeId, candidateId);
                     }
                 }
 
                 // Calculate travel time
-                int iChosenBuilding = m_pathDistance.FindNearestNeighborId(true, uiStartNode, out float fTravelTime, out long ticks, out int iNodesExamined, s_nodesExamined);
-                
-                Debug.Log($"ChosenBuilding:{iChosenBuilding} TravelTime:{fTravelTime} NodesExamined: {iNodesExamined} Ticks: {ticks}");
+                int iResult = m_pathDistance.FindNearestNeighborId(bStartActive, uiStartNode, out m_chosenNodeId, out m_travelTime, out m_ticks, out int iNodesExamined);
+                if (iResult > 0)
+                {
+                    m_chosenBuildingId = iResult;
+                }
+
+                // Store nodes
+                m_nodesExamined = m_pathDistance.GetExaminedNodes();
             }
         }
 
-        private static ushort FindBuildingNode(CustomTransferReason.Reason material, ushort building, bool bActive)
+        public void Clear()
         {
-            ushort uiNearestNodeId = 0;
+            m_pathDistance.Candidates.Clear();
+            m_nodesExamined.Clear();
+            m_chosenNodeId = 0;
+            m_startNodeId = 0;
+            m_travelTime = 0.0f;
+            m_ticks = 0;
+            m_chosenBuildingId = 0;
+        }
 
-            ushort segmentId = PathNode.FindStartSegmentBuilding(building, material);
-            if (segmentId != 0)
+        public Dictionary<ushort, PathData> GetExaminedNodes()
+        {
+            return m_nodesExamined;
+        }
+
+        public HashSet<ushort> GetChosenPathNodes()
+        {
+            HashSet<ushort> chosenPath = new HashSet<ushort>();
+
+            chosenPath.Add(m_startNodeId);
+            chosenPath.Add(m_chosenNodeId);
+
+            ushort nodeId = m_chosenNodeId;
+            while (nodeId != 0)
             {
-                NetSegment segment = Singleton<NetManager>.instance.m_segments.m_buffer[segmentId];
-                uiNearestNodeId = PathNode.GetStartNode(segmentId, segment, bActive);
+                chosenPath.Add(nodeId);
+
+                PathData node = m_nodesExamined[nodeId];
+                nodeId = node.prevId;
             }
 
-            return uiNearestNodeId;
+            return chosenPath;
+        }
+
+        private static ushort FindBuildingNode(CustomTransferReason.Reason material, ushort buildingId, bool bActive)
+        {
+            ushort segmentId = PathNode.FindStartSegmentBuilding(buildingId, material);
+            if (segmentId != 0)
+            {
+                return PathNode.FindNearestNode(buildingId, segmentId, bActive);
+            }
+
+            return 0;
         }
     }
 }

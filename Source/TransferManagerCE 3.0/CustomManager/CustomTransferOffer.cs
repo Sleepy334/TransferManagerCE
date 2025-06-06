@@ -1,7 +1,8 @@
 ﻿using ColossalFramework;
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
-using TransferManagerCE.Data;
+using TransferManagerCE.CustomManager.Stats;
 using TransferManagerCE.Settings;
 using UnityEngine;
 using static TransferManager;
@@ -79,7 +80,7 @@ namespace TransferManagerCE.CustomManager
 #if DEBUG
             if (m_offerBuildingId is not null)
             {
-                Debug.LogError("Cached values not reset");
+                CDebug.LogError("Cached values not reset");
             }
 #endif
         }

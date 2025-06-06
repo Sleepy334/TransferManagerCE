@@ -7,6 +7,7 @@ using TransferManagerCE.TransferRules;
 using TransferManagerCE.Settings;
 using static TransferManagerCE.WarehouseUtils;
 using static TransferManagerCE.CustomManager.CustomTransferOffer;
+using SleepyCommon;
 
 namespace TransferManagerCE.CustomManager
 {

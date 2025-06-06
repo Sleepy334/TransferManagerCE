@@ -1,23 +1,25 @@
 using ColossalFramework.UI;
+using SleepyCommon;
 using System.Collections.Generic;
 using TransferManagerCE.Util;
 using UnifiedUI.Helpers;
+using static TransferManagerCE.BuildingTypeHelper;
 using static TransferManagerCE.UI.BuildingPanel;
 
 namespace TransferManagerCE.UI
 {
-    public class BuildingPathingTab
+    public class BuildingPathingTab : BuildingTab
     {
-        private ushort m_buildingId = 0;
-
         // Pathing tab
         private ListView? m_listPathing = null;
         private UIButton? m_btnReset = null;
         private bool m_bHideTab = true;
 
-        public void Setup(UITabStrip tabStrip)
+
+        // ----------------------------------------------------------------------------------------
+        public override void SetupInternal()
         {
-            UIPanel? tabPathing = tabStrip.AddTabIcon("ToolbarIconRoads", Localization.Get("tabTransferIssuesPathing"), "", 140f);
+            UIPanel? tabPathing = m_tabStrip.AddTabIcon("ToolbarIconRoads", Localization.Get("tabTransferIssuesPathing"), "", 140f);
             if (tabPathing is not null)
             {
                 tabPathing.autoLayout = true;
@@ -36,21 +38,53 @@ namespace TransferManagerCE.UI
                     m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET_FAIL_COUNT, "#", "Path fail count", BuildingPanel.iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
                 }
 
-                m_btnReset = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, tabPathing, Localization.Get("btnResetPathingStatistics"), "", 200, iButtonHeight, OnReset);
+                m_btnReset = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, tabPathing, Localization.Get("btnResetPathingStatistics"), "", 200, iButtonHeight, OnReset);
                 if (m_btnReset is not null)
                 {
                     m_btnReset.tooltip = "Reset pathing for this building.";
                 }
             }
-
-            // Hide till needed.
-            tabStrip.SetTabVisible((int)TabIndex.TAB_PATHING, false);
         }
 
-        public void SetTabBuilding(ushort buildingId)
+        public override void SetTabBuilding(ushort buildingId, BuildingType buildingType, List<ushort> subBuildingIds)
         {
-            m_buildingId = buildingId;
             m_bHideTab = true;
+            base.SetTabBuilding(buildingId, buildingType, subBuildingIds);
+        }
+
+        public override bool ShowTab()
+        {
+            if (m_buildingId == 0)
+            {
+                return false;
+            }
+
+            // Show pathing tab if there are any pathing uissues, do not hide pathing tab once it is shown for this building.
+            bool bShowTab = false;
+            if (GetPathingIssues().Count > 0)
+            {
+                bShowTab = true;
+            }
+            else if (m_buildingId == 0 || m_bHideTab)
+            {
+                bShowTab = false;
+            }
+            if (bShowTab)
+            {
+                if (!m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING))
+                {
+                    m_tabStrip.SetTabVisible((int)TabIndex.TAB_PATHING, true);
+                }
+            }
+            else
+            {
+                m_tabStrip.SetTabVisible((int)TabIndex.TAB_PATHING, false);
+            }
+
+            // Don't hide tab once shown for this building
+            m_bHideTab = false;
+
+            return bShowTab;
         }
 
         public List<PathingContainer> GetPathingIssues()
@@ -112,8 +146,13 @@ namespace TransferManagerCE.UI
             return list;
         }
 
-        public void UpdateTab(UITabStrip tabStrip)
+        public override bool UpdateTab(bool bActive)
         {
+            if (!base.UpdateTab(bActive))
+            {
+                return false;
+            }
+
             List<PathingContainer> listPathing = GetPathingIssues();
 
             // Show pathing tab if there are any pathing uissues, do not hide pathing tab once it is shown for this building.
@@ -128,30 +167,29 @@ namespace TransferManagerCE.UI
             }
             if (bShowTab)
             {
-                if (!tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING))
+                if (!m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING))
                 {
-                    tabStrip.SetTabVisible((int)TabIndex.TAB_PATHING, true);
+                    m_tabStrip.SetTabVisible((int)TabIndex.TAB_PATHING, true);
                 }
             }
             else
             {
-                tabStrip.SetTabVisible((int)TabIndex.TAB_PATHING, false);
+                m_tabStrip.SetTabVisible((int)TabIndex.TAB_PATHING, false);
             }
 
             // Don't hide tab once shown for this building
             m_bHideTab = false;
 
             // Update pathing tab count
-            if (tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING))
+            if (m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING))
             {
-                tabStrip.SetTabText((int)TabIndex.TAB_PATHING, Localization.Get("tabTransferIssuesPathing") + "(" + listPathing.Count + ")");
+                m_tabStrip.SetTabText((int)TabIndex.TAB_PATHING, Localization.Get("tabTransferIssuesPathing") + "(" + listPathing.Count + ")");
             }
 
-            bool bActive = (TabIndex)tabStrip.GetSelectTabIndex() == TabIndex.TAB_PATHING;
             if (bActive)
             {
                 // Update entries
-                if (m_listPathing is not null && tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING))
+                if (m_listPathing is not null && m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING))
                 {
                     listPathing.Sort(PathingContainer.CompareToTime);
                     m_listPathing.GetList().rowsData = new FastList<object>
@@ -165,6 +203,8 @@ namespace TransferManagerCE.UI
             {
                 Clear();
             }
+
+            return true;
         }
 
         private void OnReset(UIComponent component, UIMouseEventParameter eventParam)
@@ -180,24 +220,28 @@ namespace TransferManagerCE.UI
                 }
             }
 
-            BuildingPanel.Instance.UpdatePanel();
+            BuildingPanel.Instance.InvalidatePanel();
         }
 
-        public void Clear()
+        public override void Clear()
         {
             if (m_listPathing is not null)
             {
                 m_listPathing.Clear();
             }
+
+            base.Clear();
         }
 
-        public void Destroy()
+        public override void Destroy()
         {
             if (m_listPathing is not null)
             {
                 m_listPathing.Destroy();
                 m_listPathing = null;
             }
+
+            base.Destroy();
         }
     }
 }

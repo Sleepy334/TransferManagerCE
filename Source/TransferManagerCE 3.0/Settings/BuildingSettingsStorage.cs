@@ -1,5 +1,8 @@
+using ColossalFramework;
 using ICities;
+using SleepyCommon;
 using System.Collections.Generic;
+using System.Diagnostics;
 using TransferManagerCE.TransferRules;
 using static TransferManager;
 
@@ -9,12 +12,28 @@ namespace TransferManagerCE
     {
         private static Dictionary<ushort, BuildingSettings> s_BuildingsSettings = new Dictionary<ushort, BuildingSettings>();
         private static readonly object s_dictionaryLock = new object();
-        //private static BuildingSettings s_defaultSettings = new BuildingSettings();
+        private static bool s_bInvalidate = false;
 
         public static Dictionary<ushort, BuildingSettings> GetSettingsArray()
         {
             return s_BuildingsSettings;
         }
+
+        public static void Invalidate()
+        {
+            s_bInvalidate = true;
+        }
+
+        // Called regularly by the settings coroutine.
+        public static void Update()
+        {
+            if (s_bInvalidate) 
+            {
+                s_bInvalidate = false;
+                CheckBuildingSettings();
+            }
+        }
+
 
         public static bool HasSettings(ushort buildingId)
         {
@@ -171,22 +190,29 @@ namespace TransferManagerCE
 
         public static void CheckBuildingSettings()
         {
+            //Stopwatch stopwatch = Stopwatch.StartNew();
+            //long startTicks = stopwatch.ElapsedTicks;
+
             Building[] BuildingBuffer = BuildingManager.instance.m_buildings.m_buffer;
 
             List<ushort> buildingsToRemove = new List<ushort>();
 
-            foreach (KeyValuePair<ushort, BuildingSettings> kvp in BuildingSettingsStorage.GetSettingsArray())
-            {
-                Building building = BuildingBuffer[kvp.Key];
-                if (building.m_flags == 0)
-                {
-                    Debug.Log($"Building: {kvp.Key} is no longer valid.");
-                    buildingsToRemove.Add(kvp.Key);
-                }
-            }
-
             lock (s_dictionaryLock)
             {
+                foreach (KeyValuePair<ushort, BuildingSettings> kvp in BuildingSettingsStorage.GetSettingsArray())
+                {
+                    Building building = BuildingBuffer[kvp.Key];
+                    if (building.m_flags == 0)
+                    {
+                        CDebug.Log($"Building: {kvp.Key} is no longer valid.");
+                        buildingsToRemove.Add(kvp.Key);
+                    }
+                    else
+                    {
+                        kvp.Value.Validate();
+                    }
+                }
+
                 foreach (ushort buildingId in buildingsToRemove)
                 {
                     // Remove settings for this building
@@ -196,6 +222,9 @@ namespace TransferManagerCE
                     }
                 }
             }
+
+            //long stopTicks = stopwatch.ElapsedTicks;
+            //CDebug.Log($"{SleepyCommon.Utils.DisplayTicks(stopTicks - startTicks)}");
         }
     }
 }

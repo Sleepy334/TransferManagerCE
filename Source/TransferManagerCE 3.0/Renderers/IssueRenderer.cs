@@ -4,22 +4,29 @@ using UnityEngine;
 using static RenderManager;
 using TransferManagerCE.UI;
 using static TransferManagerCE.UI.TransferIssuePanel;
+using SleepyCommon;
 
 namespace TransferManagerCE
 {
     public class IssueRenderer : SimulationManagerBase<IssueRenderer, MonoBehaviour>, IRenderableManager
     {
-        public IssueRenderer()
+        private static bool s_rendererRegistered = false;
+
+        public static void RegisterRenderer()
         {
-            SimulationManager.RegisterManager(instance);
+            // Used to draw path connection graph, only add this once
+            if (!s_rendererRegistered)
+            {
+                SimulationManager.RegisterManager(IssueRenderer.instance);
+                s_rendererRegistered = true;
+            }
         }
 
         protected override void BeginOverlayImpl(CameraInfo cameraInfo)
         {
             base.BeginOverlayImpl(cameraInfo);
 
-            if (TransferIssuePanel.Instance is not null &&
-                TransferIssuePanel.Instance.isVisible &&
+            if (TransferIssuePanel.IsVisible() &&
                 ModSettings.GetSettings().HighlightIssuesState == 1)
             {
                 switch ((TransferIssuePanel.TabOrder) TransferIssuePanel.Instance.GetSelectTabIndex())
@@ -64,7 +71,7 @@ namespace TransferManagerCE
             }
             else
             {
-                Debug.Log($"m_issueHelper is null");
+                CDebug.Log($"m_issueHelper is null");
             }
         }
 

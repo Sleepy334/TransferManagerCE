@@ -1,5 +1,6 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
+using SleepyCommon;
 using System;
 using System.Diagnostics;
 using TransferManagerCE.Settings;
@@ -46,7 +47,7 @@ namespace TransferManagerCE
                                 // Set MaxValue so a vehicle is spawned.
                                 Nodes[stop].m_maxWaitTime = byte.MaxValue;
 #if DEBUG
-                                Debug.Log($"Building: {buildingID} Stop: {stop} - Set to {byte.MaxValue}");
+                                CDebug.Log($"Building: {buildingID} Stop: {stop} - Set to {byte.MaxValue}");
 #endif
                             }
                         }
@@ -60,7 +61,7 @@ namespace TransferManagerCE
                     }
 
                     //long jobMatchTimeTicks = s_stopwatch.ElapsedTicks - startTimeTicks;
-                    //Debug.Log($"buildingID: {buildingID} TransportType: {__instance.m_transportInfo.m_transportType} Time: {(jobMatchTimeTicks * 0.0001).ToString("F")}");
+                    //CDebug.Log($"buildingID: {buildingID} TransportType: {__instance.m_transportInfo.m_transportType} Time: {(jobMatchTimeTicks * 0.0001).ToString("F")}");
                 }
             }
 
@@ -160,7 +161,7 @@ namespace TransferManagerCE
                         citizenInstanceId = nextGridInstance;
                         if (++iLoopCount > 65536)
                         {
-                            Debug.Log("Invalid list detected!\n" + Environment.StackTrace);
+                            CDebug.Log("Invalid list detected!\n" + Environment.StackTrace);
                             break;
                         }
                     }

@@ -75,5 +75,35 @@ namespace TransferManagerCE
                 }
             }
         }
+
+        public static void HighlightNode(CameraInfo cameraInfo, NetNode oNode, Color color)
+        {
+            RenderManager.instance.OverlayEffect.DrawCircle(
+                                            cameraInfo,
+                                            color,
+                                            oNode.m_position,
+                                            oNode.m_bounds.size.magnitude,
+                                            oNode.m_position.y - 1f,
+                                            oNode.m_position.y + 1f,
+                                            true,
+                                            true);
+        }
+
+        public static void HighlightSegment(RenderManager.CameraInfo cameraInfo, ref NetSegment segment, Color importantColor, Color nonImportantColor)
+        {
+            NetInfo info = segment.Info;
+            if (!(info == null) && ((segment.m_flags & NetSegment.Flags.Untouchable) == 0 || info.m_overlayVisible))
+            {
+                Bezier3 bezier = default(Bezier3);
+                bezier.a = Singleton<NetManager>.instance.m_nodes.m_buffer[segment.m_startNode].m_position;
+                bezier.d = Singleton<NetManager>.instance.m_nodes.m_buffer[segment.m_endNode].m_position;
+                NetSegment.CalculateMiddlePoints(bezier.a, segment.m_startDirection, bezier.d, segment.m_endDirection, smoothStart: false, smoothEnd: false, out bezier.b, out bezier.c);
+                bool flag = false;
+                bool flag2 = false;
+                int privateServiceIndex = ItemClass.GetPrivateServiceIndex(info.m_class.m_service);
+                Color color = (((privateServiceIndex == -1 && !info.m_autoRemove) || (segment.m_flags & NetSegment.Flags.Untouchable) != 0) ? importantColor : nonImportantColor);
+                Singleton<RenderManager>.instance.OverlayEffect.DrawBezier(cameraInfo, color, bezier, info.m_halfWidth * 2f, (!flag) ? (-100000f) : info.m_halfWidth, (!flag2) ? (-100000f) : info.m_halfWidth, -1f, 1280f, renderLimits: false, alphaBlend: false);
+            }
+        }
     }
 }

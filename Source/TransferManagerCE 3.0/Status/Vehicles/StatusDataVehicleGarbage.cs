@@ -5,22 +5,22 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataVehicleGarbage : StatusDataVehicle
     {
-        public StatusDataVehicleGarbage(TransferReason material, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
+        public StatusDataVehicleGarbage(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
             base(material, eBuildingType, BuildingId, responder, target)
         {
         }
 
-        protected override string CalculateTarget(out string tooltip)
+        protected override string CalculateVehicle(out string tooltip)
         {
             tooltip = "";
 
-            if (m_material == TransferReason.Goods)
+            if (m_material == CustomTransferReason.Reason.Goods)
             {
                 return "";
             }
             else
             {
-                return base.CalculateTarget(out tooltip);
+                return base.CalculateVehicle(out tooltip);
             }
         }
 
@@ -28,7 +28,7 @@ namespace TransferManagerCE.Data
         {
             tooltip = "";
 
-            if (m_material == TransferReason.Goods)
+            if (m_material == CustomTransferReason.Reason.Goods)
             {
                 return "";
             }

@@ -7,7 +7,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataSchool : StatusDataBuilding
     {
-        public StatusDataSchool(TransferReason material, BuildingType eBuildingType, ushort BuildingId) : 
+        public StatusDataSchool(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) : 
             base(material, eBuildingType, BuildingId)
         {
         }

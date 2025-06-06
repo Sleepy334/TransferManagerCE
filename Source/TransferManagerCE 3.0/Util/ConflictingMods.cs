@@ -1,4 +1,5 @@
 using ColossalFramework.Plugins;
+using SleepyCommon;
 using System.Reflection;
 
 namespace TransferManagerCE
@@ -51,7 +52,7 @@ namespace TransferManagerCE
                                 
                             default:
                                 {
-                                    //Debug.Log("Assembly: " + assembly.GetName().Name);
+                                    //CDebug.Log("Assembly: " + assembly.GetName().Name);
                                     break;
                                 }
                         }

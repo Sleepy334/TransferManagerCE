@@ -13,7 +13,7 @@ namespace TransferManagerCE.Data
     {
         private static int? s_maxLoadSize = null;
 
-        public StatusDataBuildingCommercial(TransferReason material, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataBuildingCommercial(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) :
             base(material, eBuildingType, BuildingId)
         {
         }
@@ -28,9 +28,9 @@ namespace TransferManagerCE.Data
                 {
                     switch (m_material)
                     {
-                        case TransferReason.Goods:
-                        case TransferReason.Food:
-                        case TransferReason.LuxuryProducts:
+                        case CustomTransferReason.Reason.Goods:
+                        case CustomTransferReason.Reason.Food:
+                        case CustomTransferReason.Reason.LuxuryProducts:
                             {
                                 int maxIncomingLoadSize = MaxIncomingLoadSize(buildingAI);
                                 int visitPlaceCount = GetCustomerPlaces(buildingAI, building);
@@ -59,7 +59,7 @@ namespace TransferManagerCE.Data
 
         protected override string CalculateTimer(out string tooltip)
         {
-            bool bIncoming = m_material == TransferReason.Goods || m_material == TransferReason.Food;
+            bool bIncoming = m_material == CustomTransferReason.Reason.Goods || m_material == CustomTransferReason.Reason.Food;
 
             string sTimer = base.CalculateTimer(out tooltip);
             

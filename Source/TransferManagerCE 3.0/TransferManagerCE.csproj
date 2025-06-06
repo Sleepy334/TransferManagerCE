@@ -76,14 +76,17 @@
     </Reference>
     <Reference Include="UnifiedUILib">
       <HintPath>..\..\References\UnifiedUILib.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine">
+    </Reference>    
+    <Reference Include="UnityEngine">  
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Assemblies\" />
+    <Folder Include="SelectionTool\SelectionMode\" />
   </ItemGroup>
+
+  <Import Project="..\..\SleepyCommon\SleepyCommon.projitems" Label="Shared" />
 
 </Project>

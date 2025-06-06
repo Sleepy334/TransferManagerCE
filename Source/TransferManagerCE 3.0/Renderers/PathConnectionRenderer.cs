@@ -1,9 +1,10 @@
 ﻿using ColossalFramework;
 using System.Collections.Generic;
-using TransferManagerCE.Settings;
 using UnityEngine;
 using static RenderManager;
 using System;
+using TransferManagerCE.UI;
+using static TransferManagerCE.NetworkModeHelper;
 
 namespace TransferManagerCE
 {
@@ -15,9 +16,9 @@ namespace TransferManagerCE
         public static void RegisterRenderer()
         {
             // Used to draw path connection graph, only add this once
-            if (!s_rendererRegistered && ModSettings.GetSettings().ShowConnectionGraph > 0)
+            if (!s_rendererRegistered)
             {
-                SimulationManager.RegisterManager((UnityEngine.Object)ColossalFramework.Singleton<PathConnectionRenderer>.instance);
+                SimulationManager.RegisterManager(PathConnectionRenderer.instance);
                 s_rendererRegistered = true;
             }
         }
@@ -26,7 +27,7 @@ namespace TransferManagerCE
         {
             base.BeginOverlayImpl(cameraInfo);
 
-            if (TransferManagerLoader.IsLoaded())
+            if (TransferManagerMod.Instance.IsLoaded)
             {
                 HighlightNodes(cameraInfo);
             }
@@ -34,25 +35,30 @@ namespace TransferManagerCE
 
         private void HighlightNodes(CameraInfo cameraInfo)
         {
-            int iShowConnection = ModSettings.GetSettings().ShowConnectionGraph;
-            if (iShowConnection > 0)
+            // Do nothing if panel not visible
+            if (!PathDistancePanel.IsVisible())
             {
-                // DEBUGGING, Show node connection colors
+                return;
+            }
+
+            if (PathDistancePanel.Instance.ShowConnectionGraph && PathDistancePanel.Instance.Algorithm != NetworkModeHelper.NetworkMode.None)
+            {
+                // Show node connection colors
                 ConnectedStorage? connectionNodes = null;
-                switch (iShowConnection)
+                switch (PathDistancePanel.Instance.Algorithm)
                 {
-                    case 1:
+                    case NetworkMode.Goods:
                         {
                             connectionNodes = PathConnectedCache.GetGoodsBufferCopy();
 
                             break;
                         }
-                    case 2:
+                    case NetworkMode.PedestrianZone:
                         {
                             connectionNodes = PathConnectedCache.GetPedestrianZoneServicesBufferCopy();
                             break;
                         }
-                    case 3:
+                    case NetworkMode.OtherServices:
                         {
                             connectionNodes = PathConnectedCache.GetOtherServicesBufferCopy();
                             break;
@@ -74,15 +80,11 @@ namespace TransferManagerCE
                             int iColorIndex = kvp.Value - 1;
                             if (iColorIndex >= 0 && iColorIndex < m_color.Length)
                             {
-                                HighlightNode(cameraInfo, oNode, m_color[iColorIndex]);
+                                RendererUtils.HighlightNode(cameraInfo, oNode, m_color[iColorIndex]);
                             }
                         }
                     }
                 }
-            }
-            else
-            {
-                m_color = null;
             }
         }
 
@@ -108,19 +110,6 @@ namespace TransferManagerCE
                     m_color[i] = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
                 }
             }
-        }
-
-        private static void HighlightNode(CameraInfo cameraInfo, NetNode oNode, Color color)
-        {
-            RenderManager.instance.OverlayEffect.DrawCircle(
-                                            cameraInfo,
-                                            color,
-                                            oNode.m_position,
-                                            oNode.m_bounds.size.magnitude,
-                                            oNode.m_position.y - 1f,
-                                            oNode.m_position.y + 1f,
-                                            true,
-                                            true);
         }
     }
 }

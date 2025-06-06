@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using SleepyCommon;
 using System;
 using TransferManagerCE.Settings;
 using UnityEngine;
@@ -29,7 +30,7 @@ namespace TransferManagerCE
                     float fDistanceSquared = Vector3.SqrMagnitude(data.GetLastFramePosition() - building.m_position);
                     if (fDistanceSquared < fDespawnDistanceSquared)
                     {
-                        //Debug.Log($"Vehicle:{vehicleID} Flags: {data.m_flags}, Outside connection:{data.m_targetBuilding} Distance: {fDistanceSquared}");
+                        //CDebug.Log($"Vehicle:{vehicleID} Flags: {data.m_flags}, Outside connection:{data.m_targetBuilding} Distance: {fDistanceSquared}");
                         __instance.ArriveAtDestination(vehicleID, ref data);
                     }
                 }

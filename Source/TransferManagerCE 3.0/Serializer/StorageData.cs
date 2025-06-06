@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SleepyCommon;
+using System;
 using System.Collections.Generic;
 
 namespace TransferManagerCE
@@ -171,7 +172,7 @@ namespace TransferManagerCE
                 } 
                 else
                 {
-                    Debug.LogError("Data size not large enough aborting read. ArraySize: " + iArrayCount + " DataSize: " + Data.Length + " Index: " + iIndex);
+                    CDebug.LogError("Data size not large enough aborting read. ArraySize: " + iArrayCount + " DataSize: " + Data.Length + " Index: " + iIndex);
                 }
             }
             return list;

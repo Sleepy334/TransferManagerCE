@@ -26,9 +26,12 @@ namespace TransferManagerCE.Util
         private CustomTransferReason.Reason m_material;
         private LogCandidates m_candidateLogging = LogCandidates.All;
         Dictionary<ExclusionReason, int> m_candidateReasons = new Dictionary<ExclusionReason, int>();
-        private bool m_bScaleByPriority = false;
         private string LogFilePath;
         private StreamWriter? m_streamWriter = null;
+        private Dictionary<InstanceID, string> m_incomingOfferDescriptions = new Dictionary<InstanceID, string>();
+        private Dictionary<InstanceID, string> m_outgoingOfferDescriptions = new Dictionary<InstanceID, string>();
+        private bool m_bScaleByPriority = false;
+        private bool m_bDisplayNode = false;
 
         // Shared variables
         private static readonly object LogLock = new object();
@@ -41,6 +44,7 @@ namespace TransferManagerCE.Util
             m_material = material;
             m_candidateLogging = (LogCandidates)ModSettings.GetSettings().MatchLogCandidates;
             m_bScaleByPriority = TransferManagerModes.IsScaleByPriority(m_material);
+            m_bDisplayNode = PathDistanceTypes.GetDistanceAlgorithm(material) != PathDistanceTypes.PathDistanceAlgorithm.LineOfSight;
 
             try
             {
@@ -188,8 +192,8 @@ namespace TransferManagerCE.Util
         public void LogMatch(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, int deltaamount)
         {
             LogInfo($"       ### Match Found ### Material:{m_material} Amount:{deltaamount} Distance:{TransferManagerUtils.GetDistanceKm(incomingOffer, outgoingOffer)}km");
-            LogInfo("       - " + TransferManagerUtils.DebugOffer(m_material, incomingOffer, false, false, false));
-            LogInfo("       - " + TransferManagerUtils.DebugOffer(m_material, outgoingOffer, false, false, false));
+            LogInfo("       - " + GetOfferDescription(incomingOffer));
+            LogInfo("       - " + GetOfferDescription(outgoingOffer));
         }
 
         // -------------------------------------------------------------------------------------------
@@ -200,7 +204,7 @@ namespace TransferManagerCE.Util
             for (int i = 0; i < job.m_incomingCount; i++)
             {
                 CustomTransferOffer incomingOffer = job.m_incomingOffers[i];
-                LogInfo($"#{i.ToString("0000")} | {TransferManagerUtils.DebugOffer(job.material, incomingOffer, true, false, true)} |");
+                LogInfo($"#{i.ToString("0000")} | {GetOfferDescription(incomingOffer)} |");
             }
 
             // Add separator
@@ -209,7 +213,7 @@ namespace TransferManagerCE.Util
             for (int i = 0; i < job.m_outgoingCount; i++)
             {
                 CustomTransferOffer outgoingOffer = job.m_outgoingOffers[i];
-                LogInfo($"#{i.ToString("0000")} | {TransferManagerUtils.DebugOffer(job.material, outgoingOffer, true, false, true)} |");
+                LogInfo($"#{i.ToString("0000")} | {GetOfferDescription(outgoingOffer)} |");
             }
 
             LogSeparator();
@@ -240,7 +244,7 @@ namespace TransferManagerCE.Util
             // Log candidate if requested
             if (LogCandidate(reason))
             {
-                LogInfo($"       -> | #{iIndex.ToString("0000")} | {TransferManagerUtils.DebugOffer(m_material, candidateOffer, true, true, true)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km | Exclusion:{reason}");
+                LogInfo($"       -> | #{iIndex.ToString("0000")} | {GetOfferDescription(candidateOffer)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km | Exclusion:{reason}");
             }
         }
 
@@ -253,7 +257,7 @@ namespace TransferManagerCE.Util
             // Log candidate if requested
             if (LogCandidate(reason))
             {
-                LogInfo($"       -> | #{iIndex.ToString("0000")} {TransferManagerUtils.DebugOffer(m_material, candidateOffer, true, bConnectedMode, true)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km |" + (m_bScaleByPriority ? $" PriorityFactor:{candidateOffer.GetPriorityFactor(m_material).ToString("0.0000000")} | " : "") + $" OutsideFactor:{fOutsideFactor.ToString("0.0000000")} | Exclusion: {reason}");
+                LogInfo($"       -> | #{iIndex.ToString("0000")} {GetOfferDescription(candidateOffer)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km |" + (m_bScaleByPriority ? $" PriorityFactor:{candidateOffer.GetPriorityFactor(m_material).ToString("0.0000000")} | " : "") + $" OutsideFactor:{fOutsideFactor.ToString("0.0000000")} | Exclusion: {reason}");
             }
         }
 
@@ -266,7 +270,7 @@ namespace TransferManagerCE.Util
             // Log candidate if requested
             if (LogCandidate(reason))
             {
-                LogInfo($"       -> | #{iIndex.ToString("0000")} {TransferManagerUtils.DebugOffer(m_material, candidateOffer, true, bConnectedMode, true)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km |" + (m_bScaleByPriority ? $" PriorityFactor:{candidateOffer.GetPriorityFactor(m_material).ToString("0.0000000")} | " : "") + $" OutsideFactor:{fOutsideFactor.ToString("0.0000000")} | Exclusion: {reason}");
+                LogInfo($"       -> | #{iIndex.ToString("0000")} {GetOfferDescription(candidateOffer)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km |" + (m_bScaleByPriority ? $" PriorityFactor:{candidateOffer.GetPriorityFactor(m_material).ToString("0.0000000")} | " : "") + $" OutsideFactor:{fOutsideFactor.ToString("0.0000000")} | Exclusion: {reason}");
             }
         }
 
@@ -279,7 +283,7 @@ namespace TransferManagerCE.Util
             // Log candidate if requested
             if (LogCandidate(reason))
             {
-                LogInfo($"       -> | #{iIndex.ToString("0000")} | {TransferManagerUtils.DebugOffer(m_material, candidateOffer, true, false, true)} | Exclusion:{reason}");
+                LogInfo($"       -> | #{iIndex.ToString("0000")} | {GetOfferDescription(candidateOffer)} | Exclusion:{reason}");
             }
         }
 
@@ -306,6 +310,37 @@ namespace TransferManagerCE.Util
                 {
                     m_streamWriter.WriteLine(new System.Diagnostics.StackTrace(true).ToString());
                     m_streamWriter.WriteLine();
+                }
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------
+        private string GetOfferDescription(CustomTransferOffer offer)
+        {
+            if (offer.IsIncoming())
+            {
+                if (m_incomingOfferDescriptions.ContainsKey(offer.m_object))
+                {
+                    return m_incomingOfferDescriptions[offer.m_object];
+                }
+                else
+                {
+                    string sDescription = TransferManagerUtils.DebugOffer(m_material, offer, true, m_bDisplayNode, true);
+                    m_incomingOfferDescriptions[offer.m_object] = sDescription;
+                    return sDescription;
+                }
+            }
+            else
+            {
+                if (m_outgoingOfferDescriptions.ContainsKey(offer.m_object))
+                {
+                    return m_outgoingOfferDescriptions[offer.m_object];
+                }
+                else
+                {
+                    string sDescription = TransferManagerUtils.DebugOffer(m_material, offer, true, m_bDisplayNode, true);
+                    m_outgoingOfferDescriptions[offer.m_object] = sDescription;
+                    return sDescription;
                 }
             }
         }

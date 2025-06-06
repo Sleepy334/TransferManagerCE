@@ -1,8 +1,4 @@
-using static RenderManager;
-using System;
-using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
-using ICities;
 
 namespace TransferManagerCE.Data
 {

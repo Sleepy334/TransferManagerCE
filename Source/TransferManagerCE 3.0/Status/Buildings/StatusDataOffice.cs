@@ -9,7 +9,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataOffice : StatusDataBuilding
     {
-        public StatusDataOffice(TransferReason material, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataOffice(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) :
             base(material, eBuildingType, BuildingId)
         {
         }
@@ -18,10 +18,10 @@ namespace TransferManagerCE.Data
         {
             switch (m_material)
             {
-                case TransferReason.BusinessA:
-                case TransferReason.BusinessB:
-                case TransferReason.BusinessC:
-                case TransferReason.BusinessD:
+                case CustomTransferReason.Reason.BusinessA:
+                case CustomTransferReason.Reason.BusinessB:
+                case CustomTransferReason.Reason.BusinessC:
+                case CustomTransferReason.Reason.BusinessD:
                     {
                         return "Business";
                     }
@@ -42,10 +42,10 @@ namespace TransferManagerCE.Data
             {
                 switch (m_material)
                 {
-                    case TransferReason.BusinessA:
-                    case TransferReason.BusinessB:
-                    case TransferReason.BusinessC:
-                    case TransferReason.BusinessD:
+                    case CustomTransferReason.Reason.BusinessA:
+                    case CustomTransferReason.Reason.BusinessB:
+                    case CustomTransferReason.Reason.BusinessC:
+                    case CustomTransferReason.Reason.BusinessD:
                         {
                             OfficeBuildingAI buildingAI = building.Info.GetAI() as OfficeBuildingAI;
                             if (buildingAI is not null)
@@ -68,7 +68,7 @@ namespace TransferManagerCE.Data
 
         protected override string CalculateTimer(out string tooltip)
         {
-            bool bIncoming = m_material == TransferReason.Goods || m_material == TransferReason.Food;
+            bool bIncoming = m_material == CustomTransferReason.Reason.Goods || m_material == CustomTransferReason.Reason.Food;
 
             string sTimer = base.CalculateTimer(out tooltip);
             

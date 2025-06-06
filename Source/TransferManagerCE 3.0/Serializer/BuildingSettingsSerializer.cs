@@ -1,3 +1,4 @@
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using TransferManagerCE.Util;
@@ -45,7 +46,7 @@ namespace TransferManagerCE
                 // Read in the data version for these building settings
                 int iBuildingSettingsVersion = StorageData.ReadInt32(Data, ref iIndex);
 #if DEBUG
-                Debug.Log("Global: " + iGlobalVersion + " BuildingVersion: " + iBuildingSettingsVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
+                CDebug.Log("Global: " + iGlobalVersion + " BuildingVersion: " + iBuildingSettingsVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
 #endif
                 // Check we support reading this version
                 if (iBuildingSettingsVersion <= iBUILDING_SETTINGS_DATA_VERSION)
@@ -96,7 +97,7 @@ namespace TransferManagerCE
                                 case 10: settings = LoadDataVersion10(Data, ref iIndex); break;
                                 default:
                                     {
-                                        Debug.Log("New data version, unable to load!");
+                                        CDebug.Log("New data version, unable to load!");
                                         break;
                                     }
                             }
@@ -115,13 +116,13 @@ namespace TransferManagerCE
                         }
                         else
                         {
-                            Debug.Log($"Building Settings: {buildingId} are default, ignoring.");
+                            CDebug.Log($"Building Settings: {buildingId} are default, ignoring.");
                         }
                     }
                 } 
                 else
                 {
-                    Debug.Log($"New data version {iBuildingSettingsVersion}, unable to load!");
+                    CDebug.Log($"New data version {iBuildingSettingsVersion}, unable to load!");
                 }
             }
         }
@@ -282,7 +283,7 @@ namespace TransferManagerCE
                 }
                 else
                 {
-                    Debug.LogError("Error reading old settings, no restriction object created.");
+                    CDebug.LogError("Error reading old settings, no restriction object created.");
                 }
             }
             return settings;

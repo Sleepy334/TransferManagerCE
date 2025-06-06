@@ -1,5 +1,7 @@
 using ColossalFramework;
+using SleepyCommon;
 using System;
+using System.Drawing;
 using UnityEngine;
 
 namespace TransferManagerCE.Data
@@ -9,17 +11,25 @@ namespace TransferManagerCE.Data
         public ushort m_vehicleId;
         public Vehicle m_vehicle;
         private string? m_name = null;
-        private string? m_value = null;
+        
         private double? m_distance = null;
         private string? m_target = null;
         private Vector3 m_buildingPos = Vector3.zero;
         private CustomTransferReason.Reason? m_reason = null;
+
+        protected string? m_value = null;
+        protected string m_valueTooltip = "";
 
         public VehicleData(Vector3 buildingPos, ushort vehicleId)
         {
             m_buildingPos = buildingPos;
             m_vehicleId = vehicleId;
             m_vehicle = VehicleManager.instance.m_vehicles.m_buffer[m_vehicleId];
+        }
+
+        public virtual bool IsHeading()
+        {
+            return false;
         }
 
         public int CompareTo(object second)
@@ -74,11 +84,11 @@ namespace TransferManagerCE.Data
         {
             if (m_vehicle.m_targetBuilding != 0)
             {
-                return CitiesUtils.GetBuildingName(m_vehicle.m_targetBuilding, true);
+                return CitiesUtils.GetBuildingName(m_vehicle.m_targetBuilding, InstanceID.Empty, true);
             }
             else if (m_vehicle.m_sourceBuilding != 0)
             {
-                return CitiesUtils.GetBuildingName(m_vehicle.m_sourceBuilding, true);
+                return CitiesUtils.GetBuildingName(m_vehicle.m_sourceBuilding, InstanceID.Empty, true);
             }
                 
             return GetTarget();
@@ -109,7 +119,7 @@ namespace TransferManagerCE.Data
         {
             if (GetVehicleId() != 0)
             {
-                return $"#{GetVehicleId()}: {GetVehicle()}";
+                return VehicleUtils.GetVehicleTooltip(GetVehicleId());
             }
 
             return "";
@@ -120,8 +130,14 @@ namespace TransferManagerCE.Data
             if (m_value is null)
             {
                 m_value = CitiesUtils.GetVehicleTransferValue(GetVehicleId(), out int current, out int max);
+                m_valueTooltip = $"{(CustomTransferReason)m_vehicle.m_transferType} | {StatusData.DisplayBufferLong(current)} / {StatusData.DisplayBufferLong(max)}";
             }
             return m_value;
+        }
+
+        public virtual string GetValueTooltip()
+        {
+            return m_valueTooltip;
         }
 
         public virtual string GetTimer()
@@ -214,6 +230,11 @@ namespace TransferManagerCE.Data
             }
 
             return double.MaxValue;
+        }
+
+        public virtual UnityEngine.Color GetTextColor()
+        {
+            return SleepyCommon.KnownColor.lightGrey;
         }
     }
 }

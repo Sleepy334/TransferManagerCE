@@ -9,7 +9,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataProcessingFacility : StatusDataBuilding
     {
-        public StatusDataProcessingFacility(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataProcessingFacility(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }
@@ -22,33 +22,33 @@ namespace TransferManagerCE.Data
             {
                 int value = 0;
                 int bufferSize = 0;
-                if (buildingAI.m_inputResource1 == m_material)
+                if (buildingAI.m_inputResource1 == (TransferReason) m_material)
                 {
                     value = (building.m_customBuffer2);
                     bufferSize = buildingAI.GetInputBufferSize1(m_buildingId, ref building);
                 } 
-                else if (buildingAI.m_inputResource2 == m_material)
+                else if (buildingAI.m_inputResource2 == (TransferReason) m_material)
                 {
                     value = ((building.m_teens << 8) | building.m_youngs);
                     bufferSize = buildingAI.GetInputBufferSize2(m_buildingId, ref building);
                 }
-                else if (buildingAI.m_inputResource3 == m_material)
+                else if (buildingAI.m_inputResource3 == (TransferReason) m_material)
                 {
                     value = ((building.m_adults << 8) | building.m_seniors);
                     bufferSize = buildingAI.GetInputBufferSize3(m_buildingId, ref building);
                 }
-                else if (buildingAI.m_inputResource4 == m_material)
+                else if (buildingAI.m_inputResource4 == (TransferReason) m_material)
                 {
                     value = ((building.m_education1 << 8) | building.m_education2);
                     bufferSize = buildingAI.GetInputBufferSize4(m_buildingId, ref building);
                 }
-                else if (m_material == buildingAI.m_outputResource)
+                else if ((TransferReason) m_material == buildingAI.m_outputResource)
                 {
                     value = building.m_customBuffer1;
                     bufferSize = buildingAI.GetOutputBufferSize(m_buildingId, ref building);
                 }
 
-                bool bOutgoing = m_material == buildingAI.m_outputResource;
+                bool bOutgoing = (TransferReason) m_material == buildingAI.m_outputResource;
                 WarnText(!bOutgoing, bOutgoing, value, bufferSize);
                 tooltip = MakeTooltip(!bOutgoing, value, bufferSize);
                 return DisplayValueAsPercent(value, bufferSize);
@@ -68,7 +68,7 @@ namespace TransferManagerCE.Data
                 ProcessingFacilityAI? buildingAI = building.Info?.m_buildingAI as ProcessingFacilityAI;
                 if (buildingAI is not null)
                 {
-                    if (m_material == buildingAI.m_outputResource)
+                    if ((TransferReason) m_material == buildingAI.m_outputResource)
                     {
                         if (building.m_outgoingProblemTimer > 0)
                         {

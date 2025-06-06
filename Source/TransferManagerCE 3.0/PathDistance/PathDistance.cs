@@ -1,46 +1,146 @@
-using System;
+using SleepyCommon;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using UnityEngine;
-using static TransferManagerCE.PathQueue;
+using System.Linq;
+using static TransferManagerCE.NetworkModeHelper;
+using static TransferManagerCE.NodeLinkData;
 
 namespace TransferManagerCE
 {
-    public class PathDistance : PathBase
+    public class PathDistance
     {
-        const int iMAX_CANDIDATE_POSITIONS = 30;
-
+        private NetworkMode m_mode = NetworkMode.None;
+        private bool m_bAutoSelectSingleCandidate = true;
         // Arrays
-        private Dictionary<ushort, int> m_candidateData = new Dictionary<ushort, int>(); // Path candidate (node, id)
+        PathCandidates m_candidates = new PathCandidates();
         private BitArray m_visited; // A flag for whether node has been visited yet
         private PathQueue m_sortedNodes; // An indexed priority queue to help us choose next node.
 
-        // A* Heuristic
-        private Vector3[] m_candidatePositions = new Vector3[iMAX_CANDIDATE_POSITIONS];
-        private int m_iCandidatePositionCount = 0;
-
-        // Which direction is the vehicle going?
-        private bool m_bStartActive = true;
-
-        // Do we bother calculating heuristic
-        private bool m_bUsePathDistanceHeuristic;
-
         private static Stopwatch s_watch = Stopwatch.StartNew();
 
-        public PathDistance() : base()
+        // ----------------------------------------------------------------------------------------
+        public PathDistance(bool bStoreNodes, bool bAutoSelectSingleCandidate) : 
+            base()
         {
-            QueueData.UpdateHeuristicScale();
-            m_sortedNodes = new PathQueue();
+            m_sortedNodes = new PathQueue(bStoreNodes);
             m_visited = new BitArray(NetManager.MAX_NODE_COUNT);
+            m_bAutoSelectSingleCandidate = bAutoSelectSingleCandidate;
         }
 
-        public override void SetMaterial(CustomTransferReason.Reason material)
+        public void SetNetworkMode(NetworkMode mode)
         {
-            base.SetMaterial(material);
+            m_mode = mode;
 
             // Dont bother calculating heuristic if set to 0
-            m_bUsePathDistanceHeuristic = SaveGameSettings.GetSettings().PathDistanceHeuristic > 0;
+            PathData.UpdateHeuristicScale();
+        }
+
+        public Dictionary<ushort, PathData>? GetExaminedNodes()
+        {
+            return m_sortedNodes.GetExaminedNodes();
+        }
+
+        public PathCandidates Candidates
+        {
+            get { return m_candidates; }
+        }
+
+        // Dijkstra's algorithm, returns -1 if not found, otherwise returns candidate id
+        public int FindNearestNeighborId(bool bStartActive, ushort startNodeId, out ushort nodeId, out float fTravelTime, out long ticks, out int iNodesExamined)
+        {
+            long startTime = s_watch.ElapsedTicks;
+            fTravelTime = 0.0f;
+            iNodesExamined = 0;
+
+            nodeId = 0;
+            int iCandidateId = -1;
+
+            if (Candidates.Count > 0)
+            {
+                if (m_bAutoSelectSingleCandidate && Candidates.Count == 1)
+                {
+                    // 1 option just return it's id.
+                    KeyValuePair<ushort, int> kvp = Candidates.Items.First();
+                    ticks = s_watch.ElapsedTicks - startTime;
+                    nodeId = kvp.Key;
+                    return kvp.Value;
+                }
+
+                NodeLinkGraph nodeLinkLoader = PathDistanceCache.GetLoader(m_mode, false); // Don't update cache here, just use current values
+
+                // Check if start node and candidate node are the same
+                // no need to search further, return candidate id
+                if (Candidates.Contains(startNodeId, out int candidateId))
+                {
+                    ticks = s_watch.ElapsedTicks - startTime;
+                    nodeId = startNodeId;
+                    return candidateId;
+                }
+
+                // Clear graph arrays
+                ResetArrays();
+
+                // Mark start node as distance 0.
+                PathData nodeData = new PathData(startNodeId, 0, 0.0f, float.MaxValue);
+                m_sortedNodes.Push(nodeData);
+
+                // Determine direction vehicle must travel
+                NetInfo.Direction direction = bStartActive ? NetInfo.Direction.Forward : NetInfo.Direction.Backward;
+
+                // Given a starting node, traverse the maps nodes to find the nearest candidate
+                int iLoopCount = 0;
+                while (m_sortedNodes.Count > 0)
+                {
+                    // Next node to evaluate is the minimum distance "unvisited" node.
+                    PathData minNode = m_sortedNodes.Pop();
+                    
+                    ushort usMinNodeId = minNode.nodeId;
+                    if (m_visited[usMinNodeId])
+                    {
+                        continue;
+                    }
+
+                    // Set the node as visited now
+                    iNodesExamined++;
+                    minNode.visited = true;
+                    m_visited[usMinNodeId] = true;
+
+                    // If a candidate is the lowest value
+                    // unvisited node then we don't need to search anymore
+                    if (Candidates.Contains(usMinNodeId, out candidateId))
+                    {
+                        nodeId = usMinNodeId;
+                        iCandidateId = candidateId;
+                        fTravelTime = minNode.TravelTime();
+                        break;
+                    }
+
+                    // Process all node links from this node
+                    NodeLinkData links = nodeLinkLoader.GetNodeLinks(usMinNodeId);
+                    List<NodeLink> linkData = links.items;
+                    for (int i = 0; i < linkData.Count; ++i)
+                    {
+                        NodeLink link = linkData[i];
+
+                        // Check direction of node as well
+                        if (link.m_direction == NetInfo.Direction.Both || link.m_direction == direction)
+                        {
+                            UpdateNode(link.m_nodeId, usMinNodeId, minNode.TravelTime() + link.m_fTravelTime);
+                        }
+                    }
+
+                    // Safety check in case we get caught in an infinite loop somehow
+                    if (iLoopCount++ > NetManager.MAX_NODE_COUNT)
+                    {
+                        CDebug.Log($"Invalid loop detected.");
+                        break;
+                    }
+                } // End while
+            }
+
+            ticks = s_watch.ElapsedTicks - startTime;
+            return iCandidateId;
         }
 
         private void ResetArrays()
@@ -50,172 +150,23 @@ namespace TransferManagerCE
             m_visited.SetAll(false);
         }
 
-        public void AddCandidate(ushort nodeId, int id)
-        {
-            m_candidateData[nodeId] = id;
-        }
-
-        public bool ContainsNode(ushort nodeId)
-        {
-            return m_candidateData.ContainsKey(nodeId);
-        }
-
-        public int CandidateCount()
-        {
-            return m_candidateData.Count;
-        }
-
-        public void ClearCandidates()
-        {
-            m_candidateData.Clear();
-        }
-
-        // Dijkstra's algorithm, returns -1 if not found, otherwise returns candidate id
-        public int FindNearestNeighborId(bool bstartActive, ushort startNodeId, out float fTravelTime, out long ticks, out int iNodesExamined, List<QueueData>? visitedNodes = null)
-        {
-            long startTime = s_watch.ElapsedTicks;
-
-            m_bStartActive = bstartActive;
-            fTravelTime = 0.0f;
-            iNodesExamined = 0;
-            int iChosenId = -1;
-            int iNodeCount = 0;
-
-            if (m_candidateData.Count > 0)
-            {
-                if (m_candidateData.Count == 1)
-                {
-                    // 1 option just return it's id.
-                    foreach (var candidate in m_candidateData)
-                    {
-                        ticks = s_watch.ElapsedTicks - startTime;
-                        return candidate.Value;
-                    }
-                }
-
-                // Check if start node and candidate node are the same
-                // no need to search further, return candidate id
-                if (m_candidateData.ContainsKey(startNodeId))
-                {
-                    ticks = s_watch.ElapsedTicks - startTime;
-                    return m_candidateData[startNodeId];
-                }
-
-                // Load candidate positions for LOS heuristic
-                LoadCandidatePositions(m_candidateData);
-
-                // Clear graph arrays
-                ResetArrays();
-
-                // Mark start node as distance 0.
-                QueueData nodeData = new QueueData(startNodeId, 0.0f, float.MaxValue);
-                m_sortedNodes.Push(nodeData);
-
-                // Given a starting node, traverse the maps nodes to find the nearest candidate
-                int iLoopCount = 0;
-                while (m_sortedNodes.Count > 0)
-                {
-                    // Next node to evaluate is the minimum distance "unvisited" node.
-                    QueueData minNode = m_sortedNodes.Pop();
-                    ushort usMinNodeId = minNode.Node();
-                    
-                    if (m_visited[usMinNodeId])
-                    {
-                        continue;
-                    }
-
-                    // Add to visisted list if requested
-                    if (visitedNodes is not null)
-                    {
-                        visitedNodes.Add(minNode);
-                    }
-                    iNodesExamined++;
-
-                    // Set the node as visited now
-                    m_visited[usMinNodeId] = true;
-                    iNodeCount++;
-
-                    // If a candidate is the lowest value
-                    // unvisited node then we don't need to search anymore
-                    if (m_candidateData.ContainsKey(usMinNodeId))
-                    {
-                        iChosenId = m_candidateData[usMinNodeId];
-                        fTravelTime = minNode.TravelTime();
-                        break;
-                    }
-
-                    ProcessNode(usMinNodeId, NetNodes[usMinNodeId], minNode.TravelTime());
-
-                    // Safety check in case we get caught in an infinite loop somehow
-                    if (iLoopCount++ > NetManager.MAX_NODE_COUNT)
-                    {
-                        //RoadAccessData.AddInstance(new InstanceID { NetNode = (ushort) startNodeId });
-                        string sCandidates = "";
-                        foreach (var candidate in m_candidateData)
-                        {
-                            sCandidates += $"{candidate}, ";
-                            //RoadAccessData.AddInstance(new InstanceID { NetNode = (ushort)candidate });
-                        }
-                        Debug.Log($"Invalid loop detected StartNode:{startNodeId} Candidates:{sCandidates}");
-                        
-                        break;
-                    }
-                } // End while
-            }
-
-            ticks = s_watch.ElapsedTicks - startTime;
-            return iChosenId;
-        }
-
-        protected override void ProcessSegment(ushort segmentId, ushort usCurrentNodeId, float fCurrentTravelTime)
-        {
-            if (segmentId != 0)
-            {
-                NetSegment segment = NetSegments[segmentId];
-                if (segment.m_flags != 0 && IsNetInfoValid(segment.Info))
-                {      
-                    // Find direction of segment
-                    NetInfo.Direction direction = GetSegmentDirection(segment, usCurrentNodeId);
-
-                    // Check we have a lane available for this direction
-                    float fTravelTime = UncongestedTravelTime(segmentId, segment, direction);
-                    if (fTravelTime > 0)
-                    {
-                        float fNewTravelTime = fCurrentTravelTime + fTravelTime;
-
-                        // Add nodes from this segment
-                        if (segment.m_startNode != usCurrentNodeId)
-                        {
-                            UpdateNode(segment.m_startNode, fNewTravelTime);
-                        }
-
-                        if (segment.m_endNode != usCurrentNodeId)
-                        {
-                            UpdateNode(segment.m_endNode, fNewTravelTime);
-                        }
-
-                        // Loop through all sub nodes for this segments lanes
-                        ProcessLaneNodes(segment.m_lanes, fNewTravelTime);
-                    }
-                }
-            }
-        }
-
-        protected override void UpdateNode(ushort nodeId, float fNewTravelTime)
+        protected void UpdateNode(ushort nodeId, ushort prevNode, float fNewTravelTime)
         {
             // Update node distance
-            // NOTE: We currently dont remove node from m_visited here if a shorter time
-            // It is clearly less accurate but way faster as we don't have to re-examine nodes
-            // Speed is more important than absolute accuracy for transfer matching
             if (nodeId != 0 && fNewTravelTime > 0 && !m_visited[nodeId])
             {
-                if (m_sortedNodes.TryGetValue(nodeId, out QueueData nodeData))
+                if (m_sortedNodes.TryGetValue(nodeId, out PathData nodeData))
                 {
                     // We have already seen this node. Check if new distance is smaller than current distance (Shorter path)
                     if (fNewTravelTime < nodeData.TravelTime())
                     {
                         // Update travel time
                         nodeData.UpdateTravelTime(fNewTravelTime);
+                        nodeData.prevId = prevNode;
+
+                        // Reset visit flag
+                        //nodeData.visited = false;
+                        //m_visited[nodeId] = false;
 
                         // Update node in priority queue
                         m_sortedNodes.Update(nodeData);
@@ -224,131 +175,12 @@ namespace TransferManagerCE
                 else
                 {
                     // Create a new one
-                    QueueData newNodeData = new QueueData(nodeId, fNewTravelTime, GetNodeEstimateToCandidates(nodeId));
+                    PathData newNodeData = new PathData(nodeId, prevNode, fNewTravelTime, Candidates.GetNodeEstimateToCandidates(nodeId));
 
                     // Add node to priority queue so we can determine next node to visit
                     m_sortedNodes.Push(newNodeData);
                 }
             }
-        }
-
-        private NetInfo.Direction GetSegmentDirection(NetSegment segment, ushort usCurrentNodeId)
-        {
-            // Find end node of segment, depending on which way we are going.
-            NetInfo.Direction direction;
-            if (segment.m_startNode == usCurrentNodeId)
-            {
-                direction = m_bStartActive ? NetInfo.Direction.Forward : NetInfo.Direction.Backward;
-            }
-            else if (segment.m_endNode == usCurrentNodeId)
-            {
-                direction = m_bStartActive ? NetInfo.Direction.Backward : NetInfo.Direction.Forward;
-            }
-            else
-            {
-                // This is a join segment, we can go either way
-                direction = NetInfo.Direction.Both;
-            }
-
-            // Some segments have the Inverted flag set which means we have to go the other way
-            if ((segment.m_flags & NetSegment.Flags.Invert) != 0)
-            {
-                direction = NetInfo.InvertDirection(direction);
-            }
-
-            return direction;
-        }
-
-        // Load candidate positions for LOS heuristic,
-        private void LoadCandidatePositions(Dictionary<ushort, int> candidates)
-        {
-            m_iCandidatePositionCount = 0;
-
-            // if the candidate count is too large it is better just to use travel time
-            // also dont bother calculating heuristic if set to 0
-            if (m_bUsePathDistanceHeuristic && candidates.Count <= iMAX_CANDIDATE_POSITIONS)
-            {
-                int iIndex = 0;
-                foreach (var candidate in candidates)
-                {
-                    NetNode node = NetNodes[candidate.Key];
-                    if (node.m_flags != 0)
-                    {
-                        m_candidatePositions[iIndex++] = node.m_position;
-                        m_iCandidatePositionCount++;
-                    }
-                }
-            }
-        }
-
-        // A* Hueristic, find smallest LOS from node to candidate positions
-        // Ensures we are expanding nodes in the right direction instead of
-        // heading in the wrong direction wasting time.
-        private float GetNodeEstimateToCandidates(ushort nodeId)
-        {
-            if (m_iCandidatePositionCount > 0)
-            {
-                float fMinDistance = float.MaxValue;
-
-                NetNode node = NetNodes[nodeId];
-                if (node.m_flags != 0)
-                {
-                    Vector3 nodePosition = node.m_position;
-                    for (int i = 0; i < m_iCandidatePositionCount; ++i)
-                    {
-                        // Need to make sure we apply outside connection multipliers here as well
-                        float fDistance = Vector3.SqrMagnitude(nodePosition - m_candidatePositions[i]) * PathNodeCache.GetOutsideNodeMultiplier(nodeId);
-                        if (fDistance < fMinDistance)
-                        {
-                            fMinDistance = fDistance;
-                        }
-                    }
-                }
-
-                if (fMinDistance != float.MaxValue)
-                {
-                    // We scale distance so it has a bigger impact
-                    return (float)Math.Sqrt(fMinDistance);
-                }
-                else
-                {
-                    return float.MaxValue;
-                }
-            }
-
-            return 0f;
-        }
-
-        private float UncongestedTravelTime(ushort segmentId, NetSegment segment, NetInfo.Direction direction)
-        {
-            // This code assumes all valid lanes have same speed.
-            if (segment.m_flags != 0)
-            {
-                NetInfo info = segment.Info;
-                if (info is not null && IsNetInfoValid(info))
-                {
-                    for (int i = info.m_lanes.Length - 1; i >= 0; --i)
-                    {
-                        NetInfo.Lane lane = info.m_lanes[i];
-                        if ((lane.m_laneType & m_laneTypes) != 0 &&
-                            (direction == NetInfo.Direction.Both || (lane.m_finalDirection & direction) == direction) &&
-                            lane.m_speedLimit > 0)
-                        {
-                            float fEffectiveTravelTime;
-                            if (PathNodeCache.GetOutsideSegmentTravelTime(segmentId, out fEffectiveTravelTime))
-                            {
-                                return fEffectiveTravelTime;
-                            }
-                            else
-                            {
-                                return segment.m_averageLength / lane.m_speedLimit;
-                            }
-                        }
-                    }
-                }   
-            }
-            
-            return 0f;
         }
     }
 }

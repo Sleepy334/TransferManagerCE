@@ -1,4 +1,5 @@
 using HarmonyLib;
+using SleepyCommon;
 using System;
 using TransferManagerCE;
 using UnityEngine;
@@ -126,6 +127,11 @@ public class TransferIssueContainer : IComparable, IEquatable<TransferIssueConta
         return "";
     }
 
+    public string GetTimerTooltip()
+    {
+        return GetTimer();
+    }
+
     public string GetValue()
     {
         return m_value;
@@ -140,28 +146,28 @@ public class TransferIssueContainer : IComparable, IEquatable<TransferIssueConta
     {
         if (m_source is null)
         {
-            m_source = CitiesUtils.GetBuildingName(m_sourceBuildingId);
+            m_source = CitiesUtils.GetBuildingName(m_sourceBuildingId, InstanceID.Empty);
         }
         return m_source;
     }
 
     public string GetSourceTooltip()
     {
-        return CitiesUtils.GetBuildingName(m_sourceBuildingId, true);
+        return CitiesUtils.GetBuildingName(m_sourceBuildingId, InstanceID.Empty, true);
     }
 
-    public string GetTarget()
+    public string GetResponder()
     {
         if (m_target is null)
         {
-            m_target = CitiesUtils.GetBuildingName(m_targetBuildingId);
+            m_target = CitiesUtils.GetBuildingName(m_targetBuildingId, InstanceID.Empty);
         }
         return m_target;
     }
 
-    public string GetTargetTooltip()
+    public string GetResponderTooltip()
     {
-        return CitiesUtils.GetBuildingName(m_targetBuildingId, true);
+        return CitiesUtils.GetBuildingName(m_targetBuildingId, InstanceID.Empty, true);
     }
 
     public string GetVehicle()
@@ -183,7 +189,7 @@ public class TransferIssueContainer : IComparable, IEquatable<TransferIssueConta
         Building building = BuildingManager.instance.m_buildings.m_buffer[m_sourceBuildingId];
         if (building.m_flags != Building.Flags.None)
         {
-            InstanceHelper.ShowInstanceSetBuildingPanel(new InstanceID { Building = m_sourceBuildingId });
+            BuildingUtils.ShowInstanceSetBuildingPanel(new InstanceID { Building = m_sourceBuildingId });
         }
         else
         {
@@ -196,7 +202,7 @@ public class TransferIssueContainer : IComparable, IEquatable<TransferIssueConta
         Building building = BuildingManager.instance.m_buildings.m_buffer[m_targetBuildingId];
         if (building.m_flags != Building.Flags.None)
         {
-            InstanceHelper.ShowInstanceSetBuildingPanel(new InstanceID { Building = m_targetBuildingId });
+            BuildingUtils.ShowInstanceSetBuildingPanel(new InstanceID { Building = m_targetBuildingId });
         }
         else
         {

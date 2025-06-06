@@ -1,4 +1,5 @@
 using ColossalFramework;
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -135,7 +136,7 @@ namespace TransferManagerCE
 
             if (sMessage.Length > 0)
             {
-                Debug.Log("Ghost vehicles: " + sMessage);
+                CDebug.Log("Ghost vehicles: " + sMessage);
             }
 
             if (!wasPausedBeforeReset)

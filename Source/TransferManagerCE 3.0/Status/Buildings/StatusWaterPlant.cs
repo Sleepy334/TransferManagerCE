@@ -6,7 +6,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusWaterPlant : StatusDataBuilding
     {
-        public StatusWaterPlant(TransferReason material, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusWaterPlant(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) :
             base(material, eBuildingType, BuildingId)
         {
         }

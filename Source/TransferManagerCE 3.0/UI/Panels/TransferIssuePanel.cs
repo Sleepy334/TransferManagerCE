@@ -10,10 +10,12 @@ using System.Linq;
 using static TransferManagerCE.UITabStrip;
 using static TransferManagerCE.PathingContainer;
 using static TransferIssueContainer;
+using SleepyCommon;
+using static RenderManager;
 
 namespace TransferManagerCE.UI
 {
-    public class TransferIssuePanel : UIPanel
+    public class TransferIssuePanel : UIMainPanel<TransferIssuePanel>
     {
         public enum TabOrder
         {
@@ -38,8 +40,6 @@ namespace TransferManagerCE.UI
         public const int iCOLUMN_WIDTH_PATHING_BUILDING = 240;
         public const int iCOLUMN_WIDTH_DESCRIPTION = 400;
 
-        public static TransferIssuePanel? Instance = null;
-
         private UITitleBar? m_title = null;
         private ListView? m_listPathing = null;
         private ListView? m_listRoadAccess = null;
@@ -51,35 +51,20 @@ namespace TransferManagerCE.UI
         private UIButton? m_btnResetPathingLocal = null;
         private UIButton? m_btnResetRoadAccess = null;
         
-        private Coroutine? m_coroutineUpdatePanel = null;
         private Coroutine? m_coroutineUpdateHelper = null;
-
         private TransferIssueHelper m_issueHelper = new TransferIssueHelper();
-        private IssueRenderer? m_issueRenderer = null;
 
         public TransferIssuePanel() : base()
         {
-            m_coroutineUpdatePanel = StartCoroutine(UpdatePanelCoroutine(5));
+            PanelUpdateRate = 5000; // 5 seconds
             m_coroutineUpdateHelper = StartCoroutine(UpdateHelperCoroutine(1));
-        }
-
-        public static void Init()
-        {
-            if (Instance is null)
-            {
-                Instance = UIView.GetAView().AddUIComponent(typeof(TransferIssuePanel)) as TransferIssuePanel;
-                if (Instance is null)
-                {
-                    Prompt.Info("Transfer Manager CE", "Error creating Issue Panel.");
-                }
-            }
+            IssueRenderer.RegisterRenderer();
         }
 
         public TransferIssueHelper GetIssueHelper()
         {
             return m_issueHelper;
         }
-
 
         public override void Start()
         {
@@ -105,10 +90,12 @@ namespace TransferManagerCE.UI
             CenterTo(parent);
 
             // Title Bar
-            m_title = AddUIComponent<UITitleBar>();
-            m_title.SetOnclickHandler(OnCloseClick);
-            m_title.SetHighlightHandler(OnHighlightIssuesClick);
-            m_title.title = Localization.Get("titleTransferIssuesPanel");
+            m_title = UITitleBar.Create(this, Localization.Get("titleTransferIssuesPanel"), "Transfer", TransferManagerMod.Instance.LoadResources(), OnCloseClick);
+            if (m_title != null)
+            {
+                m_title.AddButton("btnHighlight", atlas, "InfoIconLevel", "Highlight Matches", OnHighlightIssuesClick);
+                m_title.SetupButtons();
+            }
 
             UIPanel mainPanel = AddUIComponent<UIPanel>();
             mainPanel.width = width;
@@ -169,11 +156,11 @@ namespace TransferManagerCE.UI
                 // Add issue filter buttons
 
                 // Dead
-                UIToggleButton btnDead = UIUtils.AddSpriteToggleButton(settings.ShowDeadIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "Dead", Localization.Get("tabTransferIssuesDead"), TransferManagerLoader.LoadResources(), 30, 30, null);
+                UIToggleButton btnDead = UIMyUtils.AddSpriteToggleButton(settings.ShowDeadIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "Dead", Localization.Get("tabTransferIssuesDead"), TransferManagerMod.Instance.LoadResources(), 30, 30, null);
                 btnDead.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowDeadIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowDeadIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -183,11 +170,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // Sick
-                UIToggleButton btnSick = UIUtils.AddSpriteToggleButton(settings.ShowSickIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "ToolbarIconHealthcare", Localization.Get("tabTransferIssuesSick"), atlas, 30, 30, null);
+                UIToggleButton btnSick = UIMyUtils.AddSpriteToggleButton(settings.ShowSickIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "ToolbarIconHealthcare", Localization.Get("tabTransferIssuesSick"), atlas, 30, 30, null);
                 btnSick.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowSickIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowSickIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -197,11 +184,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // Garbage
-                UIToggleButton btnGarbage = UIUtils.AddSpriteToggleButton(settings.ShowGarbageIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconGarbage", Localization.Get("issueGarbage"), atlas, 30, 30, null);
+                UIToggleButton btnGarbage = UIMyUtils.AddSpriteToggleButton(settings.ShowGarbageIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconGarbage", Localization.Get("issueGarbage"), atlas, 30, 30, null);
                 btnGarbage.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowGarbageIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowGarbageIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -211,11 +198,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // Fire
-                UIToggleButton btnFire = UIUtils.AddSpriteToggleButton(settings.ShowFireIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "ToolbarIconFireDepartment", Localization.Get("reasonFire"), atlas, 30, 30, null);
+                UIToggleButton btnFire = UIMyUtils.AddSpriteToggleButton(settings.ShowFireIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "ToolbarIconFireDepartment", Localization.Get("reasonFire"), atlas, 30, 30, null);
                 btnFire.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowFireIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowFireIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -225,11 +212,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // Crime
-                UIToggleButton btnCrime = UIUtils.AddSpriteToggleButton(settings.ShowCrimeIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "ToolbarIconPolice", Localization.Get("reasonCrime"), atlas, 30, 30, null);
+                UIToggleButton btnCrime = UIMyUtils.AddSpriteToggleButton(settings.ShowCrimeIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "ToolbarIconPolice", Localization.Get("reasonCrime"), atlas, 30, 30, null);
                 btnCrime.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowCrimeIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowCrimeIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -239,11 +226,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // Mail
-                UIToggleButton btnMail = UIUtils.AddSpriteToggleButton(settings.ShowMailIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconPost", Localization.Get("reasonMail"), atlas, 30, 30, null);
+                UIToggleButton btnMail = UIMyUtils.AddSpriteToggleButton(settings.ShowMailIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconPost", Localization.Get("reasonMail"), atlas, 30, 30, null);
                 btnMail.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowMailIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowMailIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -253,11 +240,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // Incoming
-                UIToggleButton btnIncoming = UIUtils.AddSpriteToggleButton(settings.ShowIncomingIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "IconPolicyIndustrySpace", Localization.Get("issueIncoming"), atlas, 30, 30, null);
+                UIToggleButton btnIncoming = UIMyUtils.AddSpriteToggleButton(settings.ShowIncomingIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "IconPolicyIndustrySpace", Localization.Get("issueIncoming"), atlas, 30, 30, null);
                 btnIncoming.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowIncomingIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowIncomingIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -267,11 +254,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // Outgoing
-                UIToggleButton btnOutgoing = UIUtils.AddSpriteToggleButton(settings.ShowOutgoingIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconOutsideConnections", Localization.Get("issueOutgoing"), atlas, 30, 30, null);
+                UIToggleButton btnOutgoing = UIMyUtils.AddSpriteToggleButton(settings.ShowOutgoingIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconOutsideConnections", Localization.Get("issueOutgoing"), atlas, 30, 30, null);
                 btnOutgoing.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowOutgoingIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowOutgoingIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -281,11 +268,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // No service
-                UIToggleButton btnNoService = UIUtils.AddSpriteToggleButton(settings.ShowServiceIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "IconServiceVehicle", Localization.Get("issueNoServices"), atlas, 30, 30, null);
+                UIToggleButton btnNoService = UIMyUtils.AddSpriteToggleButton(settings.ShowServiceIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconMaintenance", Localization.Get("issueNoServices"), atlas, 30, 30, null);
                 btnNoService.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowServiceIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowServiceIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -295,11 +282,11 @@ namespace TransferManagerCE.UI
                 };
 
                 // Workers
-                UIToggleButton btnWorkers = UIUtils.AddSpriteToggleButton(settings.ShowWorkerIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "IconPolicyWorkersUnion", Localization.Get("issueNoWorkers"), atlas, 30, 30, null);
+                UIToggleButton btnWorkers = UIMyUtils.AddSpriteToggleButton(settings.ShowWorkerIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "IconPolicyWorkersUnion", Localization.Get("issueNoWorkers"), atlas, 30, 30, null);
                 btnWorkers.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowWorkerIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowWorkerIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -313,7 +300,7 @@ namespace TransferManagerCE.UI
                 pnlButtonSeparator.width = 230;
                 pnlButtonSeparator.height = pnlButtons.height;
 
-                m_chkShowIssuesWithVehicles = UIUtils.AddCheckbox(pnlButtons, Localization.Get("optionShowIssuesWithVehiclesOnRoute"), UIFonts.Regular, 0.9f, ModSettings.GetSettings().ShowWithVehiclesOnRouteIssues, OnShowIssuesClicked);
+                m_chkShowIssuesWithVehicles = UIMyUtils.AddCheckbox(pnlButtons, Localization.Get("optionShowIssuesWithVehiclesOnRoute"), UIFonts.Regular, 0.9f, ModSettings.GetSettings().ShowWithVehiclesOnRouteIssues, OnShowIssuesClicked);
                 m_chkShowIssuesWithVehicles.autoSize = false;
                 m_chkShowIssuesWithVehicles.width = 200;
                 m_chkShowIssuesWithVehicles.height = pnlButtons.height;
@@ -354,21 +341,21 @@ namespace TransferManagerCE.UI
                 pnlButtons.autoLayoutPadding = new RectOffset(6, 0, 6, 0);
 
                 // Local
-                UIToggleButton btnLocal = UIUtils.AddSpriteToggleButton(ModSettings.GetSettings().ShowLocalPathingIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "RoadOptionFreeform", Localization.Get("pathingLocal"), atlas, 30, 30, null);
+                UIToggleButton btnLocal = UIMyUtils.AddSpriteToggleButton(ModSettings.GetSettings().ShowLocalPathingIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "RoadOptionFreeform", Localization.Get("pathingLocal"), atlas, 30, 30, null);
                 btnLocal.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowLocalPathingIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowLocalPathingIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
 
                 // Outside
-                UIToggleButton btnOutside = UIUtils.AddSpriteToggleButton(ModSettings.GetSettings().ShowOutsidePathingIssues, UIUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconOutsideConnections", Localization.Get("tabTransferIssuesOutside"), atlas, 30, 30, null);
+                UIToggleButton btnOutside = UIMyUtils.AddSpriteToggleButton(ModSettings.GetSettings().ShowOutsidePathingIssues, UIMyUtils.ButtonStyle.DropDown, pnlButtons, "InfoIconOutsideConnections", Localization.Get("tabTransferIssuesOutside"), atlas, 30, 30, null);
                 btnOutside.eventClick += (s, e) =>
                 {
                     UIToggleButton toggleButton = (UIToggleButton)s;
-                    ModSettings.GetSettings().ShowOutsidePathingIssues = toggleButton.ToggleState;
+                    ModSettings.GetSettings().ShowOutsidePathingIssues = toggleButton.StateOn;
                     ModSettings.GetSettings().Save();
                     UpdatePanel();
                 };
@@ -378,7 +365,7 @@ namespace TransferManagerCE.UI
                 pnlSeparator.height = pnlButtons.height;
 
                 // Reset pathing button
-                m_btnResetPathingLocal = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, pnlButtons, Localization.Get("btnResetPathingStatistics"), "", 200, 30, OnReset);
+                m_btnResetPathingLocal = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, pnlButtons, Localization.Get("btnResetPathingStatistics"), "", 200, 30, OnReset);
                 pnlSeparator.width = pnlButtons.width - btnLocal.width - btnOutside.width - m_btnResetPathingLocal.width - 24;
 
                 // Adjust list height
@@ -405,7 +392,7 @@ namespace TransferManagerCE.UI
                     m_listRoadAccess.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listPathingColumn2"), "Building with road access issues", iCOLUMN_WIDTH_DESCRIPTION, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
                 }
 
-                m_btnResetRoadAccess = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, tabRoadAccess, Localization.Get("btnResetRoadAccess"), "", 200, 30, OnResetRoadAccess);
+                m_btnResetRoadAccess = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, tabRoadAccess, Localization.Get("btnResetRoadAccess"), "", 200, 30, OnResetRoadAccess);
                 m_listRoadAccess.height = tabRoadAccess.height - m_btnResetRoadAccess.height - 12;
             }
         }
@@ -421,7 +408,7 @@ namespace TransferManagerCE.UI
 
         public void UpdateHighlightButtonIcon()
         {
-            if (m_title is not null && m_title.m_btnHighlight is not null)
+            if (m_title is not null)
             {
                 string sIcon = "";
                 string sTooltip = "";
@@ -461,42 +448,13 @@ namespace TransferManagerCE.UI
                                         break;
                                     }
                             }
-                            
-
-                            // Create renderer if needed
-                            if (m_issueRenderer is null)
-                            {
-                                m_issueRenderer = new IssueRenderer();
-                            }
 
                             break;
                         }
                 }
 
-                m_title.m_btnHighlight.normalBgSprite = sIcon;
-                m_title.m_btnHighlight.tooltip = sTooltip;
-            }
-        }
-
-        public bool HandleEscape()
-        {
-            if (isVisible)
-            {
-                Hide();
-                return true;
-            }
-            return false;
-        }
-
-        public void TogglePanel()
-        {
-            if (isVisible)
-            {
-                HidePanel();
-            }
-            else
-            {
-                ShowPanel();
+                m_title.Buttons[0].normalBgSprite = sIcon;
+                m_title.Buttons[0].tooltip = sTooltip;
             }
         }
 
@@ -517,30 +475,6 @@ namespace TransferManagerCE.UI
         {
             RoadAccessStorage.Reset();
             UpdatePanel();
-        }
-
-        public void ShowPanel()
-        {
-            base.Show();
-            UpdatePanel();
-        }
-
-        public void HidePanel()
-        {
-            base.Hide();
-
-            if (m_listIssues is not null)
-            {
-                m_listIssues.Clear();
-            }
-            if (m_listPathing is not null)
-            {
-                m_listPathing.Clear();
-            }
-            if (m_listRoadAccess is not null)
-            {
-                m_listRoadAccess.Clear();
-            }
         }
 
         public void OnCloseClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -587,23 +521,27 @@ namespace TransferManagerCE.UI
             {
                 // Force an update.
                 m_issueHelper.UpdateIssues();
+                UpdatePanel();
             }
-            else if (tooltipBox is not null)
+            else
             {
-                tooltipBox.tooltip = "";
-                tooltipBox.tooltipBox.Hide();
-            }
-        }
-
-        IEnumerator UpdatePanelCoroutine(int seconds)
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(seconds);
-
-                if (isVisible)
+                if (tooltipBox is not null)
                 {
-                    UpdatePanel();
+                    tooltipBox.tooltip = "";
+                    tooltipBox.tooltipBox.Hide();
+                }
+
+                if (m_listIssues is not null)
+                {
+                    m_listIssues.Clear();
+                }
+                if (m_listPathing is not null)
+                {
+                    m_listPathing.Clear();
+                }
+                if (m_listRoadAccess is not null)
+                {
+                    m_listRoadAccess.Clear();
                 }
             }
         }
@@ -626,7 +564,7 @@ namespace TransferManagerCE.UI
             return m_tabStrip.GetSelectTabIndex();
         }
 
-        public void UpdatePanel()
+        protected override void UpdatePanel()
         {
             if (!isVisible)
             {
@@ -637,7 +575,7 @@ namespace TransferManagerCE.UI
             {
                 return;
             }
-            
+
             // get data
             List<PathingContainer> listPathing = GetPathingIssues();
             List<TransferIssueContainer> filteredIssues = m_issueHelper.GetFilteredIssues();
@@ -703,10 +641,6 @@ namespace TransferManagerCE.UI
 
         public override void OnDestroy()
         {
-            if (m_coroutineUpdatePanel is not null)
-            {
-                StopCoroutine(m_coroutineUpdatePanel);
-            }
             if (m_coroutineUpdateHelper is not null)
             {
                 StopCoroutine(m_coroutineUpdateHelper);
@@ -730,11 +664,6 @@ namespace TransferManagerCE.UI
             {
                 DestroyGameObject(m_title.gameObject);
                 m_title = null;
-            }
-            if (Instance is not null && Instance.gameObject is not null)
-            {
-                DestroyGameObject(Instance.gameObject);
-                Instance = null;
             }
         }
 

@@ -15,21 +15,21 @@ namespace TransferManagerCE
             if (settings.EnableNewTransferManager)
             {
                 // Pass through to Improved matching to adjust offer
-                if (!ImprovedTransfers.HandleIncomingOffer(material, ref offer))
+                if (!ImprovedIncomingTransfers.HandleOffer(material, ref offer))
                 {
                     // If HandleIncomingOffer returns false then don't add offer to offers list
                     return false;
                 }
 
                 // Update access segment if using path distance but do it in simulation thread so we don't break anything
-                CitiesUtils.CheckRoadAccess((CustomTransferReason.Reason) material, offer);
+                TransferManagerUtils.CheckRoadAccess((CustomTransferReason.Reason) material, offer);
             }
 
             // Update the stats for the specific material
             MatchStats.RecordAddIncoming(material, offer.Amount);
 
             // Let building panel know a new offer is available
-            if (BuildingPanel.Instance is not null)
+            if (BuildingPanel.IsVisible())
             {
                 BuildingPanel.Instance.HandleOffer(offer);
             }

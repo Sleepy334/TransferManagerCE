@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
+using SleepyCommon;
 
 namespace TransferManagerCE
 {
@@ -16,7 +17,7 @@ namespace TransferManagerCE
             if (!s_patched)
             {
 #if DEBUG
-                Debug.Log("Patching...");
+                CDebug.Log("Patching...");
 #endif
                 s_patched = true;
                 var harmony = new Harmony(HarmonyId);
@@ -68,6 +69,10 @@ namespace TransferManagerCE
 
                 // DistrictSelection
                 patchList.Add(typeof(DistrictSelectionPatches));
+                patchList.Add(typeof(DistrictEventPatches));
+                
+                // UnsortedMail
+                patchList.Add(typeof(PostVanAIUnsortedMailPatch)); 
 
                 // Spawn patches
                 patchList.Add(typeof(ShipSpawnPatches));
@@ -95,7 +100,7 @@ namespace TransferManagerCE
                     string sLogMessage = "Advanced Outside Connections detected, patches skipped:\r\n";
                     sLogMessage += "OutsideConnectionAIPatch\r\n";
                     sLogMessage += "OutsideConnectionAIGenerateNamePatch\r\n";
-                    Debug.Log(sLogMessage); 
+                    CDebug.Log(sLogMessage); 
                 }
                 else
                 {
@@ -113,7 +118,7 @@ namespace TransferManagerCE
                     string sLogMessage = "Smarter Fire Fighters detected, patches skipped:\r\n";
                     sLogMessage += "FireTruckAISimulationStepPostfix\r\n";
                     sLogMessage += "FireCopterAISimulationStepPostfix\r\n";
-                    Debug.Log(sLogMessage);
+                    CDebug.Log(sLogMessage);
                 }
                 else
                 {
@@ -123,29 +128,36 @@ namespace TransferManagerCE
                 // Improved Employ Overeducated Workers
                 patchList.Add(typeof(EmployOvereducatedWorkersPatch));
 
+                patchList.Add(typeof(PathDistancePatches)); 
+
                 // General patches
                 patchList.Add(typeof(Patch.EscapePatch));
 
                 // Perform the patching
                 PatchAll(patchList);
 
-                // ============= Transpilers =================
-                // Generic industries handler is handled separately as we need to be able to unpatch it as well
-                // as it uses a transpiler
-                IndustrialBuildingAISimulationStepActive.PatchGenericIndustriesHandler();
-
-                // Crime2 Handler
-                CommonBuildingAIHandleCrime.PatchCrime2Handler();
-
-                // Improved taxi stand support
-                PatchTaxiStandHandler();
+                // Reversible patch functions
+                PatchReversibleTranspilers();
             }
+        }
+
+        public static void PatchReversibleTranspilers()
+        {
+            // Generic industries handler is handled separately as we need to be able to unpatch it as well
+            // as it uses a transpiler
+            IndustrialBuildingAIGoodsPatch.PatchGenericIndustriesHandler();
+
+            // Crime2 Handler
+            CommonBuildingAIHandleCrime.PatchCrime2Handler();
+
+            // Improved taxi stand support
+            PatchTaxiStandHandler();
         }
 
         public static void PatchAll(List<Type> patchList)
         {
 #if DEBUG           
-            Debug.Log($"Patching:{patchList.Count} functions", false);
+            CDebug.Log($"Patching:{patchList.Count} functions", false);
 #endif
             var harmony = new Harmony(HarmonyId);
 
@@ -162,7 +174,7 @@ namespace TransferManagerCE
                 harmony.UnpatchAll(HarmonyId);
                 s_patched = false;
 #if DEBUG
-                Debug.Log("Unpatching...", false);
+                CDebug.Log("Unpatching...", false);
 #endif
             }
         }
@@ -175,7 +187,7 @@ namespace TransferManagerCE
         private static void Patch(Harmony harmony, Type classType)
         {
 #if DEBUG
-            Debug.Log($"Patch: {classType}", false);
+            CDebug.Log($"Patch: {classType}", false);
 #endif
             PatchClassProcessor processor = harmony.CreateClassProcessor(classType);
             processor.Patch();
@@ -194,7 +206,7 @@ namespace TransferManagerCE
         private static void Unpatch(Harmony harmony, Type classType, string sMethod, HarmonyPatchType patchType)
         {
 #if DEBUG
-            Debug.Log($"Unpatch: Class: {classType} Method: {sMethod} PatchType: {patchType}", false);
+            CDebug.Log($"Unpatch: Class: {classType} Method: {sMethod} PatchType: {patchType}", false);
 #endif
             // Get all methods
             MethodInfo[] methods = classType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
@@ -202,12 +214,12 @@ namespace TransferManagerCE
             // Now check method name matches
             foreach (MethodInfo? method in methods)
             {
-                //Debug.Log($"method: {method}.");
+                //Debug.Log.Log($"method: {method}.");
                 if (method.Name.Equals(sMethod))
                 {
                     harmony.Unpatch(method, patchType, HarmonyId);
 #if DEBUG
-                    Debug.Log($"{classType}.{method.Name} unpatched.", false);
+                    CDebug.Log($"{classType}.{method.Name} unpatched.", false);
 #endif
                 }
             }
@@ -221,7 +233,7 @@ namespace TransferManagerCE
                 if (!s_bTaxiStandPatched)
                 {
 #if DEBUG
-                    Debug.Log("Patching taxi stand handler", false);
+                    CDebug.Log("Patching taxi stand handler", false);
 #endif
                     Patcher.Patch(typeof(TaxiAIPatch));
                     Patcher.Patch(typeof(TaxiStandAIPatch));
@@ -231,7 +243,7 @@ namespace TransferManagerCE
             else if (s_bTaxiStandPatched)
             {
 #if DEBUG
-                Debug.Log("Unpatch taxi stand handler", false);
+                CDebug.Log("Unpatch taxi stand handler", false);
 #endif
                 Patcher.Unpatch(typeof(TaxiAI), "SimulationStep");
                 Patcher.Unpatch(typeof(TaxiStandAI), "ProduceGoods");

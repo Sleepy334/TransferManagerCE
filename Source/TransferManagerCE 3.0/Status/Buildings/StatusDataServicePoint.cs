@@ -8,7 +8,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataServicePoint : StatusDataBuilding
     {
-        public StatusDataServicePoint(TransferReason material, BuildingType eBuildingType, ushort buildingId)
+        public StatusDataServicePoint(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort buildingId)
             : base(material, eBuildingType, buildingId)
         {
         }
@@ -20,7 +20,7 @@ namespace TransferManagerCE.Data
             {
                 case BuildingType.ServicePoint:
                     {
-                        ServicePointUtils.GetServicePointInValues(m_buildingId, m_material, out int iCount, out int iBuffer);
+                        ServicePointUtils.GetServicePointInValues(m_buildingId, (TransferReason) m_material, out int iCount, out int iBuffer);
 
                         tooltip = $"Buildings with {m_material}: {iCount}\n{MakeTooltip(iBuffer)}";
                         return $"{iCount} | {DisplayBuffer(iBuffer)}";

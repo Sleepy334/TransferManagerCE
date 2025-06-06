@@ -5,9 +5,9 @@ using static TransferManager;
 using UnityEngine;
 using ColossalFramework.Math;
 using System.Reflection;
-using ICities;
-using System.Collections;
 using static Notification;
+using TransferManagerCE.UI;
+using SleepyCommon;
 using static RenderManager;
 
 namespace TransferManagerCE
@@ -911,6 +911,40 @@ namespace TransferManagerCE
                 aliveVisitorCount = (int)args[6];
                 totalVisitorCount = (int)args[7];
                 visitPlaceCount = (int)args[8];
+            }
+        }
+
+        public static ushort GetSelectedBuilding()
+        {
+            InstanceID selectedId = InstanceHelper.GetTargetInstance();
+            if (selectedId.Building != 0)
+            {
+                return selectedId.Building;
+            }
+            else if (BuildingPanel.IsVisible())
+            {
+                return BuildingPanel.Instance.GetBuildingId();
+            }
+
+            return 0;
+        }
+
+        public static void ShowInstanceSetBuildingPanel(InstanceID instance)
+        {
+            InstanceHelper.ShowInstance(instance);
+
+            if (instance.Building != 0)
+            {
+                // Activate panel, if Left CTRL is held down then open panel.
+                if (Input.GetKey(KeyCode.LeftControl))
+                {
+                    // Force display of panel
+                    BuildingPanel.Instance.ShowPanel(instance.Building);
+                }
+                else if (BuildingPanel.IsVisible())
+                {
+                    BuildingPanel.Instance.ShowPanel(instance.Building);
+                }
             }
         }
     }

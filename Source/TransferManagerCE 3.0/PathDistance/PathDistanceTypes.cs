@@ -1,5 +1,8 @@
+using ColossalFramework.HTTP.Paradox;
 using System;
+using System.Runtime.InteropServices.ComTypes;
 using UnityEngine;
+using static RenderManager;
 using static TransferManager;
 using static TransferManagerCE.SaveGameSettings;
 
@@ -33,8 +36,7 @@ namespace TransferManagerCE.CustomManager
         {
             switch (material)
             {
-                // case TransferReason.SickMove: - SickMove is for helicopters, it doesnt need path distance
-                // case TransferReason.ParkMaintenance: - We get lots of no road access issues with all the parking assets from the workshop.
+                // Services
                 case CustomTransferReason.Reason.Dead:
                 case CustomTransferReason.Reason.Garbage:
                 case CustomTransferReason.Reason.Sick:
@@ -48,14 +50,9 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.CriminalMove:
                 case CustomTransferReason.Reason.RoadMaintenance:
                 case CustomTransferReason.Reason.Snow:
-                    return PathDistanceAlgorithm.PathDistance; // Services
+                    return PathDistanceAlgorithm.PathDistance;
 
-                case CustomTransferReason.Reason.DeadMove: // we want to scale by priority
-                case CustomTransferReason.Reason.GarbageMove: // we want to scale by priority
-                case CustomTransferReason.Reason.GarbageTransfer: // we want to scale by priority
-                case CustomTransferReason.Reason.SnowMove: // we want to scale by priority
-                    return PathDistanceAlgorithm.ConnectedLineOfSight;
-
+                // Goods
                 case CustomTransferReason.Reason.Oil:
                 case CustomTransferReason.Reason.Ore:
                 case CustomTransferReason.Reason.ForestProducts:
@@ -75,13 +72,32 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Goods:
                 case CustomTransferReason.Reason.LuxuryProducts:
                 case CustomTransferReason.Reason.Fish:
-                    return PathDistanceAlgorithm.PathDistance; // Goods
+                    return PathDistanceAlgorithm.PathDistance;
 
+                // we want to scale by priority so need to use ConnectedLineOfSight
+                case CustomTransferReason.Reason.DeadMove:
+                case CustomTransferReason.Reason.GarbageMove:
+                case CustomTransferReason.Reason.GarbageTransfer:
+                case CustomTransferReason.Reason.SnowMove: 
+                    return PathDistanceAlgorithm.ConnectedLineOfSight;
+
+                // All transfers are to outside connections so just do connected line of sight
                 case CustomTransferReason.Reason.UnsortedMail:
                 case CustomTransferReason.Reason.SortedMail:
                 case CustomTransferReason.Reason.IncomingMail:
                 case CustomTransferReason.Reason.OutgoingMail:
                     return PathDistanceAlgorithm.ConnectedLineOfSight;
+
+                // We get lots of no road access issues with all the parking assets from the workshop.
+                case CustomTransferReason.Reason.ParkMaintenance: 
+                    return PathDistanceAlgorithm.ConnectedLineOfSight;
+
+                // Helicopter reasons
+                case CustomTransferReason.Reason.Crime2:
+                case CustomTransferReason.Reason.Sick2:
+                case CustomTransferReason.Reason.SickMove:
+                case CustomTransferReason.Reason.Collapsed2:
+                    return PathDistanceAlgorithm.LineOfSight;
 
                 default: 
                     return PathDistanceAlgorithm.LineOfSight;

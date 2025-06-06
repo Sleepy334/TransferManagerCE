@@ -1,3 +1,4 @@
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using TransferManagerCE.CustomManager;
@@ -14,7 +15,7 @@ namespace TransferManagerCE
             ConnectedLineOfSight = 1,
             PathDistance = 2
         }
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 33;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 34;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
@@ -23,7 +24,8 @@ namespace TransferManagerCE
         // General tab
         public int PathDistanceServices = (int) PathDistanceAlgorithm.PathDistance;
         public int PathDistanceGoods = (int)PathDistanceAlgorithm.PathDistance;
-        public int PathDistanceHeuristic = 80; // 0 = Accurate, 100 = Fastest
+        public int PathDistanceHeuristic = 50; // 0 = Accurate, 100 = Fastest
+        public int PathDistanceCargoStationDelay = 500;
         public int PathDistanceTravelTimeBaseValue = 3000;
         public bool EnablePathFailExclusion = true;
         public CustomTransferManager.BalancedMatchModeOption BalancedMatchMode = CustomTransferManager.BalancedMatchModeOption.MatchModeIncomingFirst; // Vanilla
@@ -235,6 +237,7 @@ namespace TransferManagerCE
             StorageData.WriteBool(DisplaySickNotification, Data); // version 30
             StorageData.WriteInt32(MainBuildingMaxMail, Data); // version 32
             StorageData.WriteBool(MainBuildingPostTruck, Data); // version 33
+            StorageData.WriteInt32(PathDistanceCargoStationDelay, Data); // Version 34
         }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
@@ -247,14 +250,14 @@ namespace TransferManagerCE
             {
                 int iSaveGameSettingVersion = StorageData.ReadInt32(Data, ref iIndex);
 #if DEBUG
-                Debug.Log("Global: " + iGlobalVersion + " SaveGameVersion: " + iSaveGameSettingVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
+                CDebug.Log("Global: " + iGlobalVersion + " SaveGameVersion: " + iSaveGameSettingVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
 #endif
                 if (s_SaveGameSettings is not null)
                 {
                     s_SaveGameSettings.LoadDataInternal(iSaveGameSettingVersion, Data, ref iIndex);
 
 #if DEBUG
-                    Debug.Log("Settings:\r\n" + s_SaveGameSettings.DebugSettings());
+                    CDebug.Log("Settings:\r\n" + s_SaveGameSettings.DebugSettings());
 #endif
                 }
             }
@@ -423,7 +426,10 @@ namespace TransferManagerCE
             {
                 MainBuildingPostTruck = StorageData.ReadBool(Data, ref iIndex);
             }
-            
+            if (iDataVersion >= 34) 
+            {
+                PathDistanceCargoStationDelay = StorageData.ReadInt32(Data, ref iIndex); 
+            }
         }
 
         private void LoadDataVersion15(byte[] Data, ref int iIndex)

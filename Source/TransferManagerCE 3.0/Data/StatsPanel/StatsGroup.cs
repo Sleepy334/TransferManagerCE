@@ -1,3 +1,5 @@
+using SleepyCommon;
+
 namespace TransferManagerCE
 {
     public class StatsGroup : StatsBase

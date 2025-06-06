@@ -5,24 +5,24 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataVehicleProcessingFacility : StatusDataVehicle
     {
-        public StatusDataVehicleProcessingFacility(TransferReason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
+        public StatusDataVehicleProcessingFacility(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
             base(reason, eBuildingType, BuildingId, responder, target)
         {
         }
 
-        protected override string CalculateTarget(out string tooltip)
+        protected override string CalculateVehicle(out string tooltip)
         {
             tooltip = "";
 
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
             ProcessingFacilityAI? buildingAI = building.Info?.m_buildingAI as ProcessingFacilityAI;
-            if (buildingAI is not null && m_material == buildingAI.m_outputResource)
+            if (buildingAI is not null && m_material == (CustomTransferReason.Reason) buildingAI.m_outputResource)
             {
                 return ""; // A processing plant outgoing will never have a responder
             }
             else
             {
-                return base.CalculateTarget(out tooltip);
+                return base.CalculateVehicle(out tooltip);
             }
         }
 
@@ -32,7 +32,7 @@ namespace TransferManagerCE.Data
 
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
             ProcessingFacilityAI? buildingAI = building.Info?.m_buildingAI as ProcessingFacilityAI;
-            if (buildingAI is not null && m_material == buildingAI.m_outputResource)
+            if (buildingAI is not null && m_material == (CustomTransferReason.Reason) buildingAI.m_outputResource)
             {
                 return ""; // A processing plant outgoing will never have a responder
             }

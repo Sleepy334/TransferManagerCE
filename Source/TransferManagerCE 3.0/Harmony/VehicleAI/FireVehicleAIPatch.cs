@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using TransferManagerCE.Settings;
 using ColossalFramework.Math;
 using static TreeManager;
+using SleepyCommon;
 
 namespace TransferManagerCE
 {
@@ -14,7 +15,6 @@ namespace TransferManagerCE
     {
         // Construct a static so we don't constantly create and throw away a hashset.
         private static HashSet<CustomTransferReason.Reason> s_transferFire = new HashSet<CustomTransferReason.Reason>() { CustomTransferReason.Reason.Fire };
-        private static HashSet<CustomTransferReason.Reason> s_transferFire2 = new HashSet<CustomTransferReason.Reason>() { CustomTransferReason.Reason.Fire2 };
         private static HashSet<CustomTransferReason.Reason> s_transferFireAndFire2 = new HashSet<CustomTransferReason.Reason>() { CustomTransferReason.Reason.Fire, CustomTransferReason.Reason.Fire2 };
         private const float FIRE_DISTANCE_SEARCH = 160f;
 
@@ -31,7 +31,7 @@ namespace TransferManagerCE
                     ushort newTarget = FindBuildingWithFire(vehicleID, data.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFire);
                     if (newTarget != 0)
                     {
-                        //Debug.Log($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
+                        //CDebug.Log($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
                         targetBuilding = newTarget;
                     }
                 }
@@ -56,7 +56,7 @@ namespace TransferManagerCE
                     Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
                     if (building.m_fireIntensity == 0 || BuildingUtils.HasAnyCloserGuestVehicles(vehicleID, vehicleData.GetLastFramePosition(), vehicleData.m_targetBuilding, building, s_transferFire))
                     {
-                        //Debug.Log($"Fire - Vehicle: {vehicleID} Clearing target: {vehicleData.m_targetBuilding}");
+                        //CDebug.Log($"Fire - Vehicle: {vehicleID} Clearing target: {vehicleData.m_targetBuilding}");
                         // Clear target
                         vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, 0);
                     }
@@ -71,7 +71,7 @@ namespace TransferManagerCE
                     ushort newTarget = FindBuildingWithFire(vehicleID, vehicleData.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFire);
                     if (newTarget != 0)
                     {
-                        //Debug.Log($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
+                        //CDebug.Log($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
 
                         // clear flag goingback and waiting target
                         vehicleData.m_flags = vehicleData.m_flags & ~Vehicle.Flags.GoingBack & ~Vehicle.Flags.WaitingTarget;
@@ -82,7 +82,7 @@ namespace TransferManagerCE
                         // If the fire truck is stopped, the new target building is close enough that it will not move again so retarget deployed firefighting cims
                         if ((vehicleData.m_flags & Vehicle.Flags.Stopped) != 0)
                         {
-                            //Debug.Log($"FireTruck - Vehicle: {vehicleID} TargetCimsParentVehicleTarget: {newTarget}");
+                            //CDebug.Log($"FireTruck - Vehicle: {vehicleID} TargetCimsParentVehicleTarget: {newTarget}");
                             TargetCimsParentVehicleTarget(vehicleID, vehicleData);
                         }
                     }
@@ -178,7 +178,7 @@ namespace TransferManagerCE
                         }
 
                         // set new target
-                        //Debug.Log($"FireCopter - Vehicle: {vehicleID} SetTarget: {newTarget}");
+                        //CDebug.Log($"FireCopter - Vehicle: {vehicleID} SetTarget: {newTarget}");
                         vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, newTarget);
                     }
                 }

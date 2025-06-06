@@ -1,11 +1,12 @@
 using ColossalFramework.UI;
+using SleepyCommon;
 using TransferManagerCE.Common;
 using TransferManagerCE.Settings;
 using UnityEngine;
 
 namespace TransferManagerCE.UI
 {
-    public class BuildingCapacityTab
+    public class BuildingCapacityTab : BuildingTab
     {
         const float fTEXT_SCALE = 0.9f;
 
@@ -17,19 +18,29 @@ namespace TransferManagerCE.UI
         private SettingsSlider? m_sliderOutsideTouristFactor2 = null;
         private SettingsSlider? m_sliderOutsideDummyTrafficFactor = null;
 
-        private ushort m_buildingId = 0;
         private bool m_bInSetup = false;
 
+        // ----------------------------------------------------------------------------------------
         public void SetTabBuilding(ushort buildingId)
         {
             m_buildingId = buildingId;
         }
 
-        public void Setup(UITabStrip tabStrip)
+        public override bool ShowTab()
+        {
+            if (m_buildingId == 0)
+            {
+                return false;
+            }
+
+            return m_eBuildingType == BuildingTypeHelper.BuildingType.OutsideConnection;
+        }
+
+        public override void SetupInternal()
         {
             m_bInSetup = true;
 
-            UIPanel? tabSettings = tabStrip.AddTabIcon("InfoIconOutsideConnections", Localization.Get("tabBuildingPanelCapacity"), "", 120f);
+            UIPanel? tabSettings = m_tabStrip.AddTabIcon("InfoIconOutsideConnections", Localization.Get("tabBuildingPanelCapacity"), "", 120f);
             if (tabSettings is not null)
             {
                 tabSettings.autoLayout = true;
@@ -43,20 +54,20 @@ namespace TransferManagerCE.UI
                     // Clear the group background
                     m_panelOutsideSettings.backgroundSprite = "";
 
-                    m_sliderOutsideCargoCapacity = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideCargoCapacity"), fTEXT_SCALE, 400, 200, 0f, 100, 1f, 20, 0, OnOutsideCargoCapacityChanged);
-                    m_sliderOutsideResidentCapacity = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideResidentCapacity"), fTEXT_SCALE, 400, 200, 0f, 2000f, 1f, 20, 0, OnOutsideResidentCapacityChanged);
-                    m_sliderOutsideTouristFactor0 = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor0"), fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideTouristFactor0Changed);
-                    m_sliderOutsideTouristFactor1 = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor1"), fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideTouristFactor1Changed);
-                    m_sliderOutsideTouristFactor2 = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor2"), fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideTouristFactor2Changed);
-                    m_sliderOutsideDummyTrafficFactor = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideDummyTrafficFactor"), fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideDummyTrafficChanged);
+                    m_sliderOutsideCargoCapacity = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideCargoCapacity"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 100, 1f, 20, 0, OnOutsideCargoCapacityChanged);
+                    m_sliderOutsideResidentCapacity = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideResidentCapacity"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 2000f, 1f, 20, 0, OnOutsideResidentCapacityChanged);
+                    m_sliderOutsideTouristFactor0 = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor0"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideTouristFactor0Changed);
+                    m_sliderOutsideTouristFactor1 = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor1"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideTouristFactor1Changed);
+                    m_sliderOutsideTouristFactor2 = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor2"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideTouristFactor2Changed);
+                    m_sliderOutsideDummyTrafficFactor = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideDummyTrafficFactor"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideDummyTrafficChanged);
                     
-                    UIButton? btnReset = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, m_panelOutsideSettings.m_content, Localization.Get("btnOutsideReset"), "", 100, 30, null);
+                    UIButton? btnReset = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, m_panelOutsideSettings.m_content, Localization.Get("btnOutsideReset"), "", 100, 30, null);
                     if (btnReset is not null)
                     {
                         btnReset.eventClick += (c, e) =>
                         {
                             OutsideConnectionSettings.Reset(m_buildingId);
-                            UpdateTab(tabStrip);
+                            UpdateTab(true);
                         };
                     }
                 }
@@ -65,21 +76,26 @@ namespace TransferManagerCE.UI
             m_bInSetup = false;
         }
 
-        public void UpdateTab(UITabStrip tabStrip)
+        public override bool UpdateTab(bool bActive)
         {
+            if (!base.UpdateTab(true))
+            {
+                return false;
+            }
+
             if (m_bInSetup)
             {
-                return;
+                return false;
             }
 
             m_bInSetup = true;
 
             // Outside connection settings
-            if (m_panelOutsideSettings is not null)
+            if (bActive && m_panelOutsideSettings is not null)
             {
                 if (!DependencyUtils.IsAdvancedOutsideConnectionsRunning() && BuildingTypeHelper.IsOutsideConnection(m_buildingId))
                 {
-                    tabStrip.SetTabVisible((int)BuildingPanel.TabIndex.TAB_CAPACITY, true);
+                    m_tabStrip.SetTabVisible((int)BuildingPanel.TabIndex.TAB_CAPACITY, true);
 
                     OutsideConnectionSettings outsideSettings = OutsideConnectionSettings.GetSettings(m_buildingId);
 
@@ -110,11 +126,13 @@ namespace TransferManagerCE.UI
                 }
                 else
                 {
-                    tabStrip.SetTabVisible((int)BuildingPanel.TabIndex.TAB_CAPACITY, false);
+                    m_tabStrip.SetTabVisible((int)BuildingPanel.TabIndex.TAB_CAPACITY, false);
                 }
             }
 
             m_bInSetup = false;
+
+            return true;
         }
 
         public void OnOutsideCargoCapacityChanged(float fValue)
@@ -159,7 +177,7 @@ namespace TransferManagerCE.UI
             OutsideConnectionSettings.SetSettings(m_buildingId, settings);
         }
 
-        public void Destroy()
+        public override void Destroy()
         {
             if (m_sliderOutsideCargoCapacity is not null)
             {
@@ -191,6 +209,8 @@ namespace TransferManagerCE.UI
                 m_sliderOutsideDummyTrafficFactor.Destroy();
                 m_sliderOutsideDummyTrafficFactor = null;
             }
+
+            base.Destroy();
         }
     }
 }

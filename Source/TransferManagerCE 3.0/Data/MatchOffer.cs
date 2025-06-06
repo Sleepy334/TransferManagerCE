@@ -1,6 +1,7 @@
-﻿using ColossalFramework;
+﻿using SleepyCommon;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using static TransferManager;
 
@@ -11,14 +12,14 @@ namespace TransferManagerCE.CustomManager
         public InstanceID m_object;
         public uint m_flags; // Stores lots of information with bitmasks
         public byte m_byLocalPark; // Stores which park the offer is from in P&P parks.
-        public List<ushort> m_buildings;
+        public HashSet<ushort> m_buildings;
 
         public MatchOffer()
         {
             m_object = new InstanceID();
             m_flags = 0;
             m_byLocalPark = 0;
-            m_buildings = new List<ushort>();
+            m_buildings = new HashSet<ushort>();
         }
 
         public MatchOffer(MatchOffer offer)
@@ -27,7 +28,7 @@ namespace TransferManagerCE.CustomManager
             m_object.RawData = offer.m_object.RawData;
             m_flags = offer.m_flags;
             m_byLocalPark = offer.m_byLocalPark;
-            m_buildings = new List<ushort>(offer.m_buildings);
+            m_buildings = new HashSet<ushort>(offer.m_buildings);
         }
 
         public MatchOffer(TransferOffer offer)
@@ -60,6 +61,14 @@ namespace TransferManagerCE.CustomManager
         public int Amount
         {
             get { return (int)((m_flags & 0xFF00) >> 8); }
+        }
+
+        public bool Unlimited
+        {
+            get
+            {
+                return (m_flags & 8) != 0;
+            }
         }
 
         public Vector3 Position
@@ -119,12 +128,12 @@ namespace TransferManagerCE.CustomManager
             return Exclude; // Only set by warehouses.
         }
 
-        public List<ushort> GetBuildings()
+        public HashSet<ushort> GetBuildings()
         {
             return m_buildings;
         }
 
-        public string DisplayOffer(bool bShowId = false)
+        public string DescribeOfferObject(bool bShowId = false)
         {
             string sMessage = "";
             switch (m_object.Type)
@@ -132,17 +141,17 @@ namespace TransferManagerCE.CustomManager
                 case InstanceType.Park:
                 case InstanceType.Building:
                     {
-                        sMessage = InstanceHelper.DescribeInstance(m_object, bShowId);
+                        sMessage = InstanceHelper.DescribeInstance(m_object, InstanceID.Empty, bShowId);
                         break;
                     }
                 default:
                     {
-                        sMessage = InstanceHelper.DescribeInstance(m_object, bShowId);
+                        sMessage = InstanceHelper.DescribeInstance(m_object, InstanceID.Empty, bShowId);
 
                         // Add building name if not a building.
                         if (m_buildings.Count > 0)
                         {
-                            string sBuildingName = CitiesUtils.GetBuildingName(m_buildings[0]);
+                            string sBuildingName = CitiesUtils.GetBuildingName(m_buildings.First(), InstanceID.Empty);
                             if (!string.IsNullOrEmpty(sBuildingName))
                             {
                                 if (sMessage.Length > 0)
@@ -159,9 +168,46 @@ namespace TransferManagerCE.CustomManager
             return sMessage;
         }
 
+        public string DescribeActive()
+        {
+            if (Active)
+            {
+                return "Active";
+            }
+            else
+            {
+                return "Passive";
+            }
+        }
+
+        public string DescribePark()
+        {
+            if (m_byLocalPark != 0)
+            {
+                return InstanceHelper.DescribeInstance(new InstanceID { Park = m_byLocalPark }, InstanceID.Empty, true);
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        public string DescribeAmount()
+        {
+            return $"{Amount}{(Unlimited ? "*" : "")}";
+        }
+
         public void Show()
         {
-            InstanceHelper.ShowInstance(m_object);
+            Vector3 position = InstanceHelper.GetPosition(m_object);
+            if (position != Vector3.zero)
+            {
+                InstanceHelper.ShowInstance(m_object);
+            }
+            else if (m_buildings.Count > 0)
+            {
+                InstanceHelper.ShowInstance(new InstanceID { Building = m_buildings.First() });
+            }
         }
 
         public void Write(BinaryWriter writer)
@@ -172,11 +218,12 @@ namespace TransferManagerCE.CustomManager
 
             // We always write out 5 buildingId's
             int iWritten = 0;
+            ushort[] buildingIds = m_buildings.ToArray();
             while (iWritten < 5)
             {
-                if (iWritten < m_buildings.Count)
+                if (iWritten < buildingIds.Length)
                 {
-                    writer.Write(m_buildings[iWritten]);
+                    writer.Write(buildingIds[iWritten]);
                 }
                 else
                 {

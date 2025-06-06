@@ -11,7 +11,7 @@ namespace TransferManagerCE.Data
         public const int iMAJOR_CRIME_RATE = 90;
         public const int iMINOR_CRIME_RATE = 60;
 
-        public StatusDataCrime(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) : 
+        public StatusDataCrime(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) : 
             base(reason, eBuildingType, BuildingId)
         {
         }

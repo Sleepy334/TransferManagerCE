@@ -1,5 +1,6 @@
 using ColossalFramework;
 using ColossalFramework.UI;
+using SleepyCommon;
 using System.Collections.Generic;
 using TransferManagerCE.Data;
 using UnifiedUI.Helpers;
@@ -7,15 +8,15 @@ using static TransferManagerCE.UI.BuildingPanel;
 
 namespace TransferManagerCE.UI
 {
-    public class BuildingStatusTab
+    public class BuildingStatusTab : BuildingTab
     {
         public  StatusHelper m_statusHelper = new StatusHelper();
         private ListView? m_listStatus = null;
-        private ushort m_buildingId = 0;
 
-        public void Setup(UITabStrip tabStrip)
+        // ----------------------------------------------------------------------------------------
+        public override void SetupInternal()
         {
-            UIPanel? tabStatus = tabStrip.AddTabIcon("Information", Localization.Get("tabBuildingPanelStatus"), TransferManagerLoader.LoadResources(), "", 150f);
+            UIPanel? tabStatus = m_tabStrip.AddTabIcon("Information", Localization.Get("tabBuildingPanelStatus"), TransferManagerMod.Instance.LoadResources(), "", 150f);
             if (tabStatus is not null)
             {
                 tabStatus.autoLayout = true;
@@ -35,76 +36,79 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void SetTabBuilding(ushort buildingId)
+        public override bool ShowTab()
         {
-            m_buildingId = buildingId;
+            return true; // Always show tab
         }
 
-        public void UpdateTab(UITabStrip tabStrip)
+        public override bool UpdateTab(bool bActive)
         {
-            // Update status tab count
-            if (tabStrip.IsTabVisible((int)TabIndex.TAB_STATUS))
+            if (!base.UpdateTab(bActive))
             {
+                return false;
+            }
+
+            // Update status tab count
+            if (m_tabStrip.IsTabVisible((int)TabIndex.TAB_STATUS))
+            {
+                int iStatusCount;
+                List<StatusData>? statusList = m_statusHelper.GetStatusList(m_buildingId, out iStatusCount);
+
                 string sMessage = Localization.Get("tabBuildingPanelStatus");
 
                 if (m_buildingId != 0)
                 {
-                    int iVehicleCount = 0;
-
-                    Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[m_buildingId];
-                    if (building.m_flags != 0)
+                    if (iStatusCount > 0)
                     {
-                        // Add vehicle count if there are any guest vehicles
-                        List<ushort> vehicles = BuildingUtils.GetGuestParentVehiclesForBuilding(building);
-                        iVehicleCount = vehicles.Count;
-                    }
-
-                    if (iVehicleCount > 0)
-                    {
-                        sMessage += " (" + iVehicleCount + ")";
+                        sMessage += " (" + iStatusCount + ")";
                     }
                 }
 
-                tabStrip.SetTabText((int)TabIndex.TAB_STATUS, sMessage);
-            }
+                m_tabStrip.SetTabText((int)TabIndex.TAB_STATUS, sMessage);
 
-            bool bActive = (TabIndex)tabStrip.GetSelectTabIndex() == TabIndex.TAB_STATUS;
-            if (bActive)
-            {
-                // Update entries
-                int iStatusCount;
-                List<StatusData>? statusList = m_statusHelper.GetStatusList(m_buildingId, out iStatusCount);
-                if (m_listStatus is not null && statusList is not null)
+                if (bActive)
                 {
-                    // Services
-                    m_listStatus.GetList().rowsData = new FastList<object>
+                    // Update entries
+                    if (m_listStatus is not null && statusList is not null)
                     {
-                        m_buffer = statusList.ToArray(),
-                        m_size = statusList.Count,
-                    };
+                        // Services
+                        m_listStatus.GetList().rowsData = new FastList<object>
+                        {
+                            m_buffer = statusList.ToArray(),
+                            m_size = statusList.Count,
+                        };
+                    }
+                }
+                else
+                {
+                    Clear();
                 }
             }
             else
             {
                 Clear();
             }
+
+            return true;
         }
 
-        public void Clear()
+        public override void Clear()
         {
             if (m_listStatus is not null)
             {
                 m_listStatus.Clear();
             }
+            base.Clear();
         }
 
-        public void Destroy()
+        public override void Destroy()
         {
             if (m_listStatus is not null)
             {
                 m_listStatus.Destroy();
                 m_listStatus = null;
             }
+            base.Destroy();
         }
     }
 }

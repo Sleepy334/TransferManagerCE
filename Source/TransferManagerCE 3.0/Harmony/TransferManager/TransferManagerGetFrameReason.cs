@@ -1,4 +1,5 @@
 using HarmonyLib;
+using SleepyCommon;
 using static TransferManager;
 
 namespace TransferManagerCE
@@ -25,7 +26,7 @@ namespace TransferManagerCE
                             }
                             else
                             {
-                                Debug.LogError($"Error: FrameIndex 148 is in use {__result}, Crime2 not available.");
+                                CDebug.LogError($"Error: FrameIndex 148 is in use {__result}, Crime2 not available.");
                             }
                             break;
                         }
@@ -37,7 +38,7 @@ namespace TransferManagerCE
                             }
                             else
                             {
-                                Debug.LogError($"Error: FrameIndex 180 is in use {__result}, TaxiMove not available.");
+                                CDebug.LogError($"Error: FrameIndex 180 is in use {__result}, TaxiMove not available.");
                             }
                             break;
                         }
@@ -49,7 +50,7 @@ namespace TransferManagerCE
                             }
                             else
                             {
-                                Debug.LogError($"Error: FrameIndex 212 is in use {__result}, Mail2 not available.");
+                                CDebug.LogError($"Error: FrameIndex 212 is in use {__result}, Mail2 not available.");
                             }
                             break;
                         }
@@ -61,7 +62,7 @@ namespace TransferManagerCE
                             }
                             else
                             {
-                                Debug.LogError($"Error: FrameIndex 212 is in use {__result}, IntercityBus not available.");
+                                CDebug.LogError($"Error: FrameIndex 212 is in use {__result}, IntercityBus not available.");
                             }
                             break;
                         }

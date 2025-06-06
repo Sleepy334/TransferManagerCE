@@ -6,7 +6,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataExtractionFacility : StatusDataBuilding
     {
-        public StatusDataExtractionFacility(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataExtractionFacility(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }

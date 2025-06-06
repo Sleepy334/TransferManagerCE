@@ -8,17 +8,23 @@ namespace TransferManagerCE
 {
     public class BuildingSettingsRenderer : SimulationManagerBase<BuildingSettingsRenderer, MonoBehaviour>, IRenderableManager
     {
-        public BuildingSettingsRenderer()
+        private static bool s_rendererRegistered = false;
+
+        public static void RegisterRenderer()
         {
-            SimulationManager.RegisterManager(instance);
+            // Used to draw path connection graph, only add this once
+            if (!s_rendererRegistered)
+            {
+                SimulationManager.RegisterManager(BuildingSettingsRenderer.instance);
+                s_rendererRegistered = true;
+            }
         }
 
         protected override void BeginOverlayImpl(CameraInfo cameraInfo)
         {
             base.BeginOverlayImpl(cameraInfo);
 
-            if (SettingsPanel.Instance is not null &&
-                SettingsPanel.Instance.isVisible &&
+            if (SettingsPanel.IsVisible() &&
                 ModSettings.GetSettings().HighlightSettingsState == 1)
             {
                 HighlightBuildings(cameraInfo);

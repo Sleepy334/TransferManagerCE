@@ -53,7 +53,12 @@ namespace TransferManagerCE
 
         public int GetColor(ushort nodeId)
         {
-            return m_nodes[nodeId];
+            if (m_nodes.TryGetValue(nodeId, out int color))
+            {
+                return color;
+            }
+
+            return 0;
         }
 
         public void SetColor(ushort nodeId, int color)

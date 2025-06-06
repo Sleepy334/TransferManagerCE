@@ -9,7 +9,7 @@ namespace TransferManagerCE.Data
     public class StatusDataHotel : StatusDataBuilding
     {
         public StatusDataHotel(BuildingType eBuildingType, ushort BuildingId) :
-            base(TransferReason.None, eBuildingType, BuildingId)
+            base(CustomTransferReason.Reason.None, eBuildingType, BuildingId)
         {
         }
 

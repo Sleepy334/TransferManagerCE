@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SleepyCommon;
+using System;
 using System.Collections.Generic;
 using TransferManagerCE.CustomManager;
 using TransferManagerCE.Data;
@@ -128,7 +129,7 @@ namespace TransferManagerCE
             }
 
             //long stopTicks = stopwatch.ElapsedTicks;
-            //Debug.Log($"{((double)(stopTicks - startTicks) * 0.0001).ToString("F")}ms");
+            //CDebug.Log($"{((double)(stopTicks - startTicks) * 0.0001).ToString("F")}ms");
         }
 
         private void LoadBuildingMatches(ushort usSourceBuildingId)
@@ -136,7 +137,7 @@ namespace TransferManagerCE
             m_highlightBuildings.Clear();
 
             if ((ModSettings.BuildingHighlightMode)ModSettings.GetSettings().HighlightMatchesState == ModSettings.BuildingHighlightMode.Matches && 
-                BuildingPanel.Instance is not null)
+                BuildingPanel.Exists)
             {
                 // Limit the number of buildings to highlight
                 const int iMAX_BUILDINGS = 100;
@@ -150,7 +151,7 @@ namespace TransferManagerCE
                         BuildingMatchData matchData = listMatches[i];
 
                         // A match can now produce multiple buildings (Service point)
-                        List<ushort> buildings;
+                        HashSet<ushort> buildings;
                         if (matchData.m_outgoing.GetBuildings().Contains(usSourceBuildingId))
                         {
                             buildings = matchData.m_incoming.GetBuildings();

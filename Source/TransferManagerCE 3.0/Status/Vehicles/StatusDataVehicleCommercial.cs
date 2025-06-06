@@ -6,19 +6,19 @@ namespace TransferManagerCE.Data
     // --------------------------------------------------------------------------------------------
     public class StatusDataVehicleCommercial : StatusDataVehicle
     {
-        public StatusDataVehicleCommercial(TransferReason material, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
+        public StatusDataVehicleCommercial(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
             base(material, eBuildingType, BuildingId, responder, target)
         {
         }
 
-        protected override string CalculateTarget(out string tooltip)
+        protected override string CalculateVehicle(out string tooltip)
         {
             tooltip = "";
 
-            bool bIncoming = m_material == TransferReason.Goods || m_material == TransferReason.Food;
+            bool bIncoming = m_material == CustomTransferReason.Reason.Goods || m_material == CustomTransferReason.Reason.Food;
             if (bIncoming)
             {
-                return base.CalculateTarget(out tooltip);
+                return base.CalculateVehicle(out tooltip);
             }
             else
             {
@@ -30,7 +30,7 @@ namespace TransferManagerCE.Data
         {
             tooltip = "";
 
-            bool bIncoming = m_material == TransferReason.Goods || m_material == TransferReason.Food;
+            bool bIncoming = m_material == CustomTransferReason.Reason.Goods || m_material == CustomTransferReason.Reason.Food;
             if (bIncoming)
             {
                 return base.CalculateResponder(out tooltip);

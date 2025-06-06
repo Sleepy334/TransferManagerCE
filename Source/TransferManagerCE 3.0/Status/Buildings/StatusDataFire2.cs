@@ -6,7 +6,7 @@ namespace TransferManagerCE.Data
     public class StatusDataFire2 : StatusDataBuilding
     {
         public StatusDataFire2(BuildingType eBuildingType, ushort BuildingId) : 
-            base(TransferReason.Fire2, eBuildingType, BuildingId)
+            base(CustomTransferReason.Reason.Fire2, eBuildingType, BuildingId)
         {
         }
 

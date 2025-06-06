@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
 using HarmonyLib;
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -62,7 +63,7 @@ namespace TransferManagerCE
                     yield return new CodeInstruction(OpCodes.Pop); // Remove previous value
                     yield return new CodeInstruction(OpCodes.Ldc_I4_2); // Add 2U
                     yield return instruction; // Perform randomizer.
-                    Debug.Log($"WarehouseProduceGoodsTranspiler - Cargo warehouse offers patched to 50/50.", false);
+                    CDebug.Log($"WarehouseProduceGoodsTranspiler - Cargo warehouse offers patched to 50/50.", false);
                     continue;
                 }
 
@@ -81,7 +82,7 @@ namespace TransferManagerCE
                             // Set the compare flag to 0 so the loop doesnt execute
                             instruction.operand = 0;
                             bPatchedEmptyWarehouseTruckLimit = true;
-                            Debug.Log($"WarehouseProduceGoodsTranspiler - Don't remove 'Empty' mode warehouse trucks when 20% full", false);
+                            CDebug.Log($"WarehouseProduceGoodsTranspiler - Don't remove 'Empty' mode warehouse trucks when 20% full", false);
                         }
                     }
 
@@ -93,7 +94,7 @@ namespace TransferManagerCE
                     {
                         instruction.operand = 1.0f;
                         bPatchedEmptyWarehouseLimit = true;
-                        Debug.Log($"WarehouseProduceGoodsTranspiler - Removed 'Empty' mode warehouse 20% limit", false);
+                        CDebug.Log($"WarehouseProduceGoodsTranspiler - Removed 'Empty' mode warehouse 20% limit", false);
                     }
                 }
 
@@ -108,7 +109,7 @@ namespace TransferManagerCE
                         {
                             // Exclude should ALWAYS be true for warehouses.
                             instruction.opcode = OpCodes.Ldc_I4_1; // Load true
-                            Debug.Log("WarehouseProduceGoodsTranspiler - Setting 'Exclude' flag.", false);
+                            CDebug.Log("WarehouseProduceGoodsTranspiler - Setting 'Exclude' flag.", false);
                         }
 
                         yield return instruction;

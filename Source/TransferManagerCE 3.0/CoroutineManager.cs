@@ -1,3 +1,4 @@
+using SleepyCommon;
 using System;
 using System.Collections;
 using TransferManagerCE.Util;
@@ -8,7 +9,7 @@ namespace TransferManagerCE
     public class ModManager : MonoBehaviour
     {
         const int iPATH_UNIT_UPDATE_RATE = 60; // 1 minute
-        const int iDISTRICT_CHECK_UPDATE_RATE = 5; // 5 seconds
+        const int iSETTINGS_CHECK_UPDATE_RATE = 5; // 5 seconds
         const int iPATH_NODE_CACHE_UPDATE_RATE = 300; // 5 minutes
         const int iPATH_FAILURE_UPDATE_RATE = 30; // 30 seconds
 
@@ -16,10 +17,8 @@ namespace TransferManagerCE
         private Coroutine? m_pathUnitCoroutine = null;
         private bool m_bShownPathUnitWarning = false;
 
-        // Check if districts have been deleted
-        private Coroutine? m_districtCoroutine = null;
-        private int m_iDistrictCount = 0;
-        private int m_iParkCount = 0;
+        // Check if districts/buildings have been deleted
+        private Coroutine? m_settingsCoroutine = null;
 
         // Update outside connection cache
         private Coroutine? m_outsideCacheCoroutine = null;
@@ -36,9 +35,9 @@ namespace TransferManagerCE
                     m_pathUnitCoroutine = StartCoroutine(UpdatePathUnitCoroutine(iPATH_UNIT_UPDATE_RATE));
                 }
 
-                if (m_districtCoroutine is null)
+                if (m_settingsCoroutine is null)
                 {
-                    m_districtCoroutine = StartCoroutine(UpdateDistrictCoroutine(iDISTRICT_CHECK_UPDATE_RATE));
+                    m_settingsCoroutine = StartCoroutine(UpdateSettingsCoroutine(iSETTINGS_CHECK_UPDATE_RATE));
                 }
 
                 if (m_outsideCacheCoroutine is null)
@@ -53,7 +52,7 @@ namespace TransferManagerCE
             }
             catch (Exception e)
             {
-                Debug.Log("Exception: " + e.Message);
+                CDebug.Log("Exception: " + e.Message);
             }
         }
 
@@ -67,10 +66,10 @@ namespace TransferManagerCE
                     m_pathUnitCoroutine = null;
                 }
 
-                if (m_districtCoroutine is null)
+                if (m_settingsCoroutine is null)
                 {
-                    StopCoroutine(m_districtCoroutine);
-                    m_districtCoroutine = null;
+                    StopCoroutine(m_settingsCoroutine);
+                    m_settingsCoroutine = null;
                 }
 
                 if (m_outsideCacheCoroutine is null)
@@ -87,7 +86,7 @@ namespace TransferManagerCE
             }
             catch (Exception e)
             {
-                Debug.Log("Exception: " + e.Message);
+                CDebug.Log("Exception: " + e.Message);
             }
         }
 
@@ -115,24 +114,14 @@ namespace TransferManagerCE
             }
         }
 
-        IEnumerator UpdateDistrictCoroutine(int seconds)
+        IEnumerator UpdateSettingsCoroutine(int seconds)
         {
             while (true)
             {
                 yield return new WaitForSeconds(seconds);
-                CheckDistricts();
-            }
-        }
 
-        private void CheckDistricts()
-        {
-            // Check if districts changed
-            int iNewDistrictCount = DistrictManager.instance.m_districtCount;
-            int iNewParkCount = DistrictManager.instance.m_parkCount;
-            if (iNewDistrictCount != m_iDistrictCount || m_iParkCount != iNewParkCount)
-            {
-                m_iDistrictCount = iNewDistrictCount;
-                m_iParkCount = iNewParkCount;
+                // Call update incase the settings have been invalidated
+                BuildingSettingsStorage.Update();
             }
         }
 
@@ -143,7 +132,7 @@ namespace TransferManagerCE
                 yield return new WaitForSeconds(seconds);
 
                 // Clear outside connection node cache periodically in case they change
-                PathNodeCache.InvalidateOutsideConnections();
+                OutsideConnectionCache.Invalidate();
             }
         }
 

@@ -1,4 +1,5 @@
 using ICities;
+using SleepyCommon;
 using System;
 using System.Reflection;
 using TransferManagerCE.Settings;
@@ -12,7 +13,7 @@ namespace TransferManagerCE
         private const uint uiTUPLE_END = 0xFAFAFAFA;
 
         public const string DataID = "TransferManagerCE";
-        public const ushort DataVersion = 45;
+        public const ushort DataVersion = 46;
 
         public static Serializer? instance = null;
         private ISerializableData? m_serializableData = null;
@@ -28,7 +29,7 @@ namespace TransferManagerCE
             try
             {
                 // Clear any previous settings
-                TransferManagerLoader.ClearSettings();
+                TransferManagerMod.Instance.ClearSettings();
 
                 if (m_serializableData is not null)
                 {
@@ -40,7 +41,7 @@ namespace TransferManagerCE
 
                         SaveGameFileVersion = StorageData.ReadUInt16(Data, ref Index);
 #if DEBUG
-                        Debug.Log("Data length: " + Data.Length.ToString() + "; Data Version: " + SaveGameFileVersion);
+                        CDebug.Log("Data length: " + Data.Length.ToString() + "; Data Version: " + SaveGameFileVersion);
 #endif
                         if (SaveGameFileVersion <= DataVersion)
                         {
@@ -52,7 +53,7 @@ namespace TransferManagerCE
                                 int iMinor = StorageData.ReadInt32(Data, ref Index);
                                 int iBuild = StorageData.ReadInt32(Data, ref Index);
                                 int iRevision = StorageData.ReadInt32(Data, ref Index);
-                                Debug.Log($"Settings written by mod version: {iMajor}.{iMinor}.{iBuild}.{iRevision}");
+                                CDebug.Log($"Settings written by mod version: {iMajor}.{iMinor}.{iBuild}.{iRevision}");
                             }
 
                             CheckStartTuple("SaveGameSettings", SaveGameFileVersion, Data, ref Index);
@@ -75,17 +76,17 @@ namespace TransferManagerCE
                             sMessage += "\r\n";
                             sMessage += "Saved game data version: " + SaveGameFileVersion + "\r\n";
                             sMessage += "MOD data version: " + DataVersion + "\r\n";
-                            Prompt.Info(TransferManagerMain.Title, sMessage);
+                            Prompt.Info(TransferManagerMod.Instance.Name, sMessage);
                         }
                     }
                     else
                     {
-                        Debug.Log("Data is null");
+                        CDebug.Log("Data is null");
                     }
                 }
                 else
                 {
-                    Debug.Log("m_serializableData is null");
+                    CDebug.Log("m_serializableData is null");
                 }
             }
             catch (Exception ex)
@@ -93,7 +94,7 @@ namespace TransferManagerCE
                 string sErrorMessage = "Loading of Transfer Manager save game settings failed with the following error:\r\n";
                 sErrorMessage += "\r\n";
                 sErrorMessage += ex.Message;
-                Prompt.ErrorFormat(TransferManagerMain.Title, sErrorMessage);
+                Prompt.ErrorFormat(TransferManagerMod.Instance.Name, sErrorMessage);
             }
         }
 
@@ -134,7 +135,7 @@ namespace TransferManagerCE
             }
             catch (Exception ex)
             {
-                Debug.Log("Could not save data. " + ex.Message);
+                CDebug.Log("Could not save data. " + ex.Message);
             }
         }
 

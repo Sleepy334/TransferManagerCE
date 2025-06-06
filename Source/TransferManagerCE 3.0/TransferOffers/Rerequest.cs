@@ -3,6 +3,7 @@ using System;
 using static TransferManager;
 using UnityEngine;
 using System.Collections.Generic;
+using SleepyCommon;
 
 namespace TransferManagerCE.TransferOffers
 {
@@ -138,7 +139,7 @@ namespace TransferManagerCE.TransferOffers
                         // Add re-request offer
                         Singleton<TransferManager>.instance.AddIncomingOffer(primary, offer);
 #if DEBUG
-                        Debug.Log($"Building: {buildingID} Re-requesting material: {primary}");
+                        CDebug.Log($"Building: {buildingID} Re-requesting material: {primary}");
 #endif
                     }
                 }

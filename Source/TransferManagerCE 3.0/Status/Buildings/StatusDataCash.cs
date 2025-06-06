@@ -10,7 +10,7 @@ namespace TransferManagerCE.Data
     public class StatusDataCash : StatusDataBuilding
     {
         public StatusDataCash(BuildingType eBuildingType, ushort BuildingId) : 
-            base(TransferReason.Cash, eBuildingType, BuildingId)
+            base(CustomTransferReason.Reason.Cash, eBuildingType, BuildingId)
         {
         }
 

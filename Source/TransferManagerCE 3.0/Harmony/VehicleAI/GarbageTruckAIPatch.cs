@@ -22,7 +22,7 @@ namespace TransferManagerCE
                 if (Singleton<SimulationManager>.instance.m_randomizer.Int32(10U) == 0 && ShouldClearTarget(vehicleID, vehicleData))
                 {
                     //Building building = BuildingManager.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
-                    //Debug.Log($"Clearing Target - Vehicle: #{vehicleID} Building: #{vehicleData.m_targetBuilding} BuildingType: {building.Info.GetAI().GetType()} GarbageBuffer: {building.m_garbageBuffer}");
+                    //CDebug.Log($"Clearing Target - Vehicle: #{vehicleID} Building: #{vehicleData.m_targetBuilding} BuildingType: {building.Info.GetAI().GetType()} GarbageBuffer: {building.m_garbageBuffer}");
 
                     // clear target as it has been resolved
                     vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, 0);
@@ -36,7 +36,7 @@ namespace TransferManagerCE
                     vehicleData.m_transferSize < __instance.m_cargoCapacity &&
                     !ShouldReturnToSource(vehicleID, ref vehicleData))
                 {
-                    //Debug.Log($"Adding offer - Vehicle: #{vehicleID} Building: #{vehicleData.m_sourceBuilding}");
+                    //CDebug.Log($"Adding offer - Vehicle: #{vehicleID} Building: #{vehicleData.m_sourceBuilding}");
 
                     // Add an offer to see if we get another assignment
                     TransferManager.TransferOffer offer = default(TransferManager.TransferOffer);

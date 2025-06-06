@@ -1,3 +1,4 @@
+using SleepyCommon;
 using System;
 using System.Threading;
 using static TransferManager;
@@ -86,7 +87,7 @@ namespace TransferManagerCE.CustomManager
         public void MatchOfferThread()
         {
 #if DEBUG
-            Debug.Log($"MatchOffersThread: Thread started.");
+            CDebug.Log($"MatchOffersThread: Thread started.");
 #endif
             CustomTransferManager manager = new CustomTransferManager();
             while (s_runThread)
@@ -125,7 +126,7 @@ namespace TransferManagerCE.CustomManager
                 Interlocked.Decrement(ref s_runningThreads);
             }
 #if DEBUG
-            Debug.Log($"MatchOffersThread: Thread ended.");
+            CDebug.Log($"MatchOffersThread: Thread ended.");
 #endif
         }
     }

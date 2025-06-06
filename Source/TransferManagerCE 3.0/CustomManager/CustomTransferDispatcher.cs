@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SleepyCommon;
+using System;
 using System.Diagnostics;
-using TransferManagerCE.Data;
+using TransferManagerCE.CustomManager.Stats;
 using static TransferManager;
 
 namespace TransferManagerCE.CustomManager
@@ -28,9 +29,6 @@ namespace TransferManagerCE.CustomManager
         // Which match cycle are we on
         private int m_cycle = 0;
         private int m_droppedReasonCount = 0;
-        private long m_cycleStartMilliseconds = 0;
-        private long m_lastCycleMilliseconds = 0;
-        private Stopwatch m_stopwatch = Stopwatch.StartNew();
 
         public static CustomTransferDispatcher Instance
         {
@@ -56,11 +54,6 @@ namespace TransferManagerCE.CustomManager
         public int Cycle
         {
             get { return m_cycle; }
-        }
-
-        public long LastCycleMilliseconds
-        {
-            get { return m_lastCycleMilliseconds; }
         }
 
         public int DroppedReasons
@@ -95,8 +88,7 @@ namespace TransferManagerCE.CustomManager
             if (material == TransferReason.Snow)
             {
                 m_cycle++;
-                m_lastCycleMilliseconds = m_stopwatch.ElapsedMilliseconds - m_cycleStartMilliseconds;
-                m_cycleStartMilliseconds = m_stopwatch.ElapsedMilliseconds;
+                TransferManagerStats.CycleData.CycleStarted(m_cycle);
             }
 
             // Don't submit with no amounts
@@ -128,7 +120,7 @@ namespace TransferManagerCE.CustomManager
             {
                 m_droppedReasonCount++;
                 ClearAllTransferOffers(material, ref incomingCount, ref outgoingCount, ref incomingAmount, ref outgoingAmount);
-                Debug.Log($"Already in queue or running, discarding: {material}");
+                CDebug.Log($"Already in queue or running, discarding: {material}");
                 return;
             }
 
@@ -136,7 +128,7 @@ namespace TransferManagerCE.CustomManager
             TransferJob? job = TransferJobPool.Instance.Lease();
             if (job is null)
             {
-                Debug.LogError($"NO MORE TRANSFER JOBS AVAILABLE, DROPPING TRANSFER REQUESTS FOR {material}");
+                CDebug.LogError($"NO MORE TRANSFER JOBS AVAILABLE, DROPPING TRANSFER REQUESTS FOR {material}");
                 ClearAllTransferOffers(material, ref incomingCount, ref outgoingCount, ref incomingAmount, ref outgoingAmount);
                 return;
             }
@@ -199,6 +191,7 @@ namespace TransferManagerCE.CustomManager
 
             // Enqueue in work queue for match-making thread
             TransferJobQueue.Instance.EnqueueWork(job);
+            TransferManagerStats.JobStarted(m_cycle);
 
             // clear this material transfer:
             ClearAllTransferOffers(material, ref incomingCount, ref outgoingCount, ref incomingAmount, ref outgoingAmount);

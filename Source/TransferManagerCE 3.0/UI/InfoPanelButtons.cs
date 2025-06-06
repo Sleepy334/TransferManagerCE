@@ -1,4 +1,5 @@
 using ColossalFramework.UI;
+using SleepyCommon;
 using TransferManagerCE.UI;
 using UnityEngine;
 
@@ -67,7 +68,7 @@ namespace TransferManagerCE
             catch
             {
                 // Don't really care; just use default relative Y.
-                Debug.Log("couldn't find ProblemsPanel relative position");
+                CDebug.Log("couldn't find ProblemsPanel relative position");
             }
 
             m_button = infoPanel.component.AddUIComponent<UIButton>();
@@ -83,7 +84,7 @@ namespace TransferManagerCE
                 m_button.disabledBgSprite = "ToolbarIconGroup6Disabled";
                 m_button.name = "TransferManagerCEButton";
                 m_button.tooltip = "Open Transfer Manager CE";
-                m_button.atlas = TransferManagerLoader.LoadResources();
+                m_button.atlas = TransferManagerMod.Instance.LoadResources();
 
                 // Buttons to avoid
                 // RICO = 5f
@@ -139,10 +140,8 @@ namespace TransferManagerCE
                 // Event handler.
                 m_button.eventClick += (control, clickEvent) =>
                 {
-                    BuildingPanel.Init();
-
                     // Select current building in the building details panel and show.
-                    if (BuildingPanel.Instance is not null && WorldInfoPanel.GetCurrentInstanceID().Building != 0)
+                    if (WorldInfoPanel.GetCurrentInstanceID().Building != 0)
                     {
                         // Open building panel
                         BuildingPanel.Instance.ShowPanel(WorldInfoPanel.GetCurrentInstanceID().Building);
@@ -150,18 +149,18 @@ namespace TransferManagerCE
 
                     WorldInfoPanel.HideAllWorldInfoPanels();
 
-                    if (SelectionTool.Instance is null)
+                    if (!SelectionTool.Exists)
                     {
                         SelectionTool.AddSelectionTool();
                     }
-                    if (SelectionTool.Instance is not null)
+                    if (SelectionTool.Exists)
                     {
                         SelectionTool.Instance.Enable();
                     }
                     else
                     {
-                        Debug.Log("Selection tool is null");
-                        BuildingPanel.Instance?.ShowPanel();
+                        CDebug.Log("ERROR: Selection tool is null");
+                        BuildingPanel.Instance.Show();
                     }
                 };
             }

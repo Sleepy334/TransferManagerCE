@@ -1,4 +1,5 @@
 using ColossalFramework;
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using TransferManagerCE.CustomManager;
@@ -12,18 +13,20 @@ namespace TransferManagerCE
         const float fMAX_SEARCH_DISTANCE = 128f;
 
         private static bool s_bInitNeeded = true;
-        private static Array16<NetSegment>? NetSegments = null;
-        private static Array16<Building>? Buildings = null;
-        private static Array8<DistrictPark>? Parks = null;
+        private static NetSegment[] NetSegments = null;
+        private static NetNode[] NetNodes = null;
+        private static Building[] Buildings = null;
+        private static DistrictPark[] Parks = null;
 
         private static void Init()
         {
             if (s_bInitNeeded)
             {
                 s_bInitNeeded = false;
-                NetSegments = Singleton<NetManager>.instance.m_segments;
-                Buildings = Singleton<BuildingManager>.instance.m_buildings;
-                Parks = Singleton<DistrictManager>.instance.m_parks;
+                NetSegments = Singleton<NetManager>.instance.m_segments.m_buffer;
+                NetNodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
+                Buildings = Singleton<BuildingManager>.instance.m_buildings.m_buffer;
+                Parks = Singleton<DistrictManager>.instance.m_parks.m_buffer;
             }
         }
 
@@ -37,18 +40,27 @@ namespace TransferManagerCE
                 Init();
                 if (offer.Building != 0 && offer.IsOutside())
                 {
-                    uiNearestNodeId = PathNodeCache.FindCachedOutsideNode(offer.Building);
+                    uiNearestNodeId = OutsideConnectionCache.FindCachedOutsideNode(offer.Building);
                 }
                 if (uiNearestNodeId == 0)
                 {
-                    
                     ushort segmentId = FindStartSegment(material, offer);
                     if (segmentId != 0)
                     {
-                        NetSegment segment = NetSegments.m_buffer[segmentId];
+                        NetSegment segment = NetSegments[segmentId];
 
                         // Get starting node based on segment direction and active status
-                        uiNearestNodeId = GetStartNode(segmentId, segment, offer.Active);
+                        if (segment.Info.m_canCrossLanes)
+                        {
+                            // We need the closest node
+                            Building building = Buildings[offer.Building];
+                            uiNearestNodeId = GetClosestNode(building.m_position, segmentId, segment);
+                        }
+                        else
+                        {
+                            // We need the right node
+                            uiNearestNodeId = GetStartNode(segmentId, segment, offer.Active);
+                        }
                     }
                 }
             }
@@ -56,7 +68,67 @@ namespace TransferManagerCE
             return uiNearestNodeId;
         }
 
-        public static ushort GetStartNode(ushort segmentId, NetSegment segment, bool bActive)
+        public static ushort FindNearestNode(ushort buildingId, ushort segmentId, bool bActive)
+        {
+            Init();
+
+            ushort uiNearestNodeId = 0;
+            if (buildingId != 0)
+            {
+                uiNearestNodeId = OutsideConnectionCache.FindCachedOutsideNode(buildingId);
+            }
+            if (uiNearestNodeId == 0)
+            {
+                if (segmentId != 0)
+                {
+                    NetSegment segment = NetSegments[segmentId];
+                    if (segment.m_flags != 0)
+                    {
+                        // Get starting node based on segment direction and active status
+                        if (segment.Info.m_canCrossLanes)
+                        {
+                            // We need the closest node
+                            Building building = Buildings[buildingId];
+                            uiNearestNodeId = GetClosestNode(building.m_position, segmentId, segment);
+                        }
+                        else
+                        {
+                            // We need the right node
+                            uiNearestNodeId = GetStartNode(segmentId, segment, bActive);
+                        }
+                    }
+                }
+            }
+
+            return uiNearestNodeId;
+        }
+
+        private static ushort GetClosestNode(Vector3 position, ushort segmentId, NetSegment segment)
+        {
+            ushort usNode = 0;
+
+            if (segment.m_flags != 0)
+            {
+                NetNode start = NetNodes[segment.m_startNode];
+                NetNode end = NetNodes[segment.m_endNode];
+
+                float fDistanceStart = Vector3.SqrMagnitude(position - start.m_position);
+                float fDistanceEnd = Vector3.SqrMagnitude(position - end.m_position);
+                
+                if (fDistanceStart < fDistanceEnd)
+                {
+                    usNode = segment.m_startNode;
+                }
+                else
+                {
+                    usNode = segment.m_endNode;
+                }
+            }
+
+            return usNode;
+        }
+
+        private static ushort GetStartNode(ushort segmentId, NetSegment segment, bool bActive)
         {
             ushort usNode = 0;
 
@@ -134,7 +206,7 @@ namespace TransferManagerCE
                 case InstanceType.Park:
                     {
                         // We need to find a ServicePoint node instead
-                        DistrictPark park = Parks.m_buffer[offer.Park];
+                        DistrictPark park = Parks[offer.Park];
                         if (park.m_flags != 0 && park.IsPedestrianZone)
                         {
                             // TryGetRandomServicePoint fails a lot, function seems buggy.
@@ -145,7 +217,7 @@ namespace TransferManagerCE
                                 List<Building> servicePoints = new List<Building>();
                                 foreach (ushort buildingId in park.m_finalServicePointList)
                                 {
-                                    Building building = Buildings.m_buffer[buildingId];
+                                    Building building = Buildings[buildingId];
                                     if (building.m_flags != 0 && building.m_accessSegment != 0)
                                     {
                                         // Copied from TryGetRandomServicePoint
@@ -187,7 +259,7 @@ namespace TransferManagerCE
         public static ushort FindStartSegmentBuilding(ushort buildingId, CustomTransferReason.Reason material)
         {
             Init();
-            Building building = Buildings.m_buffer[buildingId];
+            Building building = Buildings[buildingId];
             if (building.m_flags != 0)
             {
                 InstanceID instance = new InstanceID { Building = buildingId };
@@ -213,7 +285,7 @@ namespace TransferManagerCE
                 // Otherwise can we use the access segment?
                 if (building.m_accessSegment != 0)
                 {
-                    NetSegment segment = NetSegments.m_buffer[building.m_accessSegment];
+                    NetSegment segment = NetSegments[building.m_accessSegment];
                     if (segment.m_flags != 0)
                     {
                         NetInfo.LaneType laneTypes = PathDistanceTypes.GetLaneTypes(PathDistanceTypes.IsGoodsMaterial(material));
@@ -246,7 +318,7 @@ namespace TransferManagerCE
             {
                 case InstanceType.Building:
                     {
-                        Building building = Buildings.m_buffer[instance.Building];
+                        Building building = Buildings[instance.Building];
                         if ((building.m_flags & Building.Flags.Collapsed) == Building.Flags.None)
                         {
                             if (building.Info.m_zoningMode == BuildingInfo.ZoningMode.CornerLeft)

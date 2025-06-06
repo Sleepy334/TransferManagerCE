@@ -1,5 +1,5 @@
 ﻿using System;
-using TransferManagerCE.Data;
+using TransferManagerCE.CustomManager.Stats;
 using TransferManagerCE.Util;
 using static TransferManager;
 

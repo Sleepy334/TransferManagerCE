@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using ColossalFramework.UI;
 using ICities;
+using SleepyCommon;
 using System;
 using System.IO;
 using System.Xml.Serialization;
@@ -66,23 +67,28 @@ namespace TransferManagerCE.Settings
 
         // We dont load these settings as they are for debugging only.
         [XmlIgnore]
-        public int ShowConnectionGraph { get; set; } = 0;
-
-        [XmlIgnore]
         public int MatchLogReason { get; set; } = (int) TransferReason.None;
 
 
         public int MatchLogCandidates { get; set; } = 0; // TransferReason.None;
-
         public bool ShowBuildingId { get; set; } = false;
-        
-        public bool EnablePanelTransparency { get; set; } = false; 
 
-        
+        public bool EnablePanelTransparency { get; set; } = false; 
+        public bool AddUnifiedUIButton { get; set; } = true;
 
         public bool StatisticsEnabled { get; set; } = true;
 
-        public string PreferredLanguage { get; set; } = "System Default";
+        public string PreferredLanguage
+        {
+            get
+            {
+                return Localization.PreferredLanguage;
+            }
+            set
+            {
+                Localization.PreferredLanguage = value;
+            }
+        }
 
         public int DeadTimerValue { get; set; } = 64; // 64 is the value when the problem icon appears
 
@@ -203,7 +209,11 @@ namespace TransferManagerCE.Settings
         public UnsavedKeyMapping SettingsPanelHotkey = new UnsavedKeyMapping(
             "SettingsPanelHotkey",
             key: KeyCode.Alpha7, bCtrl: true, bShift: false, bAlt: false);
-        
+
+        [XmlIgnore]
+        public UnsavedKeyMapping PathDistancePanelHotkey = new UnsavedKeyMapping(
+            "PathDistancePanelHotkey",
+            key: KeyCode.Alpha8, bCtrl: true, bShift: false, bAlt: false);
 
         [XmlElement("SelectionToolHotkey")]
         public XmlInputKey XMLSelectionToolHotkey
@@ -270,9 +280,22 @@ namespace TransferManagerCE.Settings
             }
         }
 
+        [XmlElement("PathDistancePanelHotkey")]
+        public XmlInputKey XMLPathDistancePanelHotkey
+        {
+            get => PathDistancePanelHotkey.XmlKey;
+            set
+            {
+                PathDistancePanelHotkey.Key = value.Key;
+                PathDistancePanelHotkey.Control = value.Control;
+                PathDistancePanelHotkey.Shift = value.Shift;
+                PathDistancePanelHotkey.Alt = value.Alt;
+            }
+        }
+
         public static ModSettings Load()
         {
-            Debug.Log("Loading settings: " + SettingsFile); 
+            CDebug.Log("Loading settings: " + SettingsFile); 
             try
             {
                 // Read settings file.
@@ -291,7 +314,7 @@ namespace TransferManagerCE.Settings
             }
             catch (Exception e)
             {
-                Debug.Log("Error loading settings:", e);
+                CDebug.Log("Error loading settings:", e);
             }
 
             return new ModSettings();
@@ -313,7 +336,7 @@ namespace TransferManagerCE.Settings
             }
             catch (Exception ex)
             {
-                Debug.Log("Saving settings file failed.", ex); 
+                CDebug.Log("Saving settings file failed.", ex); 
             }
         }
     }

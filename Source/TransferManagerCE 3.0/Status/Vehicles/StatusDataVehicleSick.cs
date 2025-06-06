@@ -1,3 +1,4 @@
+using SleepyCommon;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
@@ -5,7 +6,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataVehicleSick : StatusDataVehicle
     {
-        public StatusDataVehicleSick(TransferReason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) : 
+        public StatusDataVehicleSick(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) : 
             base(reason, eBuildingType, BuildingId, responder, target)
         {
         }
@@ -51,11 +52,11 @@ namespace TransferManagerCE.Data
 
                 if (strCitizenName.Length > 0)
                 {
-                    return $"{strCitizenName}\n#{GetVehicleId()}:{GetTarget()}\n#{GetResponderId()}:{GetResponder()}";
+                    return $"{strCitizenName}\n#{GetVehicleId()}:{GetVehicle()}\n#{GetResponderId()}:{GetResponder()}";
                 }
                 else
                 {
-                    return $"#{GetVehicleId()}:{GetTarget()}\n#{GetResponderId()}:{GetResponder()}";
+                    return $"#{GetVehicleId()}:{GetVehicle()}\n#{GetResponderId()}:{GetResponder()}";
                 }
             }
 

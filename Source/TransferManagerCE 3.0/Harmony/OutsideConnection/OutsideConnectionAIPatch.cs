@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using SleepyCommon;
 using TransferManagerCE.Settings;
 
 namespace TransferManagerCE

@@ -8,7 +8,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataBuildingGenericProcessing : StatusDataBuilding
     {
-        public StatusDataBuildingGenericProcessing(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataBuildingGenericProcessing(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }
@@ -18,7 +18,7 @@ namespace TransferManagerCE.Data
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
             if (building.Info.GetAI() is IndustrialBuildingAI processingAI)
             {
-                TransferReason outgoingMaterial = GetOutgoingTransferReason(building);
+                CustomTransferReason.Reason outgoingMaterial = (CustomTransferReason.Reason) GetOutgoingTransferReason(building);
                 if (m_material == outgoingMaterial)
                 {
                     int iProductionCapacity = processingAI.CalculateProductionCapacity((ItemClass.Level)building.m_level, new Randomizer(m_buildingId), building.Width, building.Length);
@@ -50,7 +50,7 @@ namespace TransferManagerCE.Data
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
             if (building.m_flags != 0)
             {
-                TransferReason outgoingMaterial = GetOutgoingTransferReason(building);
+                CustomTransferReason.Reason outgoingMaterial = (CustomTransferReason.Reason)GetOutgoingTransferReason(building);
                 if (m_material == outgoingMaterial)
                 {
                     if (building.m_outgoingProblemTimer > 0)

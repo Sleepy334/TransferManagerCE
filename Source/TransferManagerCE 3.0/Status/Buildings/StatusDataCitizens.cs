@@ -5,7 +5,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataCitizens : StatusDataBuilding
     {
-        public StatusDataCitizens(TransferReason material, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataCitizens(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) :
             base(material, eBuildingType, BuildingId)
         {
         }
@@ -38,7 +38,7 @@ namespace TransferManagerCE.Data
             return "";
         }
 
-        protected override string CalculateTarget(out string tooltip)
+        protected override string CalculateVehicle(out string tooltip)
         {
             tooltip = ""; 
             return ""; // No vehicles

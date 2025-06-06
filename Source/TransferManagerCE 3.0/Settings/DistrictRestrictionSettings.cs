@@ -1,4 +1,5 @@
 ﻿using ICities;
+using SleepyCommon;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
@@ -241,10 +242,9 @@ namespace TransferManagerCE.Settings
 
             if (m_allowedDistricts.Count > 0)
             {
-                HashSet<DistrictData> newIncoming = ValidateDistricts(m_allowedDistricts);
-                if (newIncoming != m_allowedDistricts)
+                if (ValidateDistricts(m_allowedDistricts, out HashSet<DistrictData> newDistricts))
                 {
-                    m_allowedDistricts = newIncoming;
+                    m_allowedDistricts = newDistricts;
                     bChanged = true;
                 }
             }
@@ -273,10 +273,11 @@ namespace TransferManagerCE.Settings
             return sMessage;
         }
 
-        public HashSet<DistrictData> ValidateDistricts(HashSet<DistrictData> districts)
+        public bool ValidateDistricts(HashSet<DistrictData> districts, out HashSet<DistrictData> newSet)
         {
-            HashSet<DistrictData> newSet = new HashSet<DistrictData>();
+            newSet = new HashSet<DistrictData>();
 
+            bool bChanged = false;
             foreach (DistrictData districtId in districts)
             {
                 if (districtId.IsDistrict())
@@ -288,8 +289,9 @@ namespace TransferManagerCE.Settings
                     }
                     else
                     {
+                        bChanged = true;
                         // District doesn't exist any more
-                        Debug.Log("District missing: " + districtId.m_iDistrictId);
+                        CDebug.Log("District missing: " + districtId.m_iDistrictId);
                     }
                 }
                 else
@@ -301,13 +303,14 @@ namespace TransferManagerCE.Settings
                     }
                     else
                     {
+                        bChanged = true;
                         // District doesn't exist any more
-                        Debug.Log("Park missing: " + districtId.m_iDistrictId);
+                        CDebug.Log("Park missing: " + districtId.m_iDistrictId);
                     }
                 }
             }
 
-            return newSet;
+            return bChanged;
         }
     }
 }

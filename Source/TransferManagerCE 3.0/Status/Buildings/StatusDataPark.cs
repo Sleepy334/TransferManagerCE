@@ -7,7 +7,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataPark : StatusDataBuilding
     {
-        public StatusDataPark(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataPark(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }
@@ -19,7 +19,7 @@ namespace TransferManagerCE.Data
             {
                 switch (m_material)
                 {
-                    case TransferReason.ParkMaintenance:
+                    case CustomTransferReason.Reason.ParkMaintenance:
                         {
                             int current = 0;
                             int max = 0;

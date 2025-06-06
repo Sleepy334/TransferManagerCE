@@ -9,7 +9,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataMarket : StatusDataBuilding
     {
-        public StatusDataMarket(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataMarket(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }

@@ -1,8 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using ColossalFramework;
+using SleepyCommon;
+using System.Collections.Generic;
+using System.Diagnostics;
+using static TransferManagerCE.NetworkModeHelper;
+using static TransferManagerCE.NodeLinkData;
 
 namespace TransferManagerCE
 {
-    public class PathConnected : PathBase
+    public class PathConnected
     {
         // Connected graph storage
         private ConnectedStorage m_nodes;
@@ -12,9 +17,19 @@ namespace TransferManagerCE
         private int m_iGameNodeCount;
         private int m_iGameSegmentCount;
         private int m_iGameLaneCount;
+        private bool m_invalidated = false;
+        private NetworkMode m_mode;
 
-        public PathConnected() : base()
+        // Statistics
+        private static Stopwatch s_stopwatch = Stopwatch.StartNew();
+        public static long s_totalGenerationTicks = 0;
+        public static int s_totalGenerations = 0;
+
+        // ----------------------------------------------------------------------------------------
+        public PathConnected(NetworkMode mode) : 
+            base()
         {
+            m_mode = mode;
             m_nodes = new ConnectedStorage();
             m_connectedNodes = new Queue<ushort>();
 
@@ -22,6 +37,7 @@ namespace TransferManagerCE
             m_iGameNodeCount = 0;
             m_iGameSegmentCount = 0;
             m_iGameLaneCount = 0;
+            m_invalidated = false;
         }
 
         public int Colors
@@ -29,12 +45,27 @@ namespace TransferManagerCE
             get { return m_nodes.Colors; }
         }
 
+        public int GetColor(ushort nodeId)
+        {
+            return m_nodes.GetColor(nodeId);
+        }
+
         public bool IsValid()
         {
+            if (m_invalidated)
+            {
+                return false;
+            }
+
             return m_iGameNodeCount > 0 && 
                    m_iGameNodeCount == NetManager.instance.m_nodeCount &&
                    m_iGameSegmentCount == NetManager.instance.m_segmentCount &&
                    m_iGameLaneCount == NetManager.instance.m_laneCount;
+        }
+
+        public void Invalidate()
+        {
+            m_invalidated = true;
         }
 
         public bool IsConnected(ushort node1, ushort node2)
@@ -49,51 +80,66 @@ namespace TransferManagerCE
 
         public void FloodFill()
         {
+            long startTicks = s_stopwatch.ElapsedTicks;
+
             // Store the game graph counts when we made this connection graph so we can invalidate it when this changes
             m_iGameNodeCount = NetManager.instance.m_nodeCount;
             m_iGameSegmentCount = NetManager.instance.m_segmentCount;
             m_iGameLaneCount = NetManager.instance.m_laneCount;
+            m_invalidated = false;
+
+            NodeLinkGraph nodeLink = PathDistanceCache.GetLoader(m_mode, true); // Generate if needed
+            NodeLinkData links;
 
             // Reset storage
             m_nodes.Clear();
 
-            for (int i = 0; i < NetNodes.Length; i++)
+            int iLength = Singleton<NetManager>.instance.m_nodes.m_buffer.Length;
+            for (int i = 0; i < iLength; i++)
             {
-                if (!HasVisited((ushort)i))
+                ushort startNodeId = (ushort)i;
+                if (!HasVisited(startNodeId) && nodeLink.HasNodeLinks(startNodeId))
                 {
-                    NetNode node = NetNodes[i];
+                    // Found an unvisited node, start exploring this nodes tree
+                    m_nodes.Colors++;
+                    int iColor = m_nodes.Colors;
 
-                    // We check the service types match for the node but don't do a full check against a node due to pedestrian nodes
-                    if (node.m_flags != 0 && node.Info is not null && IsServiceValid(node.Info))
+                    // Add to queue to start processing
+                    UpdateNode(startNodeId, 0.0f);
+
+                    // Now process all nodes connected to this node and mark them with the same color.
+                    while (m_connectedNodes.Count > 0)
                     {
-                        // Found an unvisited node, start exploring this nodes tree
-                        m_nodes.Colors++;
-                        int iColor = m_nodes.Colors;
-                        UpdateNode((ushort)i, 0.0f);
-
-                        // Now process all nodes connected to this node and mark them with the same color.
-                        while (m_connectedNodes.Count > 0)
+                        ushort nodeId = m_connectedNodes.Dequeue();
+                        if (HasVisited(nodeId))
                         {
-                            ushort nodeId = m_connectedNodes.Dequeue();
-                            if (HasVisited((ushort)nodeId))
+                            // Check the colors match
+                            if (iColor != m_nodes.GetColor(nodeId))
                             {
-                                // Check the colors match
-                                if (iColor != m_nodes.GetColor(nodeId))
-                                {
-                                    Debug.Log($"Found node {nodeId} with different color: {iColor} NodeColor: {m_nodes.GetColor(nodeId)}");
-                                }
-                            } 
-                            else
-                            { 
-                                ProcessNode(nodeId, iColor);
+                                CDebug.Log($"ERROR: Found node {nodeId} with different color: {iColor} NodeColor: {m_nodes.GetColor(nodeId)}");
+                            }
+                        } 
+                        else if (nodeLink.TryGetNodeLinks(nodeId, out links))
+                        {
+                            // We can reach this node, add to graph
+                            m_nodes.SetColor(nodeId, iColor);
+
+                            // Process all node links from this node
+                            foreach (NodeLink link in links.items)
+                            {
+                                UpdateNode(link.m_nodeId, 0.0f);
                             }
                         }
                     }
                 }
             }
+
+            long stopTicks = s_stopwatch.ElapsedTicks;
+            s_totalGenerationTicks += stopTicks - startTicks;
+            s_totalGenerations++;
         }
 
-        protected override void UpdateNode(ushort nodeId, float fCurrentTravelTime)
+        protected void UpdateNode(ushort nodeId, float fCurrentTravelTime)
         {
             m_connectedNodes.Enqueue(nodeId);
         }
@@ -101,38 +147,6 @@ namespace TransferManagerCE
         private bool HasVisited(ushort nodeId)
         {
             return m_nodes.HasVisited(nodeId);
-        }
-
-        protected void ProcessNode(ushort nodeId, int iColor)
-        {
-            NetNode node = NetNodes[nodeId];
-            if (node.m_flags != 0)
-            {
-                // We can reach this node, add to graph
-                m_nodes.SetColor(nodeId, iColor);
-
-                // Call trough to base ProcessNode
-                ProcessNode(nodeId, node, 0.0f);
-            }
-        }
-
-        protected override void ProcessSegment(ushort segmentId, ushort uiCurrentNodeId, float fCurrentTravelTime)
-        {
-            if (segmentId != 0)
-            {
-                NetSegment segment = NetSegments[segmentId];
-
-                // Check segment is valid for this service type
-                if (segment.m_flags != 0 && IsNetInfoValid(segment.Info))
-                {
-                    // Add nodes from this segment
-                    UpdateNode(segment.m_startNode, 0.0f);
-                    UpdateNode(segment.m_endNode, 0.0f);
-
-                    // Loop through all sub nodes for this segments lanes
-                    ProcessLaneNodes(segment.m_lanes, 0.0f);
-                }
-            }
         }
     }
 }

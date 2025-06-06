@@ -6,48 +6,50 @@ namespace TransferManagerCE.Patch
     /// <summary>
     /// Harmony patch to implement escape key handling.
     /// </summary>
-    [HarmonyPatch(typeof(GameKeyShortcuts), "Escape")]
+    [HarmonyPatch]
     public static class EscapePatch
     {
         /// <summary>
         /// Harmony prefix patch to cancel the zoning tool when it's active and the escape key is pressed.
         /// </summary>
         /// <returns>True (continue on to game method) if the zoning tool isn't already active, false (pre-empt game method) otherwise</returns>
+        [HarmonyPatch(typeof(GameKeyShortcuts), "Escape")]
+        [HarmonyPrefix]
         public static bool Prefix()
         {
             // Handle "Escape" in order of importance
-            if (SelectionTool.Instance is not null && SelectionTool.Instance.m_mode != SelectionTool.SelectionToolMode.Normal)
+            if (SelectionTool.Active && SelectionTool.Instance.GetCurrentMode() != SelectionTool.SelectionToolMode.Normal)
             {
-                SelectionTool.Instance.SetMode(SelectionTool.SelectionToolMode.Normal);
+                SelectionTool.Instance.SelectNormalTool();
                 return false;
             }
-            if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
-            {
-                DistrictSelectionPanel.Instance.Hide();
-                return false;
-            }
-            else if (TransferIssuePanel.Instance is not null && TransferIssuePanel.Instance.HandleEscape())
+
+            // Check panels
+            if (DistrictSelectionPanel.IsVisible() && DistrictSelectionPanel.Instance.HandleEscape())
             {
                 return false;
             }
-            else if (StatsPanel.Instance is not null && StatsPanel.Instance.HandleEscape())
+            else if (BuildingPanel.IsVisible() && BuildingPanel.Instance.HandleEscape())
             {
                 return false;
             }
-            else if (ToolsModifierControl.toolController.CurrentTool == SelectionTool.Instance) 
-            {
-                ToolsModifierControl.SetTool<DefaultTool>();
-                return false;
-            }
-            else if (BuildingPanel.Instance is not null && BuildingPanel.Instance.HandleEscape())
+            else if (TransferIssuePanel.IsVisible() && TransferIssuePanel.Instance.HandleEscape())
             {
                 return false;
             }
-            else if (SettingsPanel.Instance is not null && SettingsPanel.Instance.HandleEscape())
+            else if (StatsPanel.IsVisible() && StatsPanel.Instance.HandleEscape())
             {
                 return false;
             }
-            else if (OutsideConnectionPanel.Instance is not null && OutsideConnectionPanel.Instance.HandleEscape())
+            else if (SettingsPanel.IsVisible() && SettingsPanel.Instance.HandleEscape())
+            {
+                return false;
+            }
+            else if (OutsideConnectionPanel.IsVisible() && OutsideConnectionPanel.Instance.HandleEscape())
+            {
+                return false;
+            }
+            else if (PathDistancePanel.IsVisible() && PathDistancePanel.Instance.HandleEscape())
             {
                 return false;
             }

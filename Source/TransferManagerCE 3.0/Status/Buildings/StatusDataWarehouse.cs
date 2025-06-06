@@ -9,7 +9,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataWarehouse : StatusDataBuilding
     {
-        public StatusDataWarehouse(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) : 
+        public StatusDataWarehouse(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) : 
             base(reason, eBuildingType, BuildingId)
         {
         }

@@ -256,7 +256,7 @@ namespace TransferManagerCE
                     else
                     {
                         // District doesn't exist any more
-                        Debug.Log("District missing: " + districtId.m_iDistrictId);
+                        CDebug.Log("District missing: " + districtId.m_iDistrictId);
                     }
                 }
                 else
@@ -269,7 +269,7 @@ namespace TransferManagerCE
                     else
                     {
                         // District doesn't exist any more
-                        Debug.Log("Park missing: " + districtId.m_iDistrictId);
+                        CDebug.Log("Park missing: " + districtId.m_iDistrictId);
                     }
                 }
             }

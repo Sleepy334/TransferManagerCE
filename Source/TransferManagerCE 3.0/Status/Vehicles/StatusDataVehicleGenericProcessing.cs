@@ -5,12 +5,12 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataVehicleGenericProcessing : StatusDataVehicle
     {
-        public StatusDataVehicleGenericProcessing(TransferReason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
+        public StatusDataVehicleGenericProcessing(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
             base(reason, eBuildingType, BuildingId, responder, target)
         {
         }
 
-        protected override string CalculateTarget(out string tooltip)
+        protected override string CalculateVehicle(out string tooltip)
         {
             tooltip = "";
 
@@ -21,7 +21,7 @@ namespace TransferManagerCE.Data
             }
             else
             {
-                return base.CalculateTarget(out tooltip);
+                return base.CalculateVehicle(out tooltip);
             }
         }
 
@@ -40,20 +40,20 @@ namespace TransferManagerCE.Data
             }
         }
 
-        public static TransferReason GetOutgoingTransferReason(Building building)
+        public static CustomTransferReason.Reason GetOutgoingTransferReason(Building building)
         {
             switch (building.Info.m_class.m_subService)
             {
                 case ItemClass.SubService.IndustrialForestry:
-                    return TransferManager.TransferReason.Lumber;
+                    return CustomTransferReason.Reason.Lumber;
                 case ItemClass.SubService.IndustrialFarming:
-                    return TransferManager.TransferReason.Food;
+                    return CustomTransferReason.Reason.Food;
                 case ItemClass.SubService.IndustrialOil:
-                    return TransferManager.TransferReason.Petrol;
+                    return CustomTransferReason.Reason.Petrol;
                 case ItemClass.SubService.IndustrialOre:
-                    return TransferManager.TransferReason.Coal;
+                    return CustomTransferReason.Reason.Coal;
                 default:
-                    return TransferManager.TransferReason.Goods;
+                    return CustomTransferReason.Reason.Goods;
             }
         }
     }

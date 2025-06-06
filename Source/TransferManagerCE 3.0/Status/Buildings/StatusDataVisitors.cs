@@ -6,7 +6,7 @@ namespace TransferManagerCE.Data
     public class StatusDataVisitors : StatusDataBuilding
     {
         public StatusDataVisitors(BuildingType eBuildingType, ushort BuildingId) :
-            base(TransferReason.None, eBuildingType, BuildingId)
+            base(CustomTransferReason.Reason.None, eBuildingType, BuildingId)
         {
         }
 

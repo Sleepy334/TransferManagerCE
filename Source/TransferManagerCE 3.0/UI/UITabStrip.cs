@@ -5,6 +5,8 @@ using System.ComponentModel;
 using ColossalFramework.DataBinding;
 using System.Security.Policy;
 using static MessageInfo;
+using System;
+using SleepyCommon;
 
 namespace TransferManagerCE
 {
@@ -83,6 +85,18 @@ namespace TransferManagerCE
             }
 
             return tabStrip;
+        }
+
+        public OnTabChanged? eventTabChanged
+        {
+            get
+            {
+                return m_tabChangedEvent;
+            }
+            set
+            {
+                m_tabChangedEvent = value;
+            }
         }
 
         public UIPanel? AddTabIcon(string sIcon, string sText, UITextureAtlas atlas, string sTooltip, float fWidth = 100f)
@@ -214,7 +228,7 @@ namespace TransferManagerCE
                     }
                     else
                     {
-                        Debug.Log($"ERROR: Unable to compact tab: {iTabIndex} buttonLabel: {buttonLabel} buttonPanel: {buttonPanel} buttonSprite: {buttonSprite}");
+                        CDebug.Log($"ERROR: Unable to compact tab: {iTabIndex} buttonLabel: {buttonLabel} buttonPanel: {buttonPanel} buttonSprite: {buttonSprite}");
                     }
 
                     // Update state
@@ -245,6 +259,11 @@ namespace TransferManagerCE
                 {
                     ShowTab(m_iSelectedIndex);
                 }
+            }
+            else if (m_iSelectedIndex < 0 || 
+                    (m_iSelectedIndex >= 0 && m_iSelectedIndex < m_tabs.Count && !m_tabs[m_iSelectedIndex].visible)) 
+            {
+                SelectTabIndex(GetFirstVisibleTab());
             }
         }
 
@@ -311,15 +330,21 @@ namespace TransferManagerCE
 
         public void SelectTabIndex(int iIndex)
         {
+            m_iSelectedIndex = iIndex;
+
             if (m_tabs is not null)
             {
-                m_iSelectedIndex = iIndex;
                 ShowTab(iIndex);
                 if (m_tabChangedEvent is not null)
                 {
                     m_tabChangedEvent(iIndex);
                 }
             }
+        }
+
+        public void SelectFirstVisibleTab()
+        {
+            SelectTabIndex(GetFirstVisibleTab());
         }
 
         private void ShowTab(int iIndex)
@@ -386,6 +411,10 @@ namespace TransferManagerCE
                         SelectTabIndex(GetFirstVisibleTab());
                     }
                 }
+            }
+            else
+            {
+                throw new Exception($"Requested index is out of bounds {iIndex} of {m_tabs.Count}");
             }
         }
 
@@ -461,7 +490,7 @@ namespace TransferManagerCE
 
         public int GetTabId(int iIndex)
         {
-            if (m_tabs is not null && iIndex < m_tabs.Count)
+            if (m_tabs is not null && iIndex >= 0 && iIndex < m_tabs.Count)
             {
                 return m_tabs[iIndex].m_id;
             }
@@ -475,6 +504,18 @@ namespace TransferManagerCE
                 return m_tabs[iIndex].visible;
             }
             return false;
+        }
+
+        public override void PerformLayout()
+        {
+            // Check curent tab is visible
+            int index = GetSelectTabIndex();
+            if (index == -1 || (GetSelectTabIndex() >= 0 && !IsTabVisible(GetSelectTabIndex())))
+            {
+                SelectFirstVisibleTab();
+            }
+
+            base.PerformLayout();
         }
 
         private UIButton CreateTabButton(UIComponent parent)

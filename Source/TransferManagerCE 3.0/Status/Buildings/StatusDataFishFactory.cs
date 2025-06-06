@@ -7,7 +7,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataFishFactory : StatusDataProcessingFacility
     {
-        public StatusDataFishFactory(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataFishFactory(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }

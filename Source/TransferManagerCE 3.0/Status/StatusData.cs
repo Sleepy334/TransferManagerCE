@@ -1,33 +1,31 @@
-﻿using ColossalFramework;
+﻿using SleepyCommon;
 using System;
-using System.Reflection;
 using TransferManagerCE.UI;
 using UnityEngine;
-using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 
 namespace TransferManagerCE.Data
 {
     public abstract class StatusData : IComparable
     {
-        public TransferReason m_material;
+        public CustomTransferReason.Reason m_material;
         public BuildingType m_eBuildingType;
         public ushort m_buildingId;
 
         protected Color m_color;
 
         private string? m_value = null;
-        private string? m_target = null;
+        private string? m_vehicle = null;
         private string? m_responder = null;
         private string? m_timer = null;
         private double? m_distance = null;
 
-        private string m_valueTooltip = null;
-        private string m_targetTooltip = null;
-        private string m_responderTooltip = null;
-        private string m_timerTooltip = null;
+        private string m_valueTooltip = "";
+        private string m_vehicleTooltip = "";
+        private string m_responderTooltip = "";
+        private string m_timerTooltip = "";
 
-        public StatusData(TransferReason reason, BuildingType eBuildingType, ushort buildingId)
+        public StatusData(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort buildingId)
         {
             m_material = reason;
             m_eBuildingType = eBuildingType;
@@ -35,7 +33,7 @@ namespace TransferManagerCE.Data
             m_color = Color.white;
         }
 
-        public bool HasBuildingReason(CustomTransferReason reason)
+        public bool HasBuildingReason(CustomTransferReason.Reason reason)
         {
             return BuildingPanel.Instance.GetStatusHelper().HasBuildingReason(reason);
         }
@@ -93,7 +91,7 @@ namespace TransferManagerCE.Data
         public abstract ushort GetVehicleId();
 
         protected abstract string CalculateValue(out string tooltip);
-        protected abstract string CalculateTarget(out string tooltip);
+        protected abstract string CalculateVehicle(out string tooltip);
         protected abstract string CalculateResponder(out string tooltip);
         protected abstract string CalculateTimer(out string tooltip);
         protected abstract double CalculateDistance();
@@ -103,7 +101,7 @@ namespace TransferManagerCE.Data
             return GetMaterial().ToString();
         }
 
-        public virtual CustomTransferReason GetMaterial()
+        public virtual CustomTransferReason.Reason GetMaterial()
         {
             return m_material;
         }
@@ -155,18 +153,18 @@ namespace TransferManagerCE.Data
             return m_responderTooltip;
         }
 
-        public virtual string GetTarget()
+        public virtual string GetVehicle()
         {
-            if (m_target is null)
+            if (m_vehicle is null)
             {
-                m_target = CalculateTarget(out m_targetTooltip);
+                m_vehicle = CalculateVehicle(out m_vehicleTooltip);
             }
-            return m_target;
+            return m_vehicle;
         }
 
-        public string GetTargetTooltip()
+        public string GetVehicleTooltip()
         {
-            return m_targetTooltip;
+            return m_vehicleTooltip;
         }
 
         public virtual double GetDistance()

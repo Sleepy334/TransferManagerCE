@@ -1,6 +1,7 @@
+using SleepyCommon;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using TransferManagerCE.CustomManager;
 using UnityEngine;
 using static TransferManager;
@@ -9,10 +10,10 @@ namespace TransferManagerCE
 {
     public class MatchData : IComparable
     {
-        private static int m_iMatchCounter = 1;
+        private static int s_iMatchCounter = 1;
 
         private const ushort usTUPLE_ALIGNMENT = 0xFEFE;
-        private int m_iMatchNumber = m_iMatchCounter++; // Allows us to sort correctly over midnight.
+        private int m_iMatchNumber = s_iMatchCounter++; // Allows us to sort correctly over midnight.
         public byte m_hour;
         public byte m_minute;
         public byte m_second;
@@ -81,7 +82,7 @@ namespace TransferManagerCE
             return m_incoming.Priority + "/" + m_outgoing.Priority;
         }
 
-        public string GetPark()
+        public string GetParkId()
         {
             if (m_incoming.m_byLocalPark != m_outgoing.m_byLocalPark)
             {
@@ -124,13 +125,34 @@ namespace TransferManagerCE
             }
             else
             {
-                Debug.LogError("Tuple Alignment not found.");
+                CDebug.LogError("Tuple Alignment not found.");
             }
         }
 
-        public string Describe()
+        public string GetTooltipText()
         {
-            return $"Time: {Time()}\nMaterial: {m_material}\nIn: {m_incoming.DisplayOffer(true)}\nOut: {m_outgoing.DisplayOffer(true)}\nPriority: {GetPriority()}\nAmount:{GetAmount()}\nDistance:{GetDistance().ToString("N2")}km\nActive:{GetActiveStatus()}\nPark:{GetPark()}";
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Append($"Time: {Time()}\n");
+            stringBuilder.Append($"Material: {m_material}\n");
+            
+            if (m_incoming.m_byLocalPark != 0)
+            {
+                stringBuilder.Append($"Park: {m_incoming.DescribePark()}");
+            }
+
+            stringBuilder.Append($"In:\n");
+            stringBuilder.Append($"    Object: {m_incoming.DescribeOfferObject(true)}\n");
+            stringBuilder.Append($"    Priorty: {m_incoming.Priority}\n");
+            stringBuilder.Append($"    Amount: {m_incoming.Amount}\n");
+            stringBuilder.Append($"    Active: {m_incoming.DescribeActive()}\n");
+            stringBuilder.Append($"Out:\n");
+            stringBuilder.Append($"    Object: {m_outgoing.DescribeOfferObject(true)}\n");
+            stringBuilder.Append($"    Priorty: {m_outgoing.Priority}\n");
+            stringBuilder.Append($"    Amount: {m_outgoing.Amount}\n");
+            stringBuilder.Append($"    Active: {m_outgoing.DescribeActive()}\n");
+            stringBuilder.Append($"Distance: {GetDistance().ToString("N2")}km\n");
+
+            return stringBuilder.ToString();
         }
     }
 }

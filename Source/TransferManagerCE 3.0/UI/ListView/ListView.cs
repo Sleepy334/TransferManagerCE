@@ -1,4 +1,5 @@
 ﻿using ColossalFramework.UI;
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -47,7 +48,7 @@ namespace TransferManagerCE.UI
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log(ex);
+                CDebug.Log(ex);
             }
 
             return null;

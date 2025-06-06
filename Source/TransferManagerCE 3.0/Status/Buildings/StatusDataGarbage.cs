@@ -12,7 +12,7 @@ namespace TransferManagerCE.Data
     {
         private static int? s_maxLoadSize = null;
 
-        public StatusDataBuildingGarbage(TransferReason material, BuildingType eBuildingType, ushort BuildingId) : 
+        public StatusDataBuildingGarbage(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) : 
             base(material, eBuildingType, BuildingId)
         {
         }
@@ -45,7 +45,7 @@ namespace TransferManagerCE.Data
                 case BuildingType.Recycling:
                 case BuildingType.WasteProcessing:
                     {
-                        if (m_material == TransferReason.Goods)
+                        if (m_material == CustomTransferReason.Reason.Goods)
                         {
                             LandfillSiteAI? buildingAI = building.Info.GetAI() as LandfillSiteAI;
                             if (buildingAI is not null)

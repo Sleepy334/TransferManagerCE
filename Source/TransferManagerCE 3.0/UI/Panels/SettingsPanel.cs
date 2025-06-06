@@ -1,13 +1,14 @@
 using ColossalFramework.UI;
+using SleepyCommon;
 using System.Collections;
 using System.Collections.Generic;
 using TransferManagerCE.Settings;
 using UnityEngine;
-using static TransferManagerCE.UIUtils;
+using static RenderManager;
 
 namespace TransferManagerCE.UI
 {
-    public class SettingsPanel : UIPanel
+    public class SettingsPanel : UIMainPanel<SettingsPanel>
     {
         const int iMARGIN = 8;
 
@@ -16,30 +17,14 @@ namespace TransferManagerCE.UI
         public const int iCOLUMN_WIDTH_RESTRICTIONS = 90;
         public const int iCOLUMN_WIDTH_DESCRIPTION = 230;
 
-        public static SettingsPanel? Instance = null;
-
         private UITitleBar? m_title = null;
         private UITextField? m_txtSearch = null;
         private ListView? m_listSettings = null;
         private bool m_bUpdatePanel = false;
-        private Coroutine? m_coroutine = null;
-        BuildingSettingsRenderer? m_buildingSettingsRenderer = null;
 
         public SettingsPanel() : base()
         {
-            m_coroutine = StartCoroutine(UpdatePanelCoroutine(4));
-        }
-
-        public static void Init()
-        {
-            if (Instance is null)
-            {
-                Instance = UIView.GetAView().AddUIComponent(typeof(SettingsPanel)) as SettingsPanel;
-                if (Instance is null)
-                {
-                    Prompt.Info("Transfer Manager CE", "Error creating Settings Panel.");
-                }
-            }
+            BuildingSettingsRenderer.RegisterRenderer(); 
         }
 
         public override void Start()
@@ -82,10 +67,12 @@ namespace TransferManagerCE.UI
             };
 
             // Title Bar
-            m_title = AddUIComponent<UITitleBar>();
-            m_title.SetOnclickHandler(OnCloseClick);
-            m_title.SetHighlightHandler(OnHighlightBuildingsClick);
-            m_title.title = Localization.Get("titleSettingsPanel");
+            m_title = UITitleBar.Create(this, Localization.Get("titleSettingsPanel"), "Transfer", TransferManagerMod.Instance.LoadResources(), OnCloseClick);
+            if (m_title != null)
+            {
+                m_title.AddButton("btnHighlight", atlas, "InfoIconLevel", "Highlight Matches", OnHighlightBuildingsClick);
+                m_title.SetupButtons();
+            }
 
             UIPanel mainPanel = AddUIComponent<UIPanel>();
             mainPanel.width = width;
@@ -103,10 +90,10 @@ namespace TransferManagerCE.UI
             panelFilter.padding = new RectOffset(462, 0, 0, 0);
 
             // Search button
-            AddSpriteButton(ButtonStyle.None, panelFilter, "LineDetailButton", 25, 25);
+            UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.None, panelFilter, "LineDetailButton", 25, 25);
 
             // Search field
-            m_txtSearch = UIUtils.CreateTextField(ButtonStyle.TextField, panelFilter, "txtSearch", 0.8f, 200f, 25f);
+            m_txtSearch = UIMyUtils.CreateTextField(UIMyUtils.ButtonStyle.TextField, panelFilter, "txtSearch", 0.8f, 200f, 25f);
             m_txtSearch.eventTextChanged += OnTextChanged;
             m_txtSearch.eventMouseLeave += (sender, e) =>
             {
@@ -132,7 +119,7 @@ namespace TransferManagerCE.UI
             UpdatePanel();
         }
 
-        public void UpdatePanel()
+        protected override void UpdatePanel()
         {
             if (!isVisible)
             {
@@ -158,7 +145,7 @@ namespace TransferManagerCE.UI
             }
 
             //long stopTicks = stopwatch.ElapsedTicks;
-            //Debug.Log($"{((double)(stopTicks - startTicks) * 0.0001).ToString("F")}ms");
+            //CDebug.Log($"{((double)(stopTicks - startTicks) * 0.0001).ToString("F")}ms");
         }
 
         public void OnHighlightBuildingsClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -172,7 +159,7 @@ namespace TransferManagerCE.UI
 
         public void UpdateHighlightButtonIcon()
         {
-            if (m_title is not null && m_title.m_btnHighlight is not null)
+            if (m_title is not null)
             {
                 string sIcon = "";
                 string sTooltip = "";
@@ -189,30 +176,13 @@ namespace TransferManagerCE.UI
                         {
                             sIcon = "InfoIconLevel";
                             sTooltip = Localization.Get("tooltipHighlightModeSettings");
-
-                            // Create renderer if needed
-                            if (m_buildingSettingsRenderer is null)
-                            {
-                                m_buildingSettingsRenderer = new BuildingSettingsRenderer();
-                            }
-
                             break;
                         }
                 }
 
-                m_title.m_btnHighlight.normalBgSprite = sIcon;
-                m_title.m_btnHighlight.tooltip = sTooltip;
+                m_title.Buttons[0].normalBgSprite = sIcon;
+                m_title.Buttons[0].tooltip = sTooltip;
             }
-        }
-
-        public bool HandleEscape()
-        {
-            if (isVisible)
-            {
-                Hide();
-                return true;
-            }
-            return false;
         }
 
         public void OnVisibilityChanged(UIComponent component, bool bVisible)
@@ -236,18 +206,6 @@ namespace TransferManagerCE.UI
         public void OnCloseClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             Hide();
-        }
-
-        public void TogglePanel()
-        {
-            if (isVisible)
-            {
-                Hide();
-            }
-            else
-            {
-                Show();
-            }
         }
 
         public List<SettingsData> GetSettingsList()
@@ -326,24 +284,10 @@ namespace TransferManagerCE.UI
 
         public override void OnDestroy()
         {
-            if (m_coroutine is not null)
-            {
-                StopCoroutine(m_coroutine);
-            }
             if (m_listSettings is not null)
             {
                 Destroy(m_listSettings.gameObject);
                 m_listSettings = null;
-            }
-            if (m_buildingSettingsRenderer is not null)
-            {
-                Destroy(m_buildingSettingsRenderer.gameObject);
-                m_buildingSettingsRenderer = null;
-            }
-            if (Instance is not null)
-            {
-                Destroy(Instance.gameObject);
-                Instance = null;
             }
         }
     }

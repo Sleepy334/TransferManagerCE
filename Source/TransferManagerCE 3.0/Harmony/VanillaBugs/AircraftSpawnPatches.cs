@@ -1,6 +1,7 @@
 ﻿using ColossalFramework;
 using ColossalFramework.Math;
 using HarmonyLib;
+using SleepyCommon;
 using System;
 using TransferManagerCE.Settings;
 using UnityEngine;
@@ -34,7 +35,7 @@ namespace TransferManagerCE
             if (bForceSpawn && CitiesUtils.IsNearOutsideConnection(pos, ItemClass.SubService.PublicTransportPlane))
             {
 #if DEBUG
-                Debug.Log($"Force spawn: {__instance}");
+                CDebug.Log($"Force spawn: {__instance}");
 #endif
                 __result = true;
                 return false; // Override vanilla function
@@ -68,7 +69,7 @@ namespace TransferManagerCE
                 CitiesUtils.IsNearOutsideConnection(vehicleData.GetLastFramePosition(), ItemClass.SubService.PublicTransportPlane))
             {
 #if DEBUG
-                Debug.Log($"Force spawn: {__instance}");
+                CDebug.Log($"Force spawn: {__instance}");
 #endif
                 // Force spawn at outside connection
                 vehicleData.Spawn(vehicleID);

@@ -1,5 +1,6 @@
 using ColossalFramework;
 using ColossalFramework.UI;
+using SleepyCommon;
 using System.Collections.Generic;
 using TransferManagerCE.Data;
 using TransferManagerCE.Util;
@@ -8,14 +9,13 @@ using static TransferManagerCE.UI.BuildingPanel;
 
 namespace TransferManagerCE.UI
 {
-    public class BuildingVehicleTab
+    public class BuildingVehicleTab : BuildingTab 
     {
         private ListView? m_listVehicles = null;
-        private ushort m_buildingId = 0;
 
-        public void Setup(UITabStrip tabStrip)
+        public override void SetupInternal()
         {
-            UIPanel? tabVehicles = tabStrip.AddTabIcon("InfoIconTrafficCongestion", Localization.Get("tabBuildingPanelVehicles"), "", 230);
+            UIPanel? tabVehicles = m_tabStrip.AddTabIcon("InfoIconTrafficCongestion", Localization.Get("tabBuildingPanelVehicles"), "", 230);
             if (tabVehicles is not null)
             {
                 tabVehicles.autoLayout = true;
@@ -36,21 +36,25 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void SetTabBuilding(ushort buildingId)
+        public override bool ShowTab()
         {
-            m_buildingId = buildingId;
+            if (m_buildingId  == 0)
+            {
+                return false;
+            }
+
+            return BuildingVehicleCount.GetVehicleTypeCount(m_eBuildingType, m_buildingId) > 0;
         }
 
-        public void UpdateTabVisibility(UITabStrip tabStrip, BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId)
+        public void UpdateTabWidth(UITabStrip tabStrip, ushort buildingId)
         {
             // Vehicle tab
-            int iVehicleTypes = BuildingVehicleCount.GetVehicleTypeCount(eBuildingType, buildingId);
+            int iVehicleTypes = BuildingVehicleCount.GetVehicleTypeCount(m_eBuildingType, buildingId);
             if (iVehicleTypes > 0)
             {
                 tabStrip.SetTabVisible((int)TabIndex.TAB_VEHICLES, true);
 
                 // Set tab button width based on vehicle types
-
                 if (iVehicleTypes > 1)
                 {
                     tabStrip.SetTabWidth((int)TabIndex.TAB_VEHICLES, 230);
@@ -60,33 +64,33 @@ namespace TransferManagerCE.UI
                     tabStrip.SetTabWidth((int)TabIndex.TAB_VEHICLES, 175f);
                 }
             }
-            else
-            {
-                tabStrip.SetTabVisible((int)TabIndex.TAB_VEHICLES, false);
-            }
 
             tabStrip.PerformLayout();
         }
 
-        public void UpdateTab(UITabStrip tabStrip, BuildingTypeHelper.BuildingType eBuildingType)
+        public override bool UpdateTab(bool bActive)
         {
-            UpdateTabVisibility(tabStrip, eBuildingType, m_buildingId);
+            if (!base.UpdateTab(bActive))
+            {
+                return false;
+            }
 
             // Update vehicle tab count
-            if (tabStrip.IsTabVisible((int)TabIndex.TAB_VEHICLES))
+            if (m_tabStrip.IsTabVisible((int)TabIndex.TAB_VEHICLES))
             {
+                UpdateTabWidth(m_tabStrip, m_buildingId);
+
                 string strTab = Localization.Get("tabBuildingPanelVehicles");
 
                 Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[m_buildingId];
                 if (building.m_flags != 0)
                 {
-                    strTab = BuildingVehicleCount.GetVehicleTabText(eBuildingType, m_buildingId, building);
+                    strTab = BuildingVehicleCount.GetVehicleTabText(m_eBuildingType, m_buildingId, building);
                 }
 
-                tabStrip.SetTabText((int)TabIndex.TAB_VEHICLES, strTab);
+                m_tabStrip.SetTabText((int)TabIndex.TAB_VEHICLES, strTab);
             }
 
-            bool bActive = (TabIndex)tabStrip.GetSelectTabIndex() == TabIndex.TAB_VEHICLES;
             if (bActive)
             {
                 // Update vehicle list
@@ -105,6 +109,8 @@ namespace TransferManagerCE.UI
             {
                 Clear();
             }
+
+            return true;
         }
 
         public List<VehicleData> GetVehicles()
@@ -112,21 +118,25 @@ namespace TransferManagerCE.UI
             return new BuildingOwnVehicles().GetVehicles(m_buildingId);
         }
 
-        public void Clear()
+        public override void Clear()
         {
             if (m_listVehicles is not null)
             {
                 m_listVehicles.Clear();
             }
+
+            base.Clear();
         }
 
-        public void Destroy()
+        public override void Destroy()
         {
             if (m_listVehicles is not null)
             {
                 m_listVehicles.Destroy();
                 m_listVehicles = null;
             }
+
+            base.Destroy();
         }
     }
 }

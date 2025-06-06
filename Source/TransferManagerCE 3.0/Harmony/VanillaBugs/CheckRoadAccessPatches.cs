@@ -1,5 +1,6 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
+using SleepyCommon;
 using System;
 using TransferManagerCE.Settings;
 using UnityEngine;
@@ -23,13 +24,13 @@ namespace TransferManagerCE
                 {
                     if (FindTrainAccess(buildingID, ref data, data.m_position, out var segmentID, mostCloser: true))
                     {
-                        Debug.Log("Access segment found.");
+                        CDebug.Log("Access segment found.");
                         data.m_accessSegment = segmentID;
                         flag = false;
                     }
                     else
                     {
-                        Debug.Log("No Train Access segment found.");
+                        CDebug.Log("No Train Access segment found.");
                     }
                 }
 

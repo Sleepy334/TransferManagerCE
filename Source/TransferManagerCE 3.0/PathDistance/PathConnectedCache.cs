@@ -1,5 +1,4 @@
-using TransferManagerCE.CustomManager;
-using static TransferManager;
+using static TransferManagerCE.NetworkModeHelper;
 
 namespace TransferManagerCE
 {
@@ -14,28 +13,57 @@ namespace TransferManagerCE
         private static PathConnected? s_otherServicesGraph = null;
         static readonly object s_otherServicesLock = new object();
 
-        public static bool IsConnected(CustomTransferReason.Reason material, ushort node1, ushort node2)
+        // ----------------------------------------------------------------------------------------
+        public static bool IsConnected(NetworkMode mode, ushort node1, ushort node2)
         {
-            if (PathDistanceTypes.IsGoodsMaterial(material))
+            switch (mode)
             {
-                lock (s_goodsLock)
-                {
-                    return GetGoodsGraph().IsConnected(node1, node2);
-                }
+                case NetworkMode.Goods:
+                    {
+                        lock (s_goodsLock)
+                        {
+                            return GetGoodsGraph().IsConnected(node1, node2);
+                        }
+                    }
+                case NetworkMode.PedestrianZone:
+                    {
+                        lock (s_pedestrianZoneServicesLock)
+                        {
+                            return GetPedestrianZoneServicesGraph().IsConnected(node1, node2);
+                        }
+                    }
+                case NetworkMode.OtherServices:
+                    {
+                        lock (s_otherServicesLock)
+                        {
+                            return GetOtherServicesGraph().IsConnected(node1, node2);
+                        }
+                    }
             }
-            else if (PathDistanceTypes.IsPedestrianZoneService(material))
+
+            return false;
+        }
+
+        public static PathConnected GetGraph(NetworkMode mode)
+        {
+            switch (mode)
             {
-                lock (s_pedestrianZoneServicesLock)
-                {
-                    return GetPedestrianZoneServicesGraph().IsConnected(node1, node2);
-                }
-            }
-            else
-            {
-                lock (s_otherServicesLock)
-                {
-                    return GetOtherServicesGraph().IsConnected(node1, node2);
-                }
+                case NetworkMode.Goods:
+                    {
+                        return GetGoodsGraph();
+                    }
+                case NetworkMode.PedestrianZone:
+                    {
+                        return GetPedestrianZoneServicesGraph();
+                    }
+                case NetworkMode.OtherServices:
+                    {
+                        return GetOtherServicesGraph();
+                    }
+                default:
+                    {
+                        return GetGoodsGraph();
+                    }
             }
         }
 
@@ -45,10 +73,7 @@ namespace TransferManagerCE
             {
                 if (s_goodsGraph is null || !s_goodsGraph.IsValid())
                 {
-                    s_goodsGraph = new PathConnected();
-
-                    // Set up lane requirements
-                    s_goodsGraph.SetMaterial(CustomTransferReason.Reason.Goods);
+                    s_goodsGraph = new PathConnected(NetworkMode.Goods);
                     s_goodsGraph.FloodFill();
                 }
 
@@ -62,10 +87,7 @@ namespace TransferManagerCE
             {
                 if (s_pedestrianZoneServicesGraph is null || !s_pedestrianZoneServicesGraph.IsValid())
                 {
-                    s_pedestrianZoneServicesGraph = new PathConnected();
-
-                    // Set up lane requirements
-                    s_pedestrianZoneServicesGraph.SetMaterial(CustomTransferReason.Reason.Dead);
+                    s_pedestrianZoneServicesGraph = new PathConnected(NetworkMode.PedestrianZone);
                     s_pedestrianZoneServicesGraph.FloodFill();
                 }
 
@@ -79,10 +101,7 @@ namespace TransferManagerCE
             {
                 if (s_otherServicesGraph is null || !s_otherServicesGraph.IsValid())
                 {
-                    s_otherServicesGraph = new PathConnected();
-
-                    // Set up lane requirements
-                    s_otherServicesGraph.SetMaterial(CustomTransferReason.Reason.Garbage);
+                    s_otherServicesGraph = new PathConnected(NetworkMode.OtherServices);
                     s_otherServicesGraph.FloodFill();
                 }
 
@@ -111,6 +130,22 @@ namespace TransferManagerCE
             lock (s_otherServicesLock)
             {
                 return new ConnectedStorage(GetOtherServicesGraph().GetBuffer());
+            }
+        }
+
+        public static void Invalidate()
+        {
+            if (s_goodsGraph is not null)
+            {
+                s_goodsGraph.Invalidate();
+            }
+            if (s_pedestrianZoneServicesGraph is not null)
+            {
+                s_pedestrianZoneServicesGraph.Invalidate();
+            }
+            if (s_otherServicesGraph is not null)
+            {
+                s_otherServicesGraph.Invalidate();
             }
         }
     }

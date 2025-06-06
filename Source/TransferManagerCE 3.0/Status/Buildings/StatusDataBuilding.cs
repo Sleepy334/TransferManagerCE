@@ -7,7 +7,7 @@ namespace TransferManagerCE.Data
 {
     public abstract class StatusDataBuilding : StatusData
     {
-        public StatusDataBuilding(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataBuilding(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }
@@ -49,7 +49,7 @@ namespace TransferManagerCE.Data
             return double.MaxValue;
         }
 
-        protected override string CalculateTarget(out string tooltip)
+        protected override string CalculateVehicle(out string tooltip)
         {
             tooltip = "";
             return "";

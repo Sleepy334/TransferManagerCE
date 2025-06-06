@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using SleepyCommon;
+using System.Collections.Generic;
 using TransferManagerCE.Common;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;

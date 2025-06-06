@@ -8,7 +8,7 @@ namespace TransferManagerCE.Data
     public class StatusDataSnowDump : StatusDataBuilding
     {
         public StatusDataSnowDump(BuildingType eBuildingType, ushort BuildingId) : 
-            base(TransferReason.Snow, eBuildingType, BuildingId)
+            base(CustomTransferReason.Reason.Snow, eBuildingType, BuildingId)
         {
         }
 

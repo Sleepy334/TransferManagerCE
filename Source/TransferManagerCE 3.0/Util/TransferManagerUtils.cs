@@ -1,4 +1,5 @@
 using ColossalFramework;
+using SleepyCommon;
 using System;
 using System.Text;
 using TransferManagerCE.CustomManager;
@@ -17,14 +18,45 @@ namespace TransferManagerCE
         public static string DebugOffer(CustomTransferReason.Reason material, CustomTransferOffer offer, bool bAlign, bool bNode, bool bDistrict)
         {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.Append((offer.IsIncoming() ? "IN  | " : "OUT | ") + DebugOffer(offer.m_offer, bAlign));
 
-            Building building = BuildingManager.instance.m_buildings.m_buffer[offer.GetBuilding()];
+            // Direction
+            stringBuilder.Append(offer.IsIncoming() ? "IN  | " : "OUT | ");
+
+            // Describe object
+            string sMessage = InstanceHelper.DescribeInstance(offer.m_object, InstanceID.Empty, true);
+            if (bAlign)
+            {
+                sMessage = SleepyCommon.Utils.PadToWidth(sMessage, 60, false);
+            }
+            stringBuilder.Append(sMessage);
+
+            // Add object type
+            string sType = "";
+            if (offer.m_object.Type != InstanceType.Building)
+            {
+                sType = SleepyCommon.Utils.PadToWidth($" | {offer.m_object.Type}", 14);
+            }
+            else
+            {
+                sType = SleepyCommon.Utils.PadToWidth($" | {BuildingTypeHelper.GetBuildingType(offer.m_object.Building)}", 14);
+            }
+            if (bAlign) sType = SleepyCommon.Utils.PadToWidth(sType, 20);
+
+            // Build string to return
+            stringBuilder.Append(sType);
+            stringBuilder.Append($" | Priority:{offer.Priority}");
+            stringBuilder.Append(offer.Active ? " | Active " : " | Passive");
+            stringBuilder.Append($" | Amount:{offer.Amount.ToString("000")}");
+            stringBuilder.Append(offer.Unlimited ? "*" : " ");
+            stringBuilder.Append($" | Park:{offer.LocalPark.ToString("000")}");
+
+            ushort buildingId = offer.GetBuilding();
+            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
 
             // Add building specific information
-            if (offer.GetBuilding() != 0)
+            if (buildingId != 0)
             {
-                stringBuilder.Append($" | Building:{offer.GetBuilding().ToString("00000")}");
+                stringBuilder.Append($" | Building:{buildingId.ToString("00000")}");
             }
             else if (bAlign)
             {
@@ -36,7 +68,7 @@ namespace TransferManagerCE
                 // Incoming timer
                 if (offer.IsIncoming())
                 {
-                    if (offer.GetBuilding() != 0 && building.m_flags != 0 && building.m_incomingProblemTimer > 0)
+                    if (!offer.IsOutside() && buildingId != 0 && building.m_flags != 0 && building.m_incomingProblemTimer > 0)
                     {
                         stringBuilder.Append($" | IT:{building.m_incomingProblemTimer.ToString("000")}");
                     }
@@ -47,9 +79,9 @@ namespace TransferManagerCE
                 }
                 else
                 {
-                    if (offer.GetBuilding() != 0 && building.m_flags != 0 && building.m_outgoingProblemTimer > 0)
+                    if (!offer.IsOutside() && buildingId != 0 && building.m_flags != 0 && building.m_outgoingProblemTimer > 0)
                     {
-                        stringBuilder.Append($" | OT:{building.m_outgoingProblemTimer.ToString("000")}");
+                        stringBuilder.Append($" | OT:{SleepyCommon.Utils.PadToWidth(building.m_outgoingProblemTimer.ToString(), 3, true)}");
                     }
                     else if (bAlign)
                     {
@@ -68,7 +100,7 @@ namespace TransferManagerCE
                             if (offer.IsOutgoing())
                             {
                                 // Add sick timer
-                                if (offer.GetBuilding() != 0 && building.m_flags != 0)
+                                if (buildingId != 0 && building.m_flags != 0)
                                 {
                                     stringBuilder.Append($" | ST:{building.m_healthProblemTimer.ToString("000")}");
                                 }
@@ -123,7 +155,7 @@ namespace TransferManagerCE
                         }
                     case CustomTransferReason.Reason.Garbage:
                         {
-                            if (offer.GetBuilding() != 0 && building.m_flags != 0 && !offer.IsIncoming())
+                            if (buildingId != 0 && building.m_flags != 0 && !offer.IsIncoming())
                             {
                                 stringBuilder.Append($" | Garbage:{building.m_garbageBuffer.ToString("0000")}"); 
                             }
@@ -140,7 +172,7 @@ namespace TransferManagerCE
                         {
                             if (offer.IsIncoming())
                             {
-                                if (offer.GetBuilding() != 0 && building.m_flags != 0)
+                                if (buildingId != 0 && building.m_flags != 0)
                                 {
                                     stringBuilder.Append($" | WT:{building.m_workerProblemTimer.ToString("000")}");
                                 }
@@ -149,10 +181,10 @@ namespace TransferManagerCE
                                     stringBuilder.Append($" | WT:   ");
                                 }
 
-                                if (offer.GetBuilding() != 0)
+                                if (buildingId != 0)
                                 {
-                                    int iWorkers = BuildingUtils.GetCurrentWorkerCount(offer.GetBuilding(), building, out int worker0, out int worker1, out int worker2, out int worker3);
-                                    int iPlaces = BuildingUtils.GetTotalWorkerPlaces(offer.GetBuilding(), building, out int workPlaces0, out int workPlaces1, out int workPlaces2, out int workPlaces3);
+                                    int iWorkers = BuildingUtils.GetCurrentWorkerCount(buildingId, building, out int worker0, out int worker1, out int worker2, out int worker3);
+                                    int iPlaces = BuildingUtils.GetTotalWorkerPlaces(buildingId, building, out int workPlaces0, out int workPlaces1, out int workPlaces2, out int workPlaces3);
                                     float fPercent = ((float)iWorkers / (float)iPlaces) * 100.0f;
 
                                     // Workers
@@ -226,22 +258,24 @@ namespace TransferManagerCE
             return stringBuilder.ToString();
         }
 
-        public static string DebugOffer(TransferOffer offer, bool bAlign = false)
+        public static void CheckRoadAccess(CustomTransferReason.Reason material, TransferOffer offer)
         {
-            string sMessage = $"{InstanceHelper.DescribeInstance(offer.m_object, true)} [{offer.m_object.Type}:{offer.m_object.Index}]";
-            if (bAlign)
+            // Update access segment if using path distance but do it in simulation thread so we don't break anything
+            if (offer.Building != 0 && PathDistanceTypes.GetDistanceAlgorithm(material) != PathDistanceTypes.PathDistanceAlgorithm.LineOfSight)
             {
-                sMessage = SleepyCommon.Utils.PadToWidth(sMessage, 60, false);
+                ref Building building = ref BuildingManager.instance.m_buildings.m_buffer[offer.Building];
+                if (building.m_accessSegment == 0 &&
+                    (building.m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone &&
+                    building.Info.GetAI() is not OutsideConnectionAI)
+                {
+                    // See if we can update m_accessSegment.
+                    building.Info.m_buildingAI.CheckRoadAccess(offer.Building, ref building);
+                    if (building.m_accessSegment == 0)
+                    {
+                        RoadAccessStorage.AddInstance(new InstanceID { Building = offer.Building });
+                    }
+                }
             }
-
-            StringBuilder stringBuilder = new StringBuilder(sMessage);
-            stringBuilder.Append($" | Priority:{offer.Priority}");
-            stringBuilder.Append(offer.Active ? " | Active " : " | Passive");
-            stringBuilder.Append($" | Amount:{offer.Amount.ToString("000")}");
-            stringBuilder.Append(offer.Unlimited ? "*" : " ");
-            stringBuilder.Append($" | Park:{offer.m_isLocalPark.ToString("000")}");
-
-            return stringBuilder.ToString();
         }
     }
 }

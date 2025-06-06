@@ -1,13 +1,14 @@
 ﻿using ColossalFramework.UI;
+using SleepyCommon;
 using System.Collections.Generic;
 using UnifiedUI.Helpers;
 using UnityEngine;
+using static TransferManagerCE.BuildingTypeHelper;
 using static TransferManagerCE.UI.BuildingPanel;
-using static TransferManagerCE.UIUtils;
 
 namespace TransferManagerCE.UI
 {
-    internal class BuildingTransfersTab
+    public class BuildingTransfersTab : BuildingTab
     {
         public const int iLISTVIEW_OFFERS_HEIGHT = 196;
         public const int iLISTVIEW_MATCHES_HEIGHT = 284;
@@ -22,9 +23,10 @@ namespace TransferManagerCE.UI
         private BuildingOffers m_buildingOffers = new BuildingOffers();
         private BuildingMatches m_matches = new BuildingMatches();
 
-        public void Setup(UITabStrip tabStrip)
+        // ----------------------------------------------------------------------------------------
+        public override void SetupInternal()
         {
-            UIPanel? tabTransfers = tabStrip.AddTabIcon("Transfer", Localization.Get("tabBuildingPanelTransfers"), TransferManagerLoader.LoadResources(), "", 120f);
+            UIPanel? tabTransfers = m_tabStrip.AddTabIcon("Transfer", Localization.Get("tabBuildingPanelTransfers"), TransferManagerMod.Instance.LoadResources(), "", 120f);
             if (tabTransfers is not null)
             {
                 tabTransfers.autoLayout = true;
@@ -66,12 +68,12 @@ namespace TransferManagerCE.UI
                 m_lblMatches.autoSize = false;
                 m_lblMatches.padding = new RectOffset(4, 4, 4, 4);
                 m_lblMatches.text = Localization.Get("labelBuildingPanelMatchOffers");
-                
+
                 // Search button
-                AddSpriteButton(ButtonStyle.None, panelMatches, "LineDetailButton", 25, 25);
+                UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.None, panelMatches, "LineDetailButton", 25, 25);
 
                 // Search field
-                m_txtSearch = UIUtils.CreateTextField(ButtonStyle.TextField, panelMatches, "txtSearch", 0.8f, 200f, 25f);
+                m_txtSearch = UIMyUtils.CreateTextField(UIMyUtils.ButtonStyle.TextField, panelMatches, "txtSearch", 0.8f, 200f, 25f);
                 m_txtSearch.eventTextChanged += OnTextChanged;
                 m_txtSearch.eventMouseLeave += (sender, e) =>
                 {
@@ -101,8 +103,10 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void SetTabBuilding(ushort buildingId, List<ushort> subBuildingIds)
+        public override void SetTabBuilding(ushort buildingId, BuildingType buildingType, List<ushort> subBuildingIds)
         {
+            base.SetTabBuilding(buildingId, buildingType, subBuildingIds);
+
             if (m_matches is not null)
             {
                 m_matches.SetBuildingIds(buildingId, subBuildingIds);
@@ -117,6 +121,11 @@ namespace TransferManagerCE.UI
             Clear();
         }
 
+        public override bool ShowTab()
+        {
+            return true; // Always show tab
+        }
+
         public BuildingMatches GetBuildingMatches()
         {
             return m_matches;
@@ -127,25 +136,20 @@ namespace TransferManagerCE.UI
             UpdateMatches();
         }
 
-        public void Clear()
+        public override bool UpdateTab(bool bActive)
         {
-            if (m_listOffers is not null)
+            if (!base.UpdateTab(bActive))
             {
-                m_listOffers.Clear();
+                return false;
             }
-            if (m_listMatches is not null)
+
+            if (m_tabStrip.IsTabVisible((int)TabIndex.TAB_STATUS))
             {
-                m_listMatches.Clear();
+                // Make "Transfers" tab compact if Capacity or Pathing are displayed
+                m_tabStrip.SetCompactMode((int)TabIndex.TAB_TRANSFERS, m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING) && m_tabStrip.IsTabVisible((int)TabIndex.TAB_CAPACITY));
+                m_tabStrip.PerformLayout();
             }
-        }
 
-        public void UpdateTab(UITabStrip tabStrip)
-        {
-            // Make "Transfers" tab compact if Capacity or Pathing are displayed
-            tabStrip.SetCompactMode((int)TabIndex.TAB_TRANSFERS, tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING) && tabStrip.IsTabVisible((int)TabIndex.TAB_CAPACITY));
-            tabStrip.PerformLayout();
-
-            bool bActive = (TabIndex)tabStrip.GetSelectTabIndex() == TabIndex.TAB_TRANSFERS;
             if (bActive)
             {
                 UpdateOffers();
@@ -155,6 +159,8 @@ namespace TransferManagerCE.UI
             {
                 Clear();
             }
+
+            return true;
         }
 
         private void UpdateOffers()
@@ -224,11 +230,28 @@ namespace TransferManagerCE.UI
                         m_buffer = listMatches.ToArray(),
                         m_size = listMatches.Count,
                     };
+
+                    m_lblMatches.text = $"{Localization.Get("labelBuildingPanelMatchOffers")} ({listMatches.Count})";
                 }
             }
         }
 
-        public void Destroy()
+        public override void Clear()
+        {
+            if (m_listOffers is not null)
+            {
+                m_listOffers.Clear();
+            }
+            if (m_listMatches is not null)
+            {
+                m_listMatches.Clear();
+            }
+            GetBuildingMatches().InvalidateMatches();
+
+            base.Clear();
+        }
+
+        public override void Destroy()
         {
             if (m_listOffers is not null)
             {
@@ -240,6 +263,8 @@ namespace TransferManagerCE.UI
                 m_listMatches.Destroy();
                 m_listMatches = null;
             }
+
+            base.Destroy();
         }
     }
 }

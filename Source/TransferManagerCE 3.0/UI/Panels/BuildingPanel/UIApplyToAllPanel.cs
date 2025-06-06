@@ -1,4 +1,5 @@
 using ColossalFramework.UI;
+using SleepyCommon;
 using UnityEngine;
 using static TransferManagerCE.BuildingTypeHelper;
 
@@ -36,11 +37,11 @@ namespace TransferManagerCE.UI
             autoLayoutPadding = new RectOffset(10, 0, 0, 0);
 
             // Copy/Paste
-            UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, this, "CopyButtonIcon", Localization.Get("tooltipCopySettings"), TransferManagerLoader.LoadResources(), 30, 30, OnCopyClicked);
-            m_btnPaste = UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, this, "PasteButtonIcon", Localization.Get("tooltipPasteSettings"), TransferManagerLoader.LoadResources(), 30, 30, OnPasteClicked);
+            UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.DropDown, this, "CopyButtonIcon", Localization.Get("tooltipCopySettings"), TransferManagerMod.Instance.LoadResources(), 30, 30, OnCopyClicked);
+            m_btnPaste = UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.DropDown, this, "PasteButtonIcon", Localization.Get("tooltipPasteSettings"), TransferManagerMod.Instance.LoadResources(), 30, 30, OnPasteClicked);
 
             // Clear
-            m_btnClear = UIUtils.AddSpriteButton(UIUtils.ButtonStyle.DropDown, this, "Niet", Localization.Get("tooltipClearSettings"), atlas, 30, 30, OnClearClicked);
+            m_btnClear = UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.DropDown, this, "Niet", Localization.Get("tooltipClearSettings"), atlas, 30, 30, OnClearClicked);
 
             // Separator Panel
             UIPanel panel = AddUIComponent<UIPanel>();
@@ -57,14 +58,14 @@ namespace TransferManagerCE.UI
             m_labelApplyToAll.width = 150;
 
             // Buttons
-            m_btnApplyToAllDistrict = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnDistrict"), "", 100, 30, OnApplyToAllDistrictClicked);
-            m_btnApplyToAllPark = UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnPark"), "", 100, 30, OnApplyToAllParkClicked);
-            UIUtils.AddButton(UIUtils.ButtonStyle.DropDown, this, Localization.Get("btnMap"), "", 60, 30, OnApplyToAllWholeMapClicked);
+            m_btnApplyToAllDistrict = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, this, Localization.Get("btnDistrict"), "", 100, 30, OnApplyToAllDistrictClicked);
+            m_btnApplyToAllPark = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, this, Localization.Get("btnPark"), "", 100, 30, OnApplyToAllParkClicked);
+            UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, this, Localization.Get("btnMap"), "", 60, 30, OnApplyToAllWholeMapClicked);
         }
 
         private ushort GetBuildingId()
         {
-            if (BuildingPanel.Instance is not null)
+            if (BuildingPanel.Exists)
             {
                 return BuildingPanel.Instance.GetBuildingId();
             }
@@ -134,9 +135,9 @@ namespace TransferManagerCE.UI
                 // This function takes a copy so we dont need to do this first
                 BuildingSettingsStorage.SetSettings(buildingId, m_eCopyPasteSettings);
 
-                if (BuildingPanel.Instance is not null)
+                if (BuildingPanel.IsVisible())
                 {
-                    BuildingPanel.Instance.UpdateTabs();
+                    BuildingPanel.Instance.InvalidatePanel();
                 }
             }
         }
@@ -148,9 +149,9 @@ namespace TransferManagerCE.UI
             {
                 BuildingSettingsStorage.ClearSettings(buildingId);
 
-                if (BuildingPanel.Instance is not null)
+                if (BuildingPanel.IsVisible())
                 {
-                    BuildingPanel.Instance.UpdateTabs();
+                    BuildingPanel.Instance.InvalidatePanel();
                 }
             }
         }

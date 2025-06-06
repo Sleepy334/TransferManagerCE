@@ -6,7 +6,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataWorkers : StatusDataBuilding
     {
-        public StatusDataWorkers(TransferReason material, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataWorkers(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) :
             base(material, eBuildingType, BuildingId)
         {
         }

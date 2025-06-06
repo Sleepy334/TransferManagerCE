@@ -1,10 +1,10 @@
 using ColossalFramework.UI;
+using SleepyCommon;
 using TransferManagerCE.Util;
-using UnityEngine;
 
 namespace TransferManagerCE.UI
 {
-    public class UIPathRow : UIPanel, IUIFastListRow
+    public class UIPathRow : UIListRow<PathingContainer>
     {
         private UILabel? m_lblTime = null;
         private UILabel? m_lblLocation = null;
@@ -13,24 +13,9 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblTarget = null;
         private UILabel? m_lblTargetFailCount = null;
 
-        private PathingContainer? m_data = null;
-
         public override void Start()
         {
             base.Start();
-
-            isVisible = true;
-            canFocus = true;
-            isInteractive = true;
-            width = parent.width;
-            height = ListView.iROW_HEIGHT;
-            //backgroundSprite = "InfoviewPanel";
-            //color = new Color32(255, 0, 0, 225);
-            autoLayoutDirection = LayoutDirection.Horizontal;
-            autoLayoutStart = LayoutStart.TopLeft;
-            autoLayoutPadding = new RectOffset(2, 2, 2, 2);
-            autoLayout = true;
-            clipChildren = true;
 
             m_lblTime = AddUIComponent<UILabel>();
             if (m_lblTime is not null)
@@ -44,8 +29,6 @@ namespace TransferManagerCE.UI
                 m_lblTime.autoSize = false;
                 m_lblTime.height = height;
                 m_lblTime.width = TransferIssuePanel.iCOLUMN_WIDTH_TIME;
-                m_lblTime.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblTime.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblLocation = AddUIComponent<UILabel>();
@@ -60,10 +43,6 @@ namespace TransferManagerCE.UI
                 m_lblLocation.autoSize = false;
                 m_lblLocation.height = height;
                 m_lblLocation.width = TransferIssuePanel.iCOLUMN_WIDTH_LOCATION;
-                m_lblLocation.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblLocation.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-                m_lblLocation.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
-                m_lblLocation.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
             m_lblOwner = AddUIComponent<UILabel>();
@@ -78,8 +57,6 @@ namespace TransferManagerCE.UI
                 m_lblOwner.autoSize = false;
                 m_lblOwner.height = height;
                 m_lblOwner.width = BuildingPanel.iCOLUMN_WIDTH_PATHING_BUILDING;
-                m_lblOwner.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblOwner.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
                 m_lblOwner.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblOwner.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -96,8 +73,6 @@ namespace TransferManagerCE.UI
                 m_lblSourceFailCount.autoSize = false;
                 m_lblSourceFailCount.height = height;
                 m_lblSourceFailCount.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
-                m_lblSourceFailCount.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblSourceFailCount.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblTarget = AddUIComponent<UILabel>();
@@ -112,8 +87,6 @@ namespace TransferManagerCE.UI
                 m_lblTarget.autoSize = false;
                 m_lblTarget.height = height;
                 m_lblTarget.width = BuildingPanel.iCOLUMN_WIDTH_PATHING_BUILDING;
-                m_lblTarget.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblTarget.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
                 m_lblTarget.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblTarget.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -130,123 +103,94 @@ namespace TransferManagerCE.UI
                 m_lblTargetFailCount.autoSize = false;
                 m_lblTargetFailCount.height = height;
                 m_lblTargetFailCount.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
-                m_lblTargetFailCount.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblTargetFailCount.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
-            if (m_data is not null)
-            {
-                Display(-1, m_data, false);
-            }
+            base.AfterStart();
         }
 
-        public void Display(int index, object data, bool isRowOdd)
+        protected override void Display()
         {
-            m_data = (PathingContainer?) data;
-
-            if (m_lblTime is null)
+            if (data is not null)
             {
-                return;
-            }
-
-            if (m_data is not null)
-            {
-                m_lblTime.text = m_data.GetTimeDescription();
-                m_lblLocation.text = m_data.m_locationType.ToString();
+                m_lblTime.text = data.GetTimeDescription();
+                m_lblLocation.text = data.m_locationType.ToString();
 
                 string sText = "";
-                if (m_data.m_eSourceOrTarget == PathingContainer.SourceOrTarget.Source)
+                if (data.m_eSourceOrTarget == PathingContainer.SourceOrTarget.Source)
                 {
                     sText += "* ";
                 }
-                m_lblOwner.text = sText + InstanceHelper.DescribeInstance(m_data.m_source);
-                m_lblSourceFailCount.text = PathFindFailure.GetTotalPathFailures(m_data.m_source).ToString();
+                m_lblOwner.text = sText + InstanceHelper.DescribeInstance(data.m_source, InstanceID.Empty);
+                m_lblSourceFailCount.text = PathFindFailure.GetTotalPathFailures(data.m_source).ToString();
 
                 sText = "";
-                if (m_data.m_eSourceOrTarget == PathingContainer.SourceOrTarget.Target)
+                if (data.m_eSourceOrTarget == PathingContainer.SourceOrTarget.Target)
                 {
                     sText += "* ";
                 }
-                m_lblTarget.text = sText + InstanceHelper.DescribeInstance(m_data.m_target);
-                m_lblTargetFailCount.text = PathFindFailure.GetTotalPathFailures(m_data.m_target).ToString();
+                m_lblTarget.text = sText + InstanceHelper.DescribeInstance(data.m_target, InstanceID.Empty);
+                m_lblTargetFailCount.text = PathFindFailure.GetTotalPathFailures(data.m_target).ToString();
             }
-            else
+        }
+
+        protected override void Clear()
+        {
+            m_lblTime.text = "";
+            m_lblLocation.text = "";
+            m_lblOwner.text = "";
+            m_lblSourceFailCount.text = "";
+            m_lblTarget.text = "";
+            m_lblTargetFailCount.text = "";
+        }
+
+        protected override void ClearTooltips()
+        {
+            tooltip = "";
+
+            m_lblTime.tooltip = "";
+            m_lblLocation.tooltip = "";
+            m_lblOwner.tooltip = "";
+            m_lblSourceFailCount.tooltip = "";
+            m_lblTarget.tooltip = "";
+            m_lblTargetFailCount.tooltip = "";
+        }
+
+        protected override void OnClicked(UIComponent component)
+        {
+            if (component == m_lblOwner)
             {
-                Clear();
+                BuildingUtils.ShowInstanceSetBuildingPanel(data.m_source);
             }
-        }
-
-        public void Disabled()
-        {
-            Clear();
-        }
-
-        public void Clear()
-        {
-            m_data = null;
-
-            if (m_lblTime is not null)
+            else if (component == m_lblTarget)
             {
-                m_lblTime.text = "";
-                m_lblLocation.text = "";
-                m_lblOwner.text = "";
-                m_lblSourceFailCount.text = "";
-                m_lblTarget.text = "";
-                m_lblTargetFailCount.text = "";
-
-                m_lblTime.tooltip = "";
-                m_lblLocation.tooltip = "";
-                m_lblOwner.tooltip = "";
-                m_lblSourceFailCount.tooltip = "";
-                m_lblTarget.tooltip = "";
-                m_lblTargetFailCount.tooltip = "";
+                BuildingUtils.ShowInstanceSetBuildingPanel(data.m_target);
             }
         }
 
-        public void Select(bool isRowOdd)
+        protected override string GetTooltipText(UIComponent component)
         {
-        }
-
-        public void Deselect(bool isRowOdd)
-        {
-        }
-
-        private void OnItemClicked(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_data is not null)
+            if (component == this)
             {
-                if (component == m_lblOwner)
-                {
-                    InstanceHelper.ShowInstanceSetBuildingPanel(m_data.m_source);
-                }
-                else if (component == m_lblTarget)
-                {
-                    InstanceHelper.ShowInstanceSetBuildingPanel(m_data.m_target);
-                }
+                return "";
             }
-
-        }
-
-        private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-        }
-
-        protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            UILabel? txtLabel = component as UILabel;
-            if (txtLabel is not null)
+            else if (component == m_lblTime)
             {
-                txtLabel.textColor = Color.yellow;
+                return data.GetTimeDescription();
             }
-        }
-
-        protected void OnMouseLeave(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            UILabel? txtLabel = component as UILabel;
-            if (txtLabel is not null)
+            if (component == m_lblLocation)
             {
-                txtLabel.textColor = Color.white;
+                return data.m_locationType.ToString();
             }
+            else if (component == m_lblOwner)
+            {
+                return InstanceHelper.DescribeInstance(data.m_source, InstanceID.Empty, true);
+            }
+            else if (component == m_lblTarget)
+            {
+                return InstanceHelper.DescribeInstance(data.m_target, InstanceID.Empty, true);
+            }
+
+            return "";
         }
     }
 }

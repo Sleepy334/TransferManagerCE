@@ -1,5 +1,6 @@
 using ColossalFramework;
 using ColossalFramework.UI;
+using SleepyCommon;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,23 +10,20 @@ using UnityEngine;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
 using static TransferManagerCE.UITabStrip;
-using static TransferManagerCE.UIUtils;
 
 namespace TransferManagerCE.UI
 {
-    public class BuildingPanel : UIPanel
+    public class BuildingPanel : UIMainPanel<BuildingPanel>
     {
         public enum TabIndex
         {
-            TAB_SETTINGS,
-            TAB_CAPACITY,
-            TAB_STATUS,
-            TAB_VEHICLES,
-            TAB_PATHING,
-            TAB_TRANSFERS,
+            TAB_SETTINGS = 0,
+            TAB_CAPACITY = 1,
+            TAB_STATUS = 2,
+            TAB_VEHICLES = 3,
+            TAB_PATHING = 4,
+            TAB_TRANSFERS = 5,
         }
-        
-        public static BuildingPanel? Instance = null;
 
         public const float fTEXT_SCALE = 0.8f;
         public const int iMARGIN = 8;
@@ -55,15 +53,6 @@ namespace TransferManagerCE.UI
         private UITitleBar? m_title = null;
         private UITabStrip? m_tabStrip = null;
 
-        // Tab objects
-        private BuildingSettingsTab m_settingsTab = new BuildingSettingsTab();
-        private BuildingCapacityTab m_capacityTab = new BuildingCapacityTab();
-        public BuildingStatusTab m_statusTab = new BuildingStatusTab();
-        private BuildingVehicleTab m_vehicleTab = new BuildingVehicleTab();
-        private BuildingPathingTab m_pathingTab = new BuildingPathingTab();
-        private BuildingTransfersTab m_transfersTab = new BuildingTransfersTab();
-
-        // Transfers tab
         private UILabel? m_lblSource = null;
         private UITextField? m_txtSource = null;
         private UIPanel? m_labelPanel = null;
@@ -71,28 +60,40 @@ namespace TransferManagerCE.UI
         // Update panel
         private bool m_bUpdatePanel = false;
         private Coroutine? m_coroutine = null;
+        private bool m_bAfterStart = false;
 
-        public static bool IsVisible()
-        {
-            return Instance is not null && Instance.isVisible;
-        }
+        private List<BuildingTab> m_buildingTabs = new List<BuildingTab>();
+        private UIInfoLabel? m_infoLabel = null;
 
-        public static void Init()
-        {
-            if (Instance is null)
-            {
-                Instance = UIView.GetAView().AddUIComponent(typeof(BuildingPanel)) as BuildingPanel;
-                if (Instance is null)
-                {
-                    Prompt.Info(TransferManagerMain.Title, "Error creating Transfer Building Panel.");
-                }
-            }
-        }
-
+        // ----------------------------------------------------------------------------------------
         public BuildingPanel() : 
             base()
         {
             m_coroutine = StartCoroutine(UpdatePanelCoroutine(4));
+
+            // Add tabs
+            m_buildingTabs.Add(new BuildingSettingsTab());
+            m_buildingTabs.Add(new BuildingCapacityTab());
+            m_buildingTabs.Add(new BuildingStatusTab());
+            m_buildingTabs.Add(new BuildingVehicleTab());
+            m_buildingTabs.Add(new BuildingPathingTab());
+            m_buildingTabs.Add(new BuildingTransfersTab());
+        }
+
+        public BuildingSettingsTab GetSettingsTab()
+        {
+            return (BuildingSettingsTab)m_buildingTabs[(int)TabIndex.TAB_SETTINGS];
+        }
+
+        public BuildingTransfersTab GetTransfersTab()
+        {
+            return (BuildingTransfersTab)m_buildingTabs[(int)TabIndex.TAB_TRANSFERS];
+        }
+
+        public BuildingStatusTab GetStatusTab()
+        {
+            return (BuildingStatusTab)m_buildingTabs[(int)TabIndex.TAB_STATUS];
+
         }
 
         public ushort GetBuildingId()
@@ -107,21 +108,22 @@ namespace TransferManagerCE.UI
 
         public int GetRestrictionId()
         {
-            if (m_settingsTab is not null)
+            if (GetSettingsTab() is not null)
             {
-                return m_settingsTab.GetRestrictionId();
+                return GetSettingsTab().GetRestrictionId();
             }
-            return -1;
+            return 0;
         }
 
         public BuildingMatches GetBuildingMatches()
         {
-            return m_transfersTab.GetBuildingMatches();
+            return GetTransfersTab().GetBuildingMatches();
         }
 
+        
         public StatusHelper GetStatusHelper()
         {
-            return m_statusTab.m_statusHelper;
+            return GetStatusTab().m_statusHelper;
         }
 
         public override void Start()
@@ -129,7 +131,7 @@ namespace TransferManagerCE.UI
             base.Start();
             name = "BuildingPanel";
             width = 820;
-            height = 670;
+            height = 710;
             backgroundSprite = "SubcategoriesPanel";
             if (ModSettings.GetSettings().EnablePanelTransparency)
             {
@@ -161,18 +163,18 @@ namespace TransferManagerCE.UI
                 settings.Save();
             };
 
-
             // Title Bar
-            m_title = AddUIComponent<UITitleBar>();
-            m_title.SetOnclickHandler(OnCloseClick);
-            m_title.SetStatsHandler(OnStatsClick);
-            m_title.SetIssuesHandler(OnIssuesClick);
-            m_title.SetOutsideHandler(OnOutsideClick);
-            m_title.SetHighlightHandler(OnHighlightClick);
-            m_title.SetSettingsHandler(OnSettingsClick);
-            m_title.title = TransferManagerMain.Title;
-
-            UpdateHighlightButtonIcon();
+            m_title = UITitleBar.Create(this, TransferManagerMod.Instance.Name, "Transfer", TransferManagerMod.Instance.LoadResources(), OnTitleCloseClick);
+            if (m_title != null)
+            {
+                m_title.AddButton("btnStats", atlas, "ThumbStatistics", "Show Statistics Panel", OnStatsClick);
+                m_title.AddButton("btnSettings", atlas, "Options", "Show list of buildings with TMCE settings", OnSettingsClick);
+                m_title.AddButton("btnIssues", atlas, "IconWarning", "Show Issues Panel", OnIssuesClick);
+                m_title.AddButton("btnOutside", atlas, "InfoIconOutsideConnections", "Show Outside Connections Panel", OnOutsideClick);
+                m_title.AddButton("btnHighlight", atlas, "InfoIconLevel", "Highlight Matches", OnHighlightClick);
+                m_title.SetupButtons();
+                UpdateHighlightButtonIcon();
+            }
 
             UIPanel mainPanel = AddUIComponent<UIPanel>();
             mainPanel.width = width;
@@ -221,7 +223,7 @@ namespace TransferManagerCE.UI
 
                 // Add clear building button
                 float fBUTTON_HEIGHT = m_labelPanel.height - 6;
-                UIButton btnClearBuilding = UIUtils.AddSpriteButton(UIUtils.ButtonStyle.BigRound, m_labelPanel, "Niet", fBUTTON_HEIGHT, fBUTTON_HEIGHT, (component, param) =>
+                UIButton btnClearBuilding = UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.BigRound, m_labelPanel, "Niet", fBUTTON_HEIGHT, fBUTTON_HEIGHT, (component, param) =>
                 {
                     ToolsModifierControl.cameraController.ClearTarget();
                     SetBuilding(0);
@@ -230,7 +232,7 @@ namespace TransferManagerCE.UI
             }
             
             // Object label
-            m_txtSource = UIUtils.CreateTextField(ButtonStyle.DropDown, mainPanel, "txtSource", 1.0f, mainPanel.width - 20, 30);
+            m_txtSource = UIMyUtils.CreateTextField(UIMyUtils.ButtonStyle.DropDown, mainPanel, "txtSource", 1.0f, mainPanel.width - 20, 30);
             if (m_txtSource is not null)
             {
                 m_txtSource.text = Localization.Get("txtEnterBuildingId"); // Add a user hint
@@ -253,60 +255,39 @@ namespace TransferManagerCE.UI
             // Tabs
             m_tabStrip = UITabStrip.Create(TabStyle.Generic, mainPanel, width - 20f, height - m_txtSource.height - m_title.height - 10, OnTabChanged);
 
-            // Settings tab
-            m_settingsTab.SetTabBuilding(m_buildingId); 
-            m_settingsTab.Setup(m_tabStrip);
+            // Setup tabs
+            for (int i = 0; i < m_buildingTabs.Count; ++i)
+            {
+                m_buildingTabs[i].Setup(m_tabStrip);
+            }
 
-            // Capacity tab
-            m_capacityTab.SetTabBuilding(m_buildingId);
-            m_capacityTab.Setup(m_tabStrip);
+            m_bAfterStart = true;
 
-            // Status tab
-            m_statusTab.SetTabBuilding(m_buildingId);
-            m_statusTab.Setup(m_tabStrip);
-
-            // Vehicle tab
-            m_vehicleTab.SetTabBuilding(m_buildingId);
-            m_vehicleTab.Setup(m_tabStrip);
-
-            // Pathing tab
-            m_pathingTab.SetTabBuilding(m_buildingId);
-            m_pathingTab.Setup(m_tabStrip);
-
-            // Transfers
-            m_transfersTab.SetTabBuilding(m_buildingId, GetSubBuildingIds());
-            m_transfersTab.Setup(m_tabStrip);
+            m_infoLabel = new UIInfoLabel(this);
 
             // Select first tab
-            m_tabStrip.SelectTabIndex(0);
+            m_tabStrip.SelectFirstVisibleTab();
             isVisible = true;
+
             UpdateTabs();
             UpdatePanel();
         }
 
-        public bool HandleEscape()
-        {
-            if (isVisible)
-            {
-                Hide();
-                return true;
-            }
-            return false;
-        }
-
         public void HandleOffer(TransferOffer offer)
         {
-            if (isVisible && IsTransferTabActive())
+            if (isVisible && IsTransferTabActive() && GetBuildingId() != 0)
             {
-                if (InstanceHelper.GetBuildings(offer.m_object).Contains(GetBuildingId()))
+                HashSet<ushort> buildingIds = InstanceHelper.GetBuildings(offer.m_object);
+                if (buildingIds.Contains(GetBuildingId()))
                 {
                     InvalidatePanel();
                 }
                 else if (m_subBuildingIds.Count > 0) 
                 {
-                    foreach (ushort subBuilding in m_subBuildingIds)
+                    for (int i = 0; i < m_subBuildingIds.Count; ++i)
                     {
-                        if (InstanceHelper.GetBuildings(offer.m_object).Contains(subBuilding))
+                        ushort buildingId = m_subBuildingIds[i];
+                        if (buildingIds.Contains(buildingId))
                         {
                             InvalidatePanel();
                             break;
@@ -316,22 +297,64 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void InvalidatePanel()
-        {
-            m_bUpdatePanel = true;
-        }
-
         public void OnVisibilityChanged(UIComponent component, bool bVisible)
         {
             if (bVisible)
             {
-                InvalidatePanel();
+                // Load the relevant building if not set
+                if (m_buildingId == 0)
+                {
+                    InstanceID selectedInstance = ToolsModifierControl.cameraController.GetTarget();
+                    if (selectedInstance.Building != 0)
+                    {
+                        SetBuilding(selectedInstance.Building);
+                    }
+                }
+
+                UpdateBuildingName();
+
+                if (m_bAfterStart)
+                {
+                    UpdateTabs();
+                    UpdatePanel();
+                }
+
+                // Activate selection tool if needed
+                if (SelectionTool.Instance is null)
+                {
+                    SelectionTool.AddSelectionTool();
+                }
+                if (!SelectionTool.Active)
+                {
+                    SelectionTool.Instance.Enable(SelectionTool.SelectionToolMode.Normal);
+                }
             }
-            else if (tooltipBox is not null)
+            else
             {
-                tooltipBox.tooltip = "";
-                tooltipBox.tooltipBox.Hide();
-            }
+                m_buildingId = 0;
+                m_eBuildingType = BuildingType.None;
+
+                for (int i = 0; i < m_buildingTabs.Count; ++i)
+                {
+                    m_buildingTabs[i].Clear();
+                }
+
+                if (tooltipBox is not null)
+                {
+                    tooltipBox.tooltip = "";
+                    tooltipBox.tooltipBox.Hide();
+                }
+
+                if (SelectionTool.Exists)
+                {
+                    SelectionTool.Instance.Disable();
+                }
+
+                if (DistrictSelectionPanel.IsVisible())
+                {
+                    DistrictSelectionPanel.Instance.Hide();
+                }
+            } 
         }
 
         private void SetBuilding(ushort buildingId)
@@ -345,7 +368,7 @@ namespace TransferManagerCE.UI
                 {
                     m_eBuildingType = BuildingTypeHelper.GetBuildingType(buildingId);
 #if DEBUG
-                    Debug.Log($"Building type: {m_eBuildingType}");
+                    CDebug.Log($"Building type: {m_eBuildingType}");
 #endif
                     // Update sub buildings (if any)
                     Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
@@ -378,27 +401,26 @@ namespace TransferManagerCE.UI
                 }
 
                 // Update tabs building id's as well
-                m_settingsTab.SetTabBuilding(buildingId);
-                m_capacityTab.SetTabBuilding(buildingId);
-                m_statusTab.SetTabBuilding(buildingId);
-                m_vehicleTab.SetTabBuilding(buildingId);
-                m_pathingTab.SetTabBuilding(buildingId);
-                m_transfersTab.SetTabBuilding(m_buildingId, m_subBuildingIds);
+                // Setup tabs
+                foreach (BuildingTab buildingTab in m_buildingTabs)
+                {
+                    buildingTab.SetTabBuilding(m_buildingId, m_eBuildingType, m_subBuildingIds);
+                }
 
                 if (buildingId != 0)
                 {
                     // Select building with tool
                     InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
 
-                    if (SelectionTool.Instance is not null)
+                    if (SelectionTool.Exists)
                     {
                         SelectionTool.Instance.UpdateSelection();
                     } 
                 }
 
-                if (SettingsPanel.Instance is not null)
+                if (SettingsPanel.IsVisible())
                 {
-                    SettingsPanel.Instance.UpdatePanel();
+                    SettingsPanel.Instance.InvalidatePanel();
                 }
 
                 UpdateBuildingName();
@@ -409,15 +431,19 @@ namespace TransferManagerCE.UI
 
         public void UpdateTabs()
         {
-            if (m_tabStrip is not null)
+            if (m_bAfterStart)
             {
                 // Update tab information
-                m_settingsTab.UpdateTab(m_tabStrip);
-                m_capacityTab.UpdateTab(m_tabStrip);
-                m_statusTab.UpdateTab(m_tabStrip);
-                m_vehicleTab.UpdateTab(m_tabStrip, m_eBuildingType);
-                m_pathingTab.UpdateTab(m_tabStrip);
-                m_transfersTab.UpdateTab(m_tabStrip);
+                for (int i = 0; i < m_buildingTabs.Count; ++i)
+                {
+                    bool bTabVisible = m_buildingTabs[i].ShowTab();
+                    m_tabStrip.SetTabVisible(i, bTabVisible);
+                    if (bTabVisible)
+                    {
+                        m_buildingTabs[i].UpdateTab(m_tabStrip.GetSelectTabIndex() == i);
+                    }
+                }
+
                 m_tabStrip.PerformLayout();
             }
         }
@@ -425,117 +451,27 @@ namespace TransferManagerCE.UI
         public void ShowPanel(ushort buildingId)
         {
             SetBuilding(buildingId);
-            ShowPanel();
+            Show();
         }
 
-        public void ShowPanel()
-        {
-            // Load the relevant building if not set
-            if (m_buildingId == 0)
-            {
-                InstanceID selectedInstance = ToolsModifierControl.cameraController.GetTarget();
-                if (selectedInstance.Building != 0)
-                {
-                    SetBuilding(selectedInstance.Building);
-                }
-            }
-
-            // Activate selection tool if needed
-            if (SelectionTool.Instance is null)
-            {
-                SelectionTool.AddSelectionTool();
-            }
-            if (SelectionTool.Instance is not null && ToolsModifierControl.toolController.CurrentTool != SelectionTool.Instance)
-            {
-                SelectionTool.Instance.Enable();
-            }
-
-            UpdateBuildingName();
-            UpdateTabs();
-            UpdatePanel();
-            Show(true);
-        }
-
-        public void HidePanel()
+        public void OnTitleCloseClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             Hide();
-
-            m_buildingId = 0;
-            m_eBuildingType = BuildingType.None;
-
-            if (m_transfersTab is not null)
-            {
-                m_transfersTab.GetBuildingMatches().InvalidateMatches();
-            }
-            if (m_statusTab is not null)
-            {
-                m_statusTab.Clear();
-            }
-            if (m_vehicleTab is not null)
-            {
-                m_vehicleTab.Clear();
-            }
-            if (m_pathingTab is not null)
-            {
-                m_pathingTab.Clear();
-            }
-            if (m_transfersTab is not null)
-            {
-                m_transfersTab.Clear();
-            }
-
-            if (SelectionTool.Instance is not null)
-            {
-                SelectionTool.Instance.Disable();
-            }
-            if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
-            {
-                DistrictSelectionPanel.Instance.Hide();
-            }
-        }
-
-        public void TogglePanel()
-        {
-            if (isVisible)
-            {
-                HidePanel();
-            }
-            else
-            {
-                ShowPanel();
-            }
-        }
-
-        public void OnCloseClick(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            HidePanel();
         }
 
         public void OnStatsClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            StatsPanel.Init();
-            if (StatsPanel.Instance is not null)
-            {
-                StatsPanel.Instance.Show();
-            }
+            StatsPanel.TogglePanel();
         }
 
         public void OnIssuesClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            TransferIssuePanel.Init();
-            if (TransferIssuePanel.Instance is not null)
-            {
-                TransferIssuePanel.Instance.Show();
-            }
+            TransferIssuePanel.TogglePanel();
         }
         
         public void OnOutsideClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            OutsideConnectionPanel.Init();
-            if (OutsideConnectionPanel.Instance is not null)
-            {
-                OutsideConnectionPanel.Instance.Show();
-            }
+            OutsideConnectionPanel.TogglePanel();
         }
 
         public void OnHighlightClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -548,18 +484,12 @@ namespace TransferManagerCE.UI
 
         public void OnSettingsClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            // Create panel if needed
-            SettingsPanel.Init();
-            if (SettingsPanel.Instance is not null)
-            {
-                // Open panel
-                SettingsPanel.Instance.TogglePanel();
-            }
+            SettingsPanel.TogglePanel();
         }
 
         public void UpdateHighlightButtonIcon()
         {
-            if (m_title is not null && m_title.m_btnHighlight is not null)
+            if (m_title is not null)
             {
                 string sIcon = "";
                 string sTooltip = "";
@@ -585,11 +515,12 @@ namespace TransferManagerCE.UI
                         }
                 }
 
-                m_title.m_btnHighlight.normalBgSprite = sIcon;
-                m_title.m_btnHighlight.tooltip = sTooltip;
+                m_title.Buttons[4].normalBgSprite = sIcon;
+                m_title.Buttons[4].tooltip = sTooltip;
+                m_title.Buttons[4].RefreshTooltip();
 
                 // Update selection
-                if (SelectionTool.Instance is not null)
+                if (SelectionTool.Exists)
                 {
                     SelectionTool.Instance.UpdateSelection();
                 }
@@ -599,7 +530,7 @@ namespace TransferManagerCE.UI
         public void OnTabChanged(int index)
         {
             // Close district panel
-            if (DistrictSelectionPanel.Instance is not null && DistrictSelectionPanel.Instance.isVisible)
+            if (DistrictSelectionPanel.IsVisible())
             {
                 DistrictSelectionPanel.Instance.Hide();
             }
@@ -641,7 +572,7 @@ namespace TransferManagerCE.UI
                         }
                         else
                         {
-                            sText = CitiesUtils.GetBuildingName(m_buildingId);
+                            sText = CitiesUtils.GetBuildingName(m_buildingId, InstanceID.Empty);
                         }
                     }
                     else
@@ -649,7 +580,7 @@ namespace TransferManagerCE.UI
                         m_labelPanel.isVisible = true;
                         m_txtSource.isVisible = false;
 
-                        sText = CitiesUtils.GetBuildingName(m_buildingId, ModSettings.GetSettings().ShowBuildingId);
+                        sText = CitiesUtils.GetBuildingName(m_buildingId, InstanceID.Empty, ModSettings.GetSettings().ShowBuildingId);
                         string sDetectedDistricts = CitiesUtils.GetDetectedDistricts(m_buildingId);
                         if (sDetectedDistricts.Length > 0)
                         {
@@ -710,9 +641,9 @@ namespace TransferManagerCE.UI
                 }
 
                 // Update Import Export settings on outside connection panel if showing
-                if (OutsideConnectionPanel.Instance is not null && OutsideConnectionPanel.Instance.isVisible)
+                if (OutsideConnectionPanel.IsVisible())
                 {
-                    OutsideConnectionPanel.Instance.UpdatePanel();
+                    OutsideConnectionPanel.Instance.InvalidatePanel();
                 }
             }
         }
@@ -742,9 +673,9 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void UpdatePanel()
+        protected override void UpdatePanel()
         {
-            if (m_tabStrip is null || !isVisible)
+            if (!m_bAfterStart || !isVisible)
             {
                 return;
             }
@@ -759,12 +690,12 @@ namespace TransferManagerCE.UI
                 SetBuilding(0);
             }
 
-            if (m_tabStrip is not null)
+            if (m_bAfterStart)
             {
-                m_statusTab.UpdateTab(m_tabStrip);
-                m_vehicleTab.UpdateTab(m_tabStrip, m_eBuildingType);
-                m_pathingTab.UpdateTab(m_tabStrip);
-                m_transfersTab.UpdateTab(m_tabStrip);
+                for (int i = 0; i < m_buildingTabs.Count; ++i)
+                {
+                    m_buildingTabs[i].UpdateTab(m_tabStrip.GetSelectTabIndex() == i);
+                }
             }
 
             if (SelectionTool.Instance is not null)
@@ -785,31 +716,11 @@ namespace TransferManagerCE.UI
             {
                 StopCoroutine(m_coroutine);
             }
-            if (m_settingsTab is not null)
+            for (int i = 0; i < m_buildingTabs.Count; ++i)
             {
-                m_settingsTab.Destroy();
-                m_settingsTab = null;
-            }
-            if (m_capacityTab is not null)
-            {
-                m_capacityTab.Destroy();
-                m_capacityTab = null;
-            }
-            if (m_statusTab is not null)
-            {
-                m_statusTab.Destroy();
-            }
-            if (m_vehicleTab is not null)
-            {
-                m_vehicleTab.Destroy();
-            }
-            if (m_pathingTab is not null)
-            {
-                m_pathingTab.Destroy();
-            }
-            if (m_transfersTab is not null)
-            {
-                m_transfersTab.Destroy();
+                m_buildingTabs[i].Destroy();
+                m_buildingTabs[i] = null;
+                m_buildingTabs.Clear();
             }
             if (m_tabStrip is not null)
             {
@@ -821,10 +732,22 @@ namespace TransferManagerCE.UI
                 Destroy(m_txtSource.gameObject);
                 m_txtSource = null;
             }
-            if (Instance is not null)
+        }
+
+        public void ShowInfo(string sText)
+        {
+            if (m_infoLabel is not null)
             {
-                Destroy(Instance.gameObject);
-                Instance = null;
+                m_infoLabel.text = sText;
+                m_infoLabel.Show();
+            }
+        }
+
+        public void HideInfo()
+        {
+            if (m_infoLabel is not null)
+            {
+                m_infoLabel.Hide();
             }
         }
     }

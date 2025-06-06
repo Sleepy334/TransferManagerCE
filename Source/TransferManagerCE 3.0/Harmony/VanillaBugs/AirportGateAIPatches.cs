@@ -65,13 +65,13 @@ namespace TransferManagerCE
                         vehicleInfo.m_vehicleAI.SetSource(vehicle, ref vehicles.m_buffer[vehicle], buildingID);
                         vehicleInfo.m_vehicleAI.SetTarget(vehicle, ref vehicles.m_buffer[vehicle], startStop);
 
-                        //Debug.Log($"AirportGateAI.CreateOutgoingVehicle: buildingID{buildingID} startStop:{startStop} - SPAWNED");
+                        //CDebug.Log($"AirportGateAI.CreateOutgoingVehicle: buildingID{buildingID} startStop:{startStop} - SPAWNED");
                         return true;
                     }
                 }
             }
 
-            //Debug.Log($"AirportGateAI.CreateOutgoingVehicle: buildingID{buildingID} startStop:{startStop} - DENIED");
+            //CDebug.Log($"AirportGateAI.CreateOutgoingVehicle: buildingID{buildingID} startStop:{startStop} - DENIED");
             return false;
         }
 
@@ -102,14 +102,14 @@ namespace TransferManagerCE
                             vehicleInfo.m_vehicleAI.SetSource(vehicle, ref vehicles.m_buffer[vehicle], buildingID);
                             vehicleInfo.m_vehicleAI.SetTarget(vehicle, ref vehicles.m_buffer[vehicle], startStop);
 
-                            //Debug.Log($"AirportGateAI.CreateIncomingVehicle: buildingID{buildingID} startStop:{startStop} - SPAWNED");
+                            //CDebug.Log($"AirportGateAI.CreateIncomingVehicle: buildingID{buildingID} startStop:{startStop} - SPAWNED");
                             return true;
                         }
                     }
                 }
             }
 
-            //Debug.Log($"AirportGateAI.CreateIncomingVehicle: buildingID{buildingID} startStop:{startStop} - DENIED");
+            //CDebug.Log($"AirportGateAI.CreateIncomingVehicle: buildingID{buildingID} startStop:{startStop} - DENIED");
             return false;
         }
 

@@ -313,5 +313,13 @@ namespace TransferManagerCE
 
             return sMessage;
         }
+
+        public void Validate()
+        {
+            foreach (RestrictionSettings settings in m_restrictions.Values) 
+            {
+                settings.Validate();
+            }
+        }
     }
 }

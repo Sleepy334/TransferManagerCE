@@ -1,9 +1,9 @@
 using ColossalFramework.UI;
-using UnityEngine;
+using SleepyCommon;
 
 namespace TransferManagerCE.UI
 {
-    public class UIOfferRow : UIPanel, IUIFastListRow
+    public class UIOfferRow : UIListRow<OfferData>
     {
         private UILabel? m_lblMaterial = null;
         private UILabel? m_lblInOut = null;
@@ -13,25 +13,11 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblPark = null;
         private UITruncateLabel? m_lblDescription = null;
 
-        private OfferData? m_data = null;
-
         public override void Start()
         {
             base.Start();
 
-            isVisible = true;
-            canFocus = true;
-            isInteractive = true;
-            width = parent.width - ListView.iSCROLL_BAR_WIDTH;
-            height = ListView.iROW_HEIGHT;
-            autoLayoutDirection = LayoutDirection.Horizontal;
-            autoLayoutStart = LayoutStart.TopLeft;
-            autoLayoutPadding = new RectOffset(2, 2, 2, 2);
-            autoLayout = true;
-            clipChildren = true;
-            eventMouseEnter += new MouseEventHandler(OnMouseEnter);
-            eventMouseLeave += new MouseEventHandler(OnMouseLeave);
-            eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
+            fullRowSelect = true;
 
             m_lblMaterial = AddUIComponent<UILabel>();
             if (m_lblMaterial is not null)
@@ -45,7 +31,6 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
                 m_lblMaterial.width = BuildingPanel.iCOLUMN_WIDTH_LARGE;
-                m_lblMaterial.eventClicked += new MouseEventHandler(OnItemClicked);
             }
 
             m_lblInOut = AddUIComponent<UILabel>();
@@ -60,7 +45,6 @@ namespace TransferManagerCE.UI
                 m_lblInOut.autoSize = false;
                 m_lblInOut.height = height;
                 m_lblInOut.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
-                m_lblInOut.eventClicked += new MouseEventHandler(OnItemClicked);
             }
 
             m_lblPriority = AddUIComponent<UILabel>();
@@ -75,7 +59,6 @@ namespace TransferManagerCE.UI
                 m_lblPriority.autoSize = false;
                 m_lblPriority.height = height;
                 m_lblPriority.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
-                m_lblPriority.eventClicked += new MouseEventHandler(OnItemClicked);
             }
 
             m_lblActive = AddUIComponent<UILabel>();
@@ -90,7 +73,6 @@ namespace TransferManagerCE.UI
                 m_lblActive.autoSize = false;
                 m_lblActive.height = height;
                 m_lblActive.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
-                m_lblActive.eventClicked += new MouseEventHandler(OnItemClicked);
             }
 
             m_lblAmount = AddUIComponent<UILabel>();
@@ -105,7 +87,6 @@ namespace TransferManagerCE.UI
                 m_lblAmount.autoSize = false;
                 m_lblAmount.height = height;
                 m_lblAmount.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
-                m_lblAmount.eventClicked += new MouseEventHandler(OnItemClicked);
             }
 
             m_lblPark = AddUIComponent<UILabel>();
@@ -120,7 +101,6 @@ namespace TransferManagerCE.UI
                 m_lblPark.autoSize = false;
                 m_lblPark.height = height;
                 m_lblPark.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
-                m_lblPark.eventClicked += new MouseEventHandler(OnItemClicked);
             }
 
             m_lblDescription = AddUIComponent<UITruncateLabel>();
@@ -135,131 +115,56 @@ namespace TransferManagerCE.UI
                 m_lblDescription.autoSize = false;
                 m_lblDescription.height = height;
                 m_lblDescription.width = BuildingPanel.iCOLUMN_WIDTH_300;
-                m_lblDescription.eventClicked += new MouseEventHandler(OnItemClicked);
             }
 
-            if (m_data is not null)
-            {
-                Display(-1, m_data, false);
-            }
+            AfterStart();
         }
 
-        public void Display(int index, object data, bool isRowOdd)
+        protected override void Display()
         {
-            m_data = (OfferData?)data; 
-            
-            if (m_lblDescription is null)
-            {
-                return;
-            }
-
-            // Update width of last element now row has valid positions.
-            m_lblDescription.width = width - m_lblDescription.position.x;
-
-            if (m_data is not null)
-            {
-                m_lblMaterial.text = m_data.m_material.ToString();
-                m_lblInOut.text = m_data.m_bIncoming ? "IN" : "OUT";
-                m_lblActive.text = m_data.m_bActive ? "Active" : "Passive";
-
-                m_lblAmount.text = m_data.m_offer.Amount.ToString();
-                if (m_data.m_offer.Unlimited)
-                {
-                    m_lblAmount.text += "*";
-                }
-
-                m_lblPriority.text = m_data.m_iPrioirty.ToString();
-                m_lblPark.text = m_data.m_byLocalPark.ToString();
-                m_lblDescription.text = m_data.DisplayOffer();
-            }
-            else
-            {
-                Clear();
-            }
+            m_lblMaterial.text = data.m_material.ToString();
+            m_lblInOut.text = data.DescribeInOut();
+            m_lblActive.text = data.DescribeActive();
+            m_lblAmount.text = data.DescribeAmount();
+            m_lblPriority.text = data.Priority.ToString();
+            m_lblPark.text = data.m_byLocalPark.ToString();
+            m_lblDescription.text = data.DescribeOfferObject();
         }
 
-        public void Disabled()
+        protected override void Clear()
         {
-            Clear();
+            m_lblMaterial.text = "";
+            m_lblInOut.text = "";
+            m_lblActive.text = "";
+            m_lblAmount.text = "";
+            m_lblPriority.text = "";
+            m_lblPark.text = "";
+            m_lblDescription.text = "";
         }
 
-        public void Clear()
+        protected override void ClearTooltips()
         {
-            m_data = null;
+            tooltip = "";
+            m_lblMaterial.tooltip = "";
+            m_lblInOut.tooltip = "";
+            m_lblActive.tooltip = "";
+            m_lblAmount.tooltip = "";
+            m_lblPriority.tooltip = "";
+            m_lblPark.tooltip = "";
+            m_lblDescription.tooltip = "";
+        }
 
-            if (m_lblMaterial is not null)
+        protected override void OnClicked(UIComponent component)
+        {
+            if (data is not null)
             {
-                m_lblMaterial.text = "";
-                m_lblInOut.text = "";
-                m_lblActive.text = "";
-                m_lblAmount.text = "";
-                m_lblPriority.text = "";
-                m_lblPark.text = "";
-                m_lblDescription.text = "";
-
-                m_lblMaterial.tooltip = "";
-                m_lblInOut.tooltip = "";
-                m_lblActive.tooltip = "";
-                m_lblAmount.tooltip = "";
-                m_lblPriority.tooltip = "";
-                m_lblPark.tooltip = "";
-                m_lblDescription.tooltip = "";
+                data.Show();
             }
         }
 
-        public void Select(bool isRowOdd)
+        protected override string GetTooltipText(UIComponent component)
         {
-        }
-
-        public void Deselect(bool isRowOdd)
-        {
-        }
-
-        private void OnItemClicked(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_data is not null)
-            {
-                m_data.Show();
-            }
-        }
-
-        private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_lblMaterial is null)
-            {
-                return;
-            }
-
-            if (enabled && m_data is not null)
-            {
-                tooltip = m_data.ToolTip();
-            }
-            else
-            {
-                tooltip = "";
-            }
-        }
-
-        protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            foreach (UILabel? label in components)
-            {
-                if (label is not null)
-                {
-                    label.textColor = Color.yellow;
-                }
-            }
-        }
-
-        protected void OnMouseLeave(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            foreach (UILabel? label in components)
-            {
-                if (label is not null)
-                {
-                    label.textColor = Color.white;
-                }
-            }
-        }
+            return data.GetToolTipText();
+        }        
     }
 }

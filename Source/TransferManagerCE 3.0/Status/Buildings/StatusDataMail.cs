@@ -1,5 +1,6 @@
 using ColossalFramework;
 using ICities;
+using SleepyCommon;
 using System;
 using System.Reflection;
 using TransferManagerCE.Util;
@@ -11,7 +12,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataBuildingMail : StatusDataBuilding
     {
-        public StatusDataBuildingMail(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) : 
+        public StatusDataBuildingMail(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) : 
             base(reason, eBuildingType, BuildingId)
         {
         }
@@ -25,7 +26,7 @@ namespace TransferManagerCE.Data
                 {
                     case BuildingType.ServicePoint:
                         {
-                            ServicePointUtils.GetServicePointOutValues(m_buildingId, m_material, out int iCount, out int iBuffer);
+                            ServicePointUtils.GetServicePointOutValues(m_buildingId, (TransferReason) m_material, out int iCount, out int iBuffer);
                             tooltip = $"Buildings with {m_material}: {iCount}\n{m_material}: {DisplayBufferLong(iBuffer)}";
                             return $"{iCount} | {DisplayBuffer(iBuffer)}";
                         }
@@ -33,7 +34,7 @@ namespace TransferManagerCE.Data
                         {
                             // An actual post office, delivers SortedMail to city, returns with UnsortedMail which is sent to Post Sorting Facilities.
                             PostOfficeAI postOfficeAI = building.Info.GetAI() as PostOfficeAI;
-                            postOfficeAI.GetMaterialAmount(m_buildingId, ref building, m_material, out int amount, out int max);
+                            postOfficeAI.GetMaterialAmount(m_buildingId, ref building, (TransferReason) m_material, out int amount, out int max);
 
                             // Tooltip and color handling
                             switch ((CustomTransferReason.Reason) GetMaterial())
@@ -64,7 +65,7 @@ namespace TransferManagerCE.Data
                     case BuildingType.PostSortingFacility:
                         {
                             PostOfficeAI postOfficeAI = building.Info.GetAI() as PostOfficeAI;
-                            postOfficeAI.GetMaterialAmount(m_buildingId, ref building, m_material, out int amount, out int max);
+                            postOfficeAI.GetMaterialAmount(m_buildingId, ref building, (TransferReason) m_material, out int amount, out int max);
                             WarnText(true, true, amount, max); // We warn for both issues here
                             tooltip = MakeTooltip(amount, max);
                             return SleepyCommon.Utils.MakePercent(amount, max);

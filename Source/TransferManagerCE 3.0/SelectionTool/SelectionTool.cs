@@ -1,14 +1,11 @@
 ﻿using System;
 using ColossalFramework;
 using ColossalFramework.UI;
-using TransferManagerCE.Common;
-using TransferManagerCE.Settings;
+using SleepyCommon;
 using TransferManagerCE.UI;
-using UnifiedUI.Helpers;
 using UnityEngine;
-using static DistrictPolicies;
+using static ColossalFramework.IO.EncodedArray;
 using static RenderManager;
-using static TransferManagerCE.SelectionTool;
 
 namespace TransferManagerCE
 {
@@ -17,65 +14,96 @@ namespace TransferManagerCE
         public enum SelectionToolMode
         {
             Normal,
-            DistrictRestrictionIncoming,
-            DistrictRestrictionOutgoing,
+            DistrictRestriction,
             BuildingRestrictionIncoming,
             BuildingRestrictionOutgoing,
-            PathTesting,
+            PathDistance,
+            PathDistanceCandidates,
         }
         
-        public static SelectionTool? Instance = null;
+        public static SelectionTool? m_instance = null;
+        private static bool s_bLoadingTool = false;
 
-        public SelectionToolMode m_mode = SelectionToolMode.Normal;
+        public SelectionToolMode m_currentMode = SelectionToolMode.Normal;
+        public SelectionToolMode m_newMode = SelectionToolMode.Normal; 
         private SelectionModeBase? m_selectionMode = null;
 
-        private static bool s_bLoadingTool = false;
-        private UIComponent? m_button = null;
+        public ushort m_nodeId = 0;
+        public ushort m_segmentId = 0;
+
         private bool m_processedClick = false;
         private Vector3 m_mousePos = Vector3.zero;
 
-        public static bool HasUnifiedUIButtonBeenAdded()
+        // ----------------------------------------------------------------------------------------
+        public static SelectionTool Instance
         {
-            return (Instance is not null && Instance.m_button is not null);
+            get
+            {
+                if (m_instance is null)
+                {
+                    AddSelectionTool();
+                }
+                return m_instance;
+            }
+        }
+
+        public static bool Exists
+        {
+            get
+            {
+                return m_instance != null;
+            }
+        }
+
+        public static bool Active
+        {
+            get
+            {
+                return m_instance is not null &&
+                        ToolsModifierControl.toolController.CurrentTool == m_instance;
+            }
+        }
+
+        public ToolController ToolController
+        {
+            get
+            {
+                return GetToolController();
+            }
+        }
+
+        public SelectionTool selectionMode
+        {
+            get
+            {
+                if (m_selectionMode is null)
+                {
+                    CreateSelectionMode(m_newMode);
+                }
+                return selectionMode;
+            }
         }
 
         public static void AddSelectionTool()
         {
-            if (TransferManagerLoader.IsLoaded())
+            if (TransferManagerMod.Instance.IsLoaded && !s_bLoadingTool)
             {
-                if (Instance is null)
+                if (m_instance is null)
                 {
                     try
                     {
                         s_bLoadingTool = true;
-                        Instance = ToolsModifierControl.toolController.gameObject.AddComponent<SelectionTool>();
+                        m_instance = ToolsModifierControl.toolController.gameObject.AddComponent<SelectionTool>();
                     }
                     catch (Exception e)
                     {
-                        Debug.Log("Selection tool failed to load: ", e);
+                        CDebug.Log("Selection tool failed to load: ", e);
                     }
                     finally
                     {
                         s_bLoadingTool = false;
                     }
                 }
-            } 
-            else
-            {
-                Debug.Log("Game not loaded");
-            }
-        }
-
-        public static void RemoveUnifiedUITool()
-        {
-            if (Instance is not null)
-            {
-                if (Instance.m_button is not null)
-                {
-                    UUIHelpers.Destroy(Instance.m_button);
-                    Instance.m_button = null;
-                }
-                Instance.Destroy();
             }
         }
 
@@ -83,26 +111,13 @@ namespace TransferManagerCE
         {
             base.Awake();
 
-            if (DependencyUtils.IsUnifiedUIRunning())
-            {
-                Texture2D? icon = TextureResources.LoadDllResource("Transfer.png", 32, 32);
-                if (icon is null)
-                {
-                    Debug.Log("Failed to load icon from resources");
-                    return;
-                }
-
-                m_button = UUIHelpers.RegisterToolButton(
-                    name: "TransferManagerCE",
-                    groupName: null,
-                    tooltip: TransferManagerMain.Title,
-                    tool: this,
-                    icon: icon,
-                    hotkeys: new UUIHotKeys { ActivationKey = ModSettings.GetSettings().SelectionToolHotkey });
-            }
-
             // Start with normal tool mode.
             CreateSelectionMode(SelectionToolMode.Normal);
+        }
+
+        public void OnToggle(bool bToggle)
+        {
+            BuildingPanel.TogglePanel();
         }
 
         public static void Release() 
@@ -112,61 +127,84 @@ namespace TransferManagerCE
 
         private void CreateSelectionMode(SelectionToolMode mode)
         {
-            if (m_selectionMode is null || mode != m_mode)
+            m_currentMode = mode;
+            m_newMode = mode;
+
+            switch (mode)
             {
-                if (PathDistanceTest.PATH_TESTING_ENABLED && mode == SelectionToolMode.Normal)
-                {
-                    mode = SelectionToolMode.PathTesting;
-                }
-
-                if (m_selectionMode is not null) 
-                {
-                    m_selectionMode.Disable();
-                }
-
-                switch (mode)
-                {
-                    case SelectionToolMode.Normal:
-                        {
+                case SelectionToolMode.Normal:
+                    {
 #if DEBUG
-                            m_selectionMode = new SelectionModeNormalDebug(this);
+                        m_selectionMode = new SelectionModeNormalDebug(this);
 #else
-                            m_selectionMode = new SelectionModeNormal(this);
+                        m_selectionMode = new SelectionModeNormal(this);
 #endif
-                            break;
-                        }
-                    case SelectionToolMode.DistrictRestrictionIncoming:
-                    case SelectionToolMode.DistrictRestrictionOutgoing:
-                        {
-                            m_selectionMode = new SelectionModeDistrictRestrictions(this);
-                            break;
-                        }
-                    case SelectionToolMode.BuildingRestrictionIncoming:
-                    case SelectionToolMode.BuildingRestrictionOutgoing:
-                        {
-                            m_selectionMode = new SelectionModeBuildingRestrictions(this);
-                            break;
-                        }
-                    case SelectionToolMode.PathTesting:
-                        {
-                            m_selectionMode = new SelectionModePathTesting(this);
-                            break;
-                        }
-                }
+                        break;
+                    }
+                case SelectionToolMode.DistrictRestriction:
+                    {
+                        m_selectionMode = new SelectionModeDistrictRestrictions(this);
+                        break;
+                    }
+                case SelectionToolMode.BuildingRestrictionIncoming:
+                case SelectionToolMode.BuildingRestrictionOutgoing:
+                    {
+                        m_selectionMode = new SelectionModeBuildingRestrictions(this);
+                        break;
+                    }
+                case SelectionToolMode.PathDistance:
+                    {
+                        m_selectionMode = new SelectionModePathDistance(this);
+                        break;
+                    }
+                case SelectionToolMode.PathDistanceCandidates:
+                    {
+                        m_selectionMode = new SelectionModeSelectCandidates(this);
+                        break;
+                    }
             }
         }
 
         public void SetMode(SelectionToolMode mode)
         {
-            CreateSelectionMode(mode);
-            m_mode = mode;
-            m_selectionMode.Enable(mode);
-
-            // Update the building panel to the changed state
-            if (BuildingPanel.Instance is not null && BuildingPanel.Instance.isVisible)
+            if (m_selectionMode is null || mode != GetCurrentMode())
             {
-                BuildingPanel.Instance.UpdateTabs();
+                // We set this so it can be queried in Disable.
+                m_newMode = mode;
+
+                // Disable old tool
+                if (m_selectionMode is not null)
+                {
+                    m_selectionMode.Disable();
+                }
+
+                CreateSelectionMode(mode);
+                
+                // Enable new tool
+                m_selectionMode.Enable();
             }
+        }
+
+        public void SelectNormalTool()
+        {
+            if (BuildingPanel.IsVisible())
+            {
+                SelectionTool.Instance.SetMode(SelectionTool.SelectionToolMode.Normal);
+            }
+            else
+            {
+                SelectionTool.Instance.Disable();
+            }
+        }
+
+        public SelectionToolMode GetCurrentMode()
+        {
+            return m_currentMode;
+        }
+
+        public SelectionToolMode GetNewMode()
+        {
+            return m_newMode;
         }
 
         public InstanceID GetHoverInstance()
@@ -189,76 +227,203 @@ namespace TransferManagerCE
             base.ShowToolInfo(true, sText, m_mousePos);
         }
 
+        public override void RenderOverlay(RenderManager.CameraInfo cameraInfo)
+        {
+            if (m_nodeId != 0 && OutsideConnectionCache.IsOutsideConnectionNode(m_nodeId))
+            {
+                // Highlight outside connections
+                NetNode oNode = NetManager.instance.m_nodes.m_buffer[m_nodeId];
+                if (oNode.m_flags != 0)
+                {
+                    HighlightNode(cameraInfo, oNode, GetToolColor(false, false));
+
+                    if (m_hoverInstance.Index == 0 && oNode.m_building != 0)
+                    {
+                        m_hoverInstance.Building = oNode.m_building;
+                    }
+                }
+            }
+
+            if (m_selectionMode is not null && m_selectionMode.RenderBuildingSelection())
+            {
+                if (m_hoverInstance.Building != 0)
+                {
+                    base.RenderOverlay(cameraInfo);
+                }
+            }
+
+            m_selectionMode.RenderOverlay(cameraInfo);
+        }
+
         public override void SimulationStep()
         {
-            base.SimulationStep();
-
             // Check we arent still setting up tool when this is called as it can crash
             if (s_bLoadingTool)
             {
                 return;
             }
 
-            RaycastInput input = m_selectionMode.GetRayCastInput(m_mouseRay, m_mouseRayLength);
-            if (RayCast(input, out RaycastOutput output))
+            base.SimulationStep();
+
+            // Grab the node and segment
+            if (RayCastSegmentAndNode(out RaycastOutput output))
             {
-                if (output.m_netNode > 0)
+                m_nodeId = output.m_netNode;
+                m_segmentId = output.m_netSegment;
+                m_mousePos = output.m_hitPos;
+
+                // We try to find the node from the segment
+                if (output.m_netNode == 0)
                 {
-                    m_hoverInstance.NetNode = output.m_netNode;
-                }
-                else if (output.m_netSegment > 0)
-                {
-                    m_hoverInstance.NetSegment = output.m_netSegment;
+                    if (output.m_netSegment != 0)
+                    {
+                        var segment = NetManager.instance.m_segments.m_buffer[output.m_netSegment];
+                        var startNode = NetManager.instance.m_nodes.m_buffer[segment.m_startNode];
+                        var endNode = NetManager.instance.m_nodes.m_buffer[segment.m_endNode];
+                        var mouseRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+                        if (startNode.CountSegments() > 0)
+                        {
+                            var bounds = startNode.m_bounds;
+                            if (bounds.IntersectRay(mouseRay))
+                            {
+                                m_nodeId = segment.m_startNode;
+                            }
+                        }
+
+                        if (m_nodeId == 0 && endNode.CountSegments() > 0)
+                        {
+                            var bounds = endNode.m_bounds;
+                            if (bounds.IntersectRay(mouseRay))
+                            {
+                                m_nodeId = segment.m_endNode;
+                            }
+                        }
+                    }
+
+                    // Try looking in node grid instead
+                    if (m_nodeId == 0)
+                    {
+                        m_nodeId = FindNearestNode(output.m_hitPos);
+                    }
                 }
             }
-            
-            m_mousePos = output.m_hitPos;
+            else
+            {
+                m_nodeId = 0;
+                m_segmentId = 0;
+            }
+
+            // If the node is set and hover instance isnt the set hover instance
+            if (m_nodeId != 0 && m_hoverInstance.Index == 0)
+            {
+                NetNode oNode = NetManager.instance.m_nodes.m_buffer[m_nodeId];
+                if (oNode.m_flags != 0)
+                {
+                    m_hoverInstance.Building = oNode.m_building;
+                }
+            }
+        }
+
+        private static bool RayCastSegmentAndNode(out RaycastOutput output)
+        {
+            var input = new RaycastInput(Camera.main.ScreenPointToRay(Input.mousePosition), Camera.main.farClipPlane)
+            {
+                m_netService = { m_itemLayers = ItemClass.Layer.Default | ItemClass.Layer.MetroTunnels },
+                m_ignoreSegmentFlags = NetSegment.Flags.None,
+                m_ignoreNodeFlags = NetNode.Flags.None,
+                m_ignoreTerrain = true,
+            };
+
+            return RayCast(input, out output);
+        }
+
+        public static ushort FindNearestNode(Vector3 position)
+        {
+            int num = Mathf.Clamp((int)(position.x / 64f + 135f), 0, 269);
+            int num2 = Mathf.Clamp((int)(position.z / 64f + 135f), 0, 269);
+            int num3 = num2 * 270 + num;
+            ushort nodeId = Singleton<NetManager>.instance.m_nodeGrid[num3];
+
+            if (nodeId != 0)
+            {
+                NetNode oNode = NetManager.instance.m_nodes.m_buffer[nodeId];
+                if (oNode.m_flags != 0)
+                {
+                    if (Math.Abs(oNode.m_position.x - position.x) < oNode.m_bounds.extents.x &&
+                        Math.Abs(oNode.m_position.z - position.z) < oNode.m_bounds.extents.z)
+                    {
+                        return nodeId;
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        public void Enable(SelectionToolMode mode)
+        {
+            if (Exists)
+            {
+                m_newMode = mode;
+
+                Enable();
+                SetMode(mode);
+            }
         }
 
         public void Enable()
         {
-            if (Instance is not null && !Instance.enabled)
+            if (Exists && !Instance.enabled)
             {
                 OnEnable();
             }
         }
 
-        protected override void OnEnable() {
+        protected override void OnEnable() 
+        {
             base.OnEnable();
-
-            // Ensure we are in normal mode.
-            SetMode(SelectionToolMode.Normal);
 
             // We seem to get an eroneous OnEnable call when adding the tool.
             if (!s_bLoadingTool)
             {
                 ToolsModifierControl.mainToolbar.CloseEverything();
+
                 ToolsModifierControl.SetTool<SelectionTool>();
-                BuildingPanel.Init();
-                BuildingPanel.Instance?.ShowPanel();
             }
         }
 
         public void Disable()
         {
+            m_newMode = SelectionToolMode.Normal;
+
+            m_selectionMode.Disable();
+
             // Ensure we are in normal mode.
             SetMode(SelectionToolMode.Normal);
 
-            ToolBase oCurrentTool = ToolsModifierControl.toolController.CurrentTool;
-            if (oCurrentTool is not null && oCurrentTool == Instance && oCurrentTool.enabled)
+            if (Active && Instance.enabled)
             {
                 OnDisable();
             }
         }
 
-        protected override void OnDisable() {
-            m_toolController ??= ToolsModifierControl.toolController; // workaround exception in base code.
+        protected override void OnDisable() 
+        {
+            // workaround exception in base code.
+            m_toolController ??= ToolsModifierControl.toolController; 
+
             base.OnDisable();
+
             ToolsModifierControl.SetTool<DefaultTool>();
-            BuildingPanel.Instance?.HidePanel();
+            
+            if (BuildingPanel.IsVisible())
+            {
+                BuildingPanel.Instance.Hide();
+            }
         }
 
-        public void ToogleSelectionTool()
+        public void Toggle()
         {
             if (isActiveAndEnabled)
             {
@@ -270,38 +435,7 @@ namespace TransferManagerCE
             }
         }
         
-        public override void RenderOverlay(RenderManager.CameraInfo cameraInfo)
-        {
-            
-            if (m_selectionMode is not null && m_selectionMode.RenderBuildingSelection())
-            {
-                switch (m_hoverInstance.Type)
-                {
-                    case InstanceType.Building:
-                        {
-                            base.RenderOverlay(cameraInfo);
-                            break;
-                        }
-                    case InstanceType.NetNode:
-                        {
-                            NetNode oNode = NetManager.instance.m_nodes.m_buffer[m_hoverInstance.NetNode];
-                            if (oNode.m_building != 0)
-                            {
-                                if (BuildingTypeHelper.IsOutsideConnection(oNode.m_building))
-                                {
-                                    HighlightNode(Singleton<ToolManager>.instance, cameraInfo, oNode, GetToolColor(false, false));
-                                }
-                            }
-                            break;
-                        }
-                }
-            }
-            
-            m_selectionMode.RenderOverlay(cameraInfo);
-        }
-
-  
-        private static void HighlightNode(ToolManager toolManager, CameraInfo cameraInfo, NetNode oNode, Color color)
+        private static void HighlightNode(CameraInfo cameraInfo, NetNode oNode, Color color)
         {
             RenderManager.instance.OverlayEffect.DrawCircle(
                                             cameraInfo,
@@ -312,7 +446,6 @@ namespace TransferManagerCE
                                             oNode.m_position.y + 1f,
                                             true,
                                             true);
-            toolManager.m_drawCallData.m_overlayCalls++;
         }
 
         public void UpdateSelection()
@@ -327,6 +460,8 @@ namespace TransferManagerCE
                 base.OnToolGUI(e);
                 return;
             }
+
+
 
             m_selectionMode.OnToolGUI(e);
 
@@ -358,12 +493,13 @@ namespace TransferManagerCE
 
         public void HandleRightClick()
         {
-            switch (m_mode)
+            switch (GetCurrentMode())
             {
                 case SelectionToolMode.Normal:
                     {
                         // Close building panel.
                         ToolsModifierControl.SetTool<DefaultTool>();
+                        BuildingPanel.Instance.Hide();
                         break;
                     }
                 default:
@@ -373,14 +509,12 @@ namespace TransferManagerCE
                     }
             }
         }
-        
 
-        public void SelectBuilding(ushort buildingId)
+        public void OnSelectBuilding(ushort buildingId)
         {
             if (!s_bLoadingTool)
             {
-                // Open building panel
-                BuildingPanel.Instance?.ShowPanel(buildingId);
+                m_selectionMode.OnSelectBuilding(buildingId);
             }
         }
 
@@ -398,7 +532,10 @@ namespace TransferManagerCE
         {
             base.OnToolUpdate();
 
-            m_selectionMode.OnToolUpdate();
+            if (!ToolController.IsInsideUI)
+            {
+                ShowToolInfo(m_selectionMode.GetTooltipText());
+            }
 
             if (UIView.library.Get("PauseMenu")?.isVisible == true)
             {
@@ -413,21 +550,32 @@ namespace TransferManagerCE
             m_selectionMode.OnToolLateUpdate();
         }
 
-        public override NetNode.Flags GetNodeIgnoreFlags() => NetNode.Flags.All;
-        public override Building.Flags GetBuildingIgnoreFlags() => Building.Flags.None;
-        public override CitizenInstance.Flags GetCitizenIgnoreFlags() => CitizenInstance.Flags.All;
-        public override DisasterData.Flags GetDisasterIgnoreFlags() => DisasterData.Flags.All;
-        public override District.Flags GetDistrictIgnoreFlags() => District.Flags.All;
-        public override TransportLine.Flags GetTransportIgnoreFlags() => TransportLine.Flags.None;
-        public override VehicleParked.Flags GetParkedVehicleIgnoreFlags() => VehicleParked.Flags.All;
-        public override TreeInstance.Flags GetTreeIgnoreFlags() => TreeInstance.Flags.All;
-        public override PropInstance.Flags GetPropIgnoreFlags() => PropInstance.Flags.All;
+        public override NetNode.Flags GetNodeIgnoreFlags() 
+        { 
+            return m_selectionMode.GetNodeIgnoreFlags();
+        }
 
         public override NetSegment.Flags GetSegmentIgnoreFlags(out bool nameOnly)
         {
-            nameOnly = false;
-            return NetSegment.Flags.All;
+            return m_selectionMode.GetSegmentIgnoreFlags(out nameOnly);
         }
+
+        public override Building.Flags GetBuildingIgnoreFlags()
+        {
+            return m_selectionMode.GetBuildingIgnoreFlags();
+        }
+
+        public override TransportLine.Flags GetTransportIgnoreFlags() 
+        {
+            return m_selectionMode.GetTransportIgnoreFlags();
+        }
+
+        public override CitizenInstance.Flags GetCitizenIgnoreFlags() => CitizenInstance.Flags.All;
+        public override DisasterData.Flags GetDisasterIgnoreFlags() => DisasterData.Flags.All;
+        public override District.Flags GetDistrictIgnoreFlags() => District.Flags.All;
+        public override VehicleParked.Flags GetParkedVehicleIgnoreFlags() => VehicleParked.Flags.All;
+        public override TreeInstance.Flags GetTreeIgnoreFlags() => TreeInstance.Flags.All;
+        public override PropInstance.Flags GetPropIgnoreFlags() => PropInstance.Flags.All;
 
         protected override bool CheckNode(ushort node, ref ToolErrors errors) => true;
         protected override bool CheckSegment(ushort segment, ref ToolErrors errors) => true;

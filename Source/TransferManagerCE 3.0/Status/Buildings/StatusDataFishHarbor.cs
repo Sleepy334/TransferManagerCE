@@ -8,7 +8,7 @@ namespace TransferManagerCE.Data
     public class StatusDataFishHarbor : StatusDataExtractionFacility
     {
         public StatusDataFishHarbor(BuildingType eBuildingType, ushort BuildingId) :
-            base(TransferReason.Fish, eBuildingType, BuildingId)
+            base(CustomTransferReason.Reason.Fish, eBuildingType, BuildingId)
         {
         }
 

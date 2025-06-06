@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TransferManagerCE.UI
 {
-    public class UIMatchStatsRow : UIPanel, IUIFastListRow
+    public class UIMatchStatsRow : UIListRow<MatchStatsData>
     {
         private UILabel? m_lblMaterial = null;
         private UILabel? m_lblMatchAmount = null;
@@ -17,24 +17,11 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblJobMaxTime = null; 
         private UILabel? m_lblJobAvgTime = null;
 
-        private MatchStatsData? m_data = null;
-
         public override void Start()
         {
             base.Start();
 
-            isVisible = true;
-            canFocus = true;
-            isInteractive = true;
-            width = parent.width;
-            height = ListView.iROW_HEIGHT;
-            //backgroundSprite = "InfoviewPanel";
-            //color = new Color32(255, 0, 0, 225);
-            autoLayoutDirection = LayoutDirection.Horizontal;
-            autoLayoutStart = LayoutStart.TopLeft;
-            autoLayoutPadding = new RectOffset(2, 2, 2, 2);
-            autoLayout = true;
-            clipChildren = true;
+            fullRowSelect = true;
 
             m_lblMaterial = AddUIComponent<UILabel>();
             if (m_lblMaterial is not null)
@@ -48,8 +35,6 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
                 m_lblMaterial.width = StatsPanel.iCOLUMN_MATERIAL_WIDTH;
-                m_lblMaterial.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblMaterial.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblJobAvgTime = AddUIComponent<UILabel>();
@@ -64,8 +49,6 @@ namespace TransferManagerCE.UI
                 m_lblJobAvgTime.autoSize = false;
                 m_lblJobAvgTime.height = height;
                 m_lblJobAvgTime.width = StatsPanel.iCOLUMN_WIDTH;
-                m_lblJobAvgTime.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblJobAvgTime.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblJobLastTime = AddUIComponent<UILabel>();
@@ -80,8 +63,6 @@ namespace TransferManagerCE.UI
                 m_lblJobLastTime.autoSize = false;
                 m_lblJobLastTime.height = height;
                 m_lblJobLastTime.width = StatsPanel.iCOLUMN_WIDTH;
-                m_lblJobLastTime.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblJobLastTime.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblJobMaxTime = AddUIComponent<UILabel>();
@@ -96,8 +77,6 @@ namespace TransferManagerCE.UI
                 m_lblJobMaxTime.autoSize = false;
                 m_lblJobMaxTime.height = height;
                 m_lblJobMaxTime.width = StatsPanel.iCOLUMN_WIDTH;
-                m_lblJobMaxTime.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblJobMaxTime.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblMatchAmount = AddUIComponent<UILabel>();
@@ -112,8 +91,6 @@ namespace TransferManagerCE.UI
                 m_lblMatchAmount.autoSize = false;
                 m_lblMatchAmount.height = height;
                 m_lblMatchAmount.width = StatsPanel.iCOLUMN_BIGGER_WIDTH;
-                m_lblMatchAmount.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblMatchAmount.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblOutAmount = AddUIComponent<UILabel>();
@@ -128,8 +105,6 @@ namespace TransferManagerCE.UI
                 m_lblOutAmount.autoSize = false;
                 m_lblOutAmount.height = height;
                 m_lblOutAmount.width = StatsPanel.iCOLUMN_BIGGER_WIDTH;
-                m_lblOutAmount.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblOutAmount.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblInAmount = AddUIComponent<UILabel>();
@@ -144,8 +119,6 @@ namespace TransferManagerCE.UI
                 m_lblInAmount.autoSize = false;
                 m_lblInAmount.height = height;
                 m_lblInAmount.width = StatsPanel.iCOLUMN_WIDTH;
-                m_lblInAmount.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblInAmount.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblMatchDistance = AddUIComponent<UILabel>();
@@ -160,8 +133,6 @@ namespace TransferManagerCE.UI
                 m_lblMatchDistance.autoSize = false;
                 m_lblMatchDistance.height = height;
                 m_lblMatchDistance.width = StatsPanel.iCOLUMN_WIDTH;
-                m_lblMatchDistance.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblMatchDistance.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblMatchOutside = AddUIComponent<UILabel>();
@@ -176,54 +147,26 @@ namespace TransferManagerCE.UI
                 m_lblMatchOutside.autoSize = false;
                 m_lblMatchOutside.height = height;
                 m_lblMatchOutside.width = StatsPanel.iCOLUMN_WIDTH;
-                m_lblMatchOutside.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblMatchOutside.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
-            if (m_data is not null)
-            {
-                Display(-1, m_data, false);
-            }
+            AfterStart();
         }
 
-        public void Display(int index, object data, bool isRowOdd)
+        protected override void Display()
         {
-            m_data = (MatchStatsData?) data;
-
-            if (m_lblMaterial is null)
+            if (!data.IsSeparator())
             {
-                return;
-            }
+                m_lblMaterial.text = data.GetMaterialDescription();
 
-            if (m_data is not null)
-            {
-                if (!m_data.IsSeparator())
-                {
-                    m_lblMaterial.text = m_data.GetMaterialDescription();
+                m_lblJobAvgTime.text = Utils.DisplayTicks(data.GetJobAverageTicks());
+                m_lblJobLastTime.text = Utils.DisplayTicks(data.JobTimeLastTicks);
+                m_lblJobMaxTime.text = Utils.DisplayTicks(data.JobTimeMaxTicks);
 
-                    m_lblJobAvgTime.text = Utils.DisplayTicks(m_data.GetJobAverageTicks());
-                    m_lblJobLastTime.text = Utils.DisplayTicks(m_data.JobTimeLastTicks);
-                    m_lblJobMaxTime.text = Utils.DisplayTicks(m_data.JobTimeMaxTicks);
-                    
-                    m_lblMatchAmount.text = m_data.TotalMatchAmount.ToString();
-                    m_lblOutAmount.text = m_data.TotalOutgoingAmount.ToString();
-                    m_lblInAmount.text = m_data.TotalIncomingAmount.ToString();
-                    m_lblMatchDistance.text = m_data.GetAverageDistance();
-                    m_lblMatchOutside.text = m_data.TotalOutside.ToString();
-                }
-                else
-                {
-                    Clear();
-                }
-
-                // Update text color
-                foreach (UIComponent component in components)
-                {
-                    if (component is UILabel label)
-                    {
-                        label.textColor = GetTextColor(label);
-                    }
-                }
+                m_lblMatchAmount.text = data.TotalMatchAmount.ToString();
+                m_lblOutAmount.text = data.TotalOutgoingAmount.ToString();
+                m_lblInAmount.text = data.TotalIncomingAmount.ToString();
+                m_lblMatchDistance.text = data.GetAverageDistance();
+                m_lblMatchOutside.text = data.TotalOutside.ToString();
             }
             else
             {
@@ -231,97 +174,54 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void Clear()
+        protected override void Clear()
         {
-            m_data = null;
+            m_lblMaterial.text = "";
+            m_lblJobLastTime.text = "";
+            m_lblJobMaxTime.text = "";
+            m_lblJobAvgTime.text = "";
+            m_lblOutAmount.text = "";
+            m_lblInAmount.text = "";
+            m_lblMatchAmount.text = "";
+            m_lblMatchDistance.text = "";
+            m_lblMatchOutside.text = "";
+        }
 
-            if (m_lblMaterial is not null)
+        protected override void ClearTooltips()
+        {
+            m_lblMaterial.tooltip = "";
+            m_lblJobLastTime.tooltip = "";
+            m_lblJobMaxTime.tooltip = "";
+            m_lblJobAvgTime.tooltip = "";
+            m_lblOutAmount.tooltip = "";
+            m_lblInAmount.tooltip = "";
+            m_lblMatchAmount.tooltip = "";
+            m_lblMatchDistance.tooltip = "";
+            m_lblMatchOutside.tooltip = "";
+        }
+
+        protected override void OnClicked(UIComponent component)
+        {
+        }
+
+        protected override string GetTooltipText(UIComponent component)
+        {
+            return "";
+        }
+
+        protected override Color GetTextColor(UIComponent component, bool highlightRow)
+        {
+            if (highlightRow)
             {
-                m_lblMaterial.text = "";
-                m_lblJobLastTime.text = "";
-                m_lblJobMaxTime.text = "";
-                m_lblJobAvgTime.text = "";
-                m_lblOutAmount.text = "";
-                m_lblInAmount.text = "";
-                m_lblMatchAmount.text = "";
-                m_lblMatchDistance.text = "";
-                m_lblMatchOutside.text = "";
-
-                m_lblMaterial.tooltip = "";
-                m_lblJobLastTime.tooltip = "";
-                m_lblJobMaxTime.tooltip = "";
-                m_lblJobAvgTime.tooltip = "";
-                m_lblOutAmount.tooltip = "";
-                m_lblInAmount.tooltip = "";
-                m_lblMatchAmount.tooltip = "";
-                m_lblMatchDistance.tooltip = "";
-                m_lblMatchOutside.tooltip = "";
+                return KnownColor.yellow;
             }
-        }
-
-        public void Disabled()
-        {
-        }
-
-        public float SafeDiv(float fNumerator, float fDenominator)
-        {
-            if (fNumerator == 0 || fDenominator == 0)
+            else if (data is not null)
             {
-                return 0f;
-            }
-            else
-            {
-                return fNumerator / fDenominator;
-            }
-        }
-
-        public void Select(bool isRowOdd)
-        {
-        }
-
-        public void Deselect(bool isRowOdd)
-        {
-        }
-
-        private void OnItemClicked(UIComponent component, UIMouseEventParameter eventParam)
-        {
-        }
-
-        private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-        }
-
-        protected void OnMouseHover(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            foreach (UILabel? label in components)
-            {
-                if (label is not null)
-                {
-                    label.textColor = Color.yellow;
-                }
-            }
-        }
-
-        protected void OnMouseLeave(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            foreach (UILabel? label in components)
-            {
-                if (label is not null)
-                {
-                    label.textColor = Color.white;
-                }
-            }
-        }
-
-        public virtual Color GetTextColor(UIComponent component)
-        {
-            if (m_data is not null)
-            {
-                return m_data.GetTextColor();
+                return data.GetTextColor();
             }
             else
             {
-                return Color.white;
+                return KnownColor.white;
             }
         }
     }

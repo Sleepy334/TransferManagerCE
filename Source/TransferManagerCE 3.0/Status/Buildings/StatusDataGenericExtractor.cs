@@ -9,7 +9,7 @@ namespace TransferManagerCE.Data
 {
     public class StatusDataGenericExtractor : StatusDataBuilding
     {
-        public StatusDataGenericExtractor(TransferReason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataGenericExtractor(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }

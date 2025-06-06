@@ -1,34 +1,22 @@
 using ColossalFramework.UI;
-using UnityEngine;
+using SleepyCommon;
 
 namespace TransferManagerCE.UI
 {
-    public class UIIssueRow : UIPanel, IUIFastListRow
+    public class UIIssueRow : UIListRow<TransferIssueContainer>
     {
+
         private UILabel? m_lblMaterial = null;
         private UILabel? m_lblPriority = null;
         private UILabel? m_lblValue = null;
         private UILabel? m_lblTimer = null;
         private UITruncateLabel? m_lblSource = null;
-        private UITruncateLabel? m_lblTarget = null;
+        private UITruncateLabel? m_lblResponder = null;
         private UITruncateLabel? m_lblVehicle = null;
-
-        private TransferIssueContainer? m_data = null;
 
         public override void Start()
         {
             base.Start();
-
-            isVisible = true;
-            canFocus = true;
-            isInteractive = true;
-            width = parent.width - ListView.iSCROLL_BAR_WIDTH;
-            height = ListView.iROW_HEIGHT;
-            autoLayoutDirection = LayoutDirection.Horizontal;
-            autoLayoutStart = LayoutStart.TopLeft;
-            autoLayoutPadding = new RectOffset(2, 2, 2, 2);
-            autoLayout = true;
-            clipChildren = true;
 
             m_lblMaterial = AddUIComponent<UILabel>();
             if (m_lblMaterial is not null)
@@ -42,8 +30,6 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
                 m_lblMaterial.width = TransferIssuePanel.iCOLUMN_WIDTH_ISSUE;
-                m_lblMaterial.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblMaterial.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblPriority = AddUIComponent<UILabel>();
@@ -58,8 +44,6 @@ namespace TransferManagerCE.UI
                 m_lblPriority.autoSize = false;
                 m_lblPriority.height = height;
                 m_lblPriority.width = TransferIssuePanel.iCOLUMN_WIDTH_PRIORITY;
-                m_lblPriority.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblPriority.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblTimer = AddUIComponent<UILabel>();
@@ -74,8 +58,6 @@ namespace TransferManagerCE.UI
                 m_lblTimer.autoSize = false;
                 m_lblTimer.height = height;
                 m_lblTimer.width = TransferIssuePanel.iCOLUMN_WIDTH_VALUE;
-                m_lblTimer.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblTimer.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblValue = AddUIComponent<UILabel>();
@@ -90,8 +72,6 @@ namespace TransferManagerCE.UI
                 m_lblValue.autoSize = false;
                 m_lblValue.height = height;
                 m_lblValue.width = TransferIssuePanel.iCOLUMN_WIDTH_VALUE;
-                m_lblValue.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblValue.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblSource = AddUIComponent<UITruncateLabel>();
@@ -106,8 +86,6 @@ namespace TransferManagerCE.UI
                 m_lblSource.autoSize = false;
                 m_lblSource.height = height;
                 m_lblSource.width = TransferIssuePanel.iCOLUMN_WIDTH_VEHICLE;
-                m_lblSource.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblSource.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
                 m_lblSource.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblSource.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -124,154 +102,119 @@ namespace TransferManagerCE.UI
                 m_lblVehicle.autoSize = false;
                 m_lblVehicle.height = height;
                 m_lblVehicle.width = TransferIssuePanel.iCOLUMN_WIDTH_VEHICLE;
-                m_lblVehicle.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblVehicle.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
                 m_lblVehicle.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblVehicle.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
-            m_lblTarget = AddUIComponent<UITruncateLabel>();
-            if (m_lblTarget is not null)
+            m_lblResponder = AddUIComponent<UITruncateLabel>();
+            if (m_lblResponder is not null)
             {
-                m_lblTarget.name = "m_lblTarget";
-                m_lblTarget.text = "";
-                m_lblTarget.textScale = BuildingPanel.fTEXT_SCALE;
-                m_lblTarget.tooltip = "";
-                m_lblTarget.textAlignment = UIHorizontalAlignment.Left;
-                m_lblTarget.verticalAlignment = UIVerticalAlignment.Middle;
-                m_lblTarget.autoSize = false;
-                m_lblTarget.height = height;
-                m_lblTarget.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblTarget.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
-                m_lblTarget.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
-                m_lblTarget.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
-
-                // Adjust last column
-                m_lblTarget.width = width - m_lblMaterial.width - m_lblPriority.width - m_lblTimer.width - m_lblValue.width - m_lblSource.width - m_lblVehicle.width - 18;
+                m_lblResponder.name = "m_lblResponder";
+                m_lblResponder.text = "";
+                m_lblResponder.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblResponder.tooltip = "";
+                m_lblResponder.textAlignment = UIHorizontalAlignment.Left;
+                m_lblResponder.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblResponder.autoSize = false;
+                m_lblResponder.height = height;
+                m_lblResponder.width = 100; // This gets updated in AfterStart
+                m_lblResponder.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
+                m_lblResponder.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
-            if (m_data is not null)
+            base.AfterStart();
+        }
+
+        protected override void Display()
+        {
+            if (data is not null)
             {
-                Display(-1, m_data, false);
+                m_lblMaterial.text = data.m_issue.ToString();
+                m_lblPriority.text = data.GetPriority().ToString();
+                m_lblValue.text = data.m_value.ToString();
+                m_lblTimer.text = data.GetTimer();
+                m_lblSource.text = data.GetSource();
+                m_lblResponder.text = data.GetResponder();
+                m_lblVehicle.text = data.GetVehicle();
             }
         }
 
-        public void Display(int index, object data, bool isRowOdd)
+        protected override void Clear()
         {
-            m_data = (TransferIssueContainer?) data;
+            m_lblMaterial.text = "";
 
-            if (m_lblMaterial is null)
-            {
-                // Not yet initialised
-                return;
-            }
+            m_lblPriority.text = "";
+            m_lblValue.text = "";
+            m_lblTimer.text = "";
 
-            if (m_data is not null)
+            m_lblSource.text = "";
+            m_lblVehicle.text = "";
+            m_lblResponder.text = "";
+        }
+
+        protected override void ClearTooltips()
+        {
+            tooltip = "";
+
+            m_lblMaterial.tooltip = "";
+
+            m_lblPriority.tooltip = "";
+            m_lblValue.tooltip = "";
+            m_lblTimer.tooltip = "";
+            
+            m_lblSource.tooltip = "";
+            m_lblVehicle.tooltip = "";
+            m_lblResponder.tooltip = "";
+        }
+
+        protected override void OnClicked(UIComponent component)
+        {
+            if (component == m_lblSource)
             {
-                m_lblMaterial.text = m_data.m_issue.ToString();
-                m_lblPriority.text = m_data.GetPriority().ToString();
-                m_lblValue.text = m_data.m_value.ToString();
-                m_lblTimer.text = m_data.GetTimer();
-                m_lblSource.text = m_data.GetSource();
-                m_lblTarget.text = m_data.GetTarget();
-                m_lblVehicle.text = m_data.GetVehicle();
+                data.ShowSource();
             }
-            else
+            else if (component == m_lblResponder)
             {
-                Clear();
+                data.ShowTarget();
+            }
+            else if (component == m_lblVehicle)
+            {
+                data.ShowVehicle();
             }
         }
 
-        public void Disabled()
+        protected override string GetTooltipText(UIComponent component)
         {
-            Clear();
-        }
-
-        public void Clear()
-        {
-            m_data = null;
-
-            if (m_lblMaterial is not null)
+            if (component == this)
             {
-                m_lblMaterial.text = "";
-                m_lblPriority.text = "";
-                m_lblValue.text = "";
-                m_lblTimer.text = "";
-                m_lblSource.text = "";
-                m_lblTarget.text = "";
-                m_lblVehicle.text = "";
-
-                tooltip = "";
-                m_lblTimer.tooltip = "";
-                m_lblPriority.tooltip = "";
-                m_lblMaterial.tooltip = "";
-                m_lblSource.tooltip = "";
-                m_lblTarget.tooltip = "";
-                m_lblVehicle.tooltip = "";
+                return "";
             }
-        }
-
-        public void Select(bool isRowOdd)
-        {
-        }
-
-        public void Deselect(bool isRowOdd)
-        {
-        }
-
-        private void OnItemClicked(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_data is not null)
+            else if (component == m_lblValue)
             {
-                if (component == m_lblSource)
-                {
-                    m_data.ShowSource();
-                }
-                else if (component == m_lblTarget)
-                {
-                    m_data.ShowTarget();
-                }
-                else if (component == m_lblVehicle)
-                {
-                    m_data.ShowVehicle();
-                }
+                return data.GetValueTooltip();
             }
-        }
+            if (component == m_lblPriority)
+            {
+                return "";
+            }
+            else if (component == m_lblTimer)
+            {
+                return data.GetTimerTooltip();
+            }
+            else if (component == m_lblSource)
+            {
+                return data.GetSourceTooltip();
+            }
+            else if (component == m_lblVehicle)
+            {
+                return data.GetVehicleTooltip();
+            }
+            else if (component == m_lblResponder)
+            {
+                return data.GetResponderTooltip();
+            }
 
-        private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_data is not null)
-            {
-                m_lblValue.tooltip = m_data.GetValueTooltip();
-                m_lblSource.tooltip = m_data.GetSourceTooltip();
-                m_lblTarget.tooltip = m_data.GetTargetTooltip();
-                m_lblVehicle.tooltip = m_data.GetVehicleTooltip();
-            }
-            else
-            {
-                m_lblValue.tooltip = "";
-                m_lblSource.tooltip = "";
-                m_lblTarget.tooltip = "";
-                m_lblVehicle.tooltip = "";
-            }
-        }
-
-        protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            UILabel? txtLabel = component as UILabel;
-            if (txtLabel is not null)
-            {
-                txtLabel.textColor = Color.yellow;
-            }
-        }
-
-        protected void OnMouseLeave(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            UILabel? txtLabel = component as UILabel;
-            if (txtLabel is not null)
-            {
-                txtLabel.textColor = Color.white;
-            }
+            return "";
         }
     }
 }

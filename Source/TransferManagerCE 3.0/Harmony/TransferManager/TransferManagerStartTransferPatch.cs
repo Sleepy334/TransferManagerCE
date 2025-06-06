@@ -9,13 +9,10 @@ namespace TransferManagerCE
         // This gets called by vanilla transfer manager when a match occurs.
         [HarmonyPrefix]
         [HarmonyPatch(typeof(TransferManager), "StartTransfer")]
-        public static bool Prefix(TransferManager.TransferReason material, TransferManager.TransferOffer offerOut, TransferManager.TransferOffer offerIn, int delta)
+        public static void StartTransferPrefix(TransferManager.TransferReason material, TransferManager.TransferOffer offerOut, TransferManager.TransferOffer offerIn, int delta)
         {
             // Handle this match
             MatchHandler.Match(material, offerOut, offerIn, delta);
-
-            // Handle normally
-            return true;
         }
     }
 

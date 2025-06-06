@@ -1,10 +1,11 @@
 using ColossalFramework.UI;
+using SleepyCommon;
 using TransferManagerCE.Settings;
 using UnityEngine;
 
 namespace TransferManagerCE.UI
 {
-    public class UIOutsideRow : UIPanel, IUIFastListRow
+    public class UIOutsideRow : UIListRow<OutsideContainer>
     {
         private UILabel? m_lblName = null;
         private UILabel? m_lblType = null;
@@ -13,26 +14,10 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblStuck = null;
         private UILabel? m_lblGuest = null;
 
-        private OutsideContainer? m_data = null;
-
         public override void Start()
         {
             base.Start();
-
-            isVisible = true;
-            canFocus = true;
-            isInteractive = true;
-            width = parent.width;
-            height = ListView.iROW_HEIGHT;
-            //backgroundSprite = "InfoviewPanel";
-            //color = new Color32(255, 0, 0, 225);
-            autoLayoutDirection = LayoutDirection.Horizontal;
-            autoLayoutStart = LayoutStart.TopLeft;
-            autoLayoutPadding = new RectOffset(2, 2, 2, 2);
-            autoLayout = true;
-            clipChildren = true;
-            eventMouseEnter += new MouseEventHandler(OnMouseEnter);
-            eventMouseLeave += new MouseEventHandler(OnMouseLeave);
+            fullRowSelect = true;
 
             m_lblName = AddUIComponent<UILabel>();
             if (m_lblName is not null)
@@ -46,8 +31,6 @@ namespace TransferManagerCE.UI
                 m_lblName.autoSize = false;
                 m_lblName.height = height;
                 m_lblName.width = OutsideConnectionPanel.iCOLUMN_WIDTH_XLARGE;
-                m_lblName.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblName.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblType = AddUIComponent<UILabel>();
@@ -62,8 +45,6 @@ namespace TransferManagerCE.UI
                 m_lblType.autoSize = false;
                 m_lblType.height = height;
                 m_lblType.width = OutsideConnectionPanel.iCOLUMN_WIDTH_SMALL;
-                m_lblType.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblType.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblMultiplier = AddUIComponent<UILabel>();
@@ -78,8 +59,6 @@ namespace TransferManagerCE.UI
                 m_lblMultiplier.autoSize = false;
                 m_lblMultiplier.height = height;
                 m_lblMultiplier.width = OutsideConnectionPanel.iCOLUMN_WIDTH_NORMAL;
-                m_lblMultiplier.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblMultiplier.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblOwn = AddUIComponent<UILabel>();
@@ -94,8 +73,6 @@ namespace TransferManagerCE.UI
                 m_lblOwn.autoSize = false;
                 m_lblOwn.height = height;
                 m_lblOwn.width = OutsideConnectionPanel.iCOLUMN_WIDTH_LARGE;
-                m_lblOwn.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblOwn.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblGuest = AddUIComponent<UILabel>();
@@ -110,8 +87,6 @@ namespace TransferManagerCE.UI
                 m_lblGuest.autoSize = false;
                 m_lblGuest.height = height;
                 m_lblGuest.width = OutsideConnectionPanel.iCOLUMN_WIDTH_LARGE;
-                m_lblGuest.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblGuest.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
             m_lblStuck = AddUIComponent<UILabel>();
@@ -126,128 +101,96 @@ namespace TransferManagerCE.UI
                 m_lblStuck.autoSize = false;
                 m_lblStuck.height = height;
                 m_lblStuck.width = OutsideConnectionPanel.iCOLUMN_WIDTH_LARGE;
-                m_lblStuck.eventClicked += new MouseEventHandler(OnItemClicked);
-                m_lblStuck.eventTooltipEnter += new MouseEventHandler(OnTooltipEnter);
             }
 
-            if (m_data is not null)
-            {
-                Display(-1, m_data, false);
-            }
+            AfterStart();
         }
 
-        public void Display(int index, object data, bool isRowOdd)
+        protected override void Display()
         {
-            m_data = (OutsideContainer?) data;
+            m_lblName.text = data.GetName();
+            m_lblType.text = data.m_eType.ToString();
+            m_lblMultiplier.text = BuildingSettingsFast.GetEffectiveOutsideMultiplier(data.m_buildingId).ToString();
 
-            if (m_lblName is null)
+            int iOwnCount = BuildingUtils.GetOwnParentVehiclesForBuilding(data.m_buildingId, out int iOwnStuck).Count;
+            if (m_lblOwn is not null)
             {
-                return;
+                m_lblOwn.text = iOwnCount.ToString();
             }
 
-            if (m_data is not null)
+            int iGuestCount = BuildingUtils.GetGuestParentVehiclesForBuilding(data.m_buildingId, out int iGuestStuck).Count;
+            if (m_lblGuest is not null)
             {
-                if (m_lblName is not null)
+                m_lblGuest.text = iGuestCount.ToString();
+            }
+
+            m_lblStuck.text = (iOwnStuck + iGuestStuck).ToString();
+        }
+
+        protected override void Clear()
+        {
+            m_lblName.text = "";
+            m_lblType.text = "";
+            m_lblMultiplier.text = "";
+            m_lblOwn.text = "";
+            m_lblGuest.text = "";
+            m_lblStuck.text = "";
+        }
+
+        protected override void ClearTooltips()
+        {
+            m_lblName.tooltip = "";
+            m_lblType.tooltip = "";
+            m_lblMultiplier.tooltip = "";
+            m_lblOwn.tooltip = "";
+            m_lblGuest.tooltip = "";
+            m_lblStuck.tooltip = "";
+        }
+
+        protected override void OnClicked(UIComponent component)
+        {
+            if (data is not null)
+            {
+                data.Show();
+
+                if (OutsideConnectionPanel.Exists)
                 {
-                    m_lblName.text = m_data.GetName();
+                    OutsideConnectionPanel.Instance.InvalidatePanel();
                 }
-                if (m_lblType is not null)
-                {
-                    m_lblType.text = m_data.m_eType.ToString();
-                }
-                if (m_lblMultiplier is not null)
-                {
-                    m_lblMultiplier.text = BuildingSettingsFast.GetEffectiveOutsideMultiplier(m_data.m_buildingId).ToString();
-                }
-                int iOwnCount = BuildingUtils.GetOwnParentVehiclesForBuilding(m_data.m_buildingId, out int iOwnStuck).Count;
-                if (m_lblOwn is not null)
-                {
-                    m_lblOwn.text = iOwnCount.ToString();
-                }
-                int iGuestCount = BuildingUtils.GetGuestParentVehiclesForBuilding(m_data.m_buildingId, out int iGuestStuck).Count;
-                if (m_lblGuest is not null)
-                {
-                    m_lblGuest.text = iGuestCount.ToString();
-                }
-                if (m_lblStuck is not null)
-                {
-                    m_lblStuck.text = (iOwnStuck + iGuestStuck).ToString();
-                }
-            }
-            else
-            {
-                Clear();
             }
         }
 
-        public void Disabled()
+        protected override string GetTooltipText(UIComponent component)
         {
-            Clear();
+            return $"Connection #{GetIndex(data.m_buildingId)} | {InstanceHelper.DescribeInstance(new InstanceID() { Building = data.m_buildingId }, InstanceID.Empty, true)}";
         }
 
-        public void Clear()
+        protected override Color GetTextColor(UIComponent component, bool hightlightRow)
         {
-            m_data = null;
-
-            if (m_lblName is not null)
+            if (data is not null)
             {
-                m_lblName.text = "";
-                m_lblType.text = "";
-                m_lblMultiplier.text = "";
-                m_lblOwn.text = "";
-                m_lblGuest.text = "";
-                m_lblStuck.text = "";
-
-                m_lblName.tooltip = "";
-                m_lblType.tooltip = "";
-                m_lblMultiplier.tooltip = "";
-                m_lblOwn.tooltip = "";
-                m_lblGuest.tooltip = "";
-                m_lblStuck.tooltip = "";
-            }
-        }
-
-        public void Select(bool isRowOdd)
-        {
-        }
-
-        public void Deselect(bool isRowOdd)
-        {
-        }
-
-        private void OnItemClicked(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            if (m_data is not null)
-            {
-                m_data.Show();
-            }
-        }
-
-        private void OnTooltipEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-        }
-
-        protected void OnMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
-        {
-            foreach (UILabel? label in components)
-            {
-                if (label is not null)
+                if (!hightlightRow && BuildingUtils.GetSelectedBuilding() == data.m_buildingId)
                 {
-                    label.textColor = Color.yellow;
+                    return KnownColor.lightBlue;
                 }
             }
 
+            return base.GetTextColor(component, hightlightRow);
         }
 
-        protected void OnMouseLeave(UIComponent component, UIMouseEventParameter eventParam)
+        public static int GetIndex(ushort buildingId)
         {
-            foreach (UILabel? label in components)
+            int iPosition = 0;
+            foreach (ushort outsideId in BuildingManager.instance.GetOutsideConnections())
             {
-                if (label is not null)
+                iPosition++;
+                if (buildingId == outsideId)
                 {
-                    label.textColor = Color.white;
+                    break;
                 }
             }
+
+            return iPosition;
         }
     }
 }
