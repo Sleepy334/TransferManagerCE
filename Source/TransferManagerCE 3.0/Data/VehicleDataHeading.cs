@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using SleepyCommon;
+using UnityEngine;
 
 namespace TransferManagerCE.Data
 {
@@ -42,9 +43,9 @@ namespace TransferManagerCE.Data
             return "";
         }
 
-        public override UnityEngine.Color GetTextColor()
+        public override Color GetTextColor()
         {
-            return SleepyCommon.KnownColor.white;
+            return KnownColor.cyan;
         }
     }
 }

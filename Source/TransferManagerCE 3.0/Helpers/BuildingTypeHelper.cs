@@ -1067,12 +1067,13 @@ namespace TransferManagerCE
             }
         }
 
-        public static bool IsCargoStation(ushort buildingId)
+        public static bool IsCargoStation(BuildingType buildingType)
         {
-            if (buildingId != 0)
-            {
-                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                return building.Info.GetAI() is CargoStationAI;
+            switch (buildingType) {
+                case BuildingType.CargoStation:
+                case BuildingType.AirportCargoTerminal:
+                    return true;
+
             }
             return false;
         }

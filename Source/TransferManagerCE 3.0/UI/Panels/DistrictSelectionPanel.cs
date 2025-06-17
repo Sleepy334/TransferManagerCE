@@ -1,12 +1,9 @@
-using AlgernonCommons.UI;
 using ColossalFramework.UI;
 using SleepyCommon;
 using System.Collections.Generic;
 using System.Linq;
 using TransferManagerCE.Settings;
-using UnifiedUI.GUI;
 using UnityEngine;
-using static TransferManagerCE.SelectionTool;
 
 namespace TransferManagerCE.UI
 {
@@ -31,7 +28,11 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblSource = null;
         private UICheckBox? m_chkCurrentDistrict = null;
         private UICheckBox? m_chkCurrentPark = null;
+
         private ListView? m_selectedDistricts = null;
+        private CheckListView? m_chkListView = null;
+
+        private UICheckBox? m_chkShowAllDistricts = null;
 
         // Panel sync
         private UIPanel m_parent = null;
@@ -105,6 +106,8 @@ namespace TransferManagerCE.UI
                 m_mainPanel.padding = new RectOffset(iMARGIN, iMARGIN, 4, 4);
                 m_mainPanel.autoLayout = true;
                 m_mainPanel.autoLayoutDirection = LayoutDirection.Vertical;
+                //m_mainPanel.backgroundSprite = "InfoviewPanel";
+                //m_mainPanel.color = Color.blue;
 
                 // Object label
                 m_lblSource = m_mainPanel.AddUIComponent<UILabel>();
@@ -119,14 +122,32 @@ namespace TransferManagerCE.UI
                 m_chkCurrentDistrict = UIMyUtils.AddCheckbox(m_mainPanel, Localization.Get("txtCurrentDistrict") + ": ", UIFonts.Regular, fTextScale, true, OnDistrictChanged);
                 m_chkCurrentPark = UIMyUtils.AddCheckbox(m_mainPanel, Localization.Get("txtCurrentPark") + ": ", UIFonts.Regular, fTextScale, true, OnParkChanged);
 
-                m_selectedDistricts = ListView.Create<UIDistrictRow>(m_mainPanel, "ScrollbarTrack", 1.0f, m_mainPanel.width - 20, m_mainPanel.height - m_lblSource.height - m_chkCurrentDistrict.height - m_chkCurrentPark.height - 20);
+                float fShowAllDistrictsHeight = 20;
+                float fListHeight = m_mainPanel.height - m_lblSource.height - m_chkCurrentDistrict.height - m_chkCurrentPark.height - 20 - fShowAllDistrictsHeight;
+                m_selectedDistricts = ListView.Create<UIDistrictRow>(m_mainPanel, "ScrollbarTrack", 1.0f, m_mainPanel.width - 20, fListHeight);
                 if (m_selectedDistricts is not null)
                 {
                     m_selectedDistricts.padding = new RectOffset(0, 0, iMARGIN, 0);
                     m_selectedDistricts.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("txtAdditionalDistricts"), "", (int)m_selectedDistricts.width - 50, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
                 }
 
+                m_chkListView = CheckListView.Create(m_mainPanel, "ScrollbarTrack", 1.0f, m_mainPanel.width - 36, fListHeight);
+                m_chkListView.RowHeight = 20;
+
+                // Add a panel for postioning
+                UIPanel pnlShowAllDistricts = m_mainPanel.AddUIComponent<UIPanel>();
+                pnlShowAllDistricts.width = m_mainPanel.width;
+                pnlShowAllDistricts.height = 30;
+
+                m_chkShowAllDistricts = UIMyUtils.AddCheckbox(pnlShowAllDistricts, Localization.Get("optionShowAllDistricts"), UIFonts.Regular, 0.8f, ModSettings.GetSettings().ShowAllDistricts, OnShowAllDistrictsClicked);
+                m_chkShowAllDistricts.relativePosition = new Vector2(10, 10);
+                m_chkShowAllDistricts.autoSize = false;
+                m_chkShowAllDistricts.width = pnlShowAllDistricts.width;
+                m_chkShowAllDistricts.height = fShowAllDistrictsHeight;
+                m_chkShowAllDistricts.PerformLayout();
+
                 isVisible = true;
+                UpdateAdditionalDistrictsPanelVisibility();
                 UpdatePanel();
             }
         }
@@ -183,6 +204,11 @@ namespace TransferManagerCE.UI
             {
                 m_bPanelSync = true;
                 PostitionPanel();
+
+                if (OutsideConnectionSelectionPanel.IsVisible())
+                {
+                    OutsideConnectionSelectionPanel.Instance.Hide();
+                }
             }
             else 
             { 
@@ -230,6 +256,13 @@ namespace TransferManagerCE.UI
             }
         }
 
+        private void OnShowAllDistrictsClicked(bool bEnabled)
+        {
+            ModSettings.GetSettings().ShowAllDistricts = bEnabled;
+            ModSettings.GetSettings().Save();
+            UpdatePanel();
+        }
+
         public List<DistrictData> GetAdditionalDistricts()
         {
             List<DistrictData> districts = null;
@@ -275,6 +308,23 @@ namespace TransferManagerCE.UI
                 return;
             }
 
+            
+
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictionSettings = settings.GetRestrictionsOrDefault(m_iRestrictionId);
+
+            // Are settings allowed for this building/Direction
+            if (m_bIncoming && restrictionSettings.m_incomingDistrictSettings.m_iPreferLocalDistricts == DistrictRestrictionSettings.PreferLocal.AllDistricts)
+            {
+                Hide();
+                return;
+            }
+            else if (!m_bIncoming && restrictionSettings.m_outgoingDistrictSettings.m_iPreferLocalDistricts == DistrictRestrictionSettings.PreferLocal.AllDistricts)
+            {
+                Hide();
+                return;
+            }
+
             if (m_lblSource is not null)
             {
                 string sText = CitiesUtils.GetBuildingName(m_buildingId, InstanceID.Empty);
@@ -283,20 +333,6 @@ namespace TransferManagerCE.UI
                     sText += ":" + m_buildingId + " (Outside Connection)";
                 }
                 m_lblSource.text = sText;
-            }
-
-            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
-            RestrictionSettings restrictionSettings = settings.GetRestrictionsOrDefault(m_iRestrictionId);
-
-            // Are settings allowed for this building/Direction
-            bool bDisable = false;
-            if (m_bIncoming && restrictionSettings.m_incomingDistrictSettings.m_iPreferLocalDistricts == DistrictRestrictionSettings.PreferLocal.AllDistricts)
-            {
-                bDisable = true;
-            }
-            else if (!m_bIncoming && restrictionSettings.m_outgoingDistrictSettings.m_iPreferLocalDistricts == DistrictRestrictionSettings.PreferLocal.AllDistricts)
-            {
-                bDisable = true;
             }
 
             if (m_chkCurrentDistrict is not null)
@@ -310,7 +346,6 @@ namespace TransferManagerCE.UI
                 {
                     m_chkCurrentDistrict.isChecked = restrictionSettings.m_outgoingDistrictSettings.m_bAllowLocalDistrict;
                 }
-                m_chkCurrentDistrict.isEnabled = !bDisable;
             }
             if (m_chkCurrentPark is not null)
             {
@@ -323,22 +358,60 @@ namespace TransferManagerCE.UI
                 {
                     m_chkCurrentPark.isChecked = restrictionSettings.m_outgoingDistrictSettings.m_bAllowLocalPark;
                 }
-                m_chkCurrentPark.isEnabled = !bDisable;
             }
-            if (m_selectedDistricts is not null)
+
+            // Load additional district data
+            if (ModSettings.GetSettings().ShowAllDistricts)
             {
-                List<DistrictData> additionalDistricts = GetAdditionalDistricts();
-
-                m_selectedDistricts.GetList().rowsData = new FastList<object>
+                if (m_chkListView is not null)
                 {
-                    m_buffer = additionalDistricts.ToArray(),
-                    m_size = additionalDistricts.Count,
-                };
-                m_selectedDistricts.isEnabled = !bDisable;
+                    m_chkListView.SetItems(GetAllAdditionalDistricts().ToArray());
+                }
+            }
+            else
+            {
+                if (m_selectedDistricts is not null)
+                {
+                    List<DistrictData> additionalDistricts = GetAdditionalDistricts();
+                    m_selectedDistricts.GetList().rowsData = new FastList<object>
+                    {
+                        m_buffer = additionalDistricts.ToArray(),
+                        m_size = additionalDistricts.Count,
+                    };
+                }
             }
 
+            UpdateAdditionalDistrictsPanelVisibility();
             DistrictSelectionPatches.UpdateDistricts();
             PostitionPanel();
+        }
+
+        private void UpdateAdditionalDistrictsPanelVisibility()
+        {
+            if (ModSettings.GetSettings().ShowAllDistricts)
+            {
+                if (m_selectedDistricts is not null)
+                {
+                    m_selectedDistricts.isVisible = false;
+                }
+
+                if (m_chkListView is not null)
+                {
+                    m_chkListView.isVisible = true;
+                }
+            }
+            else
+            {
+                if (m_chkListView is not null)
+                {
+                    m_chkListView.isVisible = false;
+                }
+
+                if (m_selectedDistricts is not null)
+                {
+                    m_selectedDistricts.isVisible = true;
+                }
+            }
         }
 
         public override void OnDestroy()
@@ -456,5 +529,45 @@ namespace TransferManagerCE.UI
 
             return s_emptyDistricts;
         }
+
+        public List<CheckListData> GetAllAdditionalDistricts()
+        {
+            List<CheckListData> list = new List<CheckListData>();
+
+            // Exclude "current" districts from additional list.
+            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
+            byte currentDistrict = DistrictManager.instance.GetDistrict(building.m_position);
+            byte currentPark = DistrictManager.instance.GetPark(building.m_position);
+
+            // Districts
+            for (int i = 1; i < DistrictManager.instance.m_districts.m_buffer.Length; ++i)
+            {
+                if (i != currentDistrict)
+                {
+                    District district = DistrictManager.instance.m_districts.m_buffer[i];
+                    if (district.m_flags != 0)
+                    {
+                        list.Add(new DistrictCheckListData(m_bIncoming, DistrictData.DistrictType.District, (byte)i));
+                    }
+                }
+            }
+
+            // Parks
+            for (int i = 1; i < DistrictManager.instance.m_parks.m_buffer.Length; ++i)
+            {
+                if (i != currentPark)
+                {
+                    DistrictPark park = DistrictManager.instance.m_parks.m_buffer[i];
+                    if (park.m_flags != 0)
+                    {
+                        list.Add(new DistrictCheckListData(m_bIncoming, DistrictData.DistrictType.Park, (byte)i));
+                    }
+                }
+            }
+
+            list.Sort();
+            return list;
+        }
+
     }
 }

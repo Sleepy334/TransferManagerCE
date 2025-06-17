@@ -234,7 +234,7 @@ namespace TransferManagerCE.Data
 
         public virtual UnityEngine.Color GetTextColor()
         {
-            return SleepyCommon.KnownColor.lightGrey;
+            return SleepyCommon.KnownColor.white;
         }
     }
 }

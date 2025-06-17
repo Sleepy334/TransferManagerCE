@@ -26,20 +26,6 @@ namespace TransferManagerCE.UI
 
         const int iMARGIN = 8;
 
-        // Issue list
-        public const int iCOLUMN_WIDTH_ISSUE = 65;
-        public const int iCOLUMN_WIDTH_PRIORITY = 65;
-        public const int iCOLUMN_WIDTH_TIMER = 60;
-        public const int iCOLUMN_WIDTH_VALUE = 70;
-        public const int iCOLUMN_WIDTH_VEHICLE = 190;
-
-        // Pathing
-        public const int iCOLUMN_WIDTH_LOCATION = 95;
-        public const int iCOLUMN_WIDTH_TIME = 70;
-        public const int iCOLUMN_WIDTH_PATH_FAIL = 120;
-        public const int iCOLUMN_WIDTH_PATHING_BUILDING = 240;
-        public const int iCOLUMN_WIDTH_DESCRIPTION = 400;
-
         private UITitleBar? m_title = null;
         private ListView? m_listPathing = null;
         private ListView? m_listRoadAccess = null;
@@ -134,14 +120,15 @@ namespace TransferManagerCE.UI
                 m_listIssues = ListView.Create<UIIssueRow>(tabIssues, "ScrollbarTrack", 0.7f, tabIssues.width, tabIssues.height);
                 if (m_listIssues is not null)
                 {
-                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("txtIssue"), "", iCOLUMN_WIDTH_ISSUE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listBuildingPanelOffersColumn3"), "", iCOLUMN_WIDTH_PRIORITY, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listBuildingPanelStatusColumn5"), "", iCOLUMN_WIDTH_VALUE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("listBuildingPanelStatusColumn2"), "", iCOLUMN_WIDTH_VALUE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listDeadColumn3"), "Source for issue", iCOLUMN_WIDTH_VEHICLE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_VEHICLE, Localization.Get("listDeadColumn5"), "Vehicle on route", iCOLUMN_WIDTH_VEHICLE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listDeadColumn4"), "Target for issue", iCOLUMN_WIDTH_VEHICLE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("txtIssue"), "", UIIssueRow.ColumnWidths[0], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listBuildingPanelOffersColumn3"), "", UIIssueRow.ColumnWidths[1], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listBuildingPanelStatusColumn5"), "", UIIssueRow.ColumnWidths[2], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("listBuildingPanelStatusColumn2"), "", UIIssueRow.ColumnWidths[3], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listDeadColumn3"), "Source for issue", UIIssueRow.ColumnWidths[4], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_VEHICLE, Localization.Get("listDeadColumn5"), "Vehicle on route", UIIssueRow.ColumnWidths[5], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listIssues.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listDeadColumn4"), "Target for issue", UIIssueRow.ColumnWidths[6], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
                     m_listIssues.HandleSort(ListViewRowComparer.Columns.COLUMN_PRIORITY);
+                    m_listIssues.Header.ResizeLastColumn();
                 }
 
                 UIPanel pnlButtons = tabIssues.AddUIComponent<UIPanel>();
@@ -325,12 +312,13 @@ namespace TransferManagerCE.UI
                 m_listPathing = ListView.Create<UIPathRow>(tabPathing, "ScrollbarTrack", 0.8f, tabPathing.width, tabPathing.height);
                 if (m_listPathing is not null)
                 {
-                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listPathingColumn1"), "", iCOLUMN_WIDTH_TIME, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("columnLocation"), "", iCOLUMN_WIDTH_LOCATION, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listPathingColumn2"), "Source location for path", BuildingPanel.iCOLUMN_WIDTH_PATHING_BUILDING, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_SOURCE_FAIL_COUNT, "#", "Path fail count", BuildingPanel.iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listPathingColumn3"), "Target destination for path", BuildingPanel.iCOLUMN_WIDTH_PATHING_BUILDING, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET_FAIL_COUNT, "#", "Path fail count", BuildingPanel.iCOLUMN_WIDTH_SMALL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_TIME, Localization.Get("listPathingColumn1"), "", UIPathRow.ColumnWidths[0], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("columnLocation"), "", UIPathRow.ColumnWidths[1], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listPathingColumn2"), "Source location for path", UIPathRow.ColumnWidths[2], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_SOURCE_FAIL_COUNT, "#", "Path fail count", UIPathRow.ColumnWidths[3], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET, Localization.Get("listPathingColumn3"), "Target destination for path", UIPathRow.ColumnWidths[4], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listPathing.AddColumn(ListViewRowComparer.Columns.COLUMN_TARGET_FAIL_COUNT, "#", "Path fail count", UIPathRow.ColumnWidths[5], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listPathing.Header.ResizeLastColumn();
                 }
 
                 UIPanel pnlButtons = tabPathing.AddUIComponent<UIPanel>();
@@ -387,9 +375,10 @@ namespace TransferManagerCE.UI
                 m_listRoadAccess = ListView.Create<UIRoadAccessRow>(tabRoadAccess, "ScrollbarTrack", 0.7f, tabRoadAccess.width, tabRoadAccess.height);
                 if (m_listRoadAccess is not null)
                 {
-                    m_listRoadAccess.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("columnId"), "", iCOLUMN_WIDTH_VALUE, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_listRoadAccess.AddColumn(ListViewRowComparer.Columns.COLUMN_SOURCE_FAIL_COUNT, Localization.Get("columnPathFailureCount"), "", iCOLUMN_WIDTH_PATH_FAIL, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listRoadAccess.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listPathingColumn2"), "Building with road access issues", iCOLUMN_WIDTH_DESCRIPTION, BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listRoadAccess.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("columnId"), "", UIRoadAccessRow.ColumnWidths[0], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listRoadAccess.AddColumn(ListViewRowComparer.Columns.COLUMN_SOURCE_FAIL_COUNT, Localization.Get("columnPathFailureCount"), "", UIRoadAccessRow.ColumnWidths[1], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listRoadAccess.AddColumn(ListViewRowComparer.Columns.COLUMN_OWNER, Localization.Get("listPathingColumn2"), "Building with road access issues", UIRoadAccessRow.ColumnWidths[2], BuildingPanel.iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listRoadAccess.Header.ResizeLastColumn();
                 }
 
                 m_btnResetRoadAccess = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, tabRoadAccess, Localization.Get("btnResetRoadAccess"), "", 200, 30, OnResetRoadAccess);
@@ -455,6 +444,7 @@ namespace TransferManagerCE.UI
 
                 m_title.Buttons[0].normalBgSprite = sIcon;
                 m_title.Buttons[0].tooltip = sTooltip;
+                m_title.Buttons[0].RefreshTooltip();
             }
         }
 

@@ -33,6 +33,7 @@ namespace TransferManagerCE
                 if (random.Int32(20U) == 0 && 
                     (vehicleData.m_flags & Vehicle.Flags.GoingBack) != 0 &&
                     (vehicleData.m_flags & Vehicle.Flags.WaitingTarget) == 0 &&
+                    (vehicleData.m_flags & Vehicle.Flags.Arriving) == 0 &&
                     vehicleData.m_sourceBuilding != 0 &&
                     vehicleData.m_transferSize < __instance.m_criminalCapacity &&
                     !ShouldReturnToSource(vehicleID, ref vehicleData))
@@ -151,7 +152,7 @@ namespace TransferManagerCE
                                 return false; // stop looking
                             }
                         }
-                        else if (BuildingUtils.GetCriminalCount(buildingID, building) > 0)
+                        else if (SaveGameSettings.GetSettings().PoliceToughOnCrime && BuildingUtils.GetCriminalCount(buildingID, building) > 1)
                         {
                             if (!BuildingUtils.HasAnyGuestVehicles(buildingID, building, s_transferReasons))
                             {

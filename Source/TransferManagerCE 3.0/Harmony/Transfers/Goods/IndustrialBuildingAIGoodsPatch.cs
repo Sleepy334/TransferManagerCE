@@ -339,7 +339,7 @@ namespace TransferManagerCE
         {
             if (s_maxLoadSize == null)
             {
-                // We try to call WarehouseAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
+                // We try to call IndustrialBuildingAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
                 // Unfortunately it is private so we need to use reflection, so we cache the results.
                 MethodInfo getMaxOutgoingLoadSize = typeof(IndustrialBuildingAI).GetMethod("MaxOutgoingLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
                 if (getMaxOutgoingLoadSize != null)

@@ -28,7 +28,7 @@ namespace TransferManagerCE
                 // See if we can find a new target nearby
                 if (data.m_sourceBuilding != 0 && !ShouldReturnToSource(vehicleID, ref data))
                 {
-                    ushort newTarget = FindBuildingWithFire(vehicleID, data.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFire);
+                    ushort newTarget = FindBuildingWithFire(false, vehicleID, data.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFire);
                     if (newTarget != 0)
                     {
                         //CDebug.Log($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
@@ -52,9 +52,9 @@ namespace TransferManagerCE
                 // Check assigned fire is still raging
                 if (random.Int32(10U) == 0 && vehicleData.m_targetBuilding != 0)
                 {
-                    // Check if the fire is out or a responding vehicle is closer
+                    // Check if the fire is out, cant check for closer vehicle as we may end up in a respond / cancel loop.
                     Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
-                    if (building.m_fireIntensity == 0 || BuildingUtils.HasAnyCloserGuestVehicles(vehicleID, vehicleData.GetLastFramePosition(), vehicleData.m_targetBuilding, building, s_transferFire))
+                    if (building.m_fireIntensity == 0)
                     {
                         //CDebug.Log($"Fire - Vehicle: {vehicleID} Clearing target: {vehicleData.m_targetBuilding}");
                         // Clear target
@@ -68,7 +68,7 @@ namespace TransferManagerCE
                     vehicleData.m_sourceBuilding != 0 &&
                     !ShouldReturnToSource(vehicleID, ref vehicleData))
                 {
-                    ushort newTarget = FindBuildingWithFire(vehicleID, vehicleData.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFire);
+                    ushort newTarget = FindBuildingWithFire(false, vehicleID, vehicleData.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFire);
                     if (newTarget != 0)
                     {
                         //CDebug.Log($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
@@ -168,7 +168,7 @@ namespace TransferManagerCE
                     (vehicleData.m_flags & Vehicle.Flags.WaitingTarget) == 0 &&
                     !ShouldReturnToSource(vehicleID, ref vehicleData))
                 {
-                    ushort newTarget = FindBuildingWithFire(vehicleID, vehicleData.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFireAndFire2);
+                    ushort newTarget = FindBuildingWithFire(true, vehicleID, vehicleData.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFireAndFire2);
                     if (newTarget != 0)
                     {
                         // set correct transfertype
@@ -189,12 +189,12 @@ namespace TransferManagerCE
         /// <summary>
         /// Find close by building with fire
         /// </summary>
-        public static ushort FindBuildingWithFire(ushort vehicleId, Vector3 pos, float maxDistance, HashSet<CustomTransferReason.Reason> reasons)
+        public static ushort FindBuildingWithFire(bool bHelicopter, ushort vehicleId, Vector3 pos, float maxDistance, HashSet<CustomTransferReason.Reason> reasons)
         {
             ushort result = 0;
             BuildingUtils.EnumerateNearbyBuildings(pos, maxDistance, (buildingID, building) =>
             {
-                if (building.m_fireIntensity > 0)
+                if (building.m_fireIntensity > 0 && (bHelicopter || building.m_accessSegment != 0))
                 {
                     // check if not already dispatched to
                     if (!BuildingUtils.HasAnyCloserGuestVehicles(vehicleId, pos, buildingID, building, reasons))

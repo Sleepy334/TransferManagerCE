@@ -10,13 +10,7 @@ namespace TransferManagerCE.UI
     public class OutsideConnectionPanel : UIMainPanel<OutsideConnectionPanel>
     {
         const int iMARGIN = 8;
-
         public const int iHEADER_HEIGHT = 20;
-        public const int iCOLUMN_WIDTH_XS = 20;
-        public const int iCOLUMN_WIDTH_SMALL = 60;
-        public const int iCOLUMN_WIDTH_NORMAL = 80;
-        public const int iCOLUMN_WIDTH_LARGE = 100;
-        public const int iCOLUMN_WIDTH_XLARGE = 200;
 
         private UITitleBar? m_title = null;
         private ListView? m_listConnections = null;
@@ -29,7 +23,7 @@ namespace TransferManagerCE.UI
         {
             base.Start();
             name = "OutsideConnectionPanel";
-            width = 700;
+            width = 780;
             height = 540;
             if (ModSettings.GetSettings().EnablePanelTransparency)
             {
@@ -58,12 +52,14 @@ namespace TransferManagerCE.UI
             if (m_listConnections is not null)
             {
                 m_listConnections.padding = new RectOffset(iMARGIN, iMARGIN, 4, iMARGIN);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_NAME, Localization.Get("listConnectionName"), "Name", iCOLUMN_WIDTH_XLARGE, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_TYPE, Localization.Get("listConnectionType"), "Type", iCOLUMN_WIDTH_SMALL, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_MULTIPLIER, Localization.Get("listConnectionMultiplier"), "Distance Multiplier", iCOLUMN_WIDTH_NORMAL, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_OWN, Localization.Get("listConnectionOwn"), "Own Vehicles", iCOLUMN_WIDTH_LARGE, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_GUEST, Localization.Get("listConnectionGuest"), "Guest Vehicles", iCOLUMN_WIDTH_LARGE, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_STUCK, Localization.Get("listConnectionStuck"), "Stuck Vehicles", iCOLUMN_WIDTH_LARGE, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_NAME, Localization.Get("listConnectionName"), "Name", UIOutsideRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_TYPE, Localization.Get("listConnectionType"), "Type", UIOutsideRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listConnectionPriority"), "Match Priority", UIOutsideRow.ColumnWidths[2], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_USAGE, Localization.Get("listConnectionUsage"), "% of busiest connection", UIOutsideRow.ColumnWidths[3], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_OWN, Localization.Get("listConnectionOwn"), "Own Vehicles", UIOutsideRow.ColumnWidths[4], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_GUEST, Localization.Get("listConnectionGuest"), "Guest Vehicles", UIOutsideRow.ColumnWidths[5], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_STUCK, Localization.Get("listConnectionStuck"), "Stuck Vehicles", UIOutsideRow.ColumnWidths[6], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.Header.ResizeLastColumn();
             }
 
             isVisible = true;
@@ -87,10 +83,23 @@ namespace TransferManagerCE.UI
         {
             List<OutsideContainer> result = new List<OutsideContainer>();
 
+            int maxCount = 0;
+
             FastList<ushort> connections = BuildingManager.instance.GetOutsideConnections();
             foreach (ushort connection in connections)
             {
-                result.Add(new OutsideContainer(connection));
+                int iOwnCount = BuildingUtils.GetOwnParentVehiclesForBuilding(connection, out int iOwnStuck).Count;
+                int iGuestCount = BuildingUtils.GetGuestParentVehiclesForBuilding(connection, out int iGuestStuck).Count;
+
+                maxCount = Mathf.Max(maxCount, iOwnCount + iGuestCount);
+
+                result.Add(new OutsideContainer(connection, iOwnCount, iGuestCount, iOwnStuck + iGuestStuck, 0));
+            }
+
+            // Update max count now we know it
+            foreach (OutsideContainer oc in result)
+            {
+                oc.m_maxConnectionCount = maxCount;
             }
 
             return result;

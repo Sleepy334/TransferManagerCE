@@ -4,6 +4,7 @@ using ColossalFramework;
 using TransferManagerCE.Settings;
 using static TransferManager;
 using static TransferManagerCE.WarehouseUtils;
+using TransferManagerCE.CustomManager;
 
 namespace TransferManagerCE
 {
@@ -281,14 +282,17 @@ namespace TransferManagerCE
                             
         private static bool ImprovedWarehouseMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
         {
-            Building building = Buildings[offer.Building];
+            // If its a cargo warehouse offer then we need to get the parent warehouse
+            ushort buildingId = CustomTransferOffer.GetTopMostParentBuilding(offer.Building);
+
+            Building building = Buildings[buildingId];
             if (building.m_flags != 0 && building.Info is not null)
             {
                 WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
                 if (warehouse is not null)
                 {
                     // It's a warehouse, set the priority based on storage level
-                    if (BuildingSettingsFast.IsImprovedWarehouseMatching(offer.Building))
+                    if (BuildingSettingsFast.IsImprovedWarehouseMatching(buildingId))
                     {
                         // Get warehouse mode.
                         WarehouseMode mode = WarehouseUtils.GetWarehouseMode(building);
@@ -298,7 +302,7 @@ namespace TransferManagerCE
                         {
                             // Update priority based on storage level
                             // For incoming we use the storage buffer and incoming supply
-                            TransferReason actualTransferReason = warehouse.GetActualTransferReason(offer.Building, ref building);
+                            TransferReason actualTransferReason = warehouse.GetActualTransferReason(buildingId, ref building);
                             if (actualTransferReason != TransferReason.None)
                             {
                                 float fCapacity = warehouse.m_storageCapacity * 0.001f;
@@ -312,7 +316,7 @@ namespace TransferManagerCE
                                         iMinPriority = 2;
                                     }
 
-                                    int iTransferSize = BuildingUtils.GetGuestVehiclesTransferSize(offer.Building, actualTransferReason);
+                                    int iTransferSize = BuildingUtils.GetGuestVehiclesTransferSize(buildingId, actualTransferReason);
                                     float fStorage = building.m_customBuffer1 * 0.1f + iTransferSize * 0.001f;
                                     float fPercent = fStorage / fCapacity;
 

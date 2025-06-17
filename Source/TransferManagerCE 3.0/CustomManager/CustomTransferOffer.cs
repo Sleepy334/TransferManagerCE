@@ -7,21 +7,13 @@ using TransferManagerCE.Settings;
 using UnityEngine;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCE.TransportUtils;
 using static TransferManagerCE.WarehouseUtils;
 
 namespace TransferManagerCE.CustomManager
 {
     public class CustomTransferOffer
     {
-        public enum TransportType 
-        {
-            None,
-            Road,
-            Plane,
-            Train,
-            Ship,
-        }
-
         public enum WarehouseStationOffer
         {
             None,
@@ -42,12 +34,14 @@ namespace TransferManagerCE.CustomManager
 
         // Outside connection
         private bool? m_bOutside = null;
-        private byte? m_effectiveOutsideMultiplier = null;
+        private byte? m_effectiveOutsidePriority = null;
         private bool? m_bExportAllowed = null;
         private bool? m_bImportAllowed = null;
+        private HashSet<ushort>? m_excludedOutsideConnections = null;
 
         // Warehouse settings
-        private WarehouseMode m_warehouseMode = WarehouseMode.Unknown;
+        private bool? m_bIsWarehouse = null;
+        private WarehouseMode m_warehouseMode = WarehouseMode.None;
         private float? m_fWarehouseStorage = null;
         private bool? m_IsExportVehicleLimitOk = null;
 
@@ -97,12 +91,14 @@ namespace TransferManagerCE.CustomManager
 
             // Outside connection
             m_bOutside = null;
-            m_effectiveOutsideMultiplier = null;
+            m_effectiveOutsidePriority = null;
             m_bExportAllowed = null;
             m_bImportAllowed = null;
+            m_excludedOutsideConnections = null;
 
             // Warehouse settings
-            m_warehouseMode = WarehouseMode.Unknown;
+            m_bIsWarehouse = null;
+            m_warehouseMode = WarehouseMode.None;
             m_fWarehouseStorage = null;
             m_IsExportVehicleLimitOk = null;
 
@@ -272,18 +268,22 @@ namespace TransferManagerCE.CustomManager
         // -------------------------------------------------------------------------------------------
         public bool IsWarehouse()
         {
-            return Exclude;
+            if (m_bIsWarehouse is null)
+            {
+                m_bIsWarehouse = Exclude || BuildingTypeHelper.IsWarehouse(GetBuildingType());
+            }
+            return m_bIsWarehouse.Value;
         }
 
         // -------------------------------------------------------------------------------------------
-        public int GetEffectiveOutsideModifier()
+        public int GetEffectiveOutsidePriority()
         {
-            if (m_effectiveOutsideMultiplier is null)
+            if (m_effectiveOutsidePriority is null)
             {
-                m_effectiveOutsideMultiplier = (byte)BuildingSettingsFast.GetEffectiveOutsideMultiplier(GetBuilding());
+                m_effectiveOutsidePriority = (byte)BuildingSettingsFast.GetEffectiveOutsidePriority(GetBuilding());
             }
 
-            return m_effectiveOutsideMultiplier.Value;
+            return m_effectiveOutsidePriority.Value;
         }
 
         // -------------------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ namespace TransferManagerCE.CustomManager
         // -------------------------------------------------------------------------------------------
         public WarehouseMode GetWarehouseMode()
         {
-            if (m_warehouseMode == WarehouseMode.Unknown)
+            if (m_warehouseMode == WarehouseMode.None)
             {
                 m_warehouseMode = WarehouseUtils.GetWarehouseMode(GetBuilding());
             }
@@ -396,25 +396,34 @@ namespace TransferManagerCE.CustomManager
                 if (m_offerBuildingId != 0)
                 {
                     // Check if it is a sub building and locate topmost building
-                    int iLoopCount = 0;
-                    Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[m_offerBuildingId.Value];
-                    while (building.m_parentBuilding != 0)
-                    {
-                        // Set buildingId to be parent building id.
-                        m_offerBuildingId = building.m_parentBuilding;
-
-                        // Get next parent building
-                        building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[m_offerBuildingId.Value];
-
-                        if (++iLoopCount > 16384)
-                        {
-                            CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
-                            break;
-                        }
-                    }
+                    m_offerBuildingId = GetTopMostParentBuilding(m_offerBuildingId.Value);
                 }
             }
             return m_offerBuildingId.Value;
+        }
+
+        public static ushort GetTopMostParentBuilding(ushort buildingId)
+        {
+            ushort parentBuildingId = buildingId;
+
+            int iLoopCount = 0;
+            Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[parentBuildingId];
+            while (building.m_parentBuilding != 0)
+            {
+                // Set buildingId to be parent building id.
+                parentBuildingId = building.m_parentBuilding;
+
+                // Get next parent building
+                building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[parentBuildingId];
+
+                if (++iLoopCount > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
+
+            return parentBuildingId;
         }
 
         // -------------------------------------------------------------------------------------------
@@ -462,6 +471,17 @@ namespace TransferManagerCE.CustomManager
             }
 
             return m_bExportAllowed.Value;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        public bool IsOutsideConnectionExcluded(CustomTransferReason.Reason material, ushort outsideConnectionbuildingId)
+        {
+            if (m_excludedOutsideConnections is null)
+            {
+                m_excludedOutsideConnections = BuildingSettingsFast.GetOutsideConnectionExclusionList(GetBuilding(), GetBuildingType(), material, IsIncoming());
+            }
+
+            return m_excludedOutsideConnections.Contains(outsideConnectionbuildingId);
         }
 
         // -------------------------------------------------------------------------------------------
@@ -642,7 +662,7 @@ namespace TransferManagerCE.CustomManager
                     if (Building != 0)
                     {
                         Building building = BuildingManager.instance.m_buildings.m_buffer[Building];
-                        m_transportType = GetTransportType(building);
+                        m_transportType = TransportUtils.GetTransportType(building);
                     }
                     else if (Vehicle != 0)
                     {
@@ -650,7 +670,7 @@ namespace TransferManagerCE.CustomManager
                         if (vehicle.m_sourceBuilding != 0)
                         {
                             Building building = BuildingManager.instance.m_buildings.m_buffer[vehicle.m_sourceBuilding];
-                            m_transportType = GetTransportType(building);
+                            m_transportType = TransportUtils.GetTransportType(building);
                         }
                     }
                 }
@@ -658,7 +678,7 @@ namespace TransferManagerCE.CustomManager
                 {
                     
                     Building building = BuildingManager.instance.m_buildings.m_buffer[GetBuilding()];
-                    m_transportType = GetTransportType(building);
+                    m_transportType = TransportUtils.GetTransportType(building);
                 }
             }
 
@@ -800,31 +820,6 @@ namespace TransferManagerCE.CustomManager
             }
 
             return true;
-        }
-
-        // -------------------------------------------------------------------------------------------
-        private TransportType GetTransportType(Building building)
-        {
-            if (building.Info is not null)
-            {
-                switch (building.Info.GetSubService())
-                {
-                    case ItemClass.SubService.PublicTransportPlane:
-                        {
-                            return TransportType.Plane;
-                        }
-                    case ItemClass.SubService.PublicTransportShip:
-                        {
-                            return TransportType.Ship;
-                        }
-                    case ItemClass.SubService.PublicTransportTrain:
-                        {
-                            return TransportType.Train;
-                        }
-                }
-            }
-
-            return TransportType.Road;
         }
     }
 }

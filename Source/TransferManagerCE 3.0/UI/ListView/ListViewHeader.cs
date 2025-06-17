@@ -1,4 +1,5 @@
 ﻿using ColossalFramework.UI;
+using SleepyCommon;
 using System.Collections.Generic;
 using TransferManagerCE;
 using UnityEngine;
@@ -41,11 +42,34 @@ namespace TransferManagerCE.UI
             autoLayout = true;
         }
 
-        public void AddColumn(ListViewRowComparer.Columns eColumn, string sText, string sTooltip, float fTextScale, int iWidth, int iHeight, UIHorizontalAlignment oTextAlignment, UIAlignAnchor oAncor, ListViewHeaderColumnBase.OnListViewColumnClick eventClickCallback)
+        public void AddColumn(ListViewRowComparer.Columns eColumn, string sText, string sTooltip, float fTextScale, float fWidth, float fHeight, UIHorizontalAlignment oTextAlignment, UIAlignAnchor oAncor, ListViewHeaderColumnBase.OnListViewColumnClick eventClickCallback)
         {
             if (m_columns is not null)
             {
-                m_columns.Add(new ListViewHeaderColumnLabel(eColumn, this, sText, sTooltip, fTextScale, iWidth, iHeight, oTextAlignment, oAncor, eventClickCallback));
+                m_columns.Add(new ListViewHeaderColumnLabel(eColumn, this, sText, sTooltip, fTextScale, fWidth, fHeight, oTextAlignment, oAncor, eventClickCallback));
+            }
+        }
+
+        public void ResizeLastColumn()
+        {
+            // Subtract width of each column
+            float columnWidths = 0;
+            foreach (UIComponent component in components)
+            {
+                columnWidths += component.width + autoLayoutPadding.left + autoLayoutPadding.right;
+            }
+
+            // Adjust last label column (ignore delete buttons)
+            for (int i = components.Count - 1; i >= 0; --i)
+            {
+                if (components[i] is UILabel)
+                {
+                    UILabel uILabel = (UILabel)components[i];
+                    float fOldWidth = uILabel.width;
+                    float fNewWidth = width - ListView.iSCROLL_BAR_WIDTH - columnWidths + fOldWidth;
+                    uILabel.width = fNewWidth;
+                    break;
+                }
             }
         }
 

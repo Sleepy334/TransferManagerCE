@@ -28,16 +28,6 @@ namespace TransferManagerCE.UI
         public const float fTEXT_SCALE = 0.8f;
         public const int iMARGIN = 8;
         public const int iHEADER_HEIGHT = 20;
-        public const int iCOLUMN_WIDTH_XS = 20;
-        public const int iCOLUMN_WIDTH_TINY = 40;
-        public const int iCOLUMN_WIDTH_SMALL = 60;
-        public const int iCOLUMN_WIDTH_NORMAL = 80;
-        public const int iCOLUMN_WIDTH_LARGE = 120;
-        public const int iCOLUMN_WIDTH_LARGER = 150;
-        public const int iCOLUMN_WIDTH_XLARGE = 200;
-        public const int iCOLUMN_WIDTH_PATHING_BUILDING = 240;
-        public const int iCOLUMN_WIDTH_250 = 250;
-        public const int iCOLUMN_WIDTH_300 = 300;
 
         // Performance stats
         public static long s_lastUpdateTicks = 0;
@@ -131,7 +121,7 @@ namespace TransferManagerCE.UI
             base.Start();
             name = "BuildingPanel";
             width = 820;
-            height = 710;
+            height = 716;
             backgroundSprite = "SubcategoriesPanel";
             if (ModSettings.GetSettings().EnablePanelTransparency)
             {
@@ -183,7 +173,7 @@ namespace TransferManagerCE.UI
             mainPanel.relativePosition = new Vector3(0f, m_title.height);
             mainPanel.autoLayout = true;
             mainPanel.autoLayoutDirection = LayoutDirection.Vertical;
-            mainPanel.autoLayoutPadding = new RectOffset(0, 0, 0, 4);
+            mainPanel.autoLayoutPadding = new RectOffset(0, 0, 0, 2);
 
             // Object label
             m_labelPanel = mainPanel.AddUIComponent<UIPanel>();
@@ -331,8 +321,7 @@ namespace TransferManagerCE.UI
             }
             else
             {
-                m_buildingId = 0;
-                m_eBuildingType = BuildingType.None;
+                SetBuilding(0);
 
                 for (int i = 0; i < m_buildingTabs.Count; ++i)
                 {
@@ -350,10 +339,7 @@ namespace TransferManagerCE.UI
                     SelectionTool.Instance.Disable();
                 }
 
-                if (DistrictSelectionPanel.IsVisible())
-                {
-                    DistrictSelectionPanel.Instance.Hide();
-                }
+                HideSecondaryPanels();
             } 
         }
 
@@ -363,6 +349,7 @@ namespace TransferManagerCE.UI
             {
                 m_buildingId = buildingId;
                 m_subBuildingIds.Clear();
+                m_eBuildingType = BuildingType.None;
 
                 if (buildingId != 0)
                 {
@@ -371,61 +358,36 @@ namespace TransferManagerCE.UI
                     CDebug.Log($"Building type: {m_eBuildingType}");
 #endif
                     // Update sub buildings (if any)
-                    Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                    if (building.m_flags != 0)
+                    BuildingUtils.GetBuildingSubBuildings(buildingId, m_subBuildingIds);
+
+                    // Update tabs building id's as well
+                    // Setup tabs
+                    foreach (BuildingTab buildingTab in m_buildingTabs)
                     {
-                        int iLoopCount = 0;
-                        ushort subBuildingId = building.m_subBuilding;
-                        while (subBuildingId != 0)
+                        buildingTab.SetTabBuilding(m_buildingId, m_eBuildingType, m_subBuildingIds);
+                    }
+
+                    if (buildingId != 0)
+                    {
+                        // Select building with tool
+                        InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
+
+                        if (SelectionTool.Exists)
                         {
-                            Building subBuilding = BuildingManager.instance.m_buildings.m_buffer[subBuildingId];
-                            if (subBuilding.m_flags != 0)
-                            {
-                                m_subBuildingIds.Add(subBuildingId);
-                            }
-
-                            // Setup for next sub building
-                            subBuildingId = subBuilding.m_subBuilding;
-
-                            if (++iLoopCount > 16384)
-                            {
-                                CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
-                                break;
-                            }
+                            SelectionTool.Instance.UpdateSelection();
                         }
                     }
-                } 
-                else
-                {
-                    m_eBuildingType = BuildingType.None;
+
+                    UpdateBuildingName();
+                    UpdateTabs();
+                    UpdatePanel();
                 }
 
-                // Update tabs building id's as well
-                // Setup tabs
-                foreach (BuildingTab buildingTab in m_buildingTabs)
-                {
-                    buildingTab.SetTabBuilding(m_buildingId, m_eBuildingType, m_subBuildingIds);
-                }
-
-                if (buildingId != 0)
-                {
-                    // Select building with tool
-                    InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
-
-                    if (SelectionTool.Exists)
-                    {
-                        SelectionTool.Instance.UpdateSelection();
-                    } 
-                }
-
+                // Tell the settings panel to update as well. (Dont highlight active building)
                 if (SettingsPanel.IsVisible())
                 {
                     SettingsPanel.Instance.InvalidatePanel();
                 }
-
-                UpdateBuildingName();
-                UpdateTabs();
-                UpdatePanel();
             }
         }
 
@@ -530,10 +492,7 @@ namespace TransferManagerCE.UI
         public void OnTabChanged(int index)
         {
             // Close district panel
-            if (DistrictSelectionPanel.IsVisible())
-            {
-                DistrictSelectionPanel.Instance.Hide();
-            }
+            HideSecondaryPanels();
 
             // Turn off building selection mode
             if (SelectionTool.Instance is not null)
@@ -549,6 +508,15 @@ namespace TransferManagerCE.UI
             if (m_tabStrip is not null)
             {
                 return (TabIndex)m_tabStrip.GetSelectTabIndex() == TabIndex.TAB_TRANSFERS;
+            }
+            return false;
+        }
+
+        public bool IsSettingsTabActive()
+        {
+            if (m_tabStrip is not null)
+            {
+                return (TabIndex)m_tabStrip.GetSelectTabIndex() == TabIndex.TAB_SETTINGS;
             }
             return false;
         }
@@ -748,6 +716,19 @@ namespace TransferManagerCE.UI
             if (m_infoLabel is not null)
             {
                 m_infoLabel.Hide();
+            }
+        }
+
+        public void HideSecondaryPanels()
+        {
+            if (DistrictSelectionPanel.IsVisible())
+            {
+                DistrictSelectionPanel.Instance.Hide();
+            }
+
+            if (OutsideConnectionSelectionPanel.IsVisible())
+            {
+                OutsideConnectionSelectionPanel.Instance.Hide();
             }
         }
     }

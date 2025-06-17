@@ -142,7 +142,7 @@ namespace TransferManagerCE
 
             stringBuilder.Append($"In:\n");
             stringBuilder.Append($"    Object: {m_incoming.DescribeOfferObject(true)}\n");
-            stringBuilder.Append($"    Priorty: {m_incoming.Priority}\n");
+            stringBuilder.Append($"    Priority: {m_incoming.Priority}\n");
             stringBuilder.Append($"    Amount: {m_incoming.Amount}\n");
             stringBuilder.Append($"    Active: {m_incoming.DescribeActive()}\n");
             stringBuilder.Append($"Out:\n");

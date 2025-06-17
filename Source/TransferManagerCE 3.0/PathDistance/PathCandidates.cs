@@ -53,7 +53,6 @@ namespace TransferManagerCE
                 NetNode node = NetNodes[nodeId];
                 m_candidatePositionX[m_iCandidatePositionCount] = node.m_position.x;
                 m_candidatePositionZ[m_iCandidatePositionCount] = node.m_position.z;
-                m_candidateLOSMultipliers[m_iCandidatePositionCount] = OutsideConnectionCache.GetOutsideNodeMultiplier(nodeId);
                 m_iCandidatePositionCount++;
             }
         }
@@ -96,14 +95,13 @@ namespace TransferManagerCE
                     // Get nodes position and multiplier
                     float xpos = node.m_position.x;
                     float zpos = node.m_position.z;
-                    float fNodeLOSMultiplier = OutsideConnectionCache.GetOutsideNodeMultiplier(nodeId);
 
                     for (int i = 0; i < m_iCandidatePositionCount; ++i)
                     {
                         // Need to make sure we apply outside connection multipliers here as well
                         float x = xpos - m_candidatePositionX[i];
                         float z = zpos - m_candidatePositionZ[i];
-                        float fDistanceSquared = (x * x + z * z) * fNodeLOSMultiplier * m_candidateLOSMultipliers[i];
+                        float fDistanceSquared = (x * x + z * z);
                         fMinDistanceSquared = Mathf.Min(fMinDistanceSquared, fDistanceSquared);
                     }
                 }

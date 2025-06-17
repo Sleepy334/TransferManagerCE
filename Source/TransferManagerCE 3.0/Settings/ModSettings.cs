@@ -110,6 +110,7 @@ namespace TransferManagerCE.Settings
         public bool ShowFireIssues { get; set; } = true;
         public bool ShowWithVehiclesOnRouteIssues { get; set; } = true;
 
+
         // Pathing Issues Tab
         public bool ShowLocalPathingIssues { get; set; } = true;
         public bool ShowOutsidePathingIssues { get; set; } = true;
@@ -124,6 +125,10 @@ namespace TransferManagerCE.Settings
         public float BuildingPanelPosY { get; set; } = float.MaxValue;
         public float SettingsPanelPosX { get; set; } = float.MaxValue;
         public float SettingsPanelPosY { get; set; } = float.MaxValue;
+
+
+        // District panel
+        public bool ShowAllDistricts { get; set; } = false;
 
 
         // =========================== Advanced Tab Settings ======================================

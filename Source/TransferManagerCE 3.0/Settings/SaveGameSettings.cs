@@ -15,7 +15,7 @@ namespace TransferManagerCE
             ConnectedLineOfSight = 1,
             PathDistance = 2
         }
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 34;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 37;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
@@ -26,24 +26,28 @@ namespace TransferManagerCE
         public int PathDistanceGoods = (int)PathDistanceAlgorithm.PathDistance;
         public int PathDistanceHeuristic = 50; // 0 = Accurate, 100 = Fastest
         public int PathDistanceCargoStationDelay = 500;
-        public int PathDistanceTravelTimeBaseValue = 3000;
         public bool EnablePathFailExclusion = true;
         public CustomTransferManager.BalancedMatchModeOption BalancedMatchMode = CustomTransferManager.BalancedMatchModeOption.MatchModeIncomingFirst; // Vanilla
         public bool DisableDummyTraffic = false;
         public bool ApplyUnlimited = false;
+        public bool EmployOverEducatedWorkers = true;
+
+        // Industries
+        public bool FactoryFirst = true; // ON by default
+        public bool OverrideGenericIndustriesHandler = true;
 
         // Warehouse options
-        public bool FactoryFirst = true; // ON by default
-        public bool ImprovedWarehouseMatching = false;
-        public bool NewInterWarehouseTransfer = false;
         public bool WarehouseFirst = false;
+        public bool ImprovedWarehouseMatching = false;
+        public bool WarehouseSmartImportExport = false;
+        public bool NewInterWarehouseTransfer = false;
         public int WarehouseReserveTrucksPercent = 20; // [0..100]
 
         // Outside connections
-        public int OutsideShipMultiplier = 1;
-        public int OutsidePlaneMultiplier = 1;
-        public int OutsideTrainMultiplier = 1;
-        public int OutsideRoadMultiplier = 1;
+        public int OutsideShipPriority = 100;
+        public int OutsidePlanePriority = 100;
+        public int OutsideTrainPriority = 100;
+        public int OutsideRoadPriority = 100;
         public int ExportVehicleLimit = 100; // OFF by default
 
         // Services
@@ -52,6 +56,8 @@ namespace TransferManagerCE
         public bool ImprovedGarbageMatching = true;
         public bool ImprovedCrimeMatching = true;
         public bool ImprovedMailTransfers = true;
+
+        public bool PoliceToughOnCrime = false; // Police: Sends out offers at 1 instead of 2
 
         // TaxiMove
         public bool TaxiMove = true;
@@ -68,10 +74,7 @@ namespace TransferManagerCE
         public int MainBuildingMaxMail = 2000; // vanilla = 2000
         public bool MainBuildingPostTruck = true;
 
-        // Generic Industries
-        public bool OverrideGenericIndustriesHandler = true;
 
-        public bool EmployOverEducatedWorkers = true;
         
         // Arrays
         private Dictionary<CustomTransferReason.Reason, int> m_ActiveDistanceRestrictions = new Dictionary<CustomTransferReason.Reason, int>();
@@ -184,10 +187,10 @@ namespace TransferManagerCE
             StorageData.WriteBool(ImprovedWarehouseMatching, Data); // Version 16
 
             // Import/Export
-            StorageData.WriteInt32(OutsideShipMultiplier, Data);
-            StorageData.WriteInt32(OutsidePlaneMultiplier, Data);
-            StorageData.WriteInt32(OutsideTrainMultiplier, Data);
-            StorageData.WriteInt32(OutsideRoadMultiplier, Data);
+            StorageData.WriteInt32(OutsideShipPriority, Data);
+            StorageData.WriteInt32(OutsidePlanePriority, Data);
+            StorageData.WriteInt32(OutsideTrainPriority, Data);
+            StorageData.WriteInt32(OutsideRoadPriority, Data);
 
             // Services
             StorageData.WriteBool(PreferLocalService, Data);
@@ -225,7 +228,6 @@ namespace TransferManagerCE
             StorageData.WriteInt32(PathDistanceHeuristic, Data); // Version 22
             StorageData.WriteInt32(PathDistanceServices, Data); // Version 23
             StorageData.WriteInt32(PathDistanceGoods, Data); // Version 23
-            StorageData.WriteInt32(PathDistanceTravelTimeBaseValue, Data); // 23
             StorageData.WriteBool(TaxiMove, Data); // Settings version 24
             StorageData.WriteInt32(TaxiStandDelay, Data); // Settings version 24
             StorageData.WriteBool(ApplyUnlimited, Data); // 25
@@ -238,6 +240,8 @@ namespace TransferManagerCE
             StorageData.WriteInt32(MainBuildingMaxMail, Data); // version 32
             StorageData.WriteBool(MainBuildingPostTruck, Data); // version 33
             StorageData.WriteInt32(PathDistanceCargoStationDelay, Data); // Version 34
+            StorageData.WriteBool(PoliceToughOnCrime, Data); // Version 36
+            StorageData.WriteBool(WarehouseSmartImportExport, Data); // Version 37
         }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
@@ -322,11 +326,22 @@ namespace TransferManagerCE
             ImprovedWarehouseMatching = StorageData.ReadBool(Data, ref iIndex);
 
             // Import/Export
-            OutsideShipMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-            OutsidePlaneMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-            OutsideTrainMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-            OutsideRoadMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-
+            if (iDataVersion >= 35)
+            {
+                OutsideShipPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsidePlanePriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsideTrainPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsideRoadPriority = StorageData.ReadInt32(Data, ref iIndex);
+            }
+            else
+            {
+                // Outside multipliers no longer used
+                int OutsideShipMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+                int OutsidePlaneMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+                int OutsideTrainMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+                int OutsideRoadMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+            }
+                
             // Services
             PreferLocalService = StorageData.ReadBool(Data, ref iIndex);
             ImprovedCrimeMatching = StorageData.ReadBool(Data, ref iIndex);
@@ -383,9 +398,10 @@ namespace TransferManagerCE
                 PathDistanceServices = StorageData.ReadInt32(Data, ref iIndex);
                 PathDistanceGoods = StorageData.ReadInt32(Data, ref iIndex);
             }
-            if (iDataVersion >= 23)
+            if (iDataVersion >= 23 && iDataVersion < 35)
             {
-                PathDistanceTravelTimeBaseValue = StorageData.ReadInt32(Data, ref iIndex);
+                // No longer used as we use outside connection priority instead
+                int PathDistanceTravelTimeBaseValue = StorageData.ReadInt32(Data, ref iIndex);
             }
             if (iDataVersion >= 24)
             {
@@ -400,6 +416,10 @@ namespace TransferManagerCE
             if (iDataVersion >= 26)
             {
                 EmployOverEducatedWorkers = StorageData.ReadBool(Data, ref iIndex);
+            }
+            else
+            {
+                EmployOverEducatedWorkers = false; // Backwards compatibility
             }
             if (iDataVersion >= 27)
             {
@@ -429,6 +449,22 @@ namespace TransferManagerCE
             if (iDataVersion >= 34) 
             {
                 PathDistanceCargoStationDelay = StorageData.ReadInt32(Data, ref iIndex); 
+            }
+            else
+            {
+                PathDistanceCargoStationDelay = 0; // We set this to 0 for backwards compatibility
+            }
+            if (iDataVersion >= 36)
+            {
+                PoliceToughOnCrime = StorageData.ReadBool(Data, ref iIndex);
+            }
+            else
+            {
+                PoliceToughOnCrime = true; // ON when loading old saves for backwards compatibility.
+            }
+            if (iDataVersion >= 37)
+            {
+                WarehouseSmartImportExport = StorageData.ReadBool(Data, ref iIndex);
             }
         }
 
@@ -498,10 +534,13 @@ namespace TransferManagerCE
         {
             EnableNewTransferManager = StorageData.ReadBool(Data, ref iIndex);
             PreferLocalService = StorageData.ReadBool(Data, ref iIndex);
-            OutsideShipMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-            OutsidePlaneMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-            OutsideTrainMultiplier = StorageData.ReadInt32(Data, ref iIndex);
-            OutsideRoadMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+
+            // Outside connection multipliers are no longer used
+            int OutsideShipMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+            int OutsidePlaneMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+            int OutsideTrainMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+            int OutsideRoadMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+
             WarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
             int iWarehouseReserve = StorageData.ReadInt32(Data, ref iIndex); // Used to be Reserve vehicle limit
             ImprovedDeathcareMatching = StorageData.ReadBool(Data, ref iIndex);
@@ -670,10 +709,10 @@ namespace TransferManagerCE
             sMessage += "WarehouseReserveTrucks: " + WarehouseReserveTrucksPercent + "\r\n";
             
             // Import / Export
-            sMessage += "ShipMultiplier: " + OutsideShipMultiplier + "\r\n";
-            sMessage += "PlaneMultiplier: " + OutsidePlaneMultiplier + "\r\n";
-            sMessage += "TrainMultiplier: " + OutsideTrainMultiplier + "\r\n";
-            sMessage += "RoadMultiplier: " + OutsideRoadMultiplier + "\r\n";
+            sMessage += "ShipPriority: " + OutsideShipPriority + "\r\n";
+            sMessage += "PlanePriority: " + OutsidePlanePriority + "\r\n";
+            sMessage += "TrainPriority: " + OutsideTrainPriority + "\r\n";
+            sMessage += "RoadPriority: " + OutsideRoadPriority + "\r\n";
             sMessage += "ExportVehicleLimit: " + ExportVehicleLimit + "\r\n";
 
             // Services

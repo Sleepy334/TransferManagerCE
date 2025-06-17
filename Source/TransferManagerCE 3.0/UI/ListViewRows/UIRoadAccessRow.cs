@@ -9,6 +9,13 @@ namespace TransferManagerCE.UI
         private UITruncateLabel? m_lblOwner = null;
         private UILabel? m_lblSourceFailCount = null;
 
+        public static float[] ColumnWidths =
+        {
+            70, // Value
+            120, // Fail Count
+            400, // Description
+        };
+
         // ----------------------------------------------------------------------------------------
         public override void Start()
         {
@@ -27,7 +34,7 @@ namespace TransferManagerCE.UI
                 m_lblId.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblId.autoSize = false;
                 m_lblId.height = height;
-                m_lblId.width = TransferIssuePanel.iCOLUMN_WIDTH_VALUE;
+                m_lblId.width = ColumnWidths[0];
             }
 
             m_lblSourceFailCount = AddUIComponent<UILabel>();
@@ -41,7 +48,7 @@ namespace TransferManagerCE.UI
                 m_lblSourceFailCount.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblSourceFailCount.autoSize = false;
                 m_lblSourceFailCount.height = height;
-                m_lblSourceFailCount.width = TransferIssuePanel.iCOLUMN_WIDTH_PATH_FAIL;
+                m_lblSourceFailCount.width = ColumnWidths[1];
             }
 
             m_lblOwner = AddUIComponent<UITruncateLabel>();
@@ -55,7 +62,7 @@ namespace TransferManagerCE.UI
                 m_lblOwner.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblOwner.autoSize = false;
                 m_lblOwner.height = height;
-                m_lblOwner.width = TransferIssuePanel.iCOLUMN_WIDTH_DESCRIPTION;
+                m_lblOwner.width = ColumnWidths[2];
             }
 
             base.AfterStart();

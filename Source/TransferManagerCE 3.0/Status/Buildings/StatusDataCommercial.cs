@@ -37,7 +37,7 @@ namespace TransferManagerCE.Data
                                 int iBufferSize = Mathf.Max(visitPlaceCount * 500, maxIncomingLoadSize * 4);
 
                                 WarnText(true, false, building.m_customBuffer1, iBufferSize);
-                                tooltip = MakeTooltip(true, building.m_customBuffer1, iBufferSize);
+                                tooltip = MakeTooltip(building.m_customBuffer1, iBufferSize);
                                 return DisplayValueAsPercent(building.m_customBuffer1, iBufferSize);
                             }
                         default:
@@ -119,7 +119,7 @@ namespace TransferManagerCE.Data
         {
             if (s_maxLoadSize == null)
             {
-                // We try to call WarehouseAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
+                // We try to call CommercialBuildingAI.MaxIncomingLoadSize as some mods such as Industry Rebalanced modify this value
                 // Unfortunately it is private so we need to use reflection, so we cache the results.
                 MethodInfo getMaxIncomingLoadSize = typeof(CommercialBuildingAI).GetMethod("MaxIncomingLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
                 if (getMaxIncomingLoadSize != null)

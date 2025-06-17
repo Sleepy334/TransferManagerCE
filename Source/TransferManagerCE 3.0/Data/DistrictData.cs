@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Xml.Linq;
 
 namespace TransferManagerCE
 {
@@ -16,6 +15,9 @@ namespace TransferManagerCE
         public int m_iDistrictId;
         private string m_name = null;
 
+        public static DistrictData Empty = new DistrictData(DistrictType.District, 0);
+
+        // ----------------------------------------------------------------------------------------
         public DistrictData(DistrictType eType, int iDistrictId)
         {
             m_eType = eType;

@@ -11,11 +11,7 @@ namespace TransferManagerCE.UI
     public class SettingsPanel : UIMainPanel<SettingsPanel>
     {
         const int iMARGIN = 8;
-
         public const int iHEADER_HEIGHT = 20;
-        public const int iCOLUMN_WIDTH_ID = 80;
-        public const int iCOLUMN_WIDTH_RESTRICTIONS = 90;
-        public const int iCOLUMN_WIDTH_DESCRIPTION = 230;
 
         private UITitleBar? m_title = null;
         private UITextField? m_txtSearch = null;
@@ -108,10 +104,11 @@ namespace TransferManagerCE.UI
             if (m_listSettings is not null)
             {
                 m_listSettings.padding = new RectOffset(iMARGIN, iMARGIN, 4, iMARGIN);
-                m_listSettings.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("columnId"), "", iCOLUMN_WIDTH_ID, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                m_listSettings.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("columnRestriction"), "", iCOLUMN_WIDTH_RESTRICTIONS, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listSettings.AddColumn(ListViewRowComparer.Columns.COLUMN_NAME, Localization.Get("listBuildingPanelMatchesColumn6"), "", iCOLUMN_WIDTH_DESCRIPTION, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                m_listSettings.AddColumn(ListViewRowComparer.Columns.COLUMN_NAME, Localization.Get("btnDistrict"), "", iCOLUMN_WIDTH_DESCRIPTION, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                m_listSettings.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("columnId"), "", UISettingsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                m_listSettings.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("columnRestriction"), "", UISettingsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listSettings.AddColumn(ListViewRowComparer.Columns.COLUMN_NAME, Localization.Get("listBuildingPanelMatchesColumn6"), "", UISettingsRow.ColumnWidths[2], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                m_listSettings.AddColumn(ListViewRowComparer.Columns.COLUMN_NAME, Localization.Get("btnDistrict"), "", UISettingsRow.ColumnWidths[3], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                m_listSettings.Header.ResizeLastColumn();
             }
 
             isVisible = true;

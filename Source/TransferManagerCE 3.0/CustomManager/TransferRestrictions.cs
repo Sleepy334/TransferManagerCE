@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using TransferManagerCE.TransferRules;
 using TransferManagerCE.Settings;
 using static TransferManagerCE.WarehouseUtils;
-using static TransferManagerCE.CustomManager.CustomTransferOffer;
 using SleepyCommon;
+using ColossalFramework.Math;
+using System.Threading;
 
 namespace TransferManagerCE.CustomManager
 {
@@ -21,6 +22,8 @@ namespace TransferManagerCE.CustomManager
             WarehouseReserveTrucks,
             Import,
             Export,
+            OutsideConnectionExcluded,
+            OutsideConnectionPriority,
             ActivePassive,
             DistanceRestrictionLocal,
             DistanceRestrictionGlobal,
@@ -29,9 +32,6 @@ namespace TransferManagerCE.CustomManager
             SameObject,
             SameBuilding,
             DifferentParks,
-            WarehouseLowPriority,
-            WarehouseStorageModes,
-            WarehouseStorageLevels,
             NotConnected,
             NoStartNode,
             DuplicateNode,
@@ -39,8 +39,11 @@ namespace TransferManagerCE.CustomManager
             CloseByOnly,
             ExportVehicleLimit,
             GlobalPreferLocal,
-            TransportType,
+            WarehouseLowPriority,
+            WarehouseStorageMode,
+            WarehouseStorageLevels,
             WarehouseStationType,
+            TransportType,
         };
 
         private bool m_bDistrictRestrictionsSupported = false;
@@ -53,6 +56,8 @@ namespace TransferManagerCE.CustomManager
         private bool m_bIsHelicopterReason = false;
         private bool m_bIsFactoryFirst = false;
         private float m_fGlobalDistanceRestriction = 0;
+        private Randomizer m_random = new Randomizer(Thread.CurrentThread.ManagedThreadId);
+
 
         public void SetMaterial(CustomTransferReason.Reason material)
         {
@@ -364,12 +369,44 @@ namespace TransferManagerCE.CustomManager
                     {
                         return ExclusionReason.Export; // Attempting to Export is disabled
                     }
-                    else if (!incomingOffer.IsExportAllowed(material))
+                    
+                    if (!incomingOffer.IsExportAllowed(material))
                     {
                         return ExclusionReason.Export; // The outside connection has export disabled
-                    }                    
+                    }
+
+                    if (incomingOffer.GetEffectiveOutsidePriority() < m_random.Int32(100U))
+                    {
+                        return ExclusionReason.OutsideConnectionPriority;
+                    }
+
+                    if (outgoingOffer.IsOutsideConnectionExcluded(material, incomingOffer.GetBuilding()))
+                    {
+                        return ExclusionReason.OutsideConnectionExcluded;
+                    }
+
+                    if (outgoingOffer.IsWarehouse())
+                    {
+                        switch (outgoingOffer.GetWarehouseMode())
+                        {
+                            case WarehouseMode.Fill:
+                                {
+                                    // Fill mode warehouses should never export
+                                    return ExclusionReason.WarehouseStorageMode;
+                                }
+                            case WarehouseMode.Balanced:
+                                {
+                                    if (SaveGameSettings.GetSettings().WarehouseSmartImportExport && outgoingOffer.GetWarehouseStoragePercent() < 0.66)
+                                    {
+                                        // Don't allow balanced to export when below 2/3 full
+                                        return ExclusionReason.WarehouseStorageLevels;
+                                    }
+                                    break;
+                                }
+                        }
+                    }
                 }
-            } 
+            }
             else if (outgoingOffer.IsOutside())
             {
                 if (m_bIsImportRestrictionsSupported)
@@ -378,46 +415,56 @@ namespace TransferManagerCE.CustomManager
                     {
                         return ExclusionReason.Import; // The incoming connection has import disabled
                     }
-                    else if (!outgoingOffer.IsImportAllowed(material))
+
+                    if (!outgoingOffer.IsImportAllowed(material))
                     {
                         return ExclusionReason.Import; // The outside connection has import disabled
                     }
-                    else if (incomingOffer.IsWarehouse())
+
+                    if (SaveGameSettings.GetSettings().IsImportRestricted(material))
+                    {
+                        return ExclusionReason.Import;
+                    }
+
+                    if (outgoingOffer.GetEffectiveOutsidePriority() < m_random.Int32(100U))
+                    {
+                        return ExclusionReason.OutsideConnectionPriority;
+                    }
+
+                    if (incomingOffer.IsOutsideConnectionExcluded(material, outgoingOffer.GetBuilding()))
+                    {
+                        return ExclusionReason.OutsideConnectionExcluded;
+                    }
+
+                    if (incomingOffer.IsWarehouse())
                     {
                         if (SaveGameSettings.GetSettings().IsWarehouseImportRestricted(material))
                         {
                             return ExclusionReason.Import;
                         }
-                    }
-                    else if (SaveGameSettings.GetSettings().IsImportRestricted(material))
-                    {
-                        return ExclusionReason.Import;
+
+                        switch (incomingOffer.GetWarehouseMode())
+                        {
+                            case WarehouseMode.Empty:
+                                {
+                                    // Empty mode warehouses should never import
+                                    return ExclusionReason.WarehouseStorageMode;
+                                }
+                            case WarehouseMode.Balanced:
+                                {
+                                    if (SaveGameSettings.GetSettings().WarehouseSmartImportExport && incomingOffer.GetWarehouseStoragePercent() > 0.33)
+                                    {
+                                        // Don't allow balanced to import when more than 1 / 3 full
+                                        return ExclusionReason.WarehouseStorageLevels;
+                                    }
+                                    break;
+                                }
+                        }
                     }
                 }
             }
 
             return ExclusionReason.None;
-        }
-
-        [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public float OutsideModifier(CustomTransferReason.Reason material, CustomTransferOffer incoming, CustomTransferOffer outgoing)
-        {
-            if (incoming.IsOutside() && outgoing.IsOutside())
-            {
-                // Dont apply multiplier when both outside.
-            }
-            else if (incoming.IsOutside())
-            {
-                // Apply building multiplier
-                return (float)Math.Pow(incoming.GetEffectiveOutsideModifier(), 2);
-            }
-            else if (outgoing.IsOutside())
-            {
-                // Apply building multiplier
-                return (float)Math.Pow(outgoing.GetEffectiveOutsideModifier(), 2);
-            }
-
-            return 1.0f;
         }
 
         [MethodImpl(512)] //=[MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -436,10 +483,10 @@ namespace TransferManagerCE.CustomManager
                     WarehouseMode inMode = WarehouseUtils.GetWarehouseMode(incomingOffer.GetBuilding());
                     WarehouseMode outMode = WarehouseUtils.GetWarehouseMode(outgoingOffer.GetBuilding());
 
-                    if (inMode == WarehouseMode.Unknown || outMode == WarehouseMode.Unknown)
+                    if (inMode == WarehouseMode.None || outMode == WarehouseMode.None)
                     {
                         // We couldn't determine mode for some reason so block it.
-                        return ExclusionReason.WarehouseStorageModes;
+                        return ExclusionReason.WarehouseStorageMode;
                     }
                     
                     double dWarehouseLevel;
@@ -449,7 +496,7 @@ namespace TransferManagerCE.CustomManager
                         if (outMode == WarehouseMode.Fill)
                         {
                             // Don't allow warehouse transfer when OUT is in Fill mode and IN isn't also in fill mode
-                            return ExclusionReason.WarehouseStorageModes;
+                            return ExclusionReason.WarehouseStorageMode;
                         }
 
                         // Only allow transfer if OUT is nearly full
@@ -515,79 +562,100 @@ namespace TransferManagerCE.CustomManager
 
         private ExclusionReason WarehouseStationCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
-            // Check Warehouse station restrictions - Only allow matching with train outside connections
+            // Cargo Warehouse (Train) <----> Outside Connection
+            // Cargo Warehouse (Train) <----> Cargo Warehouse (Train)
+            // Cargo Warehouse (Train) <----> Cargo Station
+            // Cargo Warehouse (Train) <----> Any train based offer
+
+            // Cargo Warehouse (Road) <----> Normal Warehouse
+            // Cargo Warehouse (Road) <----> Local (Road)
+            // Cargo Warehouse (Road) <-X-> Cargo Warehouse (Road) - Not allowed
+            // Cargo Warehouse (Road) <-X-> Outside Connection 
+            // Cargo Warehouse (Road) <-X-> Any train offer - Not allowed
+
             if (m_bIsWarehouseMaterial && (incomingOffer.IsWarehouseStation() || outgoingOffer.IsWarehouseStation()))
             {
-                if (outgoingOffer.IsOutside())
+                if (incomingOffer.IsWarehouseStation() && outgoingOffer.IsWarehouseStation())
                 {
-                    if (outgoingOffer.GetTransportType() != TransportType.Train)
+                    if (incomingOffer.GetTransportType() != outgoingOffer.GetTransportType() || 
+                        incomingOffer.GetTransportType() != TransportUtils.TransportType.Train)
                     {
-                        return ExclusionReason.TransportType;
-                    }
-                }
-                else if (incomingOffer.IsOutside())
-                {
-                    if (incomingOffer.GetTransportType() != TransportType.Train)
-                    {
-                        return ExclusionReason.TransportType;
-                    }
-                }
-                else if (incomingOffer.IsWarehouseStation() && outgoingOffer.IsWarehouseStation())
-                {
-                    if (incomingOffer.GetWarehouseStationOffer() != outgoingOffer.GetWarehouseStationOffer())
-                    {
+                        // We want train to be the only method to transport between cargo warehouses
                         return ExclusionReason.WarehouseStationType;
                     }
                 }
                 else if (incomingOffer.IsWarehouseStation())
                 {
-                    // Check other offer is appropriate transport type
-                    switch (incomingOffer.GetWarehouseStationOffer())
+                    if (incomingOffer.GetTransportType() == TransportUtils.TransportType.Train) 
                     {
-                        case WarehouseStationOffer.Warehouse:
-                            {
-                                if (outgoingOffer.GetTransportType() == CustomTransferOffer.TransportType.Train)
-                                {
-                                    return ExclusionReason.TransportType;
-                                }
-                                break;
-                            }
-                        case WarehouseStationOffer.CargoStation:
-                            {
-                                if (outgoingOffer.GetTransportType() != CustomTransferOffer.TransportType.Train)
-                                {
-                                    return ExclusionReason.TransportType;
-                                }
-                                break;
-                            }
+                        return WarehouseStationTrainCanTransfer(outgoingOffer);
+                    }
+                    else
+                    {
+                        return WarehouseStationRoadCanTransfer(outgoingOffer);
                     }
                 }
                 else if (outgoingOffer.IsWarehouseStation())
                 {
-                    // Check other offer is appropriate transport type
-                    switch (outgoingOffer.GetWarehouseStationOffer())
+                    if (outgoingOffer.GetTransportType() == TransportUtils.TransportType.Train)
                     {
-                        case WarehouseStationOffer.Warehouse:
-                            {
-                                if (incomingOffer.GetTransportType() == CustomTransferOffer.TransportType.Train)
-                                {
-                                    return ExclusionReason.TransportType;
-                                }
-                                break;
-                            }
-                        case WarehouseStationOffer.CargoStation:
-                            {
-                                if (incomingOffer.GetTransportType() != CustomTransferOffer.TransportType.Train)
-                                {
-                                    return ExclusionReason.TransportType;
-                                }
-                                break;
-                            }
+                        return WarehouseStationTrainCanTransfer(incomingOffer);
+                    }
+                    else
+                    {
+                        return WarehouseStationRoadCanTransfer(incomingOffer);
                     }
                 }
             }
 
             return ExclusionReason.None;
+        }
+
+        private ExclusionReason WarehouseStationRoadCanTransfer(CustomTransferOffer otherOffer)
+        {
+            // Cargo Warehouse (Road) <----> Normal Warehouse
+            // Cargo Warehouse (Road) <----> Local (Road)
+            // Cargo Warehouse (Road) <-X-> Cargo Warehouse (Road) - Not allowed
+            // Cargo Warehouse (Road) <-X-> Outside Connection 
+            // Cargo Warehouse (Road) <-X-> Any train offer - Not allowed
+
+            if (otherOffer.IsOutside())
+            {
+                return ExclusionReason.WarehouseStationType; // Not allowed, force all OC through train connection
+            }
+            else if (BuildingTypeHelper.IsCargoStation(otherOffer.GetBuildingType()))
+            {
+                return ExclusionReason.WarehouseStationType; // Not allowed, force all cargo station material through train connection
+            }
+            else if (otherOffer.GetTransportType() == TransportUtils.TransportType.Train)
+            {
+                return ExclusionReason.WarehouseStationType; // Dont allow road side to connect with a train offer
+            }
+
+            return ExclusionReason.None;
+        }
+
+        private ExclusionReason WarehouseStationTrainCanTransfer(CustomTransferOffer otherOffer)
+        {
+            // Cargo Warehouse (Train) <----> Outside Connection
+            // Cargo Warehouse (Train) <----> Cargo Warehouse (Train)
+            // Cargo Warehouse (Train) <----> Cargo Station
+            // Cargo Warehouse (Train) <----> Any train based offer
+
+            if (otherOffer.IsOutside())
+            {
+                return ExclusionReason.None; // Allowed
+            }
+            else if (BuildingTypeHelper.IsCargoStation(otherOffer.GetBuildingType()))
+            {
+                return ExclusionReason.None;
+            }
+            else if (otherOffer.GetTransportType() == TransportUtils.TransportType.Train)
+            {
+                return ExclusionReason.None;
+            }
+
+            return ExclusionReason.WarehouseStationType;
         }
     }
 }

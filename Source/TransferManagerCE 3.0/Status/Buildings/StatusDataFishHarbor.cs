@@ -35,7 +35,7 @@ namespace TransferManagerCE.Data
             }
 
             WarnText(false, true, value, bufferSize);
-            tooltip = MakeTooltip(false, value, bufferSize);
+            tooltip = MakeTooltip(value, bufferSize);
             return DisplayValueAsPercent(value, bufferSize);
         }
     }

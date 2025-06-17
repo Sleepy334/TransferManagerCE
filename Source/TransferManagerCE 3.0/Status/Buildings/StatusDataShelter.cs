@@ -24,7 +24,7 @@ namespace TransferManagerCE.Data
                 if (m_material == CustomTransferReason.Reason.Food || m_material == CustomTransferReason.Reason.Goods)
                 {
                     buildingAI.GetFoodStatus(m_buildingId, ref building, out amount, out max);
-                    tooltip = MakeTooltip(true, amount, max);
+                    tooltip = MakeTooltip(amount, max);
                     return Utils.MakePercent(amount, max);
                 }
             }

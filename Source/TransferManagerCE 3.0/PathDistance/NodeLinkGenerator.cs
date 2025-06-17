@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using ColossalFramework;
 using System;
 using UnityEngine;
-using static NetInfo;
 using SleepyCommon;
 
 namespace TransferManagerCE
@@ -45,7 +44,7 @@ namespace TransferManagerCE
             m_nodes.Clear();
 
             NetNode node = NetNodes[nodeId];
-            if (node.m_flags != 0 && IsNodeNetInfoValid(node))
+            if (node.m_flags != 0 && IsNodeNetInfoValid(nodeId, node))
             {
                 // Loop through segments to find neighboring roads
                 for (int i = 0; i < 8; ++i)
@@ -115,7 +114,7 @@ namespace TransferManagerCE
                     while (nodeId != 0)
                     {
                         NetNode node = NetNodes[nodeId];
-                        if (node.m_flags != 0 && IsNodeNetInfoValid(node))
+                        if (node.m_flags != 0 && IsNodeNetInfoValid(nodeId, node))
                         {
                             // Just assume direction is both for these 
                             AddNodeLink(nodeId, fTravelTime, NetInfo.Direction.Both);
@@ -166,7 +165,7 @@ namespace TransferManagerCE
             }
         }
 
-        public bool IsNodeNetInfoValid(NetNode node)
+        public bool IsNodeNetInfoValid(ushort nodeId, NetNode node)
         {
             if ((node.m_flags & NetNode.Flags.LevelCrossing) != 0)
             {
@@ -174,7 +173,22 @@ namespace TransferManagerCE
                 return true;
             }
 
-            return node.Info is not null && IsServiceValid(node.Info) && (node.Info.m_laneTypes & m_laneTypes) != 0;
+            if (node.Info is not null && IsServiceValid(node.Info) && (node.Info.m_laneTypes & m_laneTypes) != 0)
+            {
+                if (m_bCargoPathAllowed && IsCargoStationPath(node.Info.GetService(), node.Info.GetAI()))
+                {
+                    // Check building is enabled.
+                    ushort num = BuildingManager.instance.FindBuilding(node.m_position, 100f, ItemClass.Service.PublicTransport, ItemClass.SubService.None, Building.Flags.None, Building.Flags.None);
+                    if (num != 0 && BuildingUtils.IsBuildingTurnedOff(num))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         public bool IsSegmentNetInfoValid(NetSegment segment)
@@ -201,7 +215,6 @@ namespace TransferManagerCE
                     return true;
                 }
             }
-            
 
             // Also check connection class for objects like dams, level crossings.
             ItemClass.Service connectionServices = info.GetConnectionClass().m_service;
@@ -261,11 +274,7 @@ namespace TransferManagerCE
                         if ((lane.m_laneType & m_laneTypes) != 0)
                         {
                             // Determine smallest travel time
-                            float fEffectiveTravelTime;
-                            if (!OutsideConnectionCache.GetOutsideSegmentTravelTime(segmentId, out fEffectiveTravelTime))
-                            {
-                                fEffectiveTravelTime = segment.m_averageLength / lane.m_speedLimit;
-                            }
+                            float fEffectiveTravelTime = segment.m_averageLength / lane.m_speedLimit;
                             fTravelTime = Mathf.Min(fTravelTime, fEffectiveTravelTime) + fCargoTravelTimeAdjustment;
 
                             // Determine available directions

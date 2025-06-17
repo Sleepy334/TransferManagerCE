@@ -6,10 +6,17 @@ namespace TransferManagerCE
     {
         public enum WarehouseMode
         {
-            Unknown,
+            None,
             Empty,
             Balanced,
             Fill,
+        }
+
+        private enum VanillaWarehouseMode
+        {
+            Balanced,
+            Import,
+            Export
         }
 
         public static WarehouseMode GetWarehouseMode(ushort buildingId)
@@ -20,7 +27,7 @@ namespace TransferManagerCE
 
         public static WarehouseMode GetWarehouseMode(Building building)
         {
-            WarehouseMode mode = WarehouseMode.Unknown;
+            WarehouseMode mode = WarehouseMode.None;
 
             if (building.m_flags != 0)
             {
@@ -39,6 +46,26 @@ namespace TransferManagerCE
             }
 
             return mode;
+        }
+
+        public static string GetLocalisedWarehouseMode(WarehouseMode mode)
+        {
+            switch (mode)
+            {
+                case WarehouseMode.Balanced:
+                    {
+                        return ColossalFramework.Globalization.Locale.Get("WAREHOUSEPANEL_MODE", VanillaWarehouseMode.Balanced.ToString());
+                    }
+                case WarehouseMode.Empty:
+                    {
+                        return ColossalFramework.Globalization.Locale.Get("WAREHOUSEPANEL_MODE", VanillaWarehouseMode.Export.ToString());
+                    }
+                case WarehouseMode.Fill:
+                    {
+                        return ColossalFramework.Globalization.Locale.Get("WAREHOUSEPANEL_MODE", VanillaWarehouseMode.Import.ToString());
+                    }
+            }
+            return string.Empty;
         }
 
         public static int GetWarehouseTruckCount(ushort buildingId)

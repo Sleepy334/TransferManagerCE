@@ -9,6 +9,7 @@ using TransferManagerCE.CustomManager.Stats;
 using TransferManagerCE.Settings;
 using TransferManagerCE.UI;
 using TransferManagerCE.Util;
+using static TransferManagerCE.TransportUtils;
 
 namespace TransferManagerCE
 {
@@ -19,10 +20,10 @@ namespace TransferManagerCE
         private UICheckBox? m_chkEnableTransferManager = null;
         
         // Outside connection tab
-        private SettingsSlider? m_sliderShipMultiplier = null;
-        private SettingsSlider? m_sliderPlaneMultiplier = null;
-        private SettingsSlider? m_sliderTrainMultiplier = null;
-        private SettingsSlider? m_sliderRoadMultiplier = null;
+        private SettingsSlider? m_sliderShipPriority = null;
+        private SettingsSlider? m_sliderPlanePriority = null;
+        private SettingsSlider? m_sliderTrainPriority = null;
+        private SettingsSlider? m_sliderRoadPriority = null;
         private SettingsSlider? m_sliderExportVehicleLimitPercent = null;
 
         // Services tab
@@ -31,6 +32,8 @@ namespace TransferManagerCE
         private UICheckBox? m_chkGarbageExperimental = null;
         private UICheckBox? m_chkPoliceExperimental = null;
         private UICheckBox? m_chkImprovedMailTransfers = null;
+
+        private UICheckBox? m_chkPoliceToughOnCrime = null;
 
         // Collect sick
         private UICheckBox? m_chkOverrideSickCollection = null;
@@ -54,6 +57,7 @@ namespace TransferManagerCE
         private UICheckBox? m_chkWarehouseFirst = null;
         private SettingsSlider? m_sliderWarehouseReservePercent = null;
         private UICheckBox? m_chkImprovedWarehouseMatching = null;
+        private UICheckBox? m_chkWarehouseSmarterImportExport = null;
         private UICheckBox? m_chkNewInterWarehouseMatching = null;
 
         // General tab
@@ -62,7 +66,6 @@ namespace TransferManagerCE
         private UIDropDown? m_dropdownPathDistanceGoods = null;
         private SettingsSlider? m_sliderPathDistanceHeuristic = null;
         private SettingsSlider? m_sliderCargoStationDelay = null;
-        private SettingsSlider? m_sliderPathDistanceShift = null;
         private UIDropDown? m_dropdownBalanced = null;
         private UICheckBox? m_chkDisableDummyTraffic = null;
         private UICheckBox? m_chkApplyUnlimited = null;
@@ -80,6 +83,7 @@ namespace TransferManagerCE
         private Dictionary<CustomTransferReason.Reason, UICheckBox> m_chkImportWarehouses = new Dictionary<CustomTransferReason.Reason, UICheckBox>();
 
         private List<string> m_reasonNames = new List<string>();
+        private List<UIComponent> m_saveGameSettings = new List<UIComponent>();
 
         public SettingsUI()
         {
@@ -109,6 +113,11 @@ namespace TransferManagerCE
             SetupMaintenance(tabMaintenance);
 
             UpdateTransferManagerEnabled();
+        }
+
+        private void AddSaveGameSetting(UIComponent component)
+        {
+            m_saveGameSettings.Add(component);
         }
 
         public void SetupGeneralTab(UIHelper helper)
@@ -270,6 +279,7 @@ namespace TransferManagerCE
             }
         }
 
+        // ----------------------------------------------------------------------------------------
         public void SetupTransferGeneralTab(UIHelper helper)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
@@ -279,6 +289,7 @@ namespace TransferManagerCE
             UIHelper groupPathFailure = (UIHelper)helper.AddGroup(Localization.Get("GROUP_PATH_FAIL_EXCLUSION"));
             UISettings.AddDescription(groupPathFailure, "txtPathFailExclusion", 1.0f, Localization.Get("txtPathFailExclusion"));
             m_chkEnablePathFailExclusion = (UICheckBox)groupPathFailure.AddCheckbox(Localization.Get("optionPathFailExclusion"), oSettings.EnablePathFailExclusion, OnPathFailExclusion);
+            AddSaveGameSetting(m_chkEnablePathFailExclusion);
 
             // ----------------------------------------------------------------
             // Path distance
@@ -294,24 +305,23 @@ namespace TransferManagerCE
             m_dropdownPathDistanceServices.width = 400;
             m_dropdownPathDistanceGoods = (UIDropDown)groupPathDistance.AddDropdown(Localization.Get("dropdownPathDistanceAlgorithmGoods"), itemsPathDistance, (int)oSettings.PathDistanceGoods, OnPathDistanceGoods);
             m_dropdownPathDistanceGoods.width = 400;
+            AddSaveGameSetting(m_dropdownPathDistanceGoods);
             groupPathDistance.AddSpace(iSEPARATOR_HEIGHT);
 
             // Accuracy slider
             UISettings.AddDescription(groupPathDistance, "txtPathDistanceHeuristic", 1.0f, Localization.Get("txtPathDistanceHeuristic"));
             m_sliderPathDistanceHeuristic = SettingsSlider.CreateSettingsStyle(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceHeuristic"), 400, 200, 0f, 100f, 10f, (float)oSettings.PathDistanceHeuristic, 0, OnPathDistanceHeuristicChanged);
             m_sliderPathDistanceHeuristic.Percent = true;
+            AddSaveGameSetting(m_sliderPathDistanceHeuristic);
             UISettings.AddDescription(groupPathDistance, "txtPathDistanceHeuristicKey", 1.0f, Localization.Get("txtPathDistanceHeuristicKey"));
             groupPathDistance.AddSpace(iSEPARATOR_HEIGHT);
 
             // Cargo Station Travel Time Delay
             UISettings.AddDescription(groupPathDistance, "txtPathDistanceCargoStationDelay", 1.0f, Localization.Get("txtPathDistanceCargoStationDelay"));
             m_sliderCargoStationDelay = SettingsSlider.CreateSettingsStyle(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderCargoStationDelay"), 400, 200, 0f, 2000f, 100f, (float)oSettings.PathDistanceCargoStationDelay, 0, OnPathDistanceCargoDelay);
+            AddSaveGameSetting(m_sliderCargoStationDelay);
             groupPathDistance.AddSpace(iSEPARATOR_HEIGHT);
 
-            // Travel Time shift
-            UISettings.AddDescription(groupPathDistance, "txtPathDistanceShift", 1.0f, Localization.Get("txtPathDistanceShift"));
-            m_sliderPathDistanceShift = SettingsSlider.CreateSettingsStyle(groupPathDistance, LayoutDirection.Horizontal, Localization.Get("sliderPathDistanceShift"), 400, 200, 1000f, 20000f, 100f, (float)oSettings.PathDistanceTravelTimeBaseValue, 0, OnPathDistanceShiftChanged);
-            
             // ----------------------------------------------------------------
             // Balanced match mode setting
             string[] itemsBalancedMode = {
@@ -323,6 +333,7 @@ namespace TransferManagerCE
             UIHelper groupBalanced = (UIHelper)helper.AddGroup(Localization.Get("GROUP_BALANCED_MATCH_MODE"));
             m_dropdownBalanced = (UIDropDown)groupBalanced.AddDropdown(Localization.Get("dropdownBalancedTitle"), itemsBalancedMode, (int)oSettings.BalancedMatchMode, OnBalancedMatchModeChanged);
             m_dropdownBalanced.width = 400;
+            AddSaveGameSetting(m_dropdownBalanced);
             UISettings.AddDescription(groupBalanced, "txtBalancedMatch", 1.0f, Localization.Get("txtBalancedMatch"));
 
             // ----------------------------------------------------------------
@@ -330,12 +341,14 @@ namespace TransferManagerCE
             UIHelper groupOveredcuatedWorkers = (UIHelper)helper.AddGroup(Localization.Get("GROUP_OVEREDUCATED_WORKERS"));
             UISettings.AddDescription(groupOveredcuatedWorkers, "txtEmployOvereducatedWorkers", 1.0f, Localization.Get("txtEmployOvereducatedWorkers"));
             m_chkEmployOvereducatedWorkers = (UICheckBox)groupOveredcuatedWorkers.AddCheckbox(Localization.Get("optionEmployOverEducatedWorkers"), oSettings.EmployOverEducatedWorkers, OnEmployOvereducatedWOrkers);
+            AddSaveGameSetting(m_chkEmployOvereducatedWorkers);
 
             // ----------------------------------------------------------------
             // Unlimited flag
             UIHelper groupUnlimited = (UIHelper)helper.AddGroup(Localization.Get("GROUP_UNLIMITED"));
             UISettings.AddDescription(groupUnlimited, "txtApplyUnlimited", 1.0f, Localization.Get("txtApplyUnlimited"));
             m_chkApplyUnlimited = (UICheckBox)groupUnlimited.AddCheckbox(Localization.Get("optionApplyUnlimited"), oSettings.ApplyUnlimited, (bCheck) => SaveGameSettings.GetSettings().ApplyUnlimited = bCheck);
+            AddSaveGameSetting(m_chkApplyUnlimited);
             groupUnlimited.AddSpace(iSEPARATOR_HEIGHT);
             UISettings.AddDescription(groupUnlimited, "txtApplyUnlimitedWarning", 1.0f, Localization.Get("txtApplyUnlimitedWarning"));
 
@@ -344,8 +357,10 @@ namespace TransferManagerCE
             UIHelper groupDummyTraffic = (UIHelper)helper.AddGroup(Localization.Get("GROUP_DUMMY_TRAFFIC"));
             UISettings.AddDescription(groupDummyTraffic, "txtDummyTraffic", 1.0f, Localization.Get("txtDummyTraffic"));
             m_chkDisableDummyTraffic = (UICheckBox)groupDummyTraffic.AddCheckbox(Localization.Get("optionDummyTraffic"), oSettings.DisableDummyTraffic, OnDisableDummyTraffic);
+            AddSaveGameSetting(m_chkDisableDummyTraffic);
         }
 
+        // ----------------------------------------------------------------------------------------
         public void SetupWarehousesTab(UIHelper helper)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
@@ -357,11 +372,13 @@ namespace TransferManagerCE
             // Factory First
             UISettings.AddDescription(panelFactory, "optionFactoryFirstText", panelFactory, 1.0f, Localization.Get("optionFactoryFirstText"));
             m_chkFactoryFirst = (UICheckBox)groupFactory.AddCheckbox(Localization.Get("optionFactoryFirst"), oSettings.FactoryFirst, (index) => setOptionFactoryFirst(index));
+            AddSaveGameSetting(m_chkFactoryFirst);
             groupFactory.AddSpace(iSEPARATOR_HEIGHT);
 
             // Override generic industries handler
             UISettings.AddDescription(panelFactory, "txtOverrideGenericIndustriesHandler", panelFactory, 1.0f, Localization.Get("txtOverrideGenericIndustriesHandler"));
             m_chkOverrideGenericIndustriesHandler = (UICheckBox)groupFactory.AddCheckbox(Localization.Get("optionOverrideGenericIndustriesHandler"), oSettings.OverrideGenericIndustriesHandler, OnOverrideGenericIndustriesHandlerChanged);
+            AddSaveGameSetting(m_chkOverrideGenericIndustriesHandler);
 
             // WAREHOUSE GROUP
             UIHelper groupWarehouse = (UIHelper) helper.AddGroup(Localization.Get("GROUP_WAREHOUSE_OPTIONS"));
@@ -370,25 +387,36 @@ namespace TransferManagerCE
             // Warehouse first
             UISettings.AddDescription(panelGroupWarehouse, "optionWarehouseFirst_txt", panelGroupWarehouse, 1.0f, Localization.Get("optionWarehouseFirst_txt"));
             m_chkWarehouseFirst = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionWarehouseFirst"), oSettings.WarehouseFirst, (index) => setOptionWarehouseFirst(index));
+            AddSaveGameSetting(m_chkWarehouseFirst);
+            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
+
+            // Smarter Import / Export
+            UISettings.AddDescription(panelGroupWarehouse, "txtWarehouseSmartImportExport", panelGroupWarehouse, 1.0f, Localization.Get("txtWarehouseSmartImportExport"));
+            m_chkWarehouseSmarterImportExport = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionWarehouseSmartImportExport"), oSettings.WarehouseSmartImportExport, OnWarehouseSmarterImportExport);
+            AddSaveGameSetting(m_chkWarehouseSmarterImportExport);
+            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
+
+            // Improved Warehouse Matching
+            UISettings.AddDescription(panelGroupWarehouse, "txtImprovedWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtImprovedWarehouseMatching"));
+            m_chkImprovedWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionImprovedWarehouseMatching"), oSettings.ImprovedWarehouseMatching, (index) => setOptionImprovedWarehouseMatching(index));
+            AddSaveGameSetting(m_chkImprovedWarehouseMatching);
+            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
+
+            // Improved inter-warehouse matching
+            UISettings.AddDescription(panelGroupWarehouse, "txtNewInterWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtNewInterWarehouseMatching"));
+            m_chkNewInterWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionNewWarehouseTransfer"), oSettings.NewInterWarehouseTransfer, OnNewWarehouseTransferChanged);
+            AddSaveGameSetting(m_chkNewInterWarehouseMatching);
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
             // Reserve trucks
             UISettings.AddDescription(panelGroupWarehouse, "txtNewWarehouseReserveTrucks", panelGroupWarehouse, 1.0f, Localization.Get("txtNewWarehouseReserveTrucks"));
             m_sliderWarehouseReservePercent = SettingsSlider.CreateSettingsStyle(groupWarehouse, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercent"), 400, 200, 0f, 100f, 5f, (float)oSettings.WarehouseReserveTrucksPercent, 0, OnWarehouseFirstPercentChanged);
             m_sliderWarehouseReservePercent.Percent = true;
-            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
-
-            // Improved Warehouse Matching
-            UISettings.AddDescription(panelGroupWarehouse, "txtImprovedWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtImprovedWarehouseMatching"));
-            m_chkImprovedWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionImprovedWarehouseMatching"), oSettings.ImprovedWarehouseMatching, (index) => setOptionImprovedWarehouseMatching(index));
-            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
-
-            // New warehouse matching
-            UISettings.AddDescription(panelGroupWarehouse, "txtNewInterWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtNewInterWarehouseMatching"));
-            m_chkNewInterWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionNewWarehouseTransfer"), oSettings.NewInterWarehouseTransfer, OnNewWarehouseTransferChanged);
+            AddSaveGameSetting(m_sliderWarehouseReservePercent);
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
         }
 
+        // ----------------------------------------------------------------------------------------
         public void SetupImportExportTab(UIHelper helper)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
@@ -396,19 +424,28 @@ namespace TransferManagerCE
             // Outside Multipliers
             UIHelper groupImportExport = (UIHelper) helper.AddGroup(Localization.Get("GROUP_EXPORTIMPORT_OPTIONS"));
             UIPanel txtPanel3 = groupImportExport.self as UIPanel;
-            UISettings.AddDescription(txtPanel3, "OutsideMultiplierDescription1", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription1"));
-            m_sliderShipMultiplier = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderShipMultiplier"), 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideShipMultiplier, 0, OnOutsideShipMultiplier);
-            m_sliderPlaneMultiplier = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderPlaneMultiplier"), 400, 200, 1f, 10f, 1f, (float)oSettings.OutsidePlaneMultiplier, 0, OnOutsidePlaneMultiplier);
-            m_sliderTrainMultiplier = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderTrainMultiplier"), 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideTrainMultiplier, 0, OnOutsideTrainMultiplier);
-            m_sliderRoadMultiplier = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("sliderRoadMultiplier"), 400, 200, 1f, 10f, 1f, (float)oSettings.OutsideRoadMultiplier, 0, OnOutsideRoadMultiplier);
-            UISettings.AddDescription(txtPanel3, "OutsideMultiplierDescription2", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription2"));
-            UISettings.AddDescription(txtPanel3, "OutsideMultiplierDescription3", txtPanel3, 1.0f, Localization.Get("OutsideMultiplierDescription3"));
+
+            // Priority
+            UISettings.AddDescription(txtPanel3, "OutsidePriorityDescription", txtPanel3, 1.0f, Localization.Get("OutsidePriorityDescription"));
+            m_sliderPlanePriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Plane Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsidePlanePriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Plane, value));
+            m_sliderPlanePriority.Percent = true;
+            AddSaveGameSetting(m_sliderPlanePriority);
+            m_sliderTrainPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Train Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideTrainPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Train, value));
+            m_sliderTrainPriority.Percent = true;
+            AddSaveGameSetting(m_sliderTrainPriority);
+            m_sliderShipPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Ship Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideShipPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Ship, value));
+            m_sliderShipPriority.Percent = true;
+            AddSaveGameSetting(m_sliderShipPriority);
+            m_sliderRoadPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Road Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideRoadPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Road, value));
+            m_sliderRoadPriority.Percent = true;
+            AddSaveGameSetting(m_sliderRoadPriority);
 
             // Export vehicle limit
             UIHelper groupExportLimits = (UIHelper)helper.AddGroup(Localization.Get("GROUP_EXPORT_LIMITS"));
             UIPanel panelExportLimit = groupExportLimits.self as UIPanel;
             m_sliderExportVehicleLimitPercent = SettingsSlider.CreateSettingsStyle(groupExportLimits, LayoutDirection.Horizontal, Localization.Get("sliderExportVehicleLimit"), 400, 200, 0f, 100f, 1f, (float)oSettings.ExportVehicleLimit, 0, OnExportVehicleLimit);
             m_sliderExportVehicleLimitPercent.Percent = true;
+            AddSaveGameSetting(m_sliderExportVehicleLimitPercent);
             UISettings.AddDescription(panelExportLimit, "txtExportVehicleLimit", panelExportLimit, 1.0f, Localization.Get("txtExportVehicleLimit"));
 
             // Import restrictions
@@ -467,61 +504,92 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
 
+            // ----------------------------------------------------------------
             // Experimental services options
             UIHelperBase groupExperimental = helper.AddGroup(Localization.Get("GROUP_IMPROVED_SERVICES_MATCHING"));
             UIPanel panelExperimental = (groupExperimental as UIHelper).self as UIPanel;
             UILabel txtDeathcareExperimental = UISettings.AddDescription(panelExperimental, "txtDeathcareExperimental", panelExperimental, 1.0f, Localization.Get("txtDeathcareExperimental"));
             m_chkDeathcareExperimental = (UICheckBox)groupExperimental.AddCheckbox(Localization.Get("optionDeathcareExperimental"), oSettings.ImprovedDeathcareMatching, OnExperimentalDeathcare);
+            AddSaveGameSetting(m_chkDeathcareExperimental); 
             m_chkGarbageExperimental = (UICheckBox)groupExperimental.AddCheckbox(Localization.Get("optionGarbageExperimental"), oSettings.ImprovedGarbageMatching, OnExperimentalGarbage);
+            AddSaveGameSetting(m_chkGarbageExperimental); 
             m_chkPoliceExperimental = (UICheckBox)groupExperimental.AddCheckbox(Localization.Get("optionPoliceExperimental"), oSettings.ImprovedCrimeMatching, OnExperimentalCrime);
+            AddSaveGameSetting(m_chkPoliceExperimental);
             m_chkImprovedMailTransfers = (UICheckBox)groupExperimental.AddCheckbox(Localization.Get("optionImprovedMailTransfers"), oSettings.ImprovedMailTransfers, OnImprovedMailMatching);
+            AddSaveGameSetting(m_chkImprovedMailTransfers);
 
+            // ----------------------------------------------------------------
             // Sick Collection
             UIHelper groupSick = (UIHelper)helper.AddGroup(Localization.Get("GROUP_SICK_COLLECTION"));
             UISettings.AddDescription(groupSick, "txtOverrideSickHandler", 1.0f, Localization.Get("txtOverrideSickHandler"));
             m_chkOverrideSickCollection = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionOverrideSickHandler"), oSettings.OverrideSickHandler, OnOverrideResidentialSick);
+            AddSaveGameSetting(m_chkOverrideSickCollection);
             groupSick.AddSpace(iSEPARATOR_HEIGHT);
             
             UISettings.AddDescription(groupSick, "txtSickSadNotification", 1.0f, Localization.Get("txtSickSadNotification"));
             m_chkDisplaySickNotification = (UICheckBox)groupSick.AddCheckbox(Localization.Get("optionDisplaySickNotification"), oSettings.DisplaySickNotification, OnDisplaySadNotification);
+            AddSaveGameSetting(m_chkDisplaySickNotification);
             groupSick.AddSpace(iSEPARATOR_HEIGHT);
 
             UISettings.AddDescription(groupSick, "txtSickHelicopterRate", 1.0f, Localization.Get("txtSickHelicopterRate"));
             m_sliderSickHelicopterRate = SettingsSlider.CreateSettingsStyle(groupSick, LayoutDirection.Horizontal, Localization.Get("optionSickHelicopterRate"), 400, 200, 0f, 100f, 1.0f, (float)oSettings.SickHelicopterRate, 0, OnSickHelicopterRate);
             m_sliderSickHelicopterRate.Percent = true;
+            AddSaveGameSetting(m_sliderSickHelicopterRate);
 
             UISettings.AddDescription(groupSick, "txtSickWalkRate", 1.0f, Localization.Get("txtSickWalkRate"));
             m_sliderSickWalkRate = SettingsSlider.CreateSettingsStyle(groupSick, LayoutDirection.Horizontal, Localization.Get("optionSickWalkRate"), 400, 200, 0f, 100f, 1.0f, (float)oSettings.SickWalkRate, 0, OnSickWalkRate);
             m_sliderSickWalkRate.Percent = true;
+            AddSaveGameSetting(m_sliderSickWalkRate);
 
+            // ----------------------------------------------------------------
             // Sick Generation
             UIHelper groupSickGeneration = (UIHelper)helper.AddGroup(Localization.Get("GROUP_SICK_GENERATE")); 
             UISettings.AddDescription(groupSickGeneration, "txtRandomSick", 1.0f, Localization.Get("txtRandomSick"));
             m_sliderSickGenerationRate = SettingsSlider.CreateSettingsStyle(groupSickGeneration, LayoutDirection.Horizontal, Localization.Get("txtRandomSickRate"), 400, 200, 0f, 10000f, 100.0f, (float)oSettings.RandomSickRate, 0, OnRandomSickRate);
+            m_sliderSickGenerationRate.OffValue = 0;
+            AddSaveGameSetting(m_sliderSickGenerationRate);
             UISettings.AddDescription(groupSickGeneration, "txtRandomSickRateScale", 1.0f, Localization.Get("txtRandomSickRateScale"));
 
+            // ----------------------------------------------------------------
+            // Crime
+            UIHelper groupCrime = (UIHelper) helper.AddGroup(Localization.Get("GROUP_CRIME"));
+            UISettings.AddDescription(groupCrime, "txtToughOnCrime", 1.0f, Localization.Get("txtToughOnCrime"));
+            m_chkPoliceToughOnCrime = (UICheckBox)groupCrime.AddCheckbox(Localization.Get("optionPoliceToughOnCrime"), oSettings.PoliceToughOnCrime, OnPoliceToughOnCrime);
+            AddSaveGameSetting(m_chkPoliceToughOnCrime);
+
+            // ----------------------------------------------------------------
             // Main area building mail
             UIHelper groupMail = (UIHelper)helper.AddGroup(Localization.Get("reasonMail"));
             UISettings.AddDescription(groupMail, "txtMainBuildingMaxMail", 1.0f, Localization.Get("txtMainBuildingMaxMail"));
             groupMail.AddSpace(iSEPARATOR_HEIGHT);
             m_sliderMainBuildingMaxMail = SettingsSlider.CreateSettingsStyle(groupMail, LayoutDirection.Horizontal, Localization.Get("sliderMainBuildingMaxMail"), 320, 300, 2000f, 50000f, 1000f, (float)oSettings.MainBuildingMaxMail, 0, OnMainBuildingMaxMail);
+            AddSaveGameSetting(m_sliderMainBuildingMaxMail);
+            groupMail.AddSpace(iSEPARATOR_HEIGHT);
+
             UISettings.AddDescription(groupMail, "txtMainBuildingPostTruck", 1.0f, Localization.Get("txtMainBuildingPostTruck"));
             groupMail.AddSpace(iSEPARATOR_HEIGHT); 
             m_chkMainBuildingPostTruck = (UICheckBox)groupMail.AddCheckbox(Localization.Get("optionMainBuildingPostTruck"), oSettings.MainBuildingPostTruck, OnMainBuildingPostTruck);
+            AddSaveGameSetting(m_chkMainBuildingPostTruck);
 
+            // ----------------------------------------------------------------
             // Taxi Move
             UIHelper groupTaxiMove = (UIHelper)helper.AddGroup(Localization.Get("GROUP_TAXI_MOVE"));
             UISettings.AddDescription(groupTaxiMove, "txtTaxiMove", 1.0f, Localization.Get("txtTaxiMove"));
             m_chkTaxiMove = (UICheckBox)groupTaxiMove.AddCheckbox(Localization.Get("optionTaxiMove"), oSettings.TaxiMove, OnTaxiMove);
+            AddSaveGameSetting(m_chkTaxiMove);
+
             groupTaxiMove.AddSpace(iSEPARATOR_HEIGHT);
             UISettings.AddDescription(groupTaxiMove, "txtTaxiStandDelay", 1.0f, Localization.Get("txtTaxiStandDelay"));
             m_sliderTaxiStandDelay = SettingsSlider.CreateSettingsStyle(groupTaxiMove, LayoutDirection.Horizontal, Localization.Get("sliderTaxiStandDelay"), 400, 200, 0f, 20f, 1.0f, (float)oSettings.TaxiStandDelay, 0, OnTaxiStandDelay);
+            AddSaveGameSetting(m_sliderTaxiStandDelay);
 
+            // ----------------------------------------------------------------
             // Prefer local
             UIHelperBase group1 = helper.AddGroup(Localization.Get("GROUP_SERVICE_DISTRICT_OPTIONS"));
             UIPanel txtPanel1 = (group1 as UIHelper).self as UIPanel;
             UISettings.AddDescription(txtPanel1, "txtPreferLocalService", txtPanel1, 1.0f, Localization.Get("txtPreferLocalService"));
             m_chkPreferLocal = (UICheckBox)group1.AddCheckbox(Localization.Get("optionPreferLocalService"), oSettings.PreferLocalService, (index) => setOptionPreferLocalService(index));
+            AddSaveGameSetting(m_chkPreferLocal);
             group1.AddSpace(iSEPARATOR_HEIGHT);
             UISettings.AddDescription(txtPanel1, "txtPreferLocalServiceWarning", txtPanel1, 1.0f, Localization.Get("txtPreferLocalServiceWarning"));
         }
@@ -811,14 +879,6 @@ namespace TransferManagerCE
             PathDistanceCache.Invalidate();
         }
         
-        public void OnPathDistanceShiftChanged(float value)
-        {
-            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.PathDistanceTravelTimeBaseValue = (int)Math.Round(value);
-
-            // Update outside connection shift
-            OutsideConnectionCache.Invalidate();
-        }
         public void OnPathFailExclusion(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
@@ -870,6 +930,12 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.RandomSickRate = (uint) fValue;
+        }
+
+        public void OnPoliceToughOnCrime(bool bChecked)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.PoliceToughOnCrime = bChecked;
         }
 
         public void OnMainBuildingMaxMail(float fValue)
@@ -1128,34 +1194,44 @@ namespace TransferManagerCE
             oSettings.WarehouseReserveTrucksPercent = (int)fPercent;
         }
 
+        public void OnWarehouseSmarterImportExport(bool bChecked)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.WarehouseSmartImportExport = bChecked;
+        }
+
         public void OnNewWarehouseTransferChanged(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.NewInterWarehouseTransfer = bChecked;
         }
 
-        public void OnOutsideShipMultiplier(float fValue)
+        public void OnOutsideConnectionPriority(TransportType type, float fValue)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.OutsideShipMultiplier = (int)fValue;
-            OutsideConnectionCache.Invalidate();
-        }
-        public void OnOutsidePlaneMultiplier(float fValue)
-        {
-            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.OutsidePlaneMultiplier = (int)fValue;
-            OutsideConnectionCache.Invalidate();
-        }
-        public void OnOutsideTrainMultiplier(float fValue)
-        {
-            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.OutsideTrainMultiplier = (int)fValue;
-            OutsideConnectionCache.Invalidate();
-        }
-        public void OnOutsideRoadMultiplier(float fValue)
-        {
-            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.OutsideRoadMultiplier = (int)fValue;
+            switch (type)
+            {
+                case TransportType.Road:
+                    {
+                        oSettings.OutsideRoadPriority = (int)fValue;
+                        break;
+                    }
+                case TransportType.Plane:
+                    {
+                        oSettings.OutsidePlanePriority = (int)fValue;
+                        break;
+                    }
+                case TransportType.Train:
+                    {
+                        oSettings.OutsideTrainPriority = (int)fValue;
+                        break;
+                    }
+                case TransportType.Ship:
+                    {
+                        oSettings.OutsideShipPriority = (int)fValue;
+                        break;
+                    }
+            }
         }
         public void OnExportVehicleLimit(float fValue)
         {
@@ -1176,7 +1252,6 @@ namespace TransferManagerCE
                 m_chkEnablePathFailExclusion.isChecked = oSettings.EnablePathFailExclusion;
                 m_sliderPathDistanceHeuristic.SetValue(oSettings.PathDistanceHeuristic);
                 m_sliderCargoStationDelay.SetValue(oSettings.PathDistanceCargoStationDelay);
-                m_sliderPathDistanceShift.SetValue(oSettings.PathDistanceTravelTimeBaseValue);
                 m_chkDisableDummyTraffic.isChecked = oSettings.DisableDummyTraffic;
                 m_chkApplyUnlimited.isChecked = oSettings.ApplyUnlimited;
                 m_chkEmployOvereducatedWorkers.isChecked = oSettings.EmployOverEducatedWorkers;
@@ -1186,15 +1261,12 @@ namespace TransferManagerCE
                 m_chkOverrideGenericIndustriesHandler.isChecked = oSettings.OverrideGenericIndustriesHandler;
 
                 m_chkImprovedWarehouseMatching.isChecked = oSettings.ImprovedWarehouseMatching;
+                m_chkWarehouseSmarterImportExport.isChecked = oSettings.WarehouseSmartImportExport;
                 m_chkNewInterWarehouseMatching.isChecked = oSettings.NewInterWarehouseTransfer;
                 m_chkWarehouseFirst.isChecked = oSettings.WarehouseFirst;
                 m_sliderWarehouseReservePercent.SetValue(oSettings.WarehouseReserveTrucksPercent);
 
                 // Import/Export
-                m_sliderShipMultiplier.SetValue(oSettings.OutsideShipMultiplier);
-                m_sliderPlaneMultiplier.SetValue(oSettings.OutsidePlaneMultiplier);
-                m_sliderTrainMultiplier.SetValue(oSettings.OutsideTrainMultiplier);
-                m_sliderRoadMultiplier.SetValue(oSettings.OutsideRoadMultiplier);
                 m_sliderExportVehicleLimitPercent.SetValue(oSettings.ExportVehicleLimit);
 
                 // Services
@@ -1210,6 +1282,9 @@ namespace TransferManagerCE
                 m_sliderSickHelicopterRate.SetValue(oSettings.SickHelicopterRate);
                 m_chkDisplaySickNotification.isChecked = oSettings.DisplaySickNotification;
                 m_sliderSickWalkRate.SetValue(oSettings.SickWalkRate);
+
+                // Crime
+                m_chkPoliceToughOnCrime.isChecked = oSettings.PoliceToughOnCrime;
 
                 // Mail
                 m_sliderMainBuildingMaxMail.SetValue(oSettings.MainBuildingMaxMail);
@@ -1264,65 +1339,29 @@ namespace TransferManagerCE
 
             EnableCheckbox(m_chkEnableTransferManager, bLoaded);
 
-            // General
-            m_sliderPathDistanceHeuristic.Enable(bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderCargoStationDelay.Enable(bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderPathDistanceShift.Enable(bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkEnablePathFailExclusion, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkDisableDummyTraffic, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkApplyUnlimited, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkEmployOvereducatedWorkers, bLoaded && oSettings.EnableNewTransferManager); 
-
-            if (bLoaded && oSettings.EnableNewTransferManager)
+            // Enable / Disable each save game setting
+            foreach (UIComponent component in m_saveGameSettings) 
             {
-                m_dropdownBalanced.Enable();
-                m_dropdownPathDistanceServices.Enable();
-                m_dropdownPathDistanceGoods.Enable();
+                if (component is UICheckBox checkbox)
+                {
+                    EnableCheckbox(checkbox, bLoaded && oSettings.EnableNewTransferManager);
+                }
+                else if (component is SettingsSlider slider)
+                {
+                    slider.Enable(bLoaded && oSettings.EnableNewTransferManager);
+                }
+                else if (component is UIDropDown dropDown)
+                {
+                    if (bLoaded && oSettings.EnableNewTransferManager)
+                    {
+                        dropDown.Enable();
+                    }
+                    else
+                    {
+                        dropDown.Disable();
+                    }
+                }
             }
-            else
-            {
-                m_dropdownBalanced.Disable();
-                m_dropdownPathDistanceServices.Disable();
-                m_dropdownPathDistanceGoods.Disable();
-            }
-
-            // Goods Delivery
-            EnableCheckbox(m_chkFactoryFirst, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkOverrideGenericIndustriesHandler, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkImprovedWarehouseMatching, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkNewInterWarehouseMatching, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkWarehouseFirst, bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderWarehouseReservePercent.Enable(bLoaded && oSettings.EnableNewTransferManager);
-
-            // Services
-            EnableCheckbox(m_chkPreferLocal, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkDeathcareExperimental, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkGarbageExperimental, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkPoliceExperimental, bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkImprovedMailTransfers, bLoaded && oSettings.EnableNewTransferManager);
-
-
-            // Sick collection
-            EnableCheckbox(m_chkOverrideSickCollection, bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderSickHelicopterRate.Enable(m_chkOverrideSickCollection.isEnabled && m_chkOverrideSickCollection.isChecked);
-            m_sliderSickWalkRate.Enable(m_chkOverrideSickCollection.isEnabled && m_chkOverrideSickCollection.isChecked);
-            EnableCheckbox(m_chkDisplaySickNotification, m_chkOverrideSickCollection.isChecked);
-            m_sliderSickGenerationRate.Enable(bLoaded && oSettings.EnableNewTransferManager);
-
-            // Mail
-            m_sliderMainBuildingMaxMail.Enable(bLoaded && oSettings.EnableNewTransferManager);
-            EnableCheckbox(m_chkMainBuildingPostTruck, bLoaded && oSettings.EnableNewTransferManager); 
-
-            // Taxi Move
-            EnableCheckbox(m_chkTaxiMove, bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderTaxiStandDelay.Enable(bLoaded && oSettings.EnableNewTransferManager);
-
-            // Import / Export
-            m_sliderShipMultiplier.Enable(bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderPlaneMultiplier.Enable(bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderTrainMultiplier.Enable(bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderRoadMultiplier.Enable(bLoaded && oSettings.EnableNewTransferManager);
-            m_sliderExportVehicleLimitPercent.Enable(bLoaded && oSettings.EnableNewTransferManager);
                 
             foreach (KeyValuePair<CustomTransferReason.Reason, SettingsSlider> kvp in m_sliderLimits)
             {

@@ -47,22 +47,22 @@ namespace TransferManagerCE.Data
 
             StatusData oSecond = (StatusData)second;
 
-            // If material is the same then sort by distance
-            if (GetMaterialDescription() == oSecond.GetMaterialDescription())
+            // Sort by waiting timer
+            if (IsNodeData() && oSecond.IsNodeData())
             {
-                // Put the building entry first for each material type
-                if (IsBuildingData() != oSecond.IsBuildingData())
-                {
-                    if (IsBuildingData())
-                    {
-                        return -1;
-                    }
-                    else
-                    {
-                        return 1;
-                    }
-                } 
-                else if (GetDistance() < oSecond.GetDistance())
+                return ((StatusNodeStop)oSecond).GetWaitTimer() - ((StatusNodeStop)this).GetWaitTimer();
+            }
+
+            // Sort by material
+            if (GetMaterialDescription() != oSecond.GetMaterialDescription())
+            {
+                return GetMaterialDescription().CompareTo(oSecond.GetMaterialDescription());
+            }
+
+            // Put the building entry first for each material type
+            if (IsBuildingData() != oSecond.IsBuildingData())
+            {
+                if (IsBuildingData())
                 {
                     return -1;
                 }
@@ -71,11 +71,24 @@ namespace TransferManagerCE.Data
                     return 1;
                 }
             }
-            
-            return GetMaterialDescription().CompareTo(oSecond.GetMaterialDescription());
+
+            // Sort by distance
+            if (GetDistance() < oSecond.GetDistance())
+            {
+                return -1;
+            }
+            else
+            {
+                return 1;
+            }
         }
 
         public virtual bool IsSeparator()
+        {
+            return false;
+        }
+
+        public virtual bool IsHeader()
         {
             return false;
         }
@@ -84,9 +97,9 @@ namespace TransferManagerCE.Data
 
         // Building support
         public abstract bool IsBuildingData();
+        public abstract bool IsNodeData(); 
 
         // Vehicle support
-        public abstract bool IsVehicleData();
         public abstract bool HasVehicle();
         public abstract ushort GetVehicleId();
 
@@ -193,7 +206,7 @@ namespace TransferManagerCE.Data
             return 0;
         }
 
-        public Color GetTextColor()
+        public virtual Color GetTextColor()
         {
             return m_color;
         }

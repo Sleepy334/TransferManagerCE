@@ -5,6 +5,8 @@ namespace TransferManagerCE.TransferRules
 {
     public class ReasonRule
     {
+        public static ReasonRule Empty = new ReasonRule();
+
         public int m_id = 0;
         public string m_name = "";
         public HashSet<CustomTransferReason.Reason> m_reasons = new HashSet<CustomTransferReason.Reason>();
@@ -12,7 +14,8 @@ namespace TransferManagerCE.TransferRules
         public bool m_outgoingDistrict = false;
         public bool m_incomingBuilding = false;
         public bool m_outgoingBuilding = false;
-        public bool m_distance = false;
+        public bool m_incomingDistance = false;
+        public bool m_outgoingDistance = false;
         public bool m_import = false;
         public bool m_export = false;
 

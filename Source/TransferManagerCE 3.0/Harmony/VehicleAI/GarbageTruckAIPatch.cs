@@ -2,6 +2,7 @@
 using System;
 using ColossalFramework;
 using TransferManagerCE.Settings;
+using SleepyCommon;
 
 namespace TransferManagerCE
 {
@@ -32,6 +33,7 @@ namespace TransferManagerCE
                 if (Singleton<SimulationManager>.instance.m_randomizer.Int32(10U) == 0 &&
                     (vehicleData.m_flags & Vehicle.Flags.GoingBack) != 0 &&
                     (vehicleData.m_flags & Vehicle.Flags.WaitingTarget) == 0 &&
+                    (vehicleData.m_flags & Vehicle.Flags.Arriving) == 0 &&
                     vehicleData.m_sourceBuilding != 0 &&
                     vehicleData.m_transferSize < __instance.m_cargoCapacity &&
                     !ShouldReturnToSource(vehicleID, ref vehicleData))

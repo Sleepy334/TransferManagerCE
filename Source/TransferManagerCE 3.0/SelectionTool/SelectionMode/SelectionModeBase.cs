@@ -8,21 +8,12 @@ using System.Collections.Generic;
 using TransferManagerCE.TransferRules;
 using static TransferManagerCE.BuildingTypeHelper;
 using SleepyCommon;
+using System.Data;
 
 namespace TransferManagerCE
 {
     public abstract class SelectionModeBase
     {
-        private Color[] s_distanceColors =
-        {
-            Color.green,
-            Color.magenta,
-            Color.blue,
-            Color.red,
-            Color.white,
-            Color.cyan,
-        };
-
         protected SelectionTool m_tool;
 
         // ----------------------------------------------------------------------------------------
@@ -172,12 +163,14 @@ namespace TransferManagerCE
                         BuildingUtils.EnumerateOwnVehicles(building, (vehicleId, vehicle) =>
                         {
                             RendererUtils.HighlightVehicle(VehicleBuffer, cameraInfo, vehicleId, Color.magenta);
+                            return true;
                         });
 
                         // Highlight guest vehicles
                         BuildingUtils.EnumerateGuestVehicles(building, (vehicleId, vehicle) =>
                         {
                             RendererUtils.HighlightVehicle(VehicleBuffer, cameraInfo, vehicleId, Color.green);
+                            return true;
                         });
                     }
                 }
@@ -186,59 +179,57 @@ namespace TransferManagerCE
 
         public void DrawLocalDistanceCircle(CameraInfo cameraInfo, BuildingType eType, ushort buildingId, Building building, ref HashSet<CustomTransferReason.Reason> localReasons)
         {
-            // If building has distance restriction then draw the distance as a circle
-            BuildingSettings settings = BuildingSettingsStorage.GetSettings(buildingId);
-            if (settings is not null)
+            if (BuildingSettingsStorage.HasSettings(buildingId) && BuildingPanel.Instance.IsSettingsTabActive())
             {
-                foreach (KeyValuePair<int, RestrictionSettings> kvp in settings.m_restrictions)
+                BuildingSettings settings = BuildingSettingsStorage.GetSettings(buildingId);
+                if (settings is not null)
                 {
-                    if (kvp.Value.m_iServiceDistanceMeters > 0)
+                    int restrictionId = BuildingPanel.Instance.GetRestrictionId();
+                    if (restrictionId != -1)
                     {
-                        HashSet<CustomTransferReason.Reason> reasons = BuildingRuleSets.GetRestrictionReasons(eType, kvp.Key);
+                        ReasonRule rule = BuildingRuleSets.GetRule(eType, buildingId, restrictionId);
 
-                        // We need to exclude mail or mail2 depending on the MainBuildingPostTruck setting.
-                        switch (eType)
+                        // Check distance is allowed for this rule
+                        if ((rule.m_incomingDistance || rule.m_outgoingDistance) && rule.m_reasons.Count > 0)
                         {
-                            case BuildingType.MainIndustryBuilding:
-                            case BuildingType.AirportMainTerminal:
-                            case BuildingType.AirportCargoTerminal:
-                            case BuildingType.MainCampusBuilding:
+                            // See if this rule has non-zero distance setting
+                            RestrictionSettings? restrictions = settings.GetRestrictions(rule.m_id);
+
+                            if (restrictions is not null)
+                            {
+                                if (rule.m_incomingDistance && restrictions.m_incomingServiceDistanceMeters > 0)
                                 {
-                                    if (SaveGameSettings.GetSettings().MainBuildingPostTruck)
-                                    {
-                                        // Skip mail
-                                        if (reasons.Contains(CustomTransferReason.Reason.Mail))
-                                        {
-                                            continue;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // Skip mail2
-                                        if (reasons.Contains(CustomTransferReason.Reason.Mail2))
-                                        {
-                                            continue;
-                                        }
-                                    }
-                                    break;
+                                    // Add reasons for restriction
+                                    localReasons.UnionWith(rule.m_reasons);
+
+                                    RenderManager.instance.OverlayEffect.DrawCircle(
+                                            cameraInfo,
+                                            GetKnownColor(true),
+                                            building.m_position,
+                                            restrictions.m_incomingServiceDistanceMeters * 2.0f, // Range of service matching, we need diameter not radius
+                                            building.m_position.y - 1f,
+                                            building.m_position.y + 1f,
+                                            true,
+                                            true);
                                 }
+
+                                if (rule.m_outgoingDistance && restrictions.m_outgoingServiceDistanceMeters > 0)
+                                {
+                                    // Add reasons for restriction
+                                    localReasons.UnionWith(rule.m_reasons);
+
+                                    RenderManager.instance.OverlayEffect.DrawCircle(
+                                            cameraInfo,
+                                            GetKnownColor(false),
+                                            building.m_position,
+                                            restrictions.m_outgoingServiceDistanceMeters * 2.0f, // Range of service matching, we need diameter not radius
+                                            building.m_position.y - 1f,
+                                            building.m_position.y + 1f,
+                                            true,
+                                            true);
+                                }
+                            }
                         }
-
-                        // Add reasons for restriction
-                        localReasons.UnionWith(reasons);
-
-                        // Change color so we can see them if more than one (eg. Recycling Center).
-                        Color color = s_distanceColors[kvp.Key];
-
-                        RenderManager.instance.OverlayEffect.DrawCircle(
-                                cameraInfo,
-                                color,
-                                building.m_position,
-                                kvp.Value.m_iServiceDistanceMeters * 2.0f, // Range of service matching, we need diameter not radius
-                                building.m_position.y - 1f,
-                                building.m_position.y + 1f,
-                                true,
-                                true);
                     }
                 }
             }
@@ -269,6 +260,19 @@ namespace TransferManagerCE
                     }
                 }
             }
+        }
+
+        public static KnownColor GetKnownColor(bool bIncoming)
+        {
+            if (bIncoming)
+            {
+                return KnownColor.green;
+            }
+            else
+            {
+                return KnownColor.blue;
+            }
+                
         }
     }
 }

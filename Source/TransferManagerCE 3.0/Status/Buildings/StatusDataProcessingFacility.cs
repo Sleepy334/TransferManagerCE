@@ -50,7 +50,7 @@ namespace TransferManagerCE.Data
 
                 bool bOutgoing = (TransferReason) m_material == buildingAI.m_outputResource;
                 WarnText(!bOutgoing, bOutgoing, value, bufferSize);
-                tooltip = MakeTooltip(!bOutgoing, value, bufferSize);
+                tooltip = MakeTooltip(value, bufferSize);
                 return DisplayValueAsPercent(value, bufferSize);
             }
 

@@ -26,7 +26,7 @@ namespace TransferManagerCE.Data
                             int iCapacity = buildingAI.m_snowCapacity;
 
                             WarnText(false, true, iAmount, iCapacity);
-                            tooltip = MakeTooltip(true, iAmount, iCapacity);
+                            tooltip = MakeTooltip(iAmount, iCapacity);
                             return Utils.MakePercent(iAmount, iCapacity);
                         }
                         break;

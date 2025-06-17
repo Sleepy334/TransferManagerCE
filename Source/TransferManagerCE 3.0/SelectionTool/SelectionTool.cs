@@ -32,7 +32,6 @@ namespace TransferManagerCE
         public ushort m_segmentId = 0;
 
         private bool m_processedClick = false;
-        private Vector3 m_mousePos = Vector3.zero;
 
         // ----------------------------------------------------------------------------------------
         public static SelectionTool Instance
@@ -224,12 +223,12 @@ namespace TransferManagerCE
 
         public void ShowToolInfo(string sText)
         {
-            base.ShowToolInfo(true, sText, m_mousePos);
+            base.ShowToolInfo(true, sText, m_mousePosition);
         }
 
         public override void RenderOverlay(RenderManager.CameraInfo cameraInfo)
         {
-            if (m_nodeId != 0 && OutsideConnectionCache.IsOutsideConnectionNode(m_nodeId))
+            if (m_nodeId != 0 && CitiesUtils.IsOutsideConnectionNode(m_nodeId))
             {
                 // Highlight outside connections
                 NetNode oNode = NetManager.instance.m_nodes.m_buffer[m_nodeId];
@@ -270,7 +269,6 @@ namespace TransferManagerCE
             {
                 m_nodeId = output.m_netNode;
                 m_segmentId = output.m_netSegment;
-                m_mousePos = output.m_hitPos;
 
                 // We try to find the node from the segment
                 if (output.m_netNode == 0)
@@ -460,8 +458,6 @@ namespace TransferManagerCE
                 base.OnToolGUI(e);
                 return;
             }
-
-
 
             m_selectionMode.OnToolGUI(e);
 

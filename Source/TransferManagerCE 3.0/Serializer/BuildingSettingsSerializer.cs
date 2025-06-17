@@ -159,12 +159,13 @@ namespace TransferManagerCE
                             // Fix incoming
                             restrictionsIncoming.m_incomingDistrictSettings.Reset();
                             restrictionsIncoming.m_bAllowExport = true;
-                            restrictionsIncoming.m_iServiceDistanceMeters = 0;
+                            restrictionsIncoming.m_incomingServiceDistanceMeters = 0;
                             settings.SetRestrictionsDirect(0, restrictionsIncoming);
 
                             // Fix outgoing
                             restrictionsOutgoing.m_outgoingDistrictSettings.Reset();
                             restrictionsOutgoing.m_bAllowImport = true;
+                            restrictionsIncoming.m_outgoingServiceDistanceMeters = 0;
                             settings.SetRestrictionsDirect(1, restrictionsOutgoing);
 
                             break;
@@ -178,7 +179,7 @@ namespace TransferManagerCE
                             // Fix incoming 1
                             restrictionsIncoming.m_incomingDistrictSettings.Reset();
                             restrictionsIncoming.m_bAllowExport = true;
-                            restrictionsIncoming.m_iServiceDistanceMeters = 0;
+                            restrictionsIncoming.m_incomingServiceDistanceMeters = 0;
                             settings.SetRestrictions(0, restrictionsIncoming);
 
                             // Insert a copy for Incoming 2
@@ -187,6 +188,7 @@ namespace TransferManagerCE
                             // Fix outgoing
                             restrictionsOutgoing.m_outgoingDistrictSettings.Reset();
                             restrictionsOutgoing.m_bAllowImport = true;
+                            restrictionsIncoming.m_outgoingServiceDistanceMeters = 0;
                             settings.SetRestrictionsDirect(1, restrictionsOutgoing);
 
                             break;
@@ -207,12 +209,13 @@ namespace TransferManagerCE
 
             // Service distance is now stored as meters instead of km
             int iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_iServiceDistanceMeters = iServiceDistance * 1000;
+            restrictions.m_incomingServiceDistanceMeters = iServiceDistance * 1000;
+            restrictions.m_outgoingServiceDistanceMeters = iServiceDistance * 1000;
 
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex); // No longer used
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
-            settings.m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+            int iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex); // no longer used
             restrictions.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_incomingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_outgoingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
@@ -240,12 +243,13 @@ namespace TransferManagerCE
 
             // Service distance is now stored as meters instead of km
             int iServiceDistance = StorageData.ReadInt32(Data, ref iIndex);
-            restrictions.m_iServiceDistanceMeters = iServiceDistance * 1000;
+            restrictions.m_incomingServiceDistanceMeters = iServiceDistance * 1000;
+            restrictions.m_outgoingServiceDistanceMeters = iServiceDistance * 1000;
 
             settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
-            settings.m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+            int iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex); // No longer used
 
             restrictions.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_incomingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
@@ -294,7 +298,7 @@ namespace TransferManagerCE
             BuildingSettings? settings = LoadDataVersion5(Data, ref iIndex);
             if (settings is not null)
             {
-                settings.m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
+                int OutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
             }
             return settings;
         }

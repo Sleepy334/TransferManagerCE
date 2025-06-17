@@ -77,7 +77,13 @@ public class TransferIssueContainer : IComparable, IEquatable<TransferIssueConta
             return m_issue.CompareTo(oSecond.m_issue);
         }
 
-        return oSecond.GetValue().CompareTo(GetValue());
+        if (GetValue() != oSecond.GetValue())
+        {
+            return oSecond.GetValue().CompareTo(GetValue());
+        }
+
+        // Sort by building ID as last resort.
+        return oSecond.m_sourceBuildingId.CompareTo(m_sourceBuildingId);
     }
 
     public bool Equals(TransferIssueContainer second)

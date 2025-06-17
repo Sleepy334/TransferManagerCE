@@ -1,4 +1,4 @@
-using SleepyCommon;
+  using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -210,7 +210,7 @@ namespace TransferManagerCE
                 // Check before Active check as they stop being Active when on fire.
                 CheckFireIssue(buildingId, building);
 
-                if ((building.m_flags & Building.Flags.Active) != 0)
+                if (building.m_flags != 0 && (building.m_flags & (Building.Flags.Abandoned | Building.Flags.Collapsed)) == 0)
                 {
                     // Issues
                     CheckDeadIssue(buildingId, building);
@@ -248,7 +248,9 @@ namespace TransferManagerCE
                             TransferIssueContainer issue = new TransferIssueContainer(IssueType.Sick, SickHandler.GetPriority(building.m_healthProblemTimer), iSickCount.ToString(), building.m_healthProblemTimer, buildingId, vehicle.m_sourceBuilding, vehicleId);
                             m_buildingIssues.Add(issue);
                             bFoundVehicle = true;
+                            return false; // Only add one vehicle
                         }
+                        return true;
                     });
 
                     // Add issue without vehicle if no vehicles found
@@ -278,7 +280,9 @@ namespace TransferManagerCE
                             TransferIssueContainer issue = new TransferIssueContainer(IssueType.Dead, building.m_deathProblemTimer * 7 / 128, iDeadCount.ToString(), building.m_deathProblemTimer, buildingId, vehicle.m_sourceBuilding, vehicleId);
                             m_buildingIssues.Add(issue);
                             bFoundVehicle = true;
+                            return false; // Only add one vehicle
                         }
+                        return true;
                     });
 
                     // Add issue without vehicle if no vehicles found
@@ -306,7 +310,9 @@ namespace TransferManagerCE
                     {
                         m_buildingIssues.Add(new TransferIssueContainer(IssueType.Garbage, building.m_garbageBuffer / 1000, building.m_garbageBuffer.ToString(), 0, buildingId, vehicle.m_sourceBuilding, vehicleId));
                         bFoundVehicle = true;
+                        return false; // Only add one vehicle
                     }
+                    return true;
                 });
 
                 // Add issue without vehicle if no vehicles found
@@ -318,10 +324,20 @@ namespace TransferManagerCE
             }
         }
 
+        private bool HasIncomingProblem(Notification.ProblemStruct problems)
+        {
+            return (problems & 
+                (Notification.Problem1.NoFishingGoods | 
+                Notification.Problem1.NoInputProducts | 
+                Notification.Problem1.NoResources |
+                Notification.Problem1.NoGoods |
+                Notification.Problem1.NoFood |
+                Notification.Problem1.NoFuel)).IsNotNone;
+        }
+
         public void CheckIncomingIssue(ushort buildingId, Building building)
         {
-            // Health issues
-            if (building.m_incomingProblemTimer > ModSettings.GetSettings().GoodsTimerValue || (building.m_problems & Notification.Problem1.NoInputProducts).IsNotNone)
+            if (building.m_incomingProblemTimer > ModSettings.GetSettings().GoodsTimerValue || HasIncomingProblem(building.m_problems))
             {
                 BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType(building);
                 if (eType != BuildingTypeHelper.BuildingType.SpaceElevator && eType != BuildingTypeHelper.BuildingType.OutsideConnection)
@@ -338,7 +354,9 @@ namespace TransferManagerCE
                             TransferIssueContainer issue = new TransferIssueContainer(IssueType.Incoming, building.m_incomingProblemTimer * 7 / 64, $"{Math.Round(building.m_customBuffer2 * 0.001)}", building.m_incomingProblemTimer, buildingId, vehicle.m_sourceBuilding, vehicleId);
                             m_buildingIssues.Add(issue);
                             bFoundVehicle = true;
+                            return false; // Only add one vehicle
                         }
+                        return true;
                     });
 
                     // Add issue without vehicle if no vehicles found
@@ -350,12 +368,52 @@ namespace TransferManagerCE
             }
         }
 
+        private bool HasOutgoingProblem(Notification.ProblemStruct problems)
+        {
+            return (problems & (Notification.Problem1.NoPlaceForFishingGoods | Notification.Problem1.NoPlaceforGoods | Notification.Problem1.NoCustomers)).IsNotNone;
+        }
+
         public void CheckOutgoingIssue(ushort buildingId, Building building)
         {
             // Goods out issues
-            if (!BuildingTypeHelper.IsOutsideConnection(buildingId) && building.m_outgoingProblemTimer > ModSettings.GetSettings().GoodsTimerValue)
+            if (building.m_outgoingProblemTimer > ModSettings.GetSettings().GoodsTimerValue || HasOutgoingProblem(building.m_problems))
             {
-                m_buildingIssues.Add(new TransferIssueContainer(IssueType.Outgoing, building.m_outgoingProblemTimer * 7 / 64, $"{Math.Round(building.m_customBuffer2 * 0.001)}", building.m_outgoingProblemTimer, buildingId, 0, 0));
+                BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType(building);
+                if (eType != BuildingTypeHelper.BuildingType.OutsideConnection)
+                {
+                    int iPriority;
+                    if (building.m_outgoingProblemTimer > 0)
+                    {
+                        iPriority = building.m_outgoingProblemTimer * 7 / 64;
+                    }
+                    else
+                    {
+                        iPriority = 7; // Just assume 7 if it has the problem notification
+
+                        // Try and determine actual value
+                        switch (eType)
+                        {
+                            case BuildingTypeHelper.BuildingType.ProcessingFacility:
+                                {
+                                    if (building.Info?.m_buildingAI is ProcessingFacilityAI buildingAI)
+                                    {
+                                        iPriority = building.m_customBuffer1 / buildingAI.GetOutputBufferSize(buildingId, ref building) * 8;
+                                    }
+                                    break;
+                                }
+                            case BuildingTypeHelper.BuildingType.ExtractionFacility:
+                                {
+                                    if (building.Info?.m_buildingAI is ExtractingFacilityAI buildingAI)
+                                    {
+                                        iPriority = building.m_customBuffer1 / buildingAI.GetOutputBufferSize(buildingId, ref building) * 8;
+                                    }
+                                    break;
+                                }
+                        }
+                    }
+
+                    m_buildingIssues.Add(new TransferIssueContainer(IssueType.Outgoing, iPriority, $"{Math.Round(building.m_customBuffer2 * 0.001)}", building.m_outgoingProblemTimer, buildingId, 0, 0));
+                }
             }
         }
 
@@ -421,7 +479,9 @@ namespace TransferManagerCE
                                     {
                                         m_buildingIssues.Add(new TransferIssueContainer(IssueType.Crime, building.m_crimeBuffer / Mathf.Max(1, iCitizenCount * 10), Utils.MakePercent(iCrimeRate, iMaxRate), 0, buildingId, vehicle.m_sourceBuilding, vehicleId));
                                         bFoundVehicle = true;
+                                        return false; // Only add one vehicle
                                     }
+                                    return true;
                                 });
 
                                 // Add issue without vehicle if no vehicles found
@@ -464,7 +524,9 @@ namespace TransferManagerCE
                                         {
                                             m_buildingIssues.Add(new TransferIssueContainer(IssueType.Mail, iPriority, Utils.MakePercent(building.m_mailBuffer, iMaxMail), 0, buildingId, vehicle.m_sourceBuilding, vehicleId));
                                             bFoundVehicle = true;
+                                            return false; // Only add one vehicle
                                         }
+                                        return true;
                                     });
 
                                     // Add issue without vehicle if no vehicles found
@@ -495,7 +557,9 @@ namespace TransferManagerCE
                     {
                         m_buildingIssues.Add(new TransferIssueContainer(IssueType.Fire, 7, building.m_fireIntensity.ToString(), 0, buildingId, vehicle.m_sourceBuilding, vehicleId));
                         bFoundVehicle = true;
+                        return false; // Only add one vehicle
                     }
+                    return true;
                 });
 
                 // Add issue without vehicle if no vehicles found

@@ -14,6 +14,17 @@ namespace TransferManagerCE.UI
         private UITruncateLabel? m_lblResponder = null;
         private UITruncateLabel? m_lblVehicle = null;
 
+        public static float[] ColumnWidths =
+        {
+            65, // Material
+            65, // Priority
+            70, // Timer
+            70, // Value
+            190, // Source
+            190, // Vehicle
+            190, // Responder
+        };
+
         public override void Start()
         {
             base.Start();
@@ -29,7 +40,7 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
-                m_lblMaterial.width = TransferIssuePanel.iCOLUMN_WIDTH_ISSUE;
+                m_lblMaterial.width = ColumnWidths[0];
             }
 
             m_lblPriority = AddUIComponent<UILabel>();
@@ -43,7 +54,7 @@ namespace TransferManagerCE.UI
                 m_lblPriority.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblPriority.autoSize = false;
                 m_lblPriority.height = height;
-                m_lblPriority.width = TransferIssuePanel.iCOLUMN_WIDTH_PRIORITY;
+                m_lblPriority.width = ColumnWidths[1];
             }
 
             m_lblTimer = AddUIComponent<UILabel>();
@@ -57,7 +68,7 @@ namespace TransferManagerCE.UI
                 m_lblTimer.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblTimer.autoSize = false;
                 m_lblTimer.height = height;
-                m_lblTimer.width = TransferIssuePanel.iCOLUMN_WIDTH_VALUE;
+                m_lblTimer.width = ColumnWidths[2];
             }
 
             m_lblValue = AddUIComponent<UILabel>();
@@ -71,7 +82,7 @@ namespace TransferManagerCE.UI
                 m_lblValue.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblValue.autoSize = false;
                 m_lblValue.height = height;
-                m_lblValue.width = TransferIssuePanel.iCOLUMN_WIDTH_VALUE;
+                m_lblValue.width = ColumnWidths[3];
             }
 
             m_lblSource = AddUIComponent<UITruncateLabel>();
@@ -85,7 +96,7 @@ namespace TransferManagerCE.UI
                 m_lblSource.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblSource.autoSize = false;
                 m_lblSource.height = height;
-                m_lblSource.width = TransferIssuePanel.iCOLUMN_WIDTH_VEHICLE;
+                m_lblSource.width = ColumnWidths[4];
                 m_lblSource.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblSource.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -101,7 +112,7 @@ namespace TransferManagerCE.UI
                 m_lblVehicle.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblVehicle.autoSize = false;
                 m_lblVehicle.height = height;
-                m_lblVehicle.width = TransferIssuePanel.iCOLUMN_WIDTH_VEHICLE;
+                m_lblVehicle.width = ColumnWidths[5];
                 m_lblVehicle.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblVehicle.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -117,7 +128,7 @@ namespace TransferManagerCE.UI
                 m_lblResponder.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblResponder.autoSize = false;
                 m_lblResponder.height = height;
-                m_lblResponder.width = 100; // This gets updated in AfterStart
+                m_lblResponder.width = ColumnWidths[6];
                 m_lblResponder.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblResponder.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }

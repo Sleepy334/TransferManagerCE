@@ -17,7 +17,7 @@ using System.Runtime.InteropServices;
 #if TEST_RELEASE || TEST_DEBUG
 [assembly: Guid("d138d36b-61f7-4ed7-ad70-48a8c780abe3")]
 #else
-[assembly: Guid("bb562cff-e70e-4e8c-b4bd-7791b969878f")]
+[assembly: Guid("bb562cff-e70e-4e8c-b4bd-7791b969878f")] 
 #endif
 
-[assembly: AssemblyVersion("3.0.50.*")]    
+[assembly: AssemblyVersion("3.0.66.*")]    

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using ColossalFramework.Math;
-using TransferManagerCE.Util;
 using TransferManagerCE.Settings;
 using static TransferManagerCE.CustomManager.TransferRestrictions;
 using static TransferManagerCE.CustomManager.TransferManagerModes;
@@ -702,16 +701,6 @@ namespace TransferManagerCE.CustomManager
                 return iResult;
             }
 
-            // Check all outside and just perform connected LOS in this case as match will be basically as good and way faster
-            if (IsAllCandidatesOutsideConnections(offerCandidates, iCandidateCount))
-            {
-                if (m_logFile is not null)
-                {
-                    m_logFile.LogInfo("INFO: All candidates outside connections, fall back to MatchOfferConnected");
-                }
-                return MatchOfferConnectedLOSImpl(ref offer, offerCandidates, iCandidateCount, bCloseByOnly);
-            }
-
             // Check for Path Distance support
             ushort offerNodeId = offer.GetNearestNode(job.material);
             if (offerNodeId == 0 || m_pathDistance is null)
@@ -950,7 +939,6 @@ namespace TransferManagerCE.CustomManager
                     }
                 }
 
-                float distanceOutsideFactor = 0.0f;
                 if (reason == ExclusionReason.None)
                 {
                     // LOS distance
@@ -962,7 +950,7 @@ namespace TransferManagerCE.CustomManager
                     {
                         if (m_logFile is not null)
                         {
-                            m_logFile.LogCandidateDistanceLOS(counterpart_index, offer, candidateOffer, reason, bConnectedMode, distanceOutsideFactor);
+                            m_logFile.LogCandidateDistanceLOS(counterpart_index, offer, candidateOffer, reason, bConnectedMode);
                             m_logFile.LogCandidateSummary();
                             m_logFile.LogInfo("       Match Found - Acceptable distance reached.");
                         }
@@ -973,18 +961,8 @@ namespace TransferManagerCE.CustomManager
                     // For some materials types only. Similar to the vanilla matching higher priorities appear closer.
                     float fPriorityFactor = candidateOffer.GetPriorityFactor(job.material);
 
-                    // Apply outside distance modifier to make them more or less desirable.
-                    if (offer.IsIncoming())
-                    {
-                        distanceOutsideFactor = m_transferRestrictions.OutsideModifier(job.material, offer, candidateOffer);
-                    }
-                    else
-                    {
-                        distanceOutsideFactor = m_transferRestrictions.OutsideModifier(job.material, candidateOffer, offer);
-                    }
-
                     // Scale by factors
-                    float scaledSquaredDistance = squaredDistance * distanceOutsideFactor * fPriorityFactor;
+                    float scaledSquaredDistance = squaredDistance * fPriorityFactor;
 
                     // Check if it is closer than previous best
                     if (scaledSquaredDistance < bestmatch_distance)
@@ -997,7 +975,7 @@ namespace TransferManagerCE.CustomManager
 
                 if (m_logFile is not null)
                 {
-                    m_logFile.LogCandidateDistanceLOS(counterpart_index, offer, candidateOffer, reason, bConnectedMode, distanceOutsideFactor);
+                    m_logFile.LogCandidateDistanceLOS(counterpart_index, offer, candidateOffer, reason, bConnectedMode);
                 }
 
                 // If we are too low priority then no need to check any further as they will all be too low from here.
@@ -1131,8 +1109,11 @@ namespace TransferManagerCE.CustomManager
                 // By default delta is min of 2 amounts, new Unlimited flag may change this later.
                 int deltaamount = Math.Min(incomingOffer.Amount, outgoingOffer.Amount);
 
+                // If it is a warehouse station we do some more processing
+                bool bUnlimitedHandled = HandleWarehouseStation(ref incomingOffer, ref outgoingOffer, ref deltaamount);
+                
                 // Apply Unlimited flag
-                if (m_bApplyUnlimited)
+                if (!bUnlimitedHandled && m_bApplyUnlimited)
                 {
                     //int iOldDelta = deltaamount;
                     if (incomingOffer.Unlimited && outgoingOffer.Unlimited)
@@ -1147,20 +1128,6 @@ namespace TransferManagerCE.CustomManager
                     {
                         deltaamount = incomingOffer.Amount;
                     }
-
-                    // DEBUGGING
-                    /*
-                    if (deltaamount != iOldDelta)
-                    {
-                        CDebug.Log($"{m_material} IN:{incomingOffer.GetBuildingType()}({incomingOffer.GetTransportType()})|OUT:{outgoingOffer.GetBuildingType()}({outgoingOffer.GetTransportType()}) Amount:{incomingOffer.Amount}{(incomingOffer.Unlimited ? "*" : "")}/{outgoingOffer.Amount}{(outgoingOffer.Unlimited ? "*" : "")} Delta:{deltaamount}");
-                    }
-                    */
-                }
-
-                if (m_bIsWarehouseMaterial)
-                {
-                    // If it is a warehouse station we do some more processing
-                    HandleWarehouseStation(ref incomingOffer, ref outgoingOffer, ref deltaamount);
                 }
 
                 if (m_logFile is not null)
@@ -1248,6 +1215,35 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
+        private bool HandleWarehouseStation(ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer, ref int deltaamount)
+        {
+            const int iTrainAmount = 15;
+
+            if (m_bIsWarehouseMaterial)
+            {
+                if ((incomingOffer.Unlimited || outgoingOffer.Unlimited) &&
+                (incomingOffer.IsWarehouseStation() || outgoingOffer.IsWarehouseStation()))
+                {
+                    if (incomingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.CargoStation && outgoingOffer.Unlimited)
+                    {
+                        // It's an unlimited train connection so use warehouse amount capped at 15
+                        deltaamount = Math.Min(incomingOffer.Amount, iTrainAmount);
+                        return true;
+                    }
+                    else if (incomingOffer.Unlimited && outgoingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.CargoStation)
+                    {
+                        // It's an unlimited train connection so use warehouse amount capped at 15
+                        deltaamount = Math.Min(outgoingOffer.Amount, iTrainAmount);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+
+        // -------------------------------------------------------------------------------------------
         private bool IsLargeMatchSet()
         {
             return Math.Min(job.m_incomingCount, job.m_outgoingCount) > 1500;
@@ -1332,55 +1328,11 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        private void HandleWarehouseStation(ref CustomTransferOffer incomingOffer, ref CustomTransferOffer outgoingOffer, ref int deltaamount)
-        {
-            if (incomingOffer.IsWarehouseStation())
-            {
-                if (outgoingOffer.Unlimited && incomingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.CargoStation)
-                {
-                    // It's an unlimited train connection so use warehouse amount
-                    deltaamount = incomingOffer.Amount;
-                }
-            }
-            else if (outgoingOffer.IsWarehouseStation())
-            {
-                if (incomingOffer.Unlimited && outgoingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.CargoStation)
-                {
-                    // It's an unlimited train connection so use warehouse amount
-                    deltaamount = outgoingOffer.Amount;
-                }
-            }
-        }
-
-        // -------------------------------------------------------------------------------------------
         private bool IsITZoneOfficeGoodsOffer(ref CustomTransferOffer offer)
         {
             return (m_material == CustomTransferReason.Reason.Goods &&
                     offer.IsOutgoing() &&
                     offer.GetBuildingType() == BuildingTypeHelper.BuildingType.Office);
-        }
-
-        // -------------------------------------------------------------------------------------------
-        private bool IsAllCandidatesOutsideConnections(CustomTransferOffer[] offerCandidates, int iCandidateCount)
-        {
-            // Do we have any candidates
-            if (iCandidateCount == 0)
-            {
-                return false;
-            }
-
-            // Check they are all outside connections
-            for (int counterpart_index = 0; counterpart_index < iCandidateCount; counterpart_index++)
-            {
-                ref CustomTransferOffer candidateOffer = ref offerCandidates[counterpart_index];
-
-                if (candidateOffer.Amount > 0 && !candidateOffer.IsOutside())
-                {
-                    return false;
-                }
-            }
-            
-            return true;
         }
 
         // -------------------------------------------------------------------------------------------

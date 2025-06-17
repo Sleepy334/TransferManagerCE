@@ -94,30 +94,41 @@ namespace TransferManagerCE
             base.HandleLeftClick();
 
             // Check park first
+            DistrictData district = GetCurrentDistrict();
+            if (district.m_iDistrictId != 0)
+            {
+                ToggleDistrict(district.m_eType, (byte) district.m_iDistrictId);
+            }
+        }
+
+        private DistrictData GetCurrentDistrict()
+        {
             if (DistrictManager.instance.HighlightPark != -1)
             {
-                ToggleDistrict(DistrictData.DistrictType.Park, (byte) DistrictManager.instance.HighlightPark);
+                return new DistrictData(DistrictData.DistrictType.Park, (byte)DistrictManager.instance.HighlightPark);
             }
             else if (DistrictManager.instance.HighlightDistrict != -1)
             {
-                ToggleDistrict(DistrictData.DistrictType.District, (byte)DistrictManager.instance.HighlightDistrict);
+                return new DistrictData(DistrictData.DistrictType.District, (byte)DistrictManager.instance.HighlightDistrict);
             }
             else
             {
                 byte parkId = Singleton<DistrictManager>.instance.GetPark(m_tool.GetMousePosition());
                 if (parkId != 0)
                 {
-                    ToggleDistrict(DistrictData.DistrictType.Park, parkId);
+                    return new DistrictData(DistrictData.DistrictType.Park, parkId);
                 }
                 else
                 {
                     byte districtId = Singleton<DistrictManager>.instance.GetDistrict(m_tool.GetMousePosition());
                     if (districtId != 0)
                     {
-                        ToggleDistrict(DistrictData.DistrictType.District, districtId);
+                        return new DistrictData(DistrictData.DistrictType.District, districtId);
                     }
                 }
             }
+
+            return DistrictData.Empty;
         }
 
         private void ToggleDistrict(DistrictData.DistrictType eType, byte district)
@@ -137,7 +148,22 @@ namespace TransferManagerCE
 
         public override string GetTooltipText()
         {
-            return Localization.Get("titleDistrictPanel");
+            DistrictData district = GetCurrentDistrict();
+            if (district.m_iDistrictId != 0)
+            {
+                if (district.IsDistrict())
+                {
+                    return $"<color #FFFFFF>{district.GetDistrictName()}</color>";
+                }
+                else
+                {
+                    return $"<color #00FFFF>{district.GetDistrictName()}</color>";
+                }
+
+                    
+            }
+
+            return string.Empty;
         }
 
         public override void OnToolLateUpdate()

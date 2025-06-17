@@ -83,9 +83,6 @@ namespace TransferManagerCE
 
             PathFindFailure.Init();
 
-            // Make sure the outside connection cache is cleared.
-            OutsideConnectionCache.Invalidate();
-
             // Create TransferJobPool and initialize
             TransferJobPool.Instance.Initialize();
 

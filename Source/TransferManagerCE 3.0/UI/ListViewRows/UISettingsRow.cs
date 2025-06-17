@@ -12,6 +12,16 @@ namespace TransferManagerCE.UI
         private UITruncateLabel? m_lblType = null;
         private UIButton? m_btnDelete = null;
 
+        public static float[] ColumnWidths =
+{
+            80, // ID
+            90, // Restrictions
+            230, // Description
+            230, // Districts
+        };
+
+        // ----------------------------------------------------------------------------------------
+
         public override void Start()
         {
             base.Start();
@@ -30,7 +40,7 @@ namespace TransferManagerCE.UI
                 m_lblId.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblId.autoSize = false;
                 m_lblId.height = height;
-                m_lblId.width = SettingsPanel.iCOLUMN_WIDTH_ID;
+                m_lblId.width = ColumnWidths[0];
             }
 
             m_lblRestrictions = AddUIComponent<UILabel>();
@@ -44,13 +54,13 @@ namespace TransferManagerCE.UI
                 m_lblRestrictions.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblRestrictions.autoSize = false;
                 m_lblRestrictions.height = height;
-                m_lblRestrictions.width = SettingsPanel.iCOLUMN_WIDTH_RESTRICTIONS;
+                m_lblRestrictions.width = ColumnWidths[1];
             }
 
             m_lblDescription = AddUIComponent<UITruncateLabel>();
             if (m_lblDescription is not null)
             {
-                m_lblDescription.name = "m_lblOwner";
+                m_lblDescription.name = "m_lblDescription";
                 m_lblDescription.text = "";
                 m_lblDescription.textScale = BuildingPanel.fTEXT_SCALE;
                 m_lblDescription.tooltip = "";
@@ -58,13 +68,13 @@ namespace TransferManagerCE.UI
                 m_lblDescription.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblDescription.autoSize = false;
                 m_lblDescription.height = height;
-                m_lblDescription.width = SettingsPanel.iCOLUMN_WIDTH_DESCRIPTION;
+                m_lblDescription.width = ColumnWidths[2];
             }
 
             m_lblType = AddUIComponent<UITruncateLabel>();
             if (m_lblType is not null)
             {
-                m_lblType.name = "m_lblOwner";
+                m_lblType.name = "m_lblType";
                 m_lblType.text = "";
                 m_lblType.textScale = BuildingPanel.fTEXT_SCALE;
                 m_lblType.tooltip = "";
@@ -72,7 +82,7 @@ namespace TransferManagerCE.UI
                 m_lblType.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblType.autoSize = false;
                 m_lblType.height = height;
-                m_lblType.width = SettingsPanel.iCOLUMN_WIDTH_DESCRIPTION;
+                m_lblType.width = ColumnWidths[3];
             }
 
             m_btnDelete = AddUIComponent<UIButton>();

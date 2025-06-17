@@ -140,7 +140,7 @@ namespace TransferManagerCE
                 BuildingPanel.Exists)
             {
                 // Limit the number of buildings to highlight
-                const int iMAX_BUILDINGS = 100;
+                const int iMAX_BUILDINGS = 200;
 
                 List<BuildingMatchData>? listMatches = BuildingPanel.Instance.GetBuildingMatches().GetSortedBuildingMatches();
                 if (listMatches is not null && listMatches.Count > 0)

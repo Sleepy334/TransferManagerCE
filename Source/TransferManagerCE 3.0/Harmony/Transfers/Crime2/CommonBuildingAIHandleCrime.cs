@@ -189,13 +189,21 @@ namespace TransferManagerCE
             if (buildingData.m_crimeBuffer > 0 && Singleton<SimulationManager>.instance.m_randomizer.Int32(3u) == 0)
             {
                 int iPriority = Mathf.Clamp(buildingData.m_crimeBuffer / Mathf.Max(1, iCitizenCount * 10), 0, 7);
-                if (iPriority > 0)
+
+                int iMinPriority = 2; // 2 is default vanilla
+
+                // Check if "Tough on crime" is set.
+                if (SaveGameSettings.GetSettings().PoliceToughOnCrime) 
+                {
+                    iMinPriority = 1;
+                }
+
+                if (iPriority >= iMinPriority)
                 {
                     // Check if we have police vehicles responding
                     int count = BuildingUtils.GetGuestVehicleCount(buildingData, TransferReason.Crime, (TransferReason)Reason.Crime2);
                     if (count == 0)
                     {
-                        
                         AddOutgoingCrimeOffer(buildingID, ref buildingData, iPriority);
                         return; // Only add 1 offer
                     }
@@ -203,7 +211,7 @@ namespace TransferManagerCE
             }
 
             // Occasionally add a low priority offer to arrest criminals
-            if (Singleton<SimulationManager>.instance.m_randomizer.Int32(50u) == 0)
+            if (SaveGameSettings.GetSettings().PoliceToughOnCrime && Singleton<SimulationManager>.instance.m_randomizer.Int32(50u) == 0)
             {
                 // We only request a police car when there is more than 1 criminal in the building.
                 int iCriminalCount = BuildingUtils.GetCriminalCount(buildingID, buildingData);

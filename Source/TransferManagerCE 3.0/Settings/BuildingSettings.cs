@@ -8,7 +8,7 @@ namespace TransferManagerCE
     {
         // Increment this every time the settings change
         // Also increment Serializer.DataVersion
-        public const int iBUILDING_SETTINGS_DATA_VERSION = 15;
+        public const int iBUILDING_SETTINGS_DATA_VERSION = 18;
 
         // Stores a restrictions setting object for each different type of restriction supported by the building
         // eg Dead, DeadMove etc...
@@ -16,7 +16,7 @@ namespace TransferManagerCE
         private static BuildingSettings s_defaultSettings = new BuildingSettings();
 
         // Only 1 setting per building
-        public int m_iOutsideMultiplier = 0; 
+        public int m_iOutsidePriority = -1; // -1 = OFF
         public bool m_bWarehouseOverride = false;
         public bool m_bImprovedWarehouseMatching = false;
         public int m_iWarehouseReserveTrucksPercent = 20;
@@ -30,7 +30,7 @@ namespace TransferManagerCE
             m_bWarehouseOverride = oSecond.m_bWarehouseOverride;
             m_bImprovedWarehouseMatching = oSecond.m_bImprovedWarehouseMatching;
             m_iWarehouseReserveTrucksPercent = oSecond.m_iWarehouseReserveTrucksPercent;
-            m_iOutsideMultiplier = oSecond.m_iOutsideMultiplier;
+            m_iOutsidePriority = oSecond.m_iOutsidePriority;
 
             foreach (KeyValuePair<int, RestrictionSettings> kvp in oSecond.m_restrictions)
             {
@@ -66,8 +66,8 @@ namespace TransferManagerCE
                     }
                 }
             }
-
-            if (m_iOutsideMultiplier != s_defaultSettings.m_iOutsideMultiplier)
+            
+            if (m_iOutsidePriority != s_defaultSettings.m_iOutsidePriority)
             {
                 return false;
             }
@@ -90,7 +90,7 @@ namespace TransferManagerCE
             StorageData.WriteBool(m_bWarehouseOverride, Data);
             StorageData.WriteBool(false, Data); // bWarehouseFirstNotUsed
             StorageData.WriteInt32(m_iWarehouseReserveTrucksPercent, Data);
-            StorageData.WriteInt32(m_iOutsideMultiplier, Data);
+            StorageData.WriteInt32(m_iOutsidePriority, Data); // Added in v18
 
             // Write out restrictions
             StorageData.WriteInt32(RestrictionSettings.iRESTRICTION_SETTINGS_DATA_VERSION, Data);
@@ -103,6 +103,7 @@ namespace TransferManagerCE
             }
 
             StorageData.WriteBool(m_bImprovedWarehouseMatching, Data);
+            
         }
 
         public void LoadData(int BuildingSettingsVersion, byte[] Data, ref int iIndex)
@@ -117,8 +118,17 @@ namespace TransferManagerCE
             m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirstNotUsed = StorageData.ReadBool(Data, ref iIndex);
             m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
-            m_iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex);
 
+            if (BuildingSettingsVersion >= 18)
+            {
+                m_iOutsidePriority = StorageData.ReadInt32(Data, ref iIndex);
+            } 
+            else
+            {
+                // No longer used, replaced by m_iOutsidePriority in version 18
+                int iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex); 
+            }
+            
             // Restriction version was added in BuildingSettings version 12.
             int iRestrctionVersion = 1;
             if (BuildingSettingsVersion >= 12)
@@ -282,12 +292,12 @@ namespace TransferManagerCE
                 }
             }
 
-            // Outside multiplier
+            // Outside priority
             string sOutside = "";
-            if (s_defaultSettings.m_iOutsideMultiplier != m_iOutsideMultiplier)
+            if (s_defaultSettings.m_iOutsidePriority != m_iOutsidePriority)
             {
                 iChanges++;
-                sOutside = Utils.AddStringsWithNewLine(sOutside, $"Outside Multiplier: {m_iOutsideMultiplier}");
+                sOutside = Utils.AddStringsWithNewLine(sOutside, $"Outside Priority: {m_iOutsidePriority}");
             }
 
             string sMessage = "";

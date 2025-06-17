@@ -17,7 +17,7 @@ namespace TransferManagerCE.Data
             return true;
         }
 
-        public override bool IsVehicleData()
+        public override bool IsNodeData()
         {
             return false;
         }
@@ -75,22 +75,6 @@ namespace TransferManagerCE.Data
         protected string MakeTooltip(int iBuffer, int iMaxValue)
         {
             return $"{GetMaterialDescription()}: {DisplayBufferLong(iBuffer)}/{DisplayBufferLong(iMaxValue)}";
-        }
-
-        protected string MakeTooltip(bool bIncoming, int iBuffer, int iMaxValue)
-        {
-            string sDirection = "";
-            if (bIncoming)
-            {
-                sDirection = "(In)";
-            }
-            else
-            {
-                sDirection = "(Out)";
-            }
-
-            // We also store the tooltip here
-            return $"{GetMaterialDescription()} {sDirection}: {DisplayBufferLong(iBuffer)}/{DisplayBufferLong(iMaxValue)}";
         }
 
         protected void WarnText()

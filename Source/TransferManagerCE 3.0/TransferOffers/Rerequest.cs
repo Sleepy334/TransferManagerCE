@@ -101,6 +101,7 @@ namespace TransferManagerCE.TransferOffers
                         }
                     }
                 }
+                return true;
             });
 
             iTotalTrucks = iTempTotalTrucks;

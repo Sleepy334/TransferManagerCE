@@ -15,7 +15,7 @@ namespace TransferManagerCE
     public static class BuildingUtils
     {
         public delegate bool BuildingDelegate(ushort buildingID, Building building);
-        public delegate void VehicleDelegate(ushort vehicleID, Vehicle vehicle);
+        public delegate bool VehicleDelegate(ushort vehicleID, Vehicle vehicle);
 
         public static void EnumerateGuestVehicles(Building building, VehicleDelegate func)
         {
@@ -29,7 +29,10 @@ namespace TransferManagerCE
                 Vehicle vehicle = Vehicles[vehicleID];
 
                 // Call delegate for this vehicle
-                func(vehicleID, vehicle);
+                if (!func(vehicleID, vehicle))
+                {
+                    break;
+                }
 
                 vehicleID = vehicle.m_nextGuestVehicle;
 
@@ -53,7 +56,10 @@ namespace TransferManagerCE
                 Vehicle vehicle = Vehicles[vehicleID];
 
                 // Call delegate for this vehicle
-                func(vehicleID, vehicle);
+                if (!func(vehicleID, vehicle))
+                {
+                    break;
+                }
 
                 vehicleID = vehicle.m_nextOwnVehicle;
 
@@ -460,6 +466,7 @@ namespace TransferManagerCE
                         list.Add(vehicle.m_cargoParent);
                     }
                 }
+                return true;
             });
 
             return list;
@@ -476,6 +483,7 @@ namespace TransferManagerCE
                 {
                     iVehicles++;
                 }
+                return true;
             });
 
             return iVehicles;
@@ -492,6 +500,7 @@ namespace TransferManagerCE
                 {
                     iVehicles++;
                 }
+                return true;
             });
 
             return iVehicles;
@@ -535,6 +544,7 @@ namespace TransferManagerCE
                     {
                         iTempStuck++;
                     }
+                    return true;
                 });
             }
 
@@ -580,6 +590,7 @@ namespace TransferManagerCE
                     {
                         iTempStuck++;
                     }
+                    return true;
                 });
             }
 
@@ -603,6 +614,7 @@ namespace TransferManagerCE
                             iOutside++;
                         }
                     }
+                    return true;
                 });
             }
 
@@ -623,6 +635,7 @@ namespace TransferManagerCE
                     {
                         iTransferSize += vehicle.m_transferSize;
                     }
+                    return true;
                 });
             }
 
@@ -946,6 +959,42 @@ namespace TransferManagerCE
                     BuildingPanel.Instance.ShowPanel(instance.Building);
                 }
             }
+        }
+
+        public static void GetBuildingSubBuildings(ushort buildingId, List<ushort> subBuildings)
+        {
+            subBuildings.Clear();
+
+            // Update sub buildings (if any)
+            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+            if (building.m_flags != 0)
+            {
+                int iLoopCount = 0;
+                ushort subBuildingId = building.m_subBuilding;
+                while (subBuildingId != 0)
+                {
+                    Building subBuilding = BuildingManager.instance.m_buildings.m_buffer[subBuildingId];
+                    if (subBuilding.m_flags != 0)
+                    {
+                        subBuildings.Add(subBuildingId);
+                    }
+
+                    // Setup for next sub building
+                    subBuildingId = subBuilding.m_subBuilding;
+
+                    if (++iLoopCount > 16384)
+                    {
+                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public static bool IsBuildingTurnedOff(ushort buildingId)
+        {
+            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+            return (building.m_problems & Notification.Problem1.TurnedOff).IsNotNone;
         }
     }
 }

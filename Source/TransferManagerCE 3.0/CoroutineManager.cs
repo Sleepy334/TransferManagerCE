@@ -20,9 +20,6 @@ namespace TransferManagerCE
         // Check if districts/buildings have been deleted
         private Coroutine? m_settingsCoroutine = null;
 
-        // Update outside connection cache
-        private Coroutine? m_outsideCacheCoroutine = null;
-
         // Remove old entries from path failure array
         private Coroutine? m_pathFailureCoroutine = null;
 
@@ -38,11 +35,6 @@ namespace TransferManagerCE
                 if (m_settingsCoroutine is null)
                 {
                     m_settingsCoroutine = StartCoroutine(UpdateSettingsCoroutine(iSETTINGS_CHECK_UPDATE_RATE));
-                }
-
-                if (m_outsideCacheCoroutine is null)
-                {
-                    m_outsideCacheCoroutine = StartCoroutine(UpdateOutsideCacheCoroutine(iPATH_NODE_CACHE_UPDATE_RATE));
                 }
 
                 if (m_pathFailureCoroutine is null)
@@ -70,12 +62,6 @@ namespace TransferManagerCE
                 {
                     StopCoroutine(m_settingsCoroutine);
                     m_settingsCoroutine = null;
-                }
-
-                if (m_outsideCacheCoroutine is null)
-                {
-                    StopCoroutine(m_outsideCacheCoroutine);
-                    m_outsideCacheCoroutine = null;
                 }
 
                 if (m_pathFailureCoroutine is null)
@@ -122,17 +108,6 @@ namespace TransferManagerCE
 
                 // Call update incase the settings have been invalidated
                 BuildingSettingsStorage.Update();
-            }
-        }
-
-        IEnumerator UpdateOutsideCacheCoroutine(int seconds)
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(seconds);
-
-                // Clear outside connection node cache periodically in case they change
-                OutsideConnectionCache.Invalidate();
             }
         }
 

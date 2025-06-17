@@ -16,6 +16,17 @@ namespace TransferManagerCE.UI
         private UITruncateLabel? m_lblResponder = null;
         private UIButton? m_btnDelete = null;
 
+        public static float[] ColumnWidths =
+        {
+            120, // Material
+            80, // Value
+            80, // Timer
+            60, // Distance
+            200, // Vehicle
+            200, // Responder
+        };
+
+        // ----------------------------------------------------------------------------------------
         public override void Start()
         {
             base.Start();
@@ -31,7 +42,7 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
-                m_lblMaterial.width = BuildingPanel.iCOLUMN_WIDTH_LARGE;
+                m_lblMaterial.width = ColumnWidths[0];
             }
 
             m_lblValue = AddUIComponent<UILabel>();
@@ -45,7 +56,7 @@ namespace TransferManagerCE.UI
                 m_lblValue.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblValue.autoSize = false;
                 m_lblValue.height = height;
-                m_lblValue.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
+                m_lblValue.width = ColumnWidths[1];
             }
 
             m_lblTimer = AddUIComponent<UILabel>();
@@ -59,7 +70,7 @@ namespace TransferManagerCE.UI
                 m_lblTimer.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblTimer.autoSize = false;
                 m_lblTimer.height = height;
-                m_lblTimer.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
+                m_lblTimer.width = ColumnWidths[2];
             }
 
             m_lblDistance = AddUIComponent<UILabel>();
@@ -73,7 +84,7 @@ namespace TransferManagerCE.UI
                 m_lblDistance.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblDistance.autoSize = false;
                 m_lblDistance.height = height;
-                m_lblDistance.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
+                m_lblDistance.width = ColumnWidths[3];
             }
 
             m_lblVehicle = AddUIComponent<UILabelLiveTooltip>();
@@ -87,7 +98,7 @@ namespace TransferManagerCE.UI
                 m_lblVehicle.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblVehicle.autoSize = false;
                 m_lblVehicle.height = height;
-                m_lblVehicle.width = BuildingPanel.iCOLUMN_WIDTH_XLARGE;
+                m_lblVehicle.width = ColumnWidths[4];
                 m_lblVehicle.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblVehicle.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -103,7 +114,7 @@ namespace TransferManagerCE.UI
                 m_lblResponder.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblResponder.autoSize = false;
                 m_lblResponder.height = height;
-                m_lblResponder.width = BuildingPanel.iCOLUMN_WIDTH_XLARGE;
+                m_lblResponder.width = ColumnWidths[5];
                 m_lblResponder.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblResponder.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -156,7 +167,18 @@ namespace TransferManagerCE.UI
         protected override void Display()
         {
             // Update row
+            if (data.IsHeader())
+            {
+                // Make first column full width
+                m_lblMaterial.width = width;
+            }
+            else
+            {
+                m_lblMaterial.width = ColumnWidths[0];
+            }
+
             m_lblMaterial.text = data.GetMaterialDisplay();
+
             m_lblValue.text = data.GetValue();
             m_lblTimer.text = data.GetTimer();
             m_lblVehicle.text = data.GetVehicle();

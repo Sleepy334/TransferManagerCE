@@ -47,7 +47,7 @@ namespace TransferManagerCE.Data
                             if (max > 0)
                             {
                                 WarnText(true, false, current, max);
-                                tooltip = MakeTooltip(false, current, max);
+                                tooltip = MakeTooltip(current, max);
                                 return $"{SleepyCommon.Utils.MakePercent(current, max)}";
                             }
                             else

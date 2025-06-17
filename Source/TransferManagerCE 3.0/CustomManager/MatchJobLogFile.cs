@@ -4,12 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
-using TransferManagerCE.CustomManager;
-using TransferManagerCE.Settings;
 using static TransferManagerCE.CustomManager.TransferRestrictions;
 using static TransferManagerCE.Settings.ModSettings;
 
-namespace TransferManagerCE.Util
+namespace TransferManagerCE.CustomManager
 {
     public class MatchJobLogFile
     {
@@ -42,7 +40,7 @@ namespace TransferManagerCE.Util
         public MatchJobLogFile(CustomTransferReason.Reason material)
         {
             m_material = material;
-            m_candidateLogging = (LogCandidates)ModSettings.GetSettings().MatchLogCandidates;
+            m_candidateLogging = (LogCandidates)GetSettings().MatchLogCandidates;
             m_bScaleByPriority = TransferManagerModes.IsScaleByPriority(m_material);
             m_bDisplayNode = PathDistanceTypes.GetDistanceAlgorithm(material) != PathDistanceTypes.PathDistanceAlgorithm.LineOfSight;
 
@@ -52,7 +50,7 @@ namespace TransferManagerCE.Util
                 {
                     if (string.IsNullOrEmpty(s_path))
                     {
-                        string dir = Path.Combine(ModSettings.UserSettingsDir, "TransferManagerCE");
+                        string dir = Path.Combine(UserSettingsDir, "TransferManagerCE");
 
                         // Check if the folder exists
                         if (!Directory.Exists(dir))
@@ -73,7 +71,7 @@ namespace TransferManagerCE.Util
                 }
 
                 // Set this log file name
-                LogFilePath = Path.Combine(s_path, $"{s_iLogFileNumber++.ToString("000000")}-{m_material}.txt");
+                LogFilePath = Path.Combine(s_path, $"{s_iLogFileNumber++.ToString("000000")}-{CustomTransferDispatcher.Instance.Cycle.ToString("00000")}-{m_material}.txt");
 
                 if (!string.IsNullOrEmpty(LogFilePath))
                 {
@@ -127,12 +125,12 @@ namespace TransferManagerCE.Util
                     }
                 case LogCandidates.Valid:
                     {
-                        bLogCandidate = (reason == ExclusionReason.None);
+                        bLogCandidate = reason == ExclusionReason.None;
                         break;
                     }
                 case LogCandidates.Excluded:
                     {
-                        bLogCandidate = (reason != ExclusionReason.None);
+                        bLogCandidate = reason != ExclusionReason.None;
                         break;
                     }
                 case LogCandidates.None:
@@ -223,7 +221,7 @@ namespace TransferManagerCE.Util
         public void LogFooter(TransferJob job, int iMatches, long jobMatchTime)
         {
             LogSeparator();
-            LogInfo($"Match Job Complete - IN Remaining: {job.m_incomingCountRemaining}/{job.m_incomingAmount} OUT Remaining: {job.m_outgoingCountRemaining}/{job.m_outgoingAmount} Matches: {iMatches} Elapsed time: {((double)jobMatchTime * 0.0001).ToString("F")}ms");
+            LogInfo($"Match Job Complete - IN Remaining: {job.m_incomingCountRemaining}/{job.m_incomingAmount} OUT Remaining: {job.m_outgoingCountRemaining}/{job.m_outgoingAmount} Matches: {iMatches} Elapsed time: {(jobMatchTime * 0.0001).ToString("F")}ms");
             LogInfo("\r\nKey:");
             LogInfo("DT = Death Timer");
             LogInfo("IT = Incoming Timer");
@@ -249,7 +247,7 @@ namespace TransferManagerCE.Util
         }
 
         // -------------------------------------------------------------------------------------------
-        public void LogCandidateDistanceLOS(int iIndex, CustomTransferOffer offer, CustomTransferOffer candidateOffer, ExclusionReason reason, bool bConnectedMode, float fOutsideFactor)
+        public void LogCandidateDistanceLOS(int iIndex, CustomTransferOffer offer, CustomTransferOffer candidateOffer, ExclusionReason reason, bool bConnectedMode)
         {
             // Record reason for failure for summary
             RecordCandidateReason(reason);
@@ -257,12 +255,12 @@ namespace TransferManagerCE.Util
             // Log candidate if requested
             if (LogCandidate(reason))
             {
-                LogInfo($"       -> | #{iIndex.ToString("0000")} {GetOfferDescription(candidateOffer)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km |" + (m_bScaleByPriority ? $" PriorityFactor:{candidateOffer.GetPriorityFactor(m_material).ToString("0.0000000")} | " : "") + $" OutsideFactor:{fOutsideFactor.ToString("0.0000000")} | Exclusion: {reason}");
+                LogInfo($"       -> | #{iIndex.ToString("0000")} {GetOfferDescription(candidateOffer)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km |" + (m_bScaleByPriority ? $" PriorityFactor:{candidateOffer.GetPriorityFactor(m_material).ToString("0.0000000")} | " : "") + $" Exclusion: {reason}");
             }
         }
 
         // -------------------------------------------------------------------------------------------
-        public void LogCandidateLOS(int iIndex, CustomTransferOffer offer, CustomTransferOffer candidateOffer, ExclusionReason reason, bool bConnectedMode, float fOutsideFactor)
+        public void LogCandidateLOS(int iIndex, CustomTransferOffer offer, CustomTransferOffer candidateOffer, ExclusionReason reason, bool bConnectedMode)
         {
             // Record reason for failure for summary
             RecordCandidateReason(reason);
@@ -270,7 +268,7 @@ namespace TransferManagerCE.Util
             // Log candidate if requested
             if (LogCandidate(reason))
             {
-                LogInfo($"       -> | #{iIndex.ToString("0000")} {GetOfferDescription(candidateOffer)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km |" + (m_bScaleByPriority ? $" PriorityFactor:{candidateOffer.GetPriorityFactor(m_material).ToString("0.0000000")} | " : "") + $" OutsideFactor:{fOutsideFactor.ToString("0.0000000")} | Exclusion: {reason}");
+                LogInfo($"       -> | #{iIndex.ToString("0000")} {GetOfferDescription(candidateOffer)} | DistanceLOS:{TransferManagerUtils.GetDistanceKm(offer, candidateOffer)}km |" + (m_bScaleByPriority ? $" PriorityFactor:{candidateOffer.GetPriorityFactor(m_material).ToString("0.0000000")} | " : "") + $" | Exclusion: {reason}");
             }
         }
 
@@ -308,7 +306,7 @@ namespace TransferManagerCE.Util
 
                 if (level == LogLevel.Warning || level == LogLevel.Error)
                 {
-                    m_streamWriter.WriteLine(new System.Diagnostics.StackTrace(true).ToString());
+                    m_streamWriter.WriteLine(new StackTrace(true).ToString());
                     m_streamWriter.WriteLine();
                 }
             }

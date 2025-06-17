@@ -149,13 +149,15 @@ namespace TransferManagerCE.Util
                                 }
                             case InstanceType.NetNode:
                                 {
-                                    if (OutsideConnectionCache.IsOutsideConnectionNode(target.NetNode))
+                                    if (CitiesUtils.IsOutsideConnectionNode(target.NetNode))
                                     {
                                         m_listExternal.Add(vehicleData);
-                                        break;
                                     }
-
-                                    m_listInternal.Add(vehicleData);
+                                    else
+                                    {
+                                        m_listInternal.Add(vehicleData);
+                                    }
+                                        
                                     break;
                                 }
                             default:
@@ -165,6 +167,7 @@ namespace TransferManagerCE.Util
                                 }
                         }
                     }
+                    return true;
                 });
             }
         }

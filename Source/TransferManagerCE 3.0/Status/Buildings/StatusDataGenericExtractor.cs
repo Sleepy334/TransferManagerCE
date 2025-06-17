@@ -23,7 +23,7 @@ namespace TransferManagerCE.Data
                 int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, 8000 * 2);
 
                 WarnText(false, true, building.m_customBuffer1, iStorageCapacity);
-                tooltip = MakeTooltip(false, building.m_customBuffer1, iStorageCapacity);
+                tooltip = MakeTooltip(building.m_customBuffer1, iStorageCapacity);
                 return DisplayValueAsPercent(building.m_customBuffer1, iStorageCapacity);
             }
 

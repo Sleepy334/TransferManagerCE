@@ -15,11 +15,12 @@ namespace TransferManagerCE.UI
     public class BuildingSettingsTab : BuildingTab
     {
         const float fTEXT_SCALE = 0.9f;
+        const int iButtonHeight = 28;
 
         // Settings tab
         private UITabStrip? m_tabStripTransferReason = null;
         private UIPanel? m_pnlMain = null;
-        private UIScrollablePanel? m_panelTabPanel = null;
+        private UIPanel? m_panelTabPanel = null;
 
         private UIGroup? m_grpDistrictRestrictions = null;
 
@@ -28,15 +29,20 @@ namespace TransferManagerCE.UI
 
         // Distance restriction
         private UIGroup? m_grpServiceDistance = null;
-        private SettingsSlider? m_sliderServiceDistance = null;
+        private UIDistancePanel? m_sliderIncomingServiceDistance = null;
+        private UIDistancePanel? m_sliderOutgoingServiceDistance = null;
         private UILabel? m_lblDistanceGlobal = null;
+        private UIPanel? m_globalDistancePanel = null;
 
         private UIGroup? m_panelImportExport = null;
         private UICheckBox? m_chkAllowImport = null;
         private UICheckBox? m_chkAllowExport = null;
+        private UIToggleButton? m_btnExcludeOutsideConnecions = null;
+        private UIButton? m_btnOutsideClear = null;
 
-        private UIGroup? m_grpOutsideDistanceMultiplier = null;
-        private SettingsSlider? m_sliderOutsideDistanceMultiplier = null;
+        private UIGroup? m_grpOutsidePriority = null;
+        private SettingsSlider? m_sliderOutsidePriority = null;
+        private UILabel? m_lblCurrentOutsidePriority = null;
 
         // Warehouse options
         private UIGroup? m_panelGoodsDelivery = null;
@@ -54,7 +60,6 @@ namespace TransferManagerCE.UI
 
         private int m_iRestrictionTabIndex = 0;
         private bool m_bInSetup = false;
-        private bool m_bScrollbarVisibleLayoutState = false;
 
         // ----------------------------------------------------------------------------------------
         public BuildingSettingsTab() :
@@ -62,16 +67,23 @@ namespace TransferManagerCE.UI
         {
         }
 
-        public int GetRestrictionTabIndex()
+        public int RestrictionTabIndex
         {
-            return m_iRestrictionTabIndex;
+            get 
+            { 
+                return m_iRestrictionTabIndex; 
+            }
+            set
+            {
+                m_iRestrictionTabIndex = Mathf.Max(0, value);
+            }
         }
 
         public int GetRestrictionId()
         {
-            if (m_tabStripTransferReason is not null && m_tabStripTransferReason.Count > GetRestrictionTabIndex())
+            if (m_tabStripTransferReason is not null && m_tabStripTransferReason.Count > RestrictionTabIndex)
             {
-                return m_tabStripTransferReason.GetTabId(GetRestrictionTabIndex());
+                return m_tabStripTransferReason.GetTabId(RestrictionTabIndex);
             }
             return -1;
         }
@@ -80,11 +92,16 @@ namespace TransferManagerCE.UI
         {
             if (buildingId != m_buildingId)
             {
-                m_iRestrictionTabIndex = 0;
+                RestrictionTabIndex = 0;
 
                 if (DistrictSelectionPanel.IsVisible())
                 {
                     DistrictSelectionPanel.Instance.Hide();
+                }
+
+                if (OutsideConnectionSelectionPanel.IsVisible())
+                {
+                    OutsideConnectionSelectionPanel.Instance.Hide();
                 }
             }
 
@@ -122,7 +139,7 @@ namespace TransferManagerCE.UI
                 m_tabStripTransferReason = UITabStrip.Create(TabStyle.SubBar, m_pnlMain, tabSettings.width - 20f, 18f, null);
                 m_tabStripTransferReason.relativePosition = new Vector2(0, 0);
 
-                m_panelTabPanel = m_pnlMain.AddUIComponent<UIScrollablePanel>();
+                m_panelTabPanel = m_pnlMain.AddUIComponent<UIPanel>();
                 m_panelTabPanel.relativePosition = new Vector2(0, m_tabStripTransferReason.height + 6);
                 m_panelTabPanel.width = m_tabStripTransferReason.width;
                 m_panelTabPanel.height = 400; // This gets adjusted at the end
@@ -132,16 +149,6 @@ namespace TransferManagerCE.UI
                 m_panelTabPanel.autoLayoutDirection = LayoutDirection.Vertical;
                 m_panelTabPanel.autoLayoutPadding = new RectOffset(10, 0, 6, 0);
                 m_panelTabPanel.clipChildren = true;
-                m_panelTabPanel.scrollWheelDirection = UIOrientation.Vertical;
-                m_panelTabPanel.scrollPadding.bottom = 12;
-
-                // Add scroll bar
-                UIScrollbars.AddScrollbar(m_pnlMain, m_panelTabPanel);
-
-                m_panelTabPanel.eventSizeChanged += (c, value) =>
-                {
-                    m_panelTabPanel.scrollPadding.top = 1;
-                };
 
                 // ------------------------------------------------------------
                 // Prefer local services
@@ -168,8 +175,6 @@ namespace TransferManagerCE.UI
                 m_buildingRestrictionGroup = UIGroup.AddGroup(m_panelTabPanel, Localization.Get("GROUP_BUILDINGPANEL_BUILDING_RESTRICTIONS"), fTEXT_SCALE, m_panelTabPanel.width - 20, 100);
                 if (m_buildingRestrictionGroup is not null)
                 {
-                    const int iButtonHeight = 28;
-
                     // Incoming
                     m_pnlBuildingRestrictionsIncoming = UIBuildingRestrictionsPanel.Create(m_buildingRestrictionGroup.m_content, true, fTEXT_SCALE);
                     m_pnlBuildingRestrictionsIncoming.eventOnBuildingRestrictionsClicked += OnBuildingRestrictionsClicked;
@@ -186,26 +191,72 @@ namespace TransferManagerCE.UI
                 m_grpServiceDistance = UIGroup.AddGroup(m_panelTabPanel, Localization.Get("GROUP_BUILDINGPANEL_DISTANCE_RESTRICTIONS"), fTEXT_SCALE, m_panelTabPanel.width - 20, 80);
                 if (m_grpServiceDistance is not null)
                 {
-                    m_sliderServiceDistance = SettingsSlider.Create(m_grpServiceDistance.m_content, LayoutDirection.Horizontal, Localization.Get("sliderDistanceRestriction"), UIFonts.Regular, fTEXT_SCALE, 400, 280, 0f, 20f, 0.5f, 0f, 1, OnServiceDistanceChanged);
-                    m_sliderServiceDistance.SetTooltip(Localization.Get("sliderDistanceRestrictionTooltip"));
+                    m_sliderIncomingServiceDistance = UIDistancePanel.Create(m_grpServiceDistance.m_content, true, SelectionModeBase.GetKnownColor(true), fTEXT_SCALE, (value) => OnServiceDistanceChanged(true, value));
+                    m_sliderOutgoingServiceDistance = UIDistancePanel.Create(m_grpServiceDistance.m_content, false, SelectionModeBase.GetKnownColor(false), fTEXT_SCALE, (value) => OnServiceDistanceChanged(false, value));
 
-                    m_lblDistanceGlobal = m_grpServiceDistance.m_content.AddUIComponent<UILabel>();
+                    m_globalDistancePanel = m_grpServiceDistance.m_content.AddUIComponent<UIPanel>();
+                    m_globalDistancePanel.width = 400;
+                    m_globalDistancePanel.height = 26;
+                    m_globalDistancePanel.autoLayout = true;
+                    m_globalDistancePanel.autoLayoutDirection = LayoutDirection.Horizontal;
+                    m_globalDistancePanel.autoLayoutPadding = new RectOffset(4, 4, 4, 4);
+                    //globalLayout.backgroundSprite = "InfoviewPanel";
+                    //globalLayout.color = SleepyCommon.KnownColor.red;
+
+                    m_lblDistanceGlobal = m_globalDistancePanel.AddUIComponent<UILabel>();
                     m_lblDistanceGlobal.text = Localization.Get("txtGlobalDistanceRestriction");
                     m_lblDistanceGlobal.textScale = fTEXT_SCALE;
                     m_lblDistanceGlobal.font = UIFonts.Regular;
                     m_lblDistanceGlobal.autoSize = false;// true;
-                    m_lblDistanceGlobal.height = 26;
-                    m_lblDistanceGlobal.width = m_grpServiceDistance.m_content.width;
+                    m_lblDistanceGlobal.height = m_globalDistancePanel.height;
+                    m_lblDistanceGlobal.width = 294;
                     m_lblDistanceGlobal.verticalAlignment = UIVerticalAlignment.Middle;
+
+                    UIPanel spacer = m_globalDistancePanel.AddUIComponent<UIPanel>();
+                    spacer.width = m_globalDistancePanel.height;
+                    spacer.height = m_globalDistancePanel.height;
+
+                    UIPanel colorPanel = spacer.AddUIComponent<UIPanel>();
+                    colorPanel.width = 15;
+                    colorPanel.height = 15;
+                    colorPanel.backgroundSprite = "InfoviewPanel";
+                    colorPanel.color = SleepyCommon.KnownColor.yellow;
+                    colorPanel.CenterToParent();
                 }
 
                 // ------------------------------------------------------------
                 // Outside connections
-                m_panelImportExport = UIGroup.AddGroup(m_panelTabPanel, Localization.Get("GROUP_BUILDINGPANEL_OUTSIDE_CONNECTIONS"), fTEXT_SCALE, m_panelTabPanel.width - 20, 70);
+                m_panelImportExport = UIGroup.AddGroup(m_panelTabPanel, Localization.Get("GROUP_EXPORTIMPORT_OPTIONS"), fTEXT_SCALE, m_panelTabPanel.width - 20, 70);
                 if (m_panelImportExport is not null && m_panelImportExport.m_content is not null)
                 {
-                    m_chkAllowImport = UIMyUtils.AddCheckbox(m_panelImportExport.m_content, Localization.Get("chkAllowImport"), UIFonts.Regular, fTEXT_SCALE, true, OnAllowImportChanged);
+                    const int checkboxWidth = 400;
+
+                    UIPanel panel = m_panelImportExport.m_content.AddUIComponent<UIPanel>();
+                    panel.autoLayout = true;
+                    panel.autoLayoutDirection = LayoutDirection.Horizontal;
+                    panel.autoLayoutPadding.right = 4;
+                    panel.width = m_panelImportExport.m_content.width;
+                    
+                    m_chkAllowImport = UIMyUtils.AddCheckbox(panel, Localization.Get("chkAllowImport"), UIFonts.Regular, fTEXT_SCALE, true, OnAllowImportChanged);
+                    m_chkAllowImport.width = checkboxWidth;
+                    panel.height = m_chkAllowImport.height;
+
+                    m_btnExcludeOutsideConnecions = UIMyUtils.AddToggleButton(UIMyUtils.ButtonStyle.DropDown, panel, Localization.Get("GROUP_BUILDINGPANEL_OUTSIDE_CONNECTIONS") + "...", "", 260, iButtonHeight, OnSelectExcludeOutsideConnectionsClicked);
+                    if (m_btnExcludeOutsideConnecions is not null)
+                    {
+                        m_btnExcludeOutsideConnecions.onColor = KnownColor.lightBlue;
+                        m_btnExcludeOutsideConnecions.offColor = KnownColor.white;
+                        m_btnExcludeOutsideConnecions.StateOn = false; // start off
+                    }
+
+                    m_btnOutsideClear = UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.DropDown, panel, "Niet", m_btnExcludeOutsideConnecions.height, m_btnExcludeOutsideConnecions.height, OnExcludeOutsideClearClicked);
+                    if (m_btnOutsideClear is not null)
+                    {
+                        m_btnOutsideClear.tooltip = Localization.Get("btnClear");
+                    }
+
                     m_chkAllowExport = UIMyUtils.AddCheckbox(m_panelImportExport.m_content, Localization.Get("chkAllowExport"), UIFonts.Regular, fTEXT_SCALE, true, OnAllowExportChanged);
+                    m_chkAllowExport.width = checkboxWidth;
                 }
 
                 // ------------------------------------------------------------
@@ -219,15 +270,28 @@ namespace TransferManagerCE.UI
                 }
 
                 // ------------------------------------------------------------
-                m_grpOutsideDistanceMultiplier = UIGroup.AddGroup(m_pnlMain, Localization.Get("GROUP_BUILDINGPANEL_OUTSIDE_DISTANCE_MULTIPLIER"), fTEXT_SCALE, m_pnlMain.width - 20, 60);
-                if (m_grpOutsideDistanceMultiplier is not null)
+                m_grpOutsidePriority = UIGroup.AddGroup(m_pnlMain, Localization.Get("GROUP_BUILDINGPANEL_OUTSIDE_PRIORITY"), fTEXT_SCALE, m_pnlMain.width - 20, 60);
+                if (m_grpOutsidePriority is not null)
                 {
                     // Clear the group background
-                    m_grpOutsideDistanceMultiplier.backgroundSprite = "";
-                    m_grpOutsideDistanceMultiplier.relativePosition = new Vector2(0, m_tabStripTransferReason.height + m_panelTabPanel.height + 12);
-                    m_sliderOutsideDistanceMultiplier = SettingsSlider.Create(m_grpOutsideDistanceMultiplier.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideDistanceMultiplier"), UIFonts.Regular, fTEXT_SCALE, 420, 280, 0f, 10, 1f, 0f, 0, OnOutsideDistanceMultiplierChanged);
-                    m_sliderOutsideDistanceMultiplier.SetTooltip(Localization.Get("sliderOutsideDistanceMultiplierTooltip"));
-                    m_grpOutsideDistanceMultiplier.isVisible = false; // It seems to not be hidden correctly the first time so hide it here
+                    m_grpOutsidePriority.backgroundSprite = "";
+                    m_grpOutsidePriority.relativePosition = new Vector2(0, m_tabStripTransferReason.height + m_panelTabPanel.height + 12);
+
+                    // Priority
+                    m_sliderOutsidePriority = SettingsSlider.Create(m_grpOutsidePriority.m_content, LayoutDirection.Horizontal, "Priority", UIFonts.Regular, fTEXT_SCALE, 420, 280, -1f, 100, 1f, 0f, 0, OnOutsidePriorityChanged);
+                    m_sliderOutsidePriority.OffValue = -1;
+                    m_sliderOutsidePriority.Percent = true;
+
+                    m_lblCurrentOutsidePriority = m_grpOutsidePriority.m_content.AddUIComponent<UILabel>();
+                    m_lblCurrentOutsidePriority.text = Localization.Get("txtOutsideConnectionCurrentPriority");
+                    m_lblCurrentOutsidePriority.textScale = fTEXT_SCALE;
+                    m_lblCurrentOutsidePriority.font = UIFonts.Regular;
+                    m_lblCurrentOutsidePriority.autoSize = false;// true;
+                    m_lblCurrentOutsidePriority.height = iButtonHeight;
+                    m_lblCurrentOutsidePriority.width = 294;
+                    m_lblCurrentOutsidePriority.verticalAlignment = UIVerticalAlignment.Middle;
+                    
+                    m_grpOutsidePriority.isVisible = false; // It seems to not be hidden correctly the first time so hide it here
                 }
 
                 // ------------------------------------------------------------
@@ -279,11 +343,13 @@ namespace TransferManagerCE.UI
                     // Dont bother updating till it becomes the active tab
                     if (bActive)
                     {
+                        bool bIsWarehouse = IsWarehouse(m_eBuildingType);
+
                         // Update settings reason tabs
                         UpdateReasonTabVisibility(m_eBuildingType, buildingRules);
 
                         // check index is in range
-                        int iRestrictionTabIndex = GetRestrictionTabIndex();
+                        int iRestrictionTabIndex = RestrictionTabIndex;
                         if (iRestrictionTabIndex < 0 || iRestrictionTabIndex >= buildingRules.Count)
                         {
                             iRestrictionTabIndex = 0;
@@ -348,11 +414,16 @@ namespace TransferManagerCE.UI
 
                         // ------------------------------------------------------------------------
                         // Distance restrictions
-                        if (currentRule.m_distance)
+                        if (currentRule.m_incomingDistance || currentRule.m_outgoingDistance)
                         {
                             m_grpServiceDistance.Show();
                             m_grpServiceDistance.Text = Localization.Get("GROUP_BUILDINGPANEL_DISTANCE_RESTRICTIONS");
-                            m_sliderServiceDistance.SetValue(restrictionSettings.m_iServiceDistanceMeters / 1000.0f);
+
+                            m_sliderIncomingServiceDistance.isVisible = currentRule.m_incomingDistance;
+                            m_sliderIncomingServiceDistance.Value = restrictionSettings.m_incomingServiceDistanceMeters / 1000.0f;
+
+                            m_sliderOutgoingServiceDistance.isVisible = currentRule.m_outgoingDistance;
+                            m_sliderOutgoingServiceDistance.Value = restrictionSettings.m_outgoingServiceDistanceMeters / 1000.0f;
 
                             // Try and determine current reason and check global distance
                             CustomTransferReason.Reason reason = CustomTransferReason.Reason.None;
@@ -369,10 +440,12 @@ namespace TransferManagerCE.UI
                             {
                                 m_lblDistanceGlobal.Show();
                                 m_lblDistanceGlobal.text = $"{Localization.Get("txtGlobalDistanceRestriction")}: {SaveGameSettings.GetSettings().GetActiveDistanceRestrictionKm(reason).ToString("N1")}";
+                                m_globalDistancePanel.Show();
                             }
                             else
                             {
                                 m_lblDistanceGlobal.Hide();
+                                m_globalDistancePanel.Hide();
                             }
                         }
                         else
@@ -385,10 +458,44 @@ namespace TransferManagerCE.UI
                         if (currentRule.m_import || currentRule.m_export)
                         {
                             m_panelImportExport.Show();
-                            m_chkAllowImport.isEnabled = currentRule.m_import;
+
+                            // Disable appropriate import/export option
+                            if (bIsWarehouse)
+                            {
+                                switch (WarehouseUtils.GetWarehouseMode(m_buildingId))
+                                {
+                                    case WarehouseUtils.WarehouseMode.Fill:
+                                        {
+                                            m_chkAllowImport.isEnabled = currentRule.m_import;
+                                            m_chkAllowExport.isEnabled = false;
+                                            break;
+                                        }
+                                    case WarehouseUtils.WarehouseMode.Empty:
+                                        {
+                                            m_chkAllowImport.isEnabled = false;
+                                            m_chkAllowExport.isEnabled = currentRule.m_export;
+                                            break;
+                                        }
+                                    default:
+                                        {
+                                            m_chkAllowImport.isEnabled = currentRule.m_import;
+                                            m_chkAllowExport.isEnabled = currentRule.m_export;
+                                            break;
+                                        }
+                                }
+                            }
+                            else
+                            {
+                                m_chkAllowImport.isEnabled = currentRule.m_import;
+                                m_chkAllowExport.isEnabled = currentRule.m_export;
+                            }
+
                             m_chkAllowImport.isChecked = restrictionSettings.m_bAllowImport;
-                            m_chkAllowExport.isEnabled = currentRule.m_export;
                             m_chkAllowExport.isChecked = restrictionSettings.m_bAllowExport;
+
+                            m_btnExcludeOutsideConnecions.StateOn = OutsideConnectionSelectionPanel.IsVisible();
+
+                            m_btnOutsideClear.isEnabled = restrictionSettings.m_excludedOutsideConnections.Count > 0;
                         }
                         else
                         {
@@ -397,7 +504,7 @@ namespace TransferManagerCE.UI
 
                         // ------------------------------------------------------------------------
                         // Warehouse settings
-                        if (IsWarehouse(m_eBuildingType))
+                        if (bIsWarehouse)
                         {
                             m_panelGoodsDelivery.Show();
                             m_chkWarehouseOverride.isChecked = settings.m_bWarehouseOverride;
@@ -425,12 +532,13 @@ namespace TransferManagerCE.UI
                         // Outside connection multiplier
                         if (BuildingTypeHelper.IsOutsideConnection(m_buildingId))
                         {
-                            m_grpOutsideDistanceMultiplier.Show();
-                            m_sliderOutsideDistanceMultiplier.SetValue(settings.m_iOutsideMultiplier);
+                            m_grpOutsidePriority.Show();
+                            m_sliderOutsidePriority.SetValue(settings.m_iOutsidePriority);
+                            m_lblCurrentOutsidePriority.text = $"{Localization.Get("txtOutsideConnectionCurrentPriority")}: {BuildingSettingsFast.GetEffectiveOutsidePriority(m_buildingId)}%";
                         }
                         else
                         {
-                            m_grpOutsideDistanceMultiplier.Hide();
+                            m_grpOutsidePriority.Hide();
                         }
 
 
@@ -444,7 +552,7 @@ namespace TransferManagerCE.UI
                         if (IsOutsideConnection(m_buildingId))
                         {
                             m_panelTabPanel.height = m_panelImportExport.height + 20;
-                            m_grpOutsideDistanceMultiplier.relativePosition = new Vector2(10, m_tabStripTransferReason.height + m_panelTabPanel.height + 12);
+                            m_grpOutsidePriority.relativePosition = new Vector2(10, m_tabStripTransferReason.height + m_panelTabPanel.height + 12);
                         }
                         else
                         {
@@ -469,10 +577,15 @@ namespace TransferManagerCE.UI
                             DistrictSelectionPanel.Instance.InvalidatePanel();
                         }
 
+                        if (OutsideConnectionSelectionPanel.IsVisible())
+                        {
+                            OutsideConnectionSelectionPanel.Instance.SetPanelBuilding(m_buildingId, GetRestrictionId());
+                            OutsideConnectionSelectionPanel.Instance.InvalidatePanel();
+                        }
+
                         UpdateDistrictButtonTooltip(true);
                         UpdateDistrictButtonTooltip(false);
                         UpdateDistrictButtonToggle();
-                        UpdateScrollbarChanged();
                     }
                 }
                 else
@@ -521,13 +634,18 @@ namespace TransferManagerCE.UI
                     case BuildingType.WarehouseStation:
                     case BuildingType.CargoFerryWarehouseHarbor:
                         {
-                            string sName = rule.m_name;
+                            string sName = string.Empty;
+                            string sWarehouseMode = WarehouseUtils.GetLocalisedWarehouseMode(WarehouseUtils.GetWarehouseMode(m_buildingId));
 
                             // For warehouses we add the actual material to the tab name.
                             CustomTransferReason.Reason actualTransferReason = BuildingTypeHelper.GetWarehouseActualTransferReason(m_buildingId);
                             if (actualTransferReason != CustomTransferReason.Reason.None && rule.m_reasons.Contains(actualTransferReason))
                             {
-                                sName += $" ({actualTransferReason})";
+                                sName += $"{actualTransferReason} | {sWarehouseMode}";
+                            }
+                            else
+                            {
+                                sName += $"{sWarehouseMode}";
                             }
 
                             m_tabStripTransferReason.SetTabText(iTabIndex, sName);
@@ -635,34 +753,6 @@ namespace TransferManagerCE.UI
                             }
                             break;
                         }
-                    case BuildingType.MainIndustryBuilding:
-                    case BuildingType.AirportMainTerminal:
-                    case BuildingType.AirportCargoTerminal:
-                    case BuildingType.MainCampusBuilding:
-                        {
-                            if (SaveGameSettings.GetSettings().MainBuildingPostTruck)
-                            {
-                                // Turn off mail
-                                if (rule.m_reasons.Contains(CustomTransferReason.Reason.Mail))
-                                {
-                                    bShowTabForRule = false;
-                                }
-                            }
-                            else
-                            {
-                                // Turn off mail2
-                                if (rule.m_reasons.Contains(CustomTransferReason.Reason.Mail2))
-                                {
-                                    bShowTabForRule = false;
-                                }
-                            }
-
-                            // Update tab names
-                            m_tabStripTransferReason.SetTabText(iTabIndex, rule.m_name);
-                            m_tabStripTransferReason.SetTabWidth(iTabIndex, GetTabWidth(rule.m_reasons));
-                            m_tabStripTransferReason.SetTabToolTip(iTabIndex, GetRestrictionReasons(rule.m_reasons));
-                            break;
-                        }
                     default:
                         {
                             m_tabStripTransferReason.SetTabText(iTabIndex, rule.m_name);
@@ -678,31 +768,15 @@ namespace TransferManagerCE.UI
             }
 
             // Update selected tab
-            m_tabStripTransferReason.SelectTabIndex(GetRestrictionTabIndex());
-        }
-
-        public void UpdateScrollbarChanged()
-        {
-            // Resize panel when scroll bar visible
-            if (m_bScrollbarVisibleLayoutState != m_panelTabPanel.verticalScrollbar.isVisible)
+            if (0 <= RestrictionTabIndex && RestrictionTabIndex < m_tabStripTransferReason.Count)
             {
-                if (m_panelTabPanel.verticalScrollbar.isVisible)
-                {
-                    m_panelTabPanel.width = m_tabStripTransferReason.width - 10;
-                }
-                else
-                {
-                    m_panelTabPanel.width = m_tabStripTransferReason.width;
-                }
-
-                m_grpDistrictRestrictions.width = m_panelTabPanel.width - 20;
-                m_buildingRestrictionGroup.width = m_panelTabPanel.width - 20;
-                m_grpServiceDistance.width = m_panelTabPanel.width - 20;
-                m_panelImportExport.width = m_panelTabPanel.width - 20;
-                m_panelGoodsDelivery.width = m_panelTabPanel.width - 20;
-                m_grpOutsideDistanceMultiplier.width = m_panelTabPanel.width - 20;
+                m_tabStripTransferReason.SelectTabIndex(RestrictionTabIndex);
             }
-            m_bScrollbarVisibleLayoutState = m_panelTabPanel.verticalScrollbar.isVisible;
+            else if (m_tabStripTransferReason.Count > 0)
+            {
+                RestrictionTabIndex = 0;
+                m_tabStripTransferReason.SelectTabIndex(RestrictionTabIndex);
+            }
         }
 
         private string GetRestrictionReasons(CustomTransferReason.Reason reason)
@@ -728,13 +802,9 @@ namespace TransferManagerCE.UI
         {
             if (m_bInSetup) { return; }
 
-            m_iRestrictionTabIndex = index;
+            RestrictionTabIndex = index;
 
-            // Close district panel
-            if (DistrictSelectionPanel.IsVisible())
-            {
-                DistrictSelectionPanel.Instance.Hide();
-            }
+            BuildingPanel.Instance.HideSecondaryPanels();
 
             // Turn off building selection mode
             if (SelectionTool.Exists)
@@ -854,14 +924,21 @@ namespace TransferManagerCE.UI
         }
 
         // ----------------------------------------------------------------------------------------
-        public void OnServiceDistanceChanged(float Value)
+        public void OnServiceDistanceChanged(bool bIncoming, float Value)
         {
             if (m_bInSetup) { return; }
 
             BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
-            restrictions.m_iServiceDistanceMeters = (int)(Value * 1000.0f); // eg 3.5km = 3500
+            if (bIncoming)
+            {
+                restrictions.m_incomingServiceDistanceMeters = (int)(Value * 1000.0f); // eg 3.5km = 3500
+            }
+            else
+            {
+                restrictions.m_outgoingServiceDistanceMeters = (int)(Value * 1000.0f); // eg 3.5km = 3500
+            }
 
             settings.SetRestrictions(GetRestrictionId(), restrictions);
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
@@ -869,16 +946,13 @@ namespace TransferManagerCE.UI
             UpdateTab(true);
         }
 
-        public void OnOutsideDistanceMultiplierChanged(float Value)
+        public void OnOutsidePriorityChanged(float Value)
         {
             if (m_bInSetup) { return; }
 
             BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
-            settings.m_iOutsideMultiplier = (int)Value;
+            settings.m_iOutsidePriority = (int)Value;
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
-
-            // Invalidate outside connection path cache now we have updated a modifier
-            OutsideConnectionCache.Invalidate();
 
             // Update outside connection panel with this new value
             if (OutsideConnectionPanel.IsVisible())
@@ -918,6 +992,43 @@ namespace TransferManagerCE.UI
             RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
 
             restrictions.m_bAllowExport = bChecked;
+
+            settings.SetRestrictions(GetRestrictionId(), restrictions);
+            BuildingSettingsStorage.SetSettings(m_buildingId, settings);
+
+            // Update Import Export settings on outside connection panel if showing
+            if (OutsideConnectionPanel.IsVisible())
+            {
+                OutsideConnectionPanel.Instance.InvalidatePanel();
+            }
+
+            UpdateTab(true);
+        }
+
+        public void OnSelectExcludeOutsideConnectionsClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            m_btnExcludeOutsideConnecions.Toggle();
+
+            if (OutsideConnectionSelectionPanel.IsVisible())
+            {
+                OutsideConnectionSelectionPanel.Instance.Hide();
+            }
+            else 
+            {
+                OutsideConnectionSelectionPanel.Instance.ShowPanel(m_buildingId, GetRestrictionId());
+            }
+
+            UpdateTab(true);
+        }
+
+        public void OnExcludeOutsideClearClicked(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            if (m_bInSetup) { return; }
+
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(GetRestrictionId());
+
+            restrictions.m_excludedOutsideConnections.Clear();
 
             settings.SetRestrictions(GetRestrictionId(), restrictions);
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
@@ -990,7 +1101,8 @@ namespace TransferManagerCE.UI
                         SelectionTool.Instance.SetMode(SelectionTool.SelectionToolMode.BuildingRestrictionOutgoing);
                     }
                 }
-                
+
+                BuildingPanel.Instance.HideSecondaryPanels();
                 UpdateTab(true);
             }
         }

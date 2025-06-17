@@ -8,6 +8,13 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblDescription = null;
         private UILabel? m_lblValue = null;
 
+        public static float[] ColumnWidths =
+        {
+            420, // Description
+            420, // Value
+        };
+
+        // ----------------------------------------------------------------------------------------
         public override void Start()
         {
             base.Start();
@@ -25,7 +32,7 @@ namespace TransferManagerCE.UI
                 m_lblDescription.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblDescription.autoSize = false;
                 m_lblDescription.height = height;
-                m_lblDescription.width = StatsPanel.iCOLUMN_WIDTH_DESCRIPTION;
+                m_lblDescription.width = ColumnWidths[0];
             }
 
             m_lblValue = AddUIComponent<UILabel>();
@@ -39,7 +46,7 @@ namespace TransferManagerCE.UI
                 m_lblValue.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblValue.autoSize = false;
                 m_lblValue.height = height;
-                m_lblValue.width = StatsPanel.iCOLUMN_WIDTH_VALUE;
+                m_lblValue.width = ColumnWidths[1];
             }
 
             AfterStart();

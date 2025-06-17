@@ -1,7 +1,6 @@
 using ColossalFramework.UI;
 using SleepyCommon;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using TransferManagerCE.CustomManager;
 using TransferManagerCE.CustomManager.Stats;
@@ -20,15 +19,6 @@ namespace TransferManagerCE
     {
         const int iMARGIN = 8;
         public const int iHEADER_HEIGHT = 20;
-
-        // General and Game tabs
-        public const int iCOLUMN_WIDTH_DESCRIPTION = 420;
-        public const int iCOLUMN_WIDTH_VALUE = 420;
-
-        // Match stats widths
-        public const int iCOLUMN_MATERIAL_WIDTH = 130;
-        public const int iCOLUMN_WIDTH = 80;
-        public const int iCOLUMN_BIGGER_WIDTH = 100;
 
         private UITitleBar? m_title = null;
         private UITabStrip? m_tabStrip = null;
@@ -90,8 +80,8 @@ namespace TransferManagerCE
                 m_gameStats = ListView.Create<UIGeneralStatsRow>(tabGame, "ScrollbarTrack", 0.7f, width - 20f, tabGame.height);
                 if (m_gameStats is not null)
                 {
-                    m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", iCOLUMN_WIDTH_DESCRIPTION, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", iCOLUMN_WIDTH_VALUE, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                 }
             }
 
@@ -103,8 +93,8 @@ namespace TransferManagerCE
                 m_generalStats = ListView.Create<UIGeneralStatsRow>(tabGeneral, "ScrollbarTrack", 0.7f, width - 20f, tabGeneral.height);
                 if (m_generalStats is not null)
                 {
-                    m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", iCOLUMN_WIDTH_DESCRIPTION, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", iCOLUMN_WIDTH_VALUE, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                 }
             }
 
@@ -116,8 +106,8 @@ namespace TransferManagerCE
                 m_transferManagerStats = ListView.Create<UIGeneralStatsRow>(tabTransferManager, "ScrollbarTrack", 0.7f, width - 20f, tabTransferManager.height);
                 if (m_transferManagerStats is not null)
                 {
-                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", iCOLUMN_WIDTH_DESCRIPTION, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", iCOLUMN_WIDTH_VALUE, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                 }
             }
 
@@ -129,19 +119,21 @@ namespace TransferManagerCE
                 m_listStats = ListView.Create<UIMatchStatsRow>(tabMatchStats, "ScrollbarTrack", 0.7f, width - 20f, tabMatchStats.height);
                 if (m_listStats is not null)
                 {
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, "Material", "Material", iCOLUMN_MATERIAL_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, "Material", "Material", UIMatchStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
 
                     // Job stats
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_AVG, "Job Avg", "Average Job Time (ms)", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_LAST, "Job Last", "Last Job Time (ms)", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_MAX, "Job Max", "Max Job Time (ms)", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_AVG, "Job Avg", "Average Job Time (ms)", UIMatchStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_LAST, "Job Last", "Last Job Time (ms)", UIMatchStatsRow.ColumnWidths[2], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_MAX, "Job Max", "Max Job Time (ms)", UIMatchStatsRow.ColumnWidths[3], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
 
                     // Match stats
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_AMOUNT, "Match Amount", "", iCOLUMN_BIGGER_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_OUT_AMOUNT, "OUT Amount", "", iCOLUMN_BIGGER_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_IN_AMOUNT, "IN Amount", "", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_DISTANCE, "Avg Dist.", "Average Match Distance (km)", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_OUTSIDE, "Outside", "", iCOLUMN_WIDTH, iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_AMOUNT, "Match Amount", "", UIMatchStatsRow.ColumnWidths[4], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_OUT_AMOUNT, "OUT Amount", "", UIMatchStatsRow.ColumnWidths[5], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_IN_AMOUNT, "IN Amount", "", UIMatchStatsRow.ColumnWidths[6], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_DISTANCE, "Avg Dist.", "Average Match Distance (km)", UIMatchStatsRow.ColumnWidths[7], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_OUTSIDE, "Outside", "", UIMatchStatsRow.ColumnWidths[8], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+
+                    m_listStats.Header.ResizeLastColumn();
 
                     // Show sort by match amount descending
                     m_listStats.HandleSort(ListViewRowComparer.Columns.COLUMN_JOB_AVG);
@@ -156,8 +148,8 @@ namespace TransferManagerCE
                     m_panelStats = ListView.Create<UIGeneralStatsRow>(tabPanels, "ScrollbarTrack", 0.7f, width - 20f, tabPanels.height);
                     if (m_panelStats is not null)
                     {
-                        m_panelStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", iCOLUMN_WIDTH_DESCRIPTION, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                        m_panelStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", iCOLUMN_WIDTH_VALUE, iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                        m_panelStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                        m_panelStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                     }
                 }
             }
@@ -339,13 +331,6 @@ namespace TransferManagerCE
                 if (PathConnected.s_totalGenerations > 0)
                 {
                     list.Add(new StatsGroup("Path Connection Average Time", $"{Utils.DisplayTicks(PathConnected.s_totalGenerationTicks / PathConnected.s_totalGenerations)}ms"));
-                }
-
-                // Outside connections
-                list.Add(new StatsGroup("Outside Connection Generation Count", OutsideConnectionCache.s_totalGenerations.ToString()));
-                if (OutsideConnectionCache.s_totalGenerations > 0)
-                {
-                    list.Add(new StatsGroup("Outside Connection Average Time", $"{Utils.DisplayTicks(OutsideConnectionCache.s_totalGenerationTicks / OutsideConnectionCache.s_totalGenerations)}ms"));
                 }
             }
             else

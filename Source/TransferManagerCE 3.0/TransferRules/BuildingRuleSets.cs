@@ -1,9 +1,9 @@
 ﻿using SleepyCommon;
 using System.Collections.Generic;
-using TransferManagerCE.Common;
-using static TransferManager;
+using System.Data;
+using System.Security.Cryptography;
+using TransferManagerCE.CustomManager;
 using static TransferManagerCE.BuildingTypeHelper;
-using static UnityStandardAssets.CinematicEffects.TemporalAntiAliasing;
 
 namespace TransferManagerCE.TransferRules
 {
@@ -65,14 +65,19 @@ namespace TransferManagerCE.TransferRules
                     {
                         // Special case due to Industries Remastered assets, several materials are on both tabs
                         // We return correct settings based on offers Incoming/Outgoing instead
-                        if (bIncomingOffer)
+                        if (TransferManagerModes.IsFactoryMaterial(material))
                         {
-                            return 0;
+                            if (bIncomingOffer)
+                            {
+                                return 0;
+                            }
+                            else
+                            {
+                                return 1;
+                            }
                         }
-                        else 
-                        {
-                            return 1;
-                        }
+
+                        return -1;
                     }
                 default:
                     {
@@ -158,7 +163,7 @@ namespace TransferManagerCE.TransferRules
             }
         }
 
-        public static bool HasDistanceRules(BuildingType eBuildingType, CustomTransferReason.Reason material)
+        public static bool HasDistanceRules(bool bIncoming, BuildingType eBuildingType, CustomTransferReason.Reason material)
         {
             lock (s_dictionaryLock)
             {
@@ -170,13 +175,30 @@ namespace TransferManagerCE.TransferRules
                     {
                         if (rule.m_reasons.Contains(material))
                         {
-                            return rule.m_distance;
+                            if (bIncoming)
+                            {
+                                return rule.m_incomingDistance;
+                            }
+                            else
+                            {
+                                return rule.m_outgoingDistance;
+                            }
                         }
                     }
                 }
 
                 return false;
             }
+        }
+
+        public static bool HasIncomingDistanceRules(BuildingType eBuildingType, CustomTransferReason.Reason material)
+        {
+            return HasDistanceRules(true, eBuildingType, material);
+        }
+
+        public static bool HasOutgoingDistanceRules(BuildingType eBuildingType, CustomTransferReason.Reason material)
+        {
+            return HasDistanceRules(false, eBuildingType, material);
         }
 
         public static List<ReasonRule> GetRules(BuildingType eBuildingType)
@@ -251,6 +273,22 @@ namespace TransferManagerCE.TransferRules
 
             return new List<ReasonRule>();
         }
+
+        public static ReasonRule GetRule(BuildingType eBuildingType, ushort buildingId, int ruleId)
+        {
+            lock (s_dictionaryLock)
+            {
+                foreach (ReasonRule rule in BuildingRules[eBuildingType])
+                {
+                    if (rule.m_id == ruleId)
+                    {
+                        return rule;
+                    }
+                }
+            }
+
+            return ReasonRule.Empty;
+        }      
 
         private static void Init()
         {
@@ -336,7 +374,7 @@ namespace TransferManagerCE.TransferRules
                         }
 
                         // Distance
-                        if (rule.m_distance)
+                        if (rule.m_incomingDistance || rule.m_outgoingDistance)
                         {
                             s_distanceReasons.UnionWith(rule.m_reasons);
                         }
@@ -368,7 +406,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Crime);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             {
@@ -378,7 +416,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             {
@@ -388,7 +426,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Mail);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             {
@@ -398,7 +436,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Mail2);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             BuildingRules[eBuidlingType] = list;
@@ -413,7 +451,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonStudent1"); //"Students";
                 rule.AddReason(CustomTransferReason.Reason.StudentES);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -429,7 +467,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonStudent2"); //"Students";
                 rule.AddReason(CustomTransferReason.Reason.StudentHS);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -445,7 +483,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonStudent3"); //"Students";
                 rule.AddReason(CustomTransferReason.Reason.StudentUni);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -463,7 +501,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonDead"); //"Collecting Dead";
                 rule.AddReason(CustomTransferReason.Reason.Dead);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -477,7 +515,8 @@ namespace TransferManagerCE.TransferRules
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -495,7 +534,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonSick"); //"Collecting Sick";
                 rule.AddReason(CustomTransferReason.Reason.Sick);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -507,6 +546,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.SickMove);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -524,7 +564,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonSick"); //"Collecting Sick";
                 rule.AddReason(CustomTransferReason.Reason.Sick);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -545,7 +585,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonStudent3"); //"Students";
                 rule.AddReason(CustomTransferReason.Reason.StudentUni);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -563,7 +603,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonSick"); //"Collecting Sick";
                 rule.AddReason(CustomTransferReason.Reason.Sick2);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -575,7 +615,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.SickMove);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -594,7 +634,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Crime);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -608,7 +648,8 @@ namespace TransferManagerCE.TransferRules
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -626,7 +667,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Crime2);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -640,7 +681,8 @@ namespace TransferManagerCE.TransferRules
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -658,7 +700,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.CriminalMove);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -676,7 +718,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Cash);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -694,7 +736,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Fire);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -711,7 +753,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Fire2);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             { 
@@ -720,7 +762,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonForestFire"); //"Forest Fire";
                 rule.AddReason(CustomTransferReason.Reason.ForestFire);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -737,7 +779,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -749,7 +791,8 @@ namespace TransferManagerCE.TransferRules
                 rule.m_outgoingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Passive
                 rule.m_outgoingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             {
@@ -759,7 +802,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.GarbageTransfer);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -776,7 +819,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -786,6 +829,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.GarbageMove);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true; // Active
+                rule.m_incomingDistance = true; // Active
                 list.Add(rule);
             }
 
@@ -802,7 +846,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -812,6 +856,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.GarbageMove);
                 rule.m_incomingDistrict = true; // Passive from land fills
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true; // Active
                 list.Add(rule);
             }
             {
@@ -823,7 +868,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Petrol);
                 rule.m_outgoingDistrict = true; // Active
                 rule.m_outgoingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -840,7 +885,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Garbage);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -852,7 +897,8 @@ namespace TransferManagerCE.TransferRules
                 rule.m_outgoingDistrict = true; // When in "Empty" mode
                 rule.m_incomingBuilding = true; // Passive from land fills
                 rule.m_outgoingBuilding = true; // When in "Empty" mode
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             {
@@ -862,6 +908,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.GarbageTransfer);
                 rule.m_outgoingDistrict = true; // Passive
                 rule.m_outgoingBuilding = true; // Passive
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -878,7 +925,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.GarbageTransfer);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -890,7 +937,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Petrol);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -907,7 +954,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Mail);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -917,7 +964,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Mail2);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -927,7 +974,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.UnsortedMail);
                 rule.m_outgoingDistrict = true; // Active
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -938,6 +985,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.SortedMail);
                 rule.m_incomingDistrict = true; // Passive
                 rule.m_incomingBuilding = true; // Passive
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -954,7 +1002,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Mail2);
                 rule.m_incomingDistrict = true; // Active
                 rule.m_incomingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -964,6 +1012,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.UnsortedMail);
                 rule.m_incomingDistrict = true; // Passive
                 rule.m_incomingBuilding = true; // Passive
+                rule.m_incomingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -976,7 +1025,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.OutgoingMail);
                 rule.m_outgoingDistrict = true; // Active
                 rule.m_outgoingBuilding = true; // Active
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_import = true;
                 rule.m_export = true;
                 list.Add(rule);
@@ -994,7 +1043,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.ParkMaintenance);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             BuildingRules[BuildingType.ParkMaintenanceDepot] = list;
@@ -1008,7 +1057,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonRoadMaintenance"); //"Road Maintenance";
                 rule.AddReason(CustomTransferReason.Reason.RoadMaintenance);
                 rule.m_outgoingDistrict = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             BuildingRules[BuildingType.RoadMaintenanceDepot] = list;
@@ -1022,7 +1071,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonTaxi"); //"Taxi";
                 rule.AddReason(CustomTransferReason.Reason.Taxi);
                 rule.m_outgoingDistrict = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             {
@@ -1031,7 +1080,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonTaxiMove"); //"TaxiMove";
                 rule.AddReason(CustomTransferReason.Reason.TaxiMove);
                 rule.m_outgoingDistrict = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             BuildingRules[BuildingType.TaxiDepot] = list;
@@ -1045,7 +1094,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonTaxi"); //"Taxi";
                 rule.AddReason(CustomTransferReason.Reason.Taxi);
                 rule.m_outgoingDistrict = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
             {
@@ -1055,7 +1104,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.TaxiMove);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             BuildingRules[BuildingType.TaxiStand] = list;
@@ -1072,7 +1121,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Collapsed);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -1083,7 +1132,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Collapsed2);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -1100,7 +1149,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonSnow");
                 rule.AddReason(CustomTransferReason.Reason.Snow);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -1113,7 +1162,8 @@ namespace TransferManagerCE.TransferRules
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
+                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
 
@@ -1130,6 +1180,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Coal);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1146,6 +1197,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Petrol);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1162,6 +1214,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Petrol);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1178,6 +1231,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1194,7 +1248,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_name = Localization.Get("reasonFloodWater");
                 rule.AddReason(CustomTransferReason.Reason.FloodWater);
                 rule.m_incomingDistrict = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -1216,6 +1270,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1226,6 +1281,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.LuxuryProducts);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
 
@@ -1246,7 +1302,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.ForestProducts);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1277,6 +1333,7 @@ namespace TransferManagerCE.TransferRules
 
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1307,7 +1364,7 @@ namespace TransferManagerCE.TransferRules
 
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1337,6 +1394,7 @@ namespace TransferManagerCE.TransferRules
 
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -1350,7 +1408,7 @@ namespace TransferManagerCE.TransferRules
 
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1372,7 +1430,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.ForestProducts);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1394,7 +1452,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.ForestProducts);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1409,7 +1467,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Food);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1434,7 +1492,7 @@ namespace TransferManagerCE.TransferRules
 
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = false;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1456,7 +1514,7 @@ namespace TransferManagerCE.TransferRules
 
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = false;
+                rule.m_incomingDistance = true;
                 list.Add(rule);
             }
             {
@@ -1467,7 +1525,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1486,7 +1544,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1505,7 +1563,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1522,7 +1580,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1533,7 +1591,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Goods);
                 rule.m_outgoingDistrict = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1550,7 +1608,7 @@ namespace TransferManagerCE.TransferRules
                 rule.AddReason(CustomTransferReason.Reason.Fish);
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
                 rule.m_import = true;
                 list.Add(rule);
             }
@@ -1580,7 +1638,8 @@ namespace TransferManagerCE.TransferRules
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_export = true;
                 list.Add(rule);
             }
@@ -1602,7 +1661,8 @@ namespace TransferManagerCE.TransferRules
                 rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_outgoingBuilding = true;
-                rule.m_distance = true;
+                rule.m_incomingDistance = true;
+                rule.m_outgoingDistance = true;
                 rule.m_import = true;
                 rule.m_export = true;
                 list.Add(rule);

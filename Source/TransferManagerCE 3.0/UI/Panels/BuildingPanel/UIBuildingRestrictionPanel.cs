@@ -32,6 +32,45 @@ namespace TransferManagerCE.UI
             return panel;
         }
 
+        private void Setup(bool bIncoming, float fTextScale)
+        {
+            m_bIncoming = bIncoming;
+            width = parent.width;
+            height = 35;
+            autoLayout = true;
+            autoLayoutDirection = LayoutDirection.Horizontal;
+            autoLayoutPadding = new RectOffset(4, 4, 4, 4);
+
+            string sLabel;
+            if (bIncoming)
+            {
+                sLabel = Localization.Get("txtBuildingRestrictionsIncoming");
+            }
+            else
+            {
+                sLabel = Localization.Get("txtBuildingRestrictionsOutgoing");
+            }
+
+            // Label
+            m_lblBuildingRestrictions = AddUIComponent<UILabel>();
+            m_lblBuildingRestrictions.text = sLabel;
+            m_lblBuildingRestrictions.font = UIFonts.Regular;
+            m_lblBuildingRestrictions.textScale = fTextScale;
+            m_lblBuildingRestrictions.autoSize = false;
+            m_lblBuildingRestrictions.height = 30;
+            m_lblBuildingRestrictions.width = 370;
+            m_lblBuildingRestrictions.verticalAlignment = UIVerticalAlignment.Middle;
+
+            // Buttons
+            m_btnBuildingRestrictions = UIMyUtils.AddToggleButton(UIMyUtils.ButtonStyle.DropDown, this, Localization.Get("btnBuildingRestrictions"), "", 280, iButtonHeight, OnBuildingRestrictionsClicked);
+            m_btnBuildingRestrictions.onColor = KnownColor.lightBlue;
+            m_btnBuildingRestrictions.offColor = KnownColor.white;
+            m_btnBuildingRestrictions.StateOn = false; // Start off
+
+            m_btnBuildingRestrictionsClear = UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.DropDown, this, "Niet", iButtonHeight, iButtonHeight, OnBuildingRestrictionsClearClicked);
+            m_btnBuildingRestrictionsClear.tooltip = Localization.Get("btnClear");
+        }
+
         public UILabel Label
         {
             get
@@ -76,7 +115,7 @@ namespace TransferManagerCE.UI
 
             // Update button state and text
             HashSet<ushort> allowedBuildings = buildingSettings.GetBuildingRestrictionsCopy();
-            Label.text = GetBuildingRestrictionLabel(true, allowedBuildings);
+            Label.text = GetBuildingRestrictionLabel(m_bIncoming, allowedBuildings);
 
             SelectButton.tooltip = buildingSettings.Describe(buildingId);
             UpdateSelectButton(SelectionTool.Instance.GetNewMode() == mode);
@@ -97,45 +136,6 @@ namespace TransferManagerCE.UI
                 SelectButton.text = Localization.Get("btnBuildingRestrictions");
                 SelectButton.StateOn = false;
             }
-        }
-
-        private void Setup(bool bIncoming, float fTextScale)
-        {
-            m_bIncoming = bIncoming;
-            width = parent.width;
-            height = 35;
-            autoLayout = true;
-            autoLayoutDirection = LayoutDirection.Horizontal;
-            autoLayoutPadding = new RectOffset(4, 4, 4, 4);
-
-            string sLabel;
-            if (bIncoming)
-            {
-                sLabel = Localization.Get("txtBuildingRestrictionsIncoming");
-            }
-            else
-            {
-                sLabel = Localization.Get("txtBuildingRestrictionsOutgoing");
-            }
-
-            // Label
-            m_lblBuildingRestrictions = AddUIComponent<UILabel>();
-            m_lblBuildingRestrictions.text = sLabel;
-            m_lblBuildingRestrictions.font = UIFonts.Regular;
-            m_lblBuildingRestrictions.textScale = fTextScale;
-            m_lblBuildingRestrictions.autoSize = false;
-            m_lblBuildingRestrictions.height = 30;
-            m_lblBuildingRestrictions.width = 370;
-            m_lblBuildingRestrictions.verticalAlignment = UIVerticalAlignment.Middle;
-
-            // Buttons
-            m_btnBuildingRestrictions = UIMyUtils.AddToggleButton(UIMyUtils.ButtonStyle.DropDown, this, Localization.Get("btnBuildingRestrictions"), "", 280, iButtonHeight, OnBuildingRestrictionsClicked);
-            m_btnBuildingRestrictions.onColor = KnownColor.lightBlue;
-            m_btnBuildingRestrictions.offColor = KnownColor.white;
-            m_btnBuildingRestrictions.StateOn = false; // Start off
-
-            m_btnBuildingRestrictionsClear = UIMyUtils.AddSpriteButton(UIMyUtils.ButtonStyle.DropDown, this, "Niet", iButtonHeight, iButtonHeight, OnBuildingRestrictionsClearClicked);
-            m_btnBuildingRestrictionsClear.tooltip = Localization.Get("btnClear");
         }
 
         private void OnBuildingRestrictionsClicked(UIComponent component, UIMouseEventParameter eventParam)

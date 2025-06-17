@@ -252,7 +252,7 @@ namespace TransferManagerCE
 
             if (offer.IsOutside())
             {
-                stringBuilder.Append($" | Multiplier: {offer.GetEffectiveOutsideModifier()}");
+                stringBuilder.Append($" | OutsidePriority: {offer.GetEffectiveOutsidePriority()}");
             }
 
             return stringBuilder.ToString();

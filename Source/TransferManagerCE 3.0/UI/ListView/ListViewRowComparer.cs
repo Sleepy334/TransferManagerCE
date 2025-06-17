@@ -51,6 +51,7 @@ namespace TransferManagerCE.UI
             COLUMN_JOB_LAST,
             COLUMN_JOB_AVG,
             COLUMN_JOB_MAX,
+            COLUMN_USAGE,
         }
 
         public Columns m_eSortColumn;

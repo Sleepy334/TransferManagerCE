@@ -1,10 +1,6 @@
 ﻿using ColossalFramework.UI;
 using SleepyCommon;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using TransferManagerCE;
-using UnityEngine;
 
 namespace TransferManagerCE.UI
 {
@@ -16,6 +12,15 @@ namespace TransferManagerCE.UI
         private ListViewHeader? m_header = null;
         private UIFastList? m_listPanel;
         private float m_fTextScale = 1.0f;
+
+        // ----------------------------------------------------------------------------------------
+        public ListViewHeader? Header
+        {
+            get
+            {
+                return m_header;
+            }
+        }
 
         public ListView() : base()
         {
@@ -82,11 +87,11 @@ namespace TransferManagerCE.UI
             }
         }
 
-        public void AddColumn(ListViewRowComparer.Columns eColumn, string sText, string sTooltip, int iWidth, int iHeight, UIHorizontalAlignment oTextAlignment, UIAlignAnchor oAncor, ListViewHeaderColumnBase.OnListViewColumnClick eventCallback)
+        public void AddColumn(ListViewRowComparer.Columns eColumn, string sText, string sTooltip, float fWidth, float fHeight, UIHorizontalAlignment oTextAlignment, UIAlignAnchor oAncor, ListViewHeaderColumnBase.OnListViewColumnClick eventCallback)
         {
             if (m_header is not null)
             {
-                m_header.AddColumn(eColumn, sText, sTooltip, m_fTextScale, iWidth, iHeight, oTextAlignment, oAncor, eventCallback);
+                m_header.AddColumn(eColumn, sText, sTooltip, m_fTextScale, fWidth, fHeight, oTextAlignment, oAncor, eventCallback);
             }
         }
 

@@ -96,6 +96,7 @@ namespace TransferManagerCE
                             sMessage += "\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - WaitTimer = 255, Outside connection {connection} guest vehicle.";
                             ghostVehicles.Add(vehicleId);
                         }
+                        return true;
                     });
                     
                     // Own vehicles
@@ -120,6 +121,7 @@ namespace TransferManagerCE
                             sMessage += $"\r\n" + GetVehicleDescription(vehicleId, vehicle) + $" - Source = Target, Outside connection {connection} own vehicle.";
                             ghostVehicles.Add(vehicleId);
                         }
+                        return true;
                     });
                 }   
             }

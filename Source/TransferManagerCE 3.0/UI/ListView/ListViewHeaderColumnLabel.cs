@@ -8,7 +8,7 @@ namespace TransferManagerCE.UI
     {
         private UILabel? m_lblColumn = null;
 
-        public ListViewHeaderColumnLabel(ListViewRowComparer.Columns eColumn, UIComponent parent, string sText, string sTooltip, float textScale, int iWidth, int iHeight, UIHorizontalAlignment oTextAlignment, UIAlignAnchor oAncor, OnListViewColumnClick eventClickCallback) :
+        public ListViewHeaderColumnLabel(ListViewRowComparer.Columns eColumn, UIComponent parent, string sText, string sTooltip, float textScale, float fWidth, float fHeight, UIHorizontalAlignment oTextAlignment, UIAlignAnchor oAncor, OnListViewColumnClick eventClickCallback) :
                 base(eColumn, sText, eventClickCallback)
         {
             m_lblColumn = parent.AddUIComponent<UILabel>();
@@ -19,8 +19,8 @@ namespace TransferManagerCE.UI
             m_lblColumn.textAlignment = oTextAlignment;
             m_lblColumn.verticalAlignment = UIVerticalAlignment.Middle;
             m_lblColumn.autoSize = false;
-            m_lblColumn.height = iHeight;
-            m_lblColumn.width = iWidth;
+            m_lblColumn.width = fWidth;
+            m_lblColumn.height = fHeight;
             m_lblColumn.AlignTo(parent, oAncor);
             m_lblColumn.eventMouseEnter += OnMouseHover;
             m_lblColumn.eventMouseLeave += OnMouseLeave;

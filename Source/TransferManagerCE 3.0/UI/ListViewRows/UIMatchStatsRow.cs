@@ -17,6 +17,20 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblJobMaxTime = null; 
         private UILabel? m_lblJobAvgTime = null;
 
+        public static float[] ColumnWidths =
+        {
+            130, // Material
+            80, // JobAvgTime
+            80, // JobLastTime
+            80, // JobMaxTime
+            100, // Match Amount
+            100, // Out Amount
+            80, // In Amount
+            80, // Distance
+            80, // Match Outside
+        };
+
+        // ----------------------------------------------------------------------------------------
         public override void Start()
         {
             base.Start();
@@ -34,7 +48,7 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
-                m_lblMaterial.width = StatsPanel.iCOLUMN_MATERIAL_WIDTH;
+                m_lblMaterial.width = ColumnWidths[0];
             }
 
             m_lblJobAvgTime = AddUIComponent<UILabel>();
@@ -48,7 +62,7 @@ namespace TransferManagerCE.UI
                 m_lblJobAvgTime.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblJobAvgTime.autoSize = false;
                 m_lblJobAvgTime.height = height;
-                m_lblJobAvgTime.width = StatsPanel.iCOLUMN_WIDTH;
+                m_lblJobAvgTime.width = ColumnWidths[1];
             }
 
             m_lblJobLastTime = AddUIComponent<UILabel>();
@@ -62,7 +76,7 @@ namespace TransferManagerCE.UI
                 m_lblJobLastTime.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblJobLastTime.autoSize = false;
                 m_lblJobLastTime.height = height;
-                m_lblJobLastTime.width = StatsPanel.iCOLUMN_WIDTH;
+                m_lblJobLastTime.width = ColumnWidths[2];
             }
 
             m_lblJobMaxTime = AddUIComponent<UILabel>();
@@ -76,7 +90,7 @@ namespace TransferManagerCE.UI
                 m_lblJobMaxTime.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblJobMaxTime.autoSize = false;
                 m_lblJobMaxTime.height = height;
-                m_lblJobMaxTime.width = StatsPanel.iCOLUMN_WIDTH;
+                m_lblJobMaxTime.width = ColumnWidths[3];
             }
 
             m_lblMatchAmount = AddUIComponent<UILabel>();
@@ -90,7 +104,7 @@ namespace TransferManagerCE.UI
                 m_lblMatchAmount.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblMatchAmount.autoSize = false;
                 m_lblMatchAmount.height = height;
-                m_lblMatchAmount.width = StatsPanel.iCOLUMN_BIGGER_WIDTH;
+                m_lblMatchAmount.width = ColumnWidths[4];
             }
 
             m_lblOutAmount = AddUIComponent<UILabel>();
@@ -104,7 +118,7 @@ namespace TransferManagerCE.UI
                 m_lblOutAmount.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblOutAmount.autoSize = false;
                 m_lblOutAmount.height = height;
-                m_lblOutAmount.width = StatsPanel.iCOLUMN_BIGGER_WIDTH;
+                m_lblOutAmount.width = ColumnWidths[5];
             }
 
             m_lblInAmount = AddUIComponent<UILabel>();
@@ -118,7 +132,7 @@ namespace TransferManagerCE.UI
                 m_lblInAmount.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblInAmount.autoSize = false;
                 m_lblInAmount.height = height;
-                m_lblInAmount.width = StatsPanel.iCOLUMN_WIDTH;
+                m_lblInAmount.width = ColumnWidths[6];
             }
 
             m_lblMatchDistance = AddUIComponent<UILabel>();
@@ -132,7 +146,7 @@ namespace TransferManagerCE.UI
                 m_lblMatchDistance.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblMatchDistance.autoSize = false;
                 m_lblMatchDistance.height = height;
-                m_lblMatchDistance.width = StatsPanel.iCOLUMN_WIDTH;
+                m_lblMatchDistance.width = ColumnWidths[7];
             }
 
             m_lblMatchOutside = AddUIComponent<UILabel>();
@@ -146,7 +160,7 @@ namespace TransferManagerCE.UI
                 m_lblMatchOutside.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblMatchOutside.autoSize = false;
                 m_lblMatchOutside.height = height;
-                m_lblMatchOutside.width = StatsPanel.iCOLUMN_WIDTH;
+                m_lblMatchOutside.width = ColumnWidths[8];
             }
 
             AfterStart();

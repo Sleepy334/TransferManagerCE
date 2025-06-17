@@ -137,12 +137,12 @@ namespace TransferManagerCE
                     }
                 }
 
-                SortAndMergeList(list, m_listGeneral, false);
-                SortAndMergeList(list, m_listServices);
-                SortAndMergeList(list, m_listOutgoing);
-                SortAndMergeList(list, m_listIncoming);
-                SortAndMergeList(list, m_listLineStops);
-                SortAndMergeList(list, m_listIntercityStops);
+                SortAndMergeList("General", list, m_listGeneral, false);
+                SortAndMergeList("Services", list, m_listServices);
+                SortAndMergeList("Incoming", list, m_listIncoming); 
+                SortAndMergeList("Outgoing", list, m_listOutgoing);
+                SortAndMergeList("Line Stops", list, m_listLineStops);
+                SortAndMergeList("Intercity Stops", list, m_listIntercityStops);
             }
 
             iVehicleCount = m_setAddedVehicles.Count;
@@ -160,22 +160,22 @@ namespace TransferManagerCE
 
                 list.Add(data);
             }
-            else if (data.IsVehicleData())
+            else if (data.IsNodeData())
             {
-                if (data.HasVehicle() && !m_setAddedVehicles.Contains(data.GetVehicleId()))
+                list.Add(data);
+            }
+            else if (data.HasVehicle())
+            {
+                if (!m_setAddedVehicles.Contains(data.GetVehicleId()))
                 {
                     // Only add vehicle if not already in list
                     m_setAddedVehicles.Add(data.GetVehicleId());
                     list.Add(data);
                 }
             }
-            else
-            {
-                list.Add(data);
-            }
         }
 
-        private void SortAndMergeList(List<StatusData> list, List<StatusData> listToAdd, bool bSort = true)
+        private void SortAndMergeList(string sHeader, List<StatusData> list, List<StatusData> listToAdd, bool bSort = true)
         {
             if (listToAdd.Count > 0)
             {
@@ -187,7 +187,8 @@ namespace TransferManagerCE
                 {
                     listToAdd.Sort();
                 }
-                
+
+                list.Add(new StatusDataHeader(sHeader));
                 list.AddRange(listToAdd);
             }
         }
@@ -492,15 +493,15 @@ namespace TransferManagerCE
                     }
                 case BuildingTypeHelper.BuildingType.PostOffice:
                     {
-                        AddToList(m_listOutgoing, new StatusDataBuildingMail(CustomTransferReason.Reason.UnsortedMail, eBuildingType, buildingId));
+                        AddToList(m_listIncoming, new StatusDataBuildingMail(CustomTransferReason.Reason.UnsortedMail, eBuildingType, buildingId));
                         AddToList(m_listIncoming, new StatusDataBuildingMail(CustomTransferReason.Reason.SortedMail, eBuildingType, buildingId));
                         break;
                     }
                 case BuildingType.PostSortingFacility:
                     {
                         // UnsortedMail from post offices, SortedMail from Outside connections
-                        AddToList(m_listOutgoing, new StatusDataBuildingMail(CustomTransferReason.Reason.UnsortedMail, eBuildingType, buildingId));
-                        AddToList(m_listIncoming, new StatusDataBuildingMail(CustomTransferReason.Reason.SortedMail, eBuildingType, buildingId));
+                        AddToList(m_listIncoming, new StatusDataBuildingMail(CustomTransferReason.Reason.UnsortedMail, eBuildingType, buildingId));
+                        AddToList(m_listOutgoing, new StatusDataBuildingMail(CustomTransferReason.Reason.SortedMail, eBuildingType, buildingId));
                         break;
                     }
                 case BuildingType.FishMarket:
@@ -681,6 +682,8 @@ namespace TransferManagerCE
                                     switch (eBuildingType)
                                     {
                                         case BuildingType.PostOffice:
+                                            AddToList(m_listIncoming, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            break;
                                         case BuildingType.PostSortingFacility:
                                             switch ((TransferReason)vehicle.m_transferType)
                                             {
@@ -688,12 +691,12 @@ namespace TransferManagerCE
                                                 case TransferReason.SortedMail:
                                                 case TransferReason.OutgoingMail:
                                                     {
-                                                        AddToList(m_listIncoming, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                        AddToList(m_listOutgoing, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                                         break;
                                                     }
                                                 case TransferReason.UnsortedMail:
                                                     {
-                                                        AddToList(m_listOutgoing, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                        AddToList(m_listIncoming, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
                                                         break;
                                                     }
                                             }
@@ -755,6 +758,7 @@ namespace TransferManagerCE
                         }
                     }
                 }
+                return true;
             });
         }
 

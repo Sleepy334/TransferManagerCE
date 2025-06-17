@@ -21,7 +21,7 @@ namespace TransferManagerCE.Data
                     double dValue = (building.m_customBuffer1 * 0.001);
                     double dCapacity = (buildingAI.m_resourceCapacity * 0.001);
 
-                    tooltip = MakeTooltip(true, (int) dValue, (int) dCapacity);
+                    tooltip = MakeTooltip((int) dValue, (int) dCapacity);
                     return $"{Math.Round(dValue)}/{Math.Round(dCapacity)}";
                 }
             }

@@ -13,6 +13,18 @@ namespace TransferManagerCE.UI
         private UILabel? m_lblPark = null;
         private UITruncateLabel? m_lblDescription = null;
 
+        public static float[] ColumnWidths =
+        {
+            120, // Material
+            60, // In/Out
+            80, // Priority
+            80, // Active
+            60, // Amount
+            60, // Priority
+            300, // Description
+        };
+
+        // ----------------------------------------------------------------------------------------
         public override void Start()
         {
             base.Start();
@@ -30,7 +42,7 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
-                m_lblMaterial.width = BuildingPanel.iCOLUMN_WIDTH_LARGE;
+                m_lblMaterial.width = ColumnWidths[0];
             }
 
             m_lblInOut = AddUIComponent<UILabel>();
@@ -44,7 +56,7 @@ namespace TransferManagerCE.UI
                 m_lblInOut.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblInOut.autoSize = false;
                 m_lblInOut.height = height;
-                m_lblInOut.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
+                m_lblInOut.width = ColumnWidths[1];
             }
 
             m_lblPriority = AddUIComponent<UILabel>();
@@ -58,7 +70,7 @@ namespace TransferManagerCE.UI
                 m_lblPriority.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblPriority.autoSize = false;
                 m_lblPriority.height = height;
-                m_lblPriority.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
+                m_lblPriority.width = ColumnWidths[2];
             }
 
             m_lblActive = AddUIComponent<UILabel>();
@@ -72,7 +84,7 @@ namespace TransferManagerCE.UI
                 m_lblActive.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblActive.autoSize = false;
                 m_lblActive.height = height;
-                m_lblActive.width = BuildingPanel.iCOLUMN_WIDTH_NORMAL;
+                m_lblActive.width = ColumnWidths[3];
             }
 
             m_lblAmount = AddUIComponent<UILabel>();
@@ -86,7 +98,7 @@ namespace TransferManagerCE.UI
                 m_lblAmount.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblAmount.autoSize = false;
                 m_lblAmount.height = height;
-                m_lblAmount.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
+                m_lblAmount.width = ColumnWidths[4];
             }
 
             m_lblPark = AddUIComponent<UILabel>();
@@ -100,7 +112,7 @@ namespace TransferManagerCE.UI
                 m_lblPark.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblPark.autoSize = false;
                 m_lblPark.height = height;
-                m_lblPark.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
+                m_lblPark.width = ColumnWidths[5];
             }
 
             m_lblDescription = AddUIComponent<UITruncateLabel>();
@@ -114,7 +126,7 @@ namespace TransferManagerCE.UI
                 m_lblDescription.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblDescription.autoSize = false;
                 m_lblDescription.height = height;
-                m_lblDescription.width = BuildingPanel.iCOLUMN_WIDTH_300;
+                m_lblDescription.width = ColumnWidths[6];
             }
 
             AfterStart();

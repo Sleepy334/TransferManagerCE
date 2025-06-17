@@ -29,6 +29,10 @@ namespace TransferManagerCE.Patch
             {
                 return false;
             }
+            if (OutsideConnectionSelectionPanel.IsVisible() && OutsideConnectionSelectionPanel.Instance.HandleEscape())
+            {
+                return false;
+            }
             else if (BuildingPanel.IsVisible() && BuildingPanel.Instance.HandleEscape())
             {
                 return false;

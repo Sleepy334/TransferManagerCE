@@ -8,10 +8,20 @@ namespace TransferManagerCE.UI
     {
         private UILabel? m_lblTime = null;
         private UILabel? m_lblLocation = null;
-        private UILabel? m_lblOwner = null;
+        private UITruncateLabel? m_lblOwner = null;
         private UILabel? m_lblSourceFailCount = null;
-        private UILabel? m_lblTarget = null;
+        private UITruncateLabel? m_lblTarget = null;
         private UILabel? m_lblTargetFailCount = null;
+
+        public static float[] ColumnWidths =
+        {
+            70, // Time
+            95, // Location
+            240, // Source building
+            60, // Fail count
+            240, // Target building
+            60, // Fail count
+        };
 
         public override void Start()
         {
@@ -28,7 +38,7 @@ namespace TransferManagerCE.UI
                 m_lblTime.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblTime.autoSize = false;
                 m_lblTime.height = height;
-                m_lblTime.width = TransferIssuePanel.iCOLUMN_WIDTH_TIME;
+                m_lblTime.width = ColumnWidths[0];
             }
 
             m_lblLocation = AddUIComponent<UILabel>();
@@ -42,10 +52,10 @@ namespace TransferManagerCE.UI
                 m_lblLocation.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblLocation.autoSize = false;
                 m_lblLocation.height = height;
-                m_lblLocation.width = TransferIssuePanel.iCOLUMN_WIDTH_LOCATION;
+                m_lblLocation.width = ColumnWidths[1];
             }
 
-            m_lblOwner = AddUIComponent<UILabel>();
+            m_lblOwner = AddUIComponent<UITruncateLabel>();
             if (m_lblOwner is not null)
             {
                 m_lblOwner.name = "m_lblOwner";
@@ -56,7 +66,7 @@ namespace TransferManagerCE.UI
                 m_lblOwner.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblOwner.autoSize = false;
                 m_lblOwner.height = height;
-                m_lblOwner.width = BuildingPanel.iCOLUMN_WIDTH_PATHING_BUILDING;
+                m_lblOwner.width = ColumnWidths[2];
                 m_lblOwner.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblOwner.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -72,10 +82,10 @@ namespace TransferManagerCE.UI
                 m_lblSourceFailCount.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblSourceFailCount.autoSize = false;
                 m_lblSourceFailCount.height = height;
-                m_lblSourceFailCount.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
+                m_lblSourceFailCount.width = ColumnWidths[3];
             }
 
-            m_lblTarget = AddUIComponent<UILabel>();
+            m_lblTarget = AddUIComponent<UITruncateLabel>();
             if (m_lblTarget is not null)
             {
                 m_lblTarget.name = "m_lblActive";
@@ -86,7 +96,7 @@ namespace TransferManagerCE.UI
                 m_lblTarget.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblTarget.autoSize = false;
                 m_lblTarget.height = height;
-                m_lblTarget.width = BuildingPanel.iCOLUMN_WIDTH_PATHING_BUILDING;
+                m_lblTarget.width = ColumnWidths[4];
                 m_lblTarget.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
                 m_lblTarget.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
@@ -102,7 +112,7 @@ namespace TransferManagerCE.UI
                 m_lblTargetFailCount.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblTargetFailCount.autoSize = false;
                 m_lblTargetFailCount.height = height;
-                m_lblTargetFailCount.width = BuildingPanel.iCOLUMN_WIDTH_SMALL;
+                m_lblTargetFailCount.width = ColumnWidths[5];
             }
 
             base.AfterStart();

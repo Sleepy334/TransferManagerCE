@@ -40,7 +40,8 @@ namespace TransferManagerCE
                 Init();
                 if (offer.Building != 0 && offer.IsOutside())
                 {
-                    uiNearestNodeId = OutsideConnectionCache.FindCachedOutsideNode(offer.Building);
+                    Building building = Buildings[offer.Building];
+                    uiNearestNodeId = FindOutsideConnectionNode(offer.Building, building.m_position);
                 }
                 if (uiNearestNodeId == 0)
                 {
@@ -75,7 +76,8 @@ namespace TransferManagerCE
             ushort uiNearestNodeId = 0;
             if (buildingId != 0)
             {
-                uiNearestNodeId = OutsideConnectionCache.FindCachedOutsideNode(buildingId);
+                Building building = Buildings[buildingId];
+                uiNearestNodeId = FindOutsideConnectionNode(buildingId, building.m_position);
             }
             if (uiNearestNodeId == 0)
             {
@@ -471,6 +473,23 @@ namespace TransferManagerCE
             }
 
             return segmentID != 0;
+        }
+
+        private static ushort FindOutsideConnectionNode(ushort buildingId, Vector3 pos)
+        {
+            ushort nodeId = 0;
+
+            NodeUtils.EnumerateNearbyNodes(pos, 128f, (nodeID, node) =>
+            {
+                if ((node.m_flags & NetNode.Flags.Outside) != 0 && node.m_building == buildingId)
+                {
+                    nodeId = nodeID;
+                    return false;
+                }
+                return true;
+            });
+
+            return nodeId;
         }
     }
 }

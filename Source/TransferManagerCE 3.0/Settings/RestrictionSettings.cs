@@ -8,7 +8,7 @@ namespace TransferManagerCE
 {
     public class RestrictionSettings
     {
-        public const int iRESTRICTION_SETTINGS_DATA_VERSION = 3;
+        public const int iRESTRICTION_SETTINGS_DATA_VERSION = 5;
         private static RestrictionSettings s_defaultSettings = new RestrictionSettings();
 
         public enum ImportExport
@@ -19,21 +19,41 @@ namespace TransferManagerCE
             ALLOW_NEITHER,
         }
 
+        // ----------------------------------------------------------------------------------------
+        // WARNING: Update IsDefault as well.
         // Building settings
         public bool m_bAllowImport;
         public bool m_bAllowExport;
+        public HashSet<ushort> m_excludedOutsideConnections;
 
         public DistrictRestrictionSettings m_incomingDistrictSettings;
         public DistrictRestrictionSettings m_outgoingDistrictSettings;
         public BuildingRestrictionSettings m_incomingBuildingSettings;
         public BuildingRestrictionSettings m_outgoingBuildingSettings;
-        public int m_iServiceDistanceMeters;
+        public int m_incomingServiceDistanceMeters;
+        public int m_outgoingServiceDistanceMeters;
+
+        // ----------------------------------------------------------------------------------------
+        public bool IsDefault()
+        {
+            return m_bAllowImport == s_defaultSettings.m_bAllowImport &&
+                    m_bAllowExport == s_defaultSettings.m_bAllowExport &&
+                    m_excludedOutsideConnections.Equals(s_defaultSettings.m_excludedOutsideConnections) &&
+                    m_incomingServiceDistanceMeters == s_defaultSettings.m_incomingServiceDistanceMeters &&
+                    m_outgoingServiceDistanceMeters == s_defaultSettings.m_outgoingServiceDistanceMeters &&
+                    m_incomingDistrictSettings.Equals(s_defaultSettings.m_incomingDistrictSettings) &&
+                    m_outgoingDistrictSettings.Equals(s_defaultSettings.m_outgoingDistrictSettings) &&
+                    m_incomingBuildingSettings.Equals(s_defaultSettings.m_incomingBuildingSettings) &&
+                    m_outgoingBuildingSettings.Equals(s_defaultSettings.m_outgoingBuildingSettings);
+        }
 
         public RestrictionSettings()
         {
             m_bAllowImport = true;
             m_bAllowExport = true;
-            m_iServiceDistanceMeters = 0;
+            m_excludedOutsideConnections = new HashSet<ushort>();
+            m_incomingServiceDistanceMeters = 0;
+            m_outgoingServiceDistanceMeters = 0;
             m_incomingDistrictSettings = new DistrictRestrictionSettings();
             m_outgoingDistrictSettings = new DistrictRestrictionSettings();
             m_incomingBuildingSettings = new BuildingRestrictionSettings();
@@ -44,9 +64,14 @@ namespace TransferManagerCE
         {
             m_bAllowImport = oSecond.m_bAllowImport;
             m_bAllowExport = oSecond.m_bAllowExport;
-            m_iServiceDistanceMeters = oSecond.m_iServiceDistanceMeters;
+            m_excludedOutsideConnections = new HashSet<ushort>(oSecond.m_excludedOutsideConnections);
+
+            m_incomingServiceDistanceMeters = oSecond.m_incomingServiceDistanceMeters;
+            m_outgoingServiceDistanceMeters = oSecond.m_outgoingServiceDistanceMeters;
+
             m_incomingDistrictSettings = new DistrictRestrictionSettings(oSecond.m_incomingDistrictSettings);
             m_outgoingDistrictSettings = new DistrictRestrictionSettings(oSecond.m_outgoingDistrictSettings);
+
             m_incomingBuildingSettings = new BuildingRestrictionSettings(oSecond.m_incomingBuildingSettings);
             m_outgoingBuildingSettings = new BuildingRestrictionSettings(oSecond.m_outgoingBuildingSettings);
         }
@@ -58,24 +83,14 @@ namespace TransferManagerCE
             throw new NotImplementedException();
         }
 
-        public bool IsDefault()
-        {
-            return m_bAllowImport == s_defaultSettings.m_bAllowImport &&
-                    m_bAllowExport == s_defaultSettings.m_bAllowExport &&
-                    m_iServiceDistanceMeters == s_defaultSettings.m_iServiceDistanceMeters &&
-                    m_incomingDistrictSettings.Equals(s_defaultSettings.m_incomingDistrictSettings) &&
-                    m_outgoingDistrictSettings.Equals(s_defaultSettings.m_outgoingDistrictSettings) &&
-                    m_incomingBuildingSettings.Equals(s_defaultSettings.m_incomingBuildingSettings) &&
-                    m_outgoingBuildingSettings.Equals(s_defaultSettings.m_outgoingBuildingSettings);
-        }
-
         public void SaveData(FastList<byte> Data)
         {
             StorageData.WriteBool(m_bAllowImport, Data);
             StorageData.WriteBool(m_bAllowExport, Data);
             StorageData.WriteInt32((int)m_incomingDistrictSettings.m_iPreferLocalDistricts, Data);
             StorageData.WriteInt32((int)m_outgoingDistrictSettings.m_iPreferLocalDistricts, Data);
-            StorageData.WriteInt32(m_iServiceDistanceMeters, Data);
+            StorageData.WriteInt32(m_incomingServiceDistanceMeters, Data);
+            StorageData.WriteInt32(m_outgoingServiceDistanceMeters, Data);
             StorageData.WriteBool(m_incomingDistrictSettings.m_bAllowLocalDistrict, Data);
             StorageData.WriteBool(m_incomingDistrictSettings.m_bAllowLocalPark, Data);
             StorageData.WriteBool(m_outgoingDistrictSettings.m_bAllowLocalDistrict, Data);
@@ -98,6 +113,13 @@ namespace TransferManagerCE
             // Building restrictions
             m_incomingBuildingSettings.Write(Data);
             m_outgoingBuildingSettings.Write(Data);
+
+            // Outside Connection Excludions
+            StorageData.WriteInt32(m_excludedOutsideConnections.Count, Data);
+            foreach (ushort buildingId in m_excludedOutsideConnections)
+            {
+                StorageData.WriteUInt16(buildingId, Data);
+            }
         }
 
         public static RestrictionSettings LoadData(int RestrictionSettingsVersion, byte[] Data, ref int iIndex)
@@ -112,11 +134,19 @@ namespace TransferManagerCE
             if (RestrictionSettingsVersion <= 2)
             {
                 int iDistanceKm = StorageData.ReadInt32(Data,ref iIndex);
-                settings.m_iServiceDistanceMeters = iDistanceKm * 1000;
+                settings.m_incomingServiceDistanceMeters = iDistanceKm * 1000;
+                settings.m_outgoingServiceDistanceMeters = iDistanceKm * 1000;
+            }
+            else if (RestrictionSettingsVersion == 3)
+            {
+                int oldServiceDistanceMeters = StorageData.ReadInt32(Data, ref iIndex);
+                settings.m_incomingServiceDistanceMeters = oldServiceDistanceMeters;
+                settings.m_outgoingServiceDistanceMeters = oldServiceDistanceMeters;
             }
             else
             {
-                settings.m_iServiceDistanceMeters = StorageData.ReadInt32(Data, ref iIndex);
+                settings.m_incomingServiceDistanceMeters = StorageData.ReadInt32(Data, ref iIndex);
+                settings.m_outgoingServiceDistanceMeters = StorageData.ReadInt32(Data, ref iIndex);
             }
             
             settings.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
@@ -133,6 +163,17 @@ namespace TransferManagerCE
             {
                 settings.m_incomingBuildingSettings.Read(Data, ref iIndex);
                 settings.m_outgoingBuildingSettings.Read(Data, ref iIndex);
+            }
+
+            // Outside Connection Excludions
+            if (RestrictionSettingsVersion >= 5)
+            {
+                int iCount = StorageData.ReadInt32(Data, ref iIndex);
+                for (int i = 0; i < iCount; ++i)
+                {
+                    ushort buildingId = StorageData.ReadUInt16(Data, ref iIndex);
+                    settings.m_excludedOutsideConnections.Add(buildingId);
+                }
             }
 
             return settings;
@@ -219,10 +260,16 @@ namespace TransferManagerCE
             }
 
             // Distance restriction
-            if (s_defaultSettings.m_iServiceDistanceMeters != m_iServiceDistanceMeters)
+            if (s_defaultSettings.m_incomingServiceDistanceMeters != m_incomingServiceDistanceMeters)
             {
                 iChanges++;
-                sMessage = Utils.AddStringsWithNewLine(sMessage, $"Service Distance(m): {m_iServiceDistanceMeters}");
+                sMessage = Utils.AddStringsWithNewLine(sMessage, $"Incoming Service Distance(m): {m_incomingServiceDistanceMeters}");
+            }
+            // Distance restriction
+            if (s_defaultSettings.m_outgoingServiceDistanceMeters != m_outgoingServiceDistanceMeters)
+            {
+                iChanges++;
+                sMessage = Utils.AddStringsWithNewLine(sMessage, $"Outgoing Service Distance(m): {m_outgoingServiceDistanceMeters}");
             }
 
             // Import  / Export

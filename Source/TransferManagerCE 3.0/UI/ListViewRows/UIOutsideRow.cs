@@ -9,11 +9,24 @@ namespace TransferManagerCE.UI
     {
         private UILabel? m_lblName = null;
         private UILabel? m_lblType = null;
-        private UILabel? m_lblMultiplier = null;
+        private UILabel? m_lblPriority = null;
+        private UILabel? m_lblUsage = null;
         private UILabel? m_lblOwn = null;
         private UILabel? m_lblStuck = null;
         private UILabel? m_lblGuest = null;
 
+        public static float[] ColumnWidths =
+        {
+            200, // Name
+            60, // Type
+            80, // Multiplier
+            80, // Usage
+            100, // Own
+            100, // Guest
+            100, // Stuck
+        };
+
+        // ----------------------------------------------------------------------------------------
         public override void Start()
         {
             base.Start();
@@ -30,7 +43,7 @@ namespace TransferManagerCE.UI
                 m_lblName.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblName.autoSize = false;
                 m_lblName.height = height;
-                m_lblName.width = OutsideConnectionPanel.iCOLUMN_WIDTH_XLARGE;
+                m_lblName.width = ColumnWidths[0];
             }
 
             m_lblType = AddUIComponent<UILabel>();
@@ -44,21 +57,35 @@ namespace TransferManagerCE.UI
                 m_lblType.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblType.autoSize = false;
                 m_lblType.height = height;
-                m_lblType.width = OutsideConnectionPanel.iCOLUMN_WIDTH_SMALL;
+                m_lblType.width = ColumnWidths[1];
             }
 
-            m_lblMultiplier = AddUIComponent<UILabel>();
-            if (m_lblMultiplier is not null)
+            m_lblPriority = AddUIComponent<UILabel>();
+            if (m_lblPriority is not null)
             {
-                m_lblMultiplier.name = "m_lblMultiplier";
-                m_lblMultiplier.text = "";
-                m_lblMultiplier.textScale = BuildingPanel.fTEXT_SCALE;
-                m_lblMultiplier.tooltip = "";
-                m_lblMultiplier.textAlignment = UIHorizontalAlignment.Center;
-                m_lblMultiplier.verticalAlignment = UIVerticalAlignment.Middle;
-                m_lblMultiplier.autoSize = false;
-                m_lblMultiplier.height = height;
-                m_lblMultiplier.width = OutsideConnectionPanel.iCOLUMN_WIDTH_NORMAL;
+                m_lblPriority.name = "m_lblPriority";
+                m_lblPriority.text = "";
+                m_lblPriority.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblPriority.tooltip = "";
+                m_lblPriority.textAlignment = UIHorizontalAlignment.Center;
+                m_lblPriority.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblPriority.autoSize = false;
+                m_lblPriority.height = height;
+                m_lblPriority.width = ColumnWidths[2];
+            }
+
+            m_lblUsage = AddUIComponent<UILabel>();
+            if (m_lblUsage is not null)
+            {
+                m_lblUsage.name = "m_lblUsage";
+                m_lblUsage.text = "";
+                m_lblUsage.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblUsage.tooltip = "";
+                m_lblUsage.textAlignment = UIHorizontalAlignment.Center;
+                m_lblUsage.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblUsage.autoSize = false;
+                m_lblUsage.height = height;
+                m_lblUsage.width = ColumnWidths[3];
             }
 
             m_lblOwn = AddUIComponent<UILabel>();
@@ -72,7 +99,7 @@ namespace TransferManagerCE.UI
                 m_lblOwn.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblOwn.autoSize = false;
                 m_lblOwn.height = height;
-                m_lblOwn.width = OutsideConnectionPanel.iCOLUMN_WIDTH_LARGE;
+                m_lblOwn.width = ColumnWidths[4];
             }
 
             m_lblGuest = AddUIComponent<UILabel>();
@@ -86,7 +113,7 @@ namespace TransferManagerCE.UI
                 m_lblGuest.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblGuest.autoSize = false;
                 m_lblGuest.height = height;
-                m_lblGuest.width = OutsideConnectionPanel.iCOLUMN_WIDTH_LARGE;
+                m_lblGuest.width = ColumnWidths[5];
             }
 
             m_lblStuck = AddUIComponent<UILabel>();
@@ -100,7 +127,7 @@ namespace TransferManagerCE.UI
                 m_lblStuck.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblStuck.autoSize = false;
                 m_lblStuck.height = height;
-                m_lblStuck.width = OutsideConnectionPanel.iCOLUMN_WIDTH_LARGE;
+                m_lblStuck.width = ColumnWidths[6];
             }
 
             AfterStart();
@@ -110,28 +137,19 @@ namespace TransferManagerCE.UI
         {
             m_lblName.text = data.GetName();
             m_lblType.text = data.m_eType.ToString();
-            m_lblMultiplier.text = BuildingSettingsFast.GetEffectiveOutsideMultiplier(data.m_buildingId).ToString();
-
-            int iOwnCount = BuildingUtils.GetOwnParentVehiclesForBuilding(data.m_buildingId, out int iOwnStuck).Count;
-            if (m_lblOwn is not null)
-            {
-                m_lblOwn.text = iOwnCount.ToString();
-            }
-
-            int iGuestCount = BuildingUtils.GetGuestParentVehiclesForBuilding(data.m_buildingId, out int iGuestStuck).Count;
-            if (m_lblGuest is not null)
-            {
-                m_lblGuest.text = iGuestCount.ToString();
-            }
-
-            m_lblStuck.text = (iOwnStuck + iGuestStuck).ToString();
+            m_lblPriority.text = $"{BuildingSettingsFast.GetEffectiveOutsidePriority(data.m_buildingId)}%";
+            m_lblUsage.text = data.GetUsage();
+            m_lblOwn.text = data.m_ownCount.ToString();
+            m_lblGuest.text = data.m_guestCount.ToString();
+            m_lblStuck.text = data.m_stuckCount.ToString();
         }
 
         protected override void Clear()
         {
             m_lblName.text = "";
             m_lblType.text = "";
-            m_lblMultiplier.text = "";
+            m_lblPriority.text = "";
+            m_lblUsage.text = "";
             m_lblOwn.text = "";
             m_lblGuest.text = "";
             m_lblStuck.text = "";
@@ -141,7 +159,8 @@ namespace TransferManagerCE.UI
         {
             m_lblName.tooltip = "";
             m_lblType.tooltip = "";
-            m_lblMultiplier.tooltip = "";
+            m_lblPriority.tooltip = "";
+            m_lblUsage.tooltip = "";
             m_lblOwn.tooltip = "";
             m_lblGuest.tooltip = "";
             m_lblStuck.tooltip = "";
@@ -172,6 +191,10 @@ namespace TransferManagerCE.UI
                 if (!hightlightRow && BuildingUtils.GetSelectedBuilding() == data.m_buildingId)
                 {
                     return KnownColor.lightBlue;
+                }
+                else if (data.GetTotal() == 0)
+                {
+                    return KnownColor.orange;
                 }
             }
 

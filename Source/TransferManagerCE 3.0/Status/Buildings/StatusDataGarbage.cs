@@ -54,7 +54,7 @@ namespace TransferManagerCE.Data
                                 int iStorageCapacity = MaxOutgoingLoadSize(buildingAI) * 4;
 
                                 WarnText(false, true, iCurrentCapacity, iStorageCapacity);
-                                tooltip = MakeTooltip(false, iCurrentCapacity, iStorageCapacity);
+                                tooltip = MakeTooltip(iCurrentCapacity, iStorageCapacity);
                                 return DisplayValueAsPercent(iCurrentCapacity, iStorageCapacity); // Outgoing
                             }
                             else
@@ -95,7 +95,7 @@ namespace TransferManagerCE.Data
                 default:
                     {
                         WarnText(false, true, building.m_garbageBuffer, 8000);
-                        tooltip = MakeTooltip(false, building.m_garbageBuffer, 8000);
+                        tooltip = MakeTooltip(building.m_garbageBuffer, 8000);
                         return DisplayValueAsPercent(building.m_garbageBuffer, 8000);
                     }
             }
@@ -107,7 +107,7 @@ namespace TransferManagerCE.Data
         {
             if (s_maxLoadSize == null)
             {
-                // We try to call WarehouseAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
+                // We try to call LandfillSiteAI.MaxOutgoingLoadSize as some mods such as Industry Rebalanced modify this value
                 // Unfortunately it is private so we need to use reflection, so we cache the results.
                 MethodInfo getMaxOutgoingLoadSize = typeof(LandfillSiteAI).GetMethod("MaxOutgoingLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
                 if (getMaxOutgoingLoadSize != null)

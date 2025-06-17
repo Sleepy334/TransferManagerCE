@@ -124,6 +124,8 @@ namespace TransferManagerCE
                         }
                     }
                 }
+
+                return true;
             });
 
             // Put in an offer for more taxis if we have room for more
@@ -172,6 +174,7 @@ namespace TransferManagerCE
                         taxiId = vehicleId;
                     }
                 }
+                return true;
             });
 
             return taxiId;

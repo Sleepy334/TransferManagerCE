@@ -1,4 +1,5 @@
 using HarmonyLib;
+using SleepyCommon;
 
 namespace TransferManagerCE
 {
@@ -11,7 +12,6 @@ namespace TransferManagerCE
         public static void ReleaseLaneImplementationPostfix(uint lane)
         {
             PathDistanceCache.Invalidate();
-            OutsideConnectionCache.Invalidate();
         }
 
         // ----------------------------------------------------------------------------------------
@@ -22,7 +22,6 @@ namespace TransferManagerCE
         public static void ReleaseSegmentImplementationPostfix(ushort segment) 
         {
             PathDistanceCache.Invalidate();
-            OutsideConnectionCache.Invalidate();
         }
 
         // ----------------------------------------------------------------------------------------
@@ -31,7 +30,25 @@ namespace TransferManagerCE
         public static void CreateSegment(ushort segmentID, ref NetSegment data)
         {
             PathDistanceCache.Invalidate();
-            OutsideConnectionCache.Invalidate();
+        }
+
+        // ----------------------------------------------------------------------------------------
+        [HarmonyPatch(typeof(BuildingManager), "UpdateNotifications")]
+        [HarmonyPostfix]
+        public static void UpdateNotifications(ushort building, Notification.ProblemStruct oldProblems, Notification.ProblemStruct newProblems)
+        {
+            if ((oldProblems & Notification.Problem1.TurnedOff).IsNone && 
+                (newProblems & Notification.Problem1.TurnedOff).IsNotNone)
+            {
+                // Turned OFF
+                PathDistanceCache.Invalidate();
+            }
+            else if ((oldProblems & Notification.Problem1.TurnedOff).IsNotNone &&
+                     (newProblems & Notification.Problem1.TurnedOff).IsNone)
+            {
+                // Turned ON
+                PathDistanceCache.Invalidate();
+            }
         }
     }
 }
