@@ -51,10 +51,53 @@ namespace TransferManagerCE
             // Now describe buildings
             foreach (ushort buildingId in m_buildings)
             {
-                sText += $"{CitiesUtils.GetBuildingName(buildingId, InstanceID.Empty, true)}\n";
+                sText += $"{CitiesUtils.GetBuildingName(buildingId, true, true)}\n";
             }
 
             return sText;
+        }
+
+        protected void SelectBuilding(ushort buildingId)
+        {
+            if (BuildingTypeHelper.GetBuildingType(buildingId) == BuildingTypeHelper.BuildingType.CargoWarehouse)
+            {
+                // Add cargo station sub building instead
+                ushort subBuildingId = 0;
+                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                if (building.m_subBuilding != 0)
+                {
+                    subBuildingId = building.m_subBuilding;
+                }
+
+                if (m_buildings.Contains(buildingId))
+                {
+                    if (subBuildingId != 0)
+                    {
+                        m_buildings.Add(subBuildingId);
+                    }
+                    m_buildings.Remove(buildingId);
+                }
+                else if (subBuildingId != 0 && m_buildings.Contains(subBuildingId))
+                {
+                    m_buildings.Remove(subBuildingId);
+                }
+                else
+                {
+                    m_buildings.Add(buildingId);
+                }
+            }
+            else
+            {
+                // Add or remove building
+                if (m_buildings.Contains(buildingId))
+                {
+                    m_buildings.Remove(HoverInstance.Building);
+                }
+                else
+                {
+                    m_buildings.Add(HoverInstance.Building);
+                }
+            }
         }
     }
 }

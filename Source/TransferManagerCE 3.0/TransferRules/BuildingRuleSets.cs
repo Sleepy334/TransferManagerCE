@@ -65,7 +65,7 @@ namespace TransferManagerCE.TransferRules
                     {
                         // Special case due to Industries Remastered assets, several materials are on both tabs
                         // We return correct settings based on offers Incoming/Outgoing instead
-                        if (TransferManagerModes.IsFactoryMaterial(material))
+                        if (TransferManagerModes.IsWarehouseMaterial(material))
                         {
                             if (bIncomingOffer)
                             {
@@ -217,7 +217,7 @@ namespace TransferManagerCE.TransferRules
             }
         }
         
-        public static List<ReasonRule> GetRules(BuildingType eBuildingType, ushort buildingId)
+        public static List<ReasonRule>  GetRules(BuildingType eBuildingType, ushort buildingId)
         {
             lock (s_dictionaryLock)
             {
@@ -230,14 +230,16 @@ namespace TransferManagerCE.TransferRules
                     // Select appropriate rulesets for certain types
                     switch (eBuildingType)
                     {
+                        case BuildingType.CargoWarehouse:
                         case BuildingType.Warehouse:
-                        case BuildingType.WarehouseStation:
                         case BuildingType.CargoFerryWarehouseHarbor:
                             {
+                                ushort warehouseBuildingId = WarehouseUtils.GetWarehouseBuildingId(buildingId);
+
                                 // Warehouses, just return the actual material they store
                                 List<ReasonRule> rules = new List<ReasonRule>();
 
-                                CustomTransferReason.Reason actualTransferReason = GetWarehouseTransferReason(buildingId);
+                                CustomTransferReason.Reason actualTransferReason = GetWarehouseTransferReason(warehouseBuildingId);
                                 if (actualTransferReason != CustomTransferReason.Reason.None)
                                 {
                                     foreach (ReasonRule rule in buildingRules)
@@ -1669,7 +1671,7 @@ namespace TransferManagerCE.TransferRules
             }
 
             BuildingRules[BuildingType.Warehouse] = list;
-            BuildingRules[BuildingType.WarehouseStation] = list;
+            BuildingRules[BuildingType.CargoWarehouse] = list;
             BuildingRules[BuildingType.CargoFerryWarehouseHarbor] = list;
         }
 

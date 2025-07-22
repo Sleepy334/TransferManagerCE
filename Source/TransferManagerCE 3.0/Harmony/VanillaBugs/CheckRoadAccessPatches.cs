@@ -24,7 +24,7 @@ namespace TransferManagerCE
                 {
                     if (FindTrainAccess(buildingID, ref data, data.m_position, out var segmentID, mostCloser: true))
                     {
-                        CDebug.Log("Access segment found.");
+                        CDebug.Log($"Building: {buildingID} - Train access segment found.");
                         data.m_accessSegment = segmentID;
                         flag = false;
                     }

@@ -1,3 +1,4 @@
+using ColossalFramework;
 using SleepyCommon;
 using static RenderManager;
 using static TransferManagerCE.BuildingTypeHelper;
@@ -62,9 +63,10 @@ namespace TransferManagerCE.Data
             return line.Info.m_transportType.ToString();
         }
 
-        public override string GetResponder()
+        protected override string CalculateResponder(out string tooltip)
         {
-            return CitiesUtils.GetSafeLineName(m_lineId);
+            tooltip = CitiesUtils.GetSafeLineName(m_lineId);
+            return tooltip;
         }
 
         public override void OnClickResponder()

@@ -103,7 +103,7 @@ namespace TransferManagerCE.UI
         {
             if (data is not null)
             {
-                return InstanceHelper.DescribeInstance(data.m_source, InstanceID.Empty, true);
+                return InstanceHelper.DescribeInstance(data.m_source, true, true);
             }
 
             return "";

@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using TransferManagerCE.CustomManager.Stats;
 using TransferManagerCE.Settings;
 using UnityEngine;
+using static SleepyCommon.TransportUtils;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
-using static TransferManagerCE.TransportUtils;
 using static TransferManagerCE.WarehouseUtils;
 
 namespace TransferManagerCE.CustomManager
@@ -17,8 +17,8 @@ namespace TransferManagerCE.CustomManager
         public enum WarehouseStationOffer
         {
             None,
-            Warehouse,
-            CargoStation,
+            WarehouseRoad,
+            WarehouseTrain,
         }
 
         // Actual TransferOffer object
@@ -34,7 +34,8 @@ namespace TransferManagerCE.CustomManager
 
         // Outside connection
         private bool? m_bOutside = null;
-        private byte? m_effectiveOutsidePriority = null;
+        private uint? m_effectiveOutsideCargoPriorityFactor = null;
+        private uint? m_effectiveOutsideCitizenPriorityFactor = null;
         private bool? m_bExportAllowed = null;
         private bool? m_bImportAllowed = null;
         private HashSet<ushort>? m_excludedOutsideConnections = null;
@@ -58,6 +59,9 @@ namespace TransferManagerCE.CustomManager
         // Cargo warehouse settings
         private TransportType m_transportType = TransportType.None;
         private WarehouseStationOffer m_warehouseStationOfferType = WarehouseStationOffer.None;
+        
+        // Used for outside connection scaling
+        private static Util.OutsideConnectionCurve s_outsideConnectionCurve = new Util.OutsideConnectionCurve();
 
         // -------------------------------------------------------------------------------------------
         public CustomTransferOffer(bool bIncoming, TransferOffer offer)
@@ -91,7 +95,8 @@ namespace TransferManagerCE.CustomManager
 
             // Outside connection
             m_bOutside = null;
-            m_effectiveOutsidePriority = null;
+            m_effectiveOutsideCargoPriorityFactor = null;
+            m_effectiveOutsideCitizenPriorityFactor = null;
             m_bExportAllowed = null;
             m_bImportAllowed = null;
             m_excludedOutsideConnections = null;
@@ -276,14 +281,27 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public int GetEffectiveOutsidePriority()
+        public uint GetEffectiveOutsideCargoPriorityFactor()
         {
-            if (m_effectiveOutsidePriority is null)
+            if (m_effectiveOutsideCargoPriorityFactor is null)
             {
-                m_effectiveOutsidePriority = (byte)BuildingSettingsFast.GetEffectiveOutsidePriority(GetBuilding());
+                int iPercent = BuildingSettingsFast.GetEffectiveOutsideCargoPriority(GetBuilding());
+                m_effectiveOutsideCargoPriorityFactor = (uint)s_outsideConnectionCurve.GetCurveValue(iPercent);
             }
 
-            return m_effectiveOutsidePriority.Value;
+            return m_effectiveOutsideCargoPriorityFactor.Value;
+        }
+
+        // -------------------------------------------------------------------------------------------
+        public uint GetEffectiveOutsideCitizenPriorityFactor()
+        {
+            if (m_effectiveOutsideCitizenPriorityFactor is null)
+            {
+                int iPercent = BuildingSettingsFast.GetEffectiveOutsideCitizenPriority(GetBuilding());
+                m_effectiveOutsideCitizenPriorityFactor = (uint)s_outsideConnectionCurve.GetCurveValue(iPercent);
+            }
+
+            return m_effectiveOutsideCitizenPriorityFactor.Value;
         }
 
         // -------------------------------------------------------------------------------------------
@@ -310,7 +328,8 @@ namespace TransferManagerCE.CustomManager
         {
             if (m_warehouseMode == WarehouseMode.None)
             {
-                m_warehouseMode = WarehouseUtils.GetWarehouseMode(GetBuilding());
+                ushort warehouseId = WarehouseUtils.GetWarehouseBuildingId(GetBuilding());
+                m_warehouseMode = WarehouseUtils.GetWarehouseMode(warehouseId);
             }
 
             return m_warehouseMode;
@@ -325,27 +344,32 @@ namespace TransferManagerCE.CustomManager
 
                 if (IsWarehouse() && GetBuilding() != 0)
                 {
-                    Building building = BuildingManager.instance.m_buildings.m_buffer[GetBuilding()];
-                    WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
-                    if (warehouse is not null)
+                    ushort warehouseBuildingId = WarehouseUtils.GetWarehouseBuildingId(GetBuilding());
+
+                    Building building = BuildingManager.instance.m_buildings.m_buffer[warehouseBuildingId];
+                    if (building.m_flags != 0)
                     {
-                        if (m_bIncoming)
+                        WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
+                        if (warehouse is not null)
                         {
-                            // For incoming we use the storage buffer and incoming supply
-                            TransferReason actualTransferReason = warehouse.GetActualTransferReason(GetBuilding(), ref building);
-                            int iTransferSize = BuildingUtils.GetGuestVehiclesTransferSize(GetBuilding(), actualTransferReason);
-                            double dStorage = building.m_customBuffer1 * 0.1 + iTransferSize * 0.001;
-                            double dCapacity = warehouse.m_storageCapacity * 0.001;
-                            double dInPercent = dStorage / dCapacity;
-                            m_fWarehouseStorage = (float)Math.Min(dInPercent, 1.0);
-                        }
-                        else
-                        {
-                            // For outgoing we use the actual storage buffer only, not including incoming supply
-                            double dStorage = building.m_customBuffer1 * 0.1;
-                            double dCapacity = warehouse.m_storageCapacity * 0.001;
-                            double dInPercent = dStorage / dCapacity;
-                            m_fWarehouseStorage = (float)Math.Min(dInPercent, 1.0);
+                            if (m_bIncoming)
+                            {
+                                // For incoming we use the storage buffer and incoming supply
+                                TransferReason actualTransferReason = warehouse.GetActualTransferReason(warehouseBuildingId, ref building);
+                                int iTransferSize = BuildingUtils.GetGuestVehiclesTransferSize(warehouseBuildingId, actualTransferReason);
+                                double dStorage = building.m_customBuffer1 * 0.1 + iTransferSize * 0.001;
+                                double dCapacity = warehouse.m_storageCapacity * 0.001;
+                                double dInPercent = dStorage / dCapacity;
+                                m_fWarehouseStorage = (float)Math.Min(dInPercent, 1.0);
+                            }
+                            else
+                            {
+                                // For outgoing we use the actual storage buffer only, not including incoming supply
+                                double dStorage = building.m_customBuffer1 * 0.1;
+                                double dCapacity = warehouse.m_storageCapacity * 0.001;
+                                double dInPercent = dStorage / dCapacity;
+                                m_fWarehouseStorage = (float)Math.Min(dInPercent, 1.0);
+                            }
                         }
                     }
                 }
@@ -395,13 +419,19 @@ namespace TransferManagerCE.CustomManager
 
                 if (m_offerBuildingId != 0)
                 {
-                    // Check if it is a sub building and locate topmost building
-                    m_offerBuildingId = GetTopMostParentBuilding(m_offerBuildingId.Value);
+                    // Don't get parent if its a cargo warehouse as we use different settings for
+                    // the sub building and warehouse
+                    if (!IsCargoWarehouse())
+                    {
+                        // Check if it is a sub building and locate topmost building
+                        m_offerBuildingId = GetTopMostParentBuilding(m_offerBuildingId.Value);
+                    }
                 }
             }
             return m_offerBuildingId.Value;
         }
 
+        // -------------------------------------------------------------------------------------------
         public static ushort GetTopMostParentBuilding(ushort buildingId)
         {
             ushort parentBuildingId = buildingId;
@@ -656,27 +686,8 @@ namespace TransferManagerCE.CustomManager
         {
             if (m_transportType == TransportType.None)
             {
-                if (IsWarehouseStation())
+                if (GetBuilding() != 0)
                 {
-                    // We don't want to call GetBuilding() as that will return the parent building always.
-                    if (Building != 0)
-                    {
-                        Building building = BuildingManager.instance.m_buildings.m_buffer[Building];
-                        m_transportType = TransportUtils.GetTransportType(building);
-                    }
-                    else if (Vehicle != 0)
-                    {
-                        Vehicle vehicle = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[m_object.Vehicle];
-                        if (vehicle.m_sourceBuilding != 0)
-                        {
-                            Building building = BuildingManager.instance.m_buildings.m_buffer[vehicle.m_sourceBuilding];
-                            m_transportType = TransportUtils.GetTransportType(building);
-                        }
-                    }
-                }
-                else if (GetBuilding() != 0)
-                {
-                    
                     Building building = BuildingManager.instance.m_buildings.m_buffer[GetBuilding()];
                     m_transportType = TransportUtils.GetTransportType(building);
                 }
@@ -700,9 +711,9 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public bool IsWarehouseStation()
+        public bool IsCargoWarehouse()
         {
-            return (GetBuildingType() == BuildingType.WarehouseStation);
+            return (GetBuildingType() == BuildingType.CargoWarehouse);
         }
 
         // -------------------------------------------------------------------------------------------
@@ -710,33 +721,16 @@ namespace TransferManagerCE.CustomManager
         {
             if (m_warehouseStationOfferType == WarehouseStationOffer.None)
             {
-                if (GetBuildingType() == BuildingType.WarehouseStation)
+                if (IsCargoWarehouse())
                 {
-                    if (Building != 0)
+                    Building building = BuildingManager.instance.m_buildings.m_buffer[GetBuilding()];
+                    if (building.m_parentBuilding != 0)
                     {
-                        if (GetBuilding() == Building)
-                        {
-                            m_warehouseStationOfferType = WarehouseStationOffer.Warehouse;
-                        }
-                        else
-                        {
-                            m_warehouseStationOfferType = WarehouseStationOffer.CargoStation;
-                        }
+                        m_warehouseStationOfferType = WarehouseStationOffer.WarehouseTrain;
                     }
-                    else if (Vehicle != 0)
+                    else
                     {
-                        Vehicle vehicle = Singleton<VehicleManager>.instance.m_vehicles.m_buffer[m_object.Vehicle];
-                        if (vehicle.m_sourceBuilding != 0)
-                        {
-                            if (GetBuilding() == vehicle.m_sourceBuilding)
-                            {
-                                m_warehouseStationOfferType = WarehouseStationOffer.Warehouse;
-                            }
-                            else
-                            {
-                                m_warehouseStationOfferType = WarehouseStationOffer.CargoStation;
-                            }
-                        }
+                        m_warehouseStationOfferType = WarehouseStationOffer.WarehouseRoad;
                     }
                 }
             }
@@ -745,41 +739,19 @@ namespace TransferManagerCE.CustomManager
         }
 
         // -------------------------------------------------------------------------------------------
-        public ushort GetWarehouseStationId()
+        // Check Building and GetBuilding() as they may be different eg. Cargo Warehouse
+        public bool Intersects(HashSet<ushort> buildingIds)
         {
-            if (GetBuildingType() == BuildingType.WarehouseStation)
+            if (Building != 0 && buildingIds.Contains(Building))
             {
-                Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[Building];
-                if (building.Info.GetAI() is WarehouseStationAI)
-                {
-                    return Building;
-                }
-                else
-                {
-                    return building.m_subBuilding;
-                }
+                return true;
+            }
+            else if (GetBuilding() != 0 && buildingIds.Contains(GetBuilding()))
+            {
+                return true;
             }
 
-            return 0;
-        }
-
-        // -------------------------------------------------------------------------------------------
-        public ushort GetWarehouseId()
-        {
-            if (GetBuildingType() == BuildingType.WarehouseStation)
-            {
-                Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[Building];
-                if (building.Info.GetAI() is WarehouseAI)
-                {
-                    return Building;
-                }
-                else
-                {
-                    return building.m_parentBuilding;
-                }
-            }
-
-            return 0;
+            return false;
         }
 
         // -------------------------------------------------------------------------------------------

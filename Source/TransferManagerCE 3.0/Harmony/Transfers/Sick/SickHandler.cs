@@ -90,7 +90,7 @@ namespace TransferManagerCE
                     // but only when we arent having a major problem
                     if (buildingData.m_healthProblemTimer < iSICK_MAJOR_PROBLEM_TIMER_VALUE &&
                         random.Int32(2u) == 0 &&
-                        RequestEldercareChildcareService(citizenId, offer))
+                        RequestEldercareChildcareService(citizenId, ref offer))
                     {
                         return; // offer sent
                     }
@@ -146,11 +146,10 @@ namespace TransferManagerCE
             if (DependencyUtils.IsSeniorCitizenCenterModRunning() &&
                 Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.HealthCare) &&
                 Singleton<CitizenManager>.exists &&
-                Singleton<CitizenManager>.instance is not null &&
-                IsSenior(citizenID))
+                Singleton<CitizenManager>.instance is not null)
             {
                 Citizen citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID];
-                if (citizen.m_flags != 0 && sourceBuilding == citizen.m_homeBuilding && citizen.m_health >= 40)
+                if (IsSenior(citizen.Age) && citizen.m_flags != 0 && sourceBuilding == citizen.m_homeBuilding && citizen.m_health >= 40)
                 {
                     Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[citizen.m_homeBuilding];
                     if (building.Info is not null)
@@ -162,10 +161,11 @@ namespace TransferManagerCE
             return false;
         }
 
-        public static bool RequestEldercareChildcareService(uint citizenID, TransferOffer offer)
+        public static bool RequestEldercareChildcareService(uint citizenID, ref TransferOffer offer)
         {
-            if (Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID].m_health >= 40 &&
-                (IsChild(citizenID) || IsSenior(citizenID)))
+            Citizen citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID];
+
+            if (citizen.m_health >= 40 && (IsChild(citizen.Age) || IsSenior(citizen.Age)))
             {
                 TransferReason reason = TransferManager.TransferReason.None;
 
@@ -175,12 +175,12 @@ namespace TransferManagerCE
                     BuildingInfo info = Singleton<BuildingManager>.instance.m_buildings.m_buffer[serviceBuildings[i]].Info;
                     if ((object)info is not null)
                     {
-                        if (IsChild(citizenID) && info.m_class.m_level == ItemClass.Level.Level4)
+                        if (IsChild(citizen.Age) && info.m_class.m_level == ItemClass.Level.Level4)
                         {
                             reason = TransferReason.ChildCare;
                             break;
                         }
-                        else if (IsSenior(citizenID) && info.m_class.m_level == ItemClass.Level.Level5)
+                        else if (IsSenior(citizen.Age) && info.m_class.m_level == ItemClass.Level.Level5)
                         {
                             reason = TransferReason.ElderCare;
                             break;
@@ -201,14 +201,23 @@ namespace TransferManagerCE
             return false;
         }
 
-        private static bool IsChild(uint citizenID)
+        private static bool IsChild(int Age)
         {
-            return Citizen.GetAgeGroup(Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID].Age) == Citizen.AgeGroup.Child || Citizen.GetAgeGroup(Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID].Age) == Citizen.AgeGroup.Teen;
+            switch (Citizen.GetAgeGroup(Age))
+            {
+                case Citizen.AgeGroup.Child:
+                case Citizen.AgeGroup.Teen:
+                    {
+                        return true;
+                    }
+            }   
+
+            return false;
         }
 
-        private static bool IsSenior(uint citizenID)
+        private static bool IsSenior(int Age)
         {
-            return Citizen.GetAgeGroup(Singleton<CitizenManager>.instance.m_citizens.m_buffer[citizenID].Age) == Citizen.AgeGroup.Senior;
+            return Citizen.GetAgeGroup(Age) == Citizen.AgeGroup.Senior;
         }
 
         public static void ClearSickTimerForNonResidential()

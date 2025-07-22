@@ -158,7 +158,7 @@ namespace TransferManagerCE
                     }
 
                     // Update priority based on storage level
-                    if (BuildingSettingsFast.IsImprovedWarehouseMatching(offer.Building))
+                    if (SaveGameSettings.GetSettings().ImprovedWarehouseMatching)
                     {
                         // Check warehouse mode
                         int iMinPriority = 0;

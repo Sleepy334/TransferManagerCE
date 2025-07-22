@@ -130,7 +130,7 @@ namespace TransferManagerCE.UI
                 {
                     sText += "* ";
                 }
-                m_lblOwner.text = sText + InstanceHelper.DescribeInstance(data.m_source, InstanceID.Empty);
+                m_lblOwner.text = sText + InstanceHelper.DescribeInstance(data.m_source, true, false);
                 m_lblSourceFailCount.text = PathFindFailure.GetTotalPathFailures(data.m_source).ToString();
 
                 sText = "";
@@ -138,7 +138,7 @@ namespace TransferManagerCE.UI
                 {
                     sText += "* ";
                 }
-                m_lblTarget.text = sText + InstanceHelper.DescribeInstance(data.m_target, InstanceID.Empty);
+                m_lblTarget.text = sText + InstanceHelper.DescribeInstance(data.m_target, true, false);
                 m_lblTargetFailCount.text = PathFindFailure.GetTotalPathFailures(data.m_target).ToString();
             }
         }
@@ -193,11 +193,11 @@ namespace TransferManagerCE.UI
             }
             else if (component == m_lblOwner)
             {
-                return InstanceHelper.DescribeInstance(data.m_source, InstanceID.Empty, true);
+                return InstanceHelper.DescribeInstance(data.m_source, true, true);
             }
             else if (component == m_lblTarget)
             {
-                return InstanceHelper.DescribeInstance(data.m_target, InstanceID.Empty, true);
+                return InstanceHelper.DescribeInstance(data.m_target, true, true);
             }
 
             return "";

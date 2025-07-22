@@ -31,11 +31,6 @@ namespace TransferManagerCE.Data
             return false;
         }
 
-        public override bool IsNodeData()
-        {
-            return false;
-        }
-
         public override bool HasVehicle()
         {
             return false;

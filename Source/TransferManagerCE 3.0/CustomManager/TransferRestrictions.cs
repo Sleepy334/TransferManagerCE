@@ -21,6 +21,8 @@ namespace TransferManagerCE.CustomManager
             PathFinding,
             WarehouseReserveTrucks,
             Import,
+            ImportGlobal,
+            ImportGlobalWarehouse,
             Export,
             OutsideConnectionExcluded,
             OutsideConnectionPriority,
@@ -125,6 +127,13 @@ namespace TransferManagerCE.CustomManager
                 }
             }
 
+            // Check if Import/Export are disbled
+            ExclusionReason eOutsideReason = OutsideConnectionCanTransfer(incomingOffer, outgoingOffer, material);
+            if (eOutsideReason != ExclusionReason.None)
+            {
+                return eOutsideReason;
+            }
+
             if (!TransferManagerModes.IsFastChecksOnly(material))
             {
                 // Order calls by speed of execution!
@@ -133,13 +142,6 @@ namespace TransferManagerCE.CustomManager
                 if (m_bEnablePathFailExclusion && PathfindExclusion(material, ref incomingOffer, ref outgoingOffer))
                 {
                     return ExclusionReason.PathFinding;
-                }
-
-                // Check if Import/Export are disbled
-                ExclusionReason eOutsideReason = OutsideConnectionCanTransfer(incomingOffer, outgoingOffer, material);
-                if (eOutsideReason != ExclusionReason.None)
-                {
-                    return eOutsideReason;
                 }
 
                 // This checks warehouse transfers
@@ -179,8 +181,8 @@ namespace TransferManagerCE.CustomManager
                     return ExclusionReason.DistrictRestriction;
                 }
 
-                // Check Warehouse station restrictions - Only allow matching with train outside connections
-                ExclusionReason eWarehouseStationReason = WarehouseStationCanTransfer(incomingOffer, outgoingOffer, material);
+                // Check Cargo Warehouse restrictions - Only allow matching with train outside connections
+                ExclusionReason eWarehouseStationReason = CargoWarehouseCanTransfer(incomingOffer, outgoingOffer, material);
                 if (eWarehouseStationReason != ExclusionReason.None)
                 {
                     return eWarehouseStationReason;
@@ -312,7 +314,7 @@ namespace TransferManagerCE.CustomManager
                         return false;
                     }
                 }
-                else if (!incomingList.Contains(outgoingOffer.GetBuilding()))
+                else if (!outgoingOffer.Intersects(incomingList))
                 {
                     return false;
                 }
@@ -330,7 +332,7 @@ namespace TransferManagerCE.CustomManager
                         return false;
                     }
                 }
-                else if (!outgoingList.Contains(incomingOffer.GetBuilding()))
+                else if (!incomingOffer.Intersects(outgoingList))
                 {
                     return false;
                 }
@@ -363,21 +365,39 @@ namespace TransferManagerCE.CustomManager
         {
             if (incomingOffer.IsOutside())
             {
+                // Apply priority restrictions to all transfer types
+                if (m_bIsWarehouseMaterial)
+                {
+                    if (incomingOffer.GetEffectiveOutsideCargoPriorityFactor() != 1)
+                    {
+                        if (m_random.Int32(incomingOffer.GetEffectiveOutsideCargoPriorityFactor()) != 0)
+                        {
+                            return ExclusionReason.OutsideConnectionPriority;
+                        }
+                    }
+                }
+                else
+                {
+                    // Apply priority restrictions to all transfer types
+                    if (incomingOffer.GetEffectiveOutsideCitizenPriorityFactor() != 1)
+                    {
+                        if (m_random.Int32(incomingOffer.GetEffectiveOutsideCitizenPriorityFactor()) != 0)
+                        {
+                            return ExclusionReason.OutsideConnectionPriority;
+                        }
+                    }
+                }
+
                 if (m_bIsExportRestrictionsSupported)
                 {
                     if (!outgoingOffer.IsExportAllowed(material))
                     {
                         return ExclusionReason.Export; // Attempting to Export is disabled
                     }
-                    
+
                     if (!incomingOffer.IsExportAllowed(material))
                     {
                         return ExclusionReason.Export; // The outside connection has export disabled
-                    }
-
-                    if (incomingOffer.GetEffectiveOutsidePriority() < m_random.Int32(100U))
-                    {
-                        return ExclusionReason.OutsideConnectionPriority;
                     }
 
                     if (outgoingOffer.IsOutsideConnectionExcluded(material, incomingOffer.GetBuilding()))
@@ -409,6 +429,29 @@ namespace TransferManagerCE.CustomManager
             }
             else if (outgoingOffer.IsOutside())
             {
+                // Apply priority restrictions to all transfer types
+                if (m_bIsWarehouseMaterial)
+                {
+                    if (outgoingOffer.GetEffectiveOutsideCargoPriorityFactor() != 1)
+                    {
+                        if (m_random.Int32(outgoingOffer.GetEffectiveOutsideCargoPriorityFactor()) != 0)
+                        {
+                            return ExclusionReason.OutsideConnectionPriority;
+                        }
+                    }
+                }
+                else
+                {
+                    // Apply priority restrictions to all transfer types
+                    if (outgoingOffer.GetEffectiveOutsideCitizenPriorityFactor() != 1)
+                    {
+                        if (m_random.Int32(outgoingOffer.GetEffectiveOutsideCitizenPriorityFactor()) != 0)
+                        {
+                            return ExclusionReason.OutsideConnectionPriority;
+                        }
+                    }
+                }
+
                 if (m_bIsImportRestrictionsSupported)
                 {
                     if (!incomingOffer.IsImportAllowed(material))
@@ -421,16 +464,6 @@ namespace TransferManagerCE.CustomManager
                         return ExclusionReason.Import; // The outside connection has import disabled
                     }
 
-                    if (SaveGameSettings.GetSettings().IsImportRestricted(material))
-                    {
-                        return ExclusionReason.Import;
-                    }
-
-                    if (outgoingOffer.GetEffectiveOutsidePriority() < m_random.Int32(100U))
-                    {
-                        return ExclusionReason.OutsideConnectionPriority;
-                    }
-
                     if (incomingOffer.IsOutsideConnectionExcluded(material, outgoingOffer.GetBuilding()))
                     {
                         return ExclusionReason.OutsideConnectionExcluded;
@@ -438,9 +471,10 @@ namespace TransferManagerCE.CustomManager
 
                     if (incomingOffer.IsWarehouse())
                     {
+                        // Check if restricted for warehouses
                         if (SaveGameSettings.GetSettings().IsWarehouseImportRestricted(material))
                         {
-                            return ExclusionReason.Import;
+                            return ExclusionReason.ImportGlobalWarehouse;
                         }
 
                         switch (incomingOffer.GetWarehouseMode())
@@ -461,6 +495,14 @@ namespace TransferManagerCE.CustomManager
                                 }
                         }
                     }
+                    else
+                    {
+                        // Check for none warehouses
+                        if (SaveGameSettings.GetSettings().IsImportRestricted(material))
+                        {
+                            return ExclusionReason.ImportGlobal;
+                        }
+                    }
                 }
             }
 
@@ -473,15 +515,13 @@ namespace TransferManagerCE.CustomManager
             // Is it an inter-warehouse transfer
             if (incomingOffer.IsWarehouse() && outgoingOffer.IsWarehouse())
             {
-                // We have to also use the new Inter-warehouse logic when ImprovedWarehouseMatching is ON as the
+                // We have to also use the Inter-warehouse logic when ImprovedWarehouseMatching is ON as the
                 // vanilla logic only works when warehouse priorities are restricted to 0, 1 and 2
-                if (SaveGameSettings.GetSettings().NewInterWarehouseTransfer || 
-                    BuildingSettingsFast.IsImprovedWarehouseMatching(incomingOffer.GetBuilding()) ||
-                    BuildingSettingsFast.IsImprovedWarehouseMatching(outgoingOffer.GetBuilding()))
+                if (SaveGameSettings.GetSettings().InterWarehouseTransfer || SaveGameSettings.GetSettings().ImprovedWarehouseMatching)
                 {
                     // Add some logic based on warehouse mode
-                    WarehouseMode inMode = WarehouseUtils.GetWarehouseMode(incomingOffer.GetBuilding());
-                    WarehouseMode outMode = WarehouseUtils.GetWarehouseMode(outgoingOffer.GetBuilding());
+                    WarehouseMode inMode = incomingOffer.GetWarehouseMode();
+                    WarehouseMode outMode = outgoingOffer.GetWarehouseMode();
 
                     if (inMode == WarehouseMode.None || outMode == WarehouseMode.None)
                     {
@@ -492,41 +532,81 @@ namespace TransferManagerCE.CustomManager
                     double dWarehouseLevel;
                     if ((int)inMode < (int)outMode)
                     {
-                        // IN is in a lower "Fill" mode than OUT so only allow if IN is a lot more empty than out
-                        if (outMode == WarehouseMode.Fill)
-                        {
-                            // Don't allow warehouse transfer when OUT is in Fill mode and IN isn't also in fill mode
-                            return ExclusionReason.WarehouseStorageMode;
-                        }
-
-                        // Only allow transfer if OUT is nearly full
-                        dWarehouseLevel = 0.90; 
+                        // Fill -> Balanced -> Empty - Never allowed
+                        return ExclusionReason.WarehouseStorageMode;
                     }
                     else if ((int)inMode > (int)outMode)
                     {
-                        // IN is in a higher "Fill" mode than OUT so allow this if IN is emptier
-                        dWarehouseLevel = 0.0;
+                        // Empty -> Balanced -> Fill
+                        switch (outMode)
+                        {
+                            case WarehouseMode.Empty:
+                                {
+                                    return ExclusionReason.None; // Always allowed
+                                }
+                            case WarehouseMode.Balanced:
+                                {
+                                    // IN warehouse: Fill
+                                    // OUT warehouse: Balanced
+
+                                    double dInPercent = incomingOffer.GetWarehouseStoragePercent();
+                                    double dOutPercent = outgoingOffer.GetWarehouseStoragePercent();
+
+                                    if (dInPercent < 0.0 || dOutPercent < 0.0)
+                                    {
+                                        // We don't know their storage levels so just say no.
+                                        return ExclusionReason.WarehouseStorageLevels;
+                                    }
+
+                                    if (dOutPercent > dInPercent)
+                                    {
+                                        // Always allow when Fill warehouse is emptier
+                                        return ExclusionReason.None;
+                                    }
+
+                                    if (dOutPercent < 0.33)
+                                    {
+                                        // Don't allow when balanced OUT warehouse is below 1/3rd full so it remains balanced
+                                        return ExclusionReason.WarehouseStorageLevels;
+                                    }
+                                    else
+                                    {
+                                        // We occasionally allow transfer between warehouses, but use randomize to slow it down
+                                        if (m_random.Int32(6U) == 0)
+                                        {
+                                            return ExclusionReason.None;
+                                        }
+                                        else
+                                        {
+                                            return ExclusionReason.WarehouseStorageLevels;
+                                        }
+                                    }
+                                }
+                        }
+
+                        // Block anything else
+                        return ExclusionReason.WarehouseStorageLevels;
                     }
                     else
                     {
-                        // inMode == outMode
+                        // Same warehouse mode
                         dWarehouseLevel = 0.33; // Allow transfer if IN is 1/3 emptier than OUT
-                    }
 
-                    // We use actual storage percentages to allow/deny transfer rather than relying on priority
-                    double dInPercent = incomingOffer.GetWarehouseStoragePercent();
-                    double dOutPercent = outgoingOffer.GetWarehouseStoragePercent();
-                        
-                    if (dInPercent < 0.0 || dOutPercent < 0.0)
-                    {
-                        // We don't know their storage levels so just say no.
-                        return ExclusionReason.WarehouseStorageLevels;
-                    }
+                        // We use actual storage percentages to allow/deny transfer rather than relying on priority
+                        double dInPercent = incomingOffer.GetWarehouseStoragePercent();
+                        double dOutPercent = outgoingOffer.GetWarehouseStoragePercent();
 
-                    // Only transfer if IN warehouse is dWarehouseLevel lower storage level
-                    if ((dInPercent + dWarehouseLevel) >= dOutPercent)
-                    {
-                        return ExclusionReason.WarehouseStorageLevels;
+                        if (dInPercent < 0.0 || dOutPercent < 0.0)
+                        {
+                            // We don't know their storage levels so just say no.
+                            return ExclusionReason.WarehouseStorageLevels;
+                        }
+
+                        // Only transfer if IN warehouse is dWarehouseLevel lower storage level
+                        if ((dInPercent + dWarehouseLevel) >= dOutPercent)
+                        {
+                            return ExclusionReason.WarehouseStorageLevels;
+                        }
                     }
                 }
                 else
@@ -560,7 +640,7 @@ namespace TransferManagerCE.CustomManager
             return ExclusionReason.None;
         }
 
-        private ExclusionReason WarehouseStationCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
+        private ExclusionReason CargoWarehouseCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
             // Cargo Warehouse (Train) <----> Outside Connection
             // Cargo Warehouse (Train) <----> Cargo Warehouse (Train)
@@ -573,9 +653,9 @@ namespace TransferManagerCE.CustomManager
             // Cargo Warehouse (Road) <-X-> Outside Connection 
             // Cargo Warehouse (Road) <-X-> Any train offer - Not allowed
 
-            if (m_bIsWarehouseMaterial && (incomingOffer.IsWarehouseStation() || outgoingOffer.IsWarehouseStation()))
+            if (m_bIsWarehouseMaterial && (incomingOffer.IsCargoWarehouse() || outgoingOffer.IsCargoWarehouse()))
             {
-                if (incomingOffer.IsWarehouseStation() && outgoingOffer.IsWarehouseStation())
+                if (incomingOffer.IsCargoWarehouse() && outgoingOffer.IsCargoWarehouse())
                 {
                     if (incomingOffer.GetTransportType() != outgoingOffer.GetTransportType() || 
                         incomingOffer.GetTransportType() != TransportUtils.TransportType.Train)
@@ -584,26 +664,26 @@ namespace TransferManagerCE.CustomManager
                         return ExclusionReason.WarehouseStationType;
                     }
                 }
-                else if (incomingOffer.IsWarehouseStation())
+                else if (incomingOffer.IsCargoWarehouse())
                 {
                     if (incomingOffer.GetTransportType() == TransportUtils.TransportType.Train) 
                     {
-                        return WarehouseStationTrainCanTransfer(outgoingOffer);
+                        return CargoWarehouseTrainCanTransfer(outgoingOffer);
                     }
                     else
                     {
-                        return WarehouseStationRoadCanTransfer(outgoingOffer);
+                        return CargoWarehouseRoadCanTransfer(outgoingOffer);
                     }
                 }
-                else if (outgoingOffer.IsWarehouseStation())
+                else if (outgoingOffer.IsCargoWarehouse())
                 {
                     if (outgoingOffer.GetTransportType() == TransportUtils.TransportType.Train)
                     {
-                        return WarehouseStationTrainCanTransfer(incomingOffer);
+                        return CargoWarehouseTrainCanTransfer(incomingOffer);
                     }
                     else
                     {
-                        return WarehouseStationRoadCanTransfer(incomingOffer);
+                        return CargoWarehouseRoadCanTransfer(incomingOffer);
                     }
                 }
             }
@@ -611,7 +691,7 @@ namespace TransferManagerCE.CustomManager
             return ExclusionReason.None;
         }
 
-        private ExclusionReason WarehouseStationRoadCanTransfer(CustomTransferOffer otherOffer)
+        private ExclusionReason CargoWarehouseRoadCanTransfer(CustomTransferOffer otherOffer)
         {
             // Cargo Warehouse (Road) <----> Normal Warehouse
             // Cargo Warehouse (Road) <----> Local (Road)
@@ -635,7 +715,7 @@ namespace TransferManagerCE.CustomManager
             return ExclusionReason.None;
         }
 
-        private ExclusionReason WarehouseStationTrainCanTransfer(CustomTransferOffer otherOffer)
+        private ExclusionReason CargoWarehouseTrainCanTransfer(CustomTransferOffer otherOffer)
         {
             // Cargo Warehouse (Train) <----> Outside Connection
             // Cargo Warehouse (Train) <----> Cargo Warehouse (Train)

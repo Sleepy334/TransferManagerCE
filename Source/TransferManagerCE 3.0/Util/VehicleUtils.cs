@@ -65,13 +65,14 @@ namespace TransferManagerCE
                 sText += $"{reason.ToString()} | ";
             }
 
-            sText += $"{InstanceHelper.DescribeInstance(new InstanceID { Vehicle = vehicleId }, InstanceID.Empty, true)}";
+            sText += $"{InstanceHelper.DescribeInstance(new InstanceID { Vehicle = vehicleId }, true, true)}";
+            sText += $" ({CitiesUtils.GetVehicleTransferValue(vehicleId, out int current, out int max)})";
 
             // Add on target if available
             InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
             if (target != InstanceID.Empty)
             {
-                sText += $" | {InstanceHelper.DescribeInstance(target, InstanceID.Empty, true)}";
+                sText += $" | {InstanceHelper.DescribeInstance(target, true, true)}";
             }
 
             List<string> materials = new List<string>();
@@ -86,13 +87,13 @@ namespace TransferManagerCE
 
                 // Add vehicle to tooltip
                 materials.Add(((CustomTransferReason)vehicle.m_transferType).ToString());
-                vehicles.Add(InstanceHelper.DescribeInstance(new InstanceID { Vehicle = nextVehicleId }, InstanceID.Empty, true));
+                vehicles.Add(InstanceHelper.DescribeInstance(new InstanceID { Vehicle = nextVehicleId }, true, true));
 
                 // Add on target if available and different to parent
                 InstanceID cargoTarget = VehicleTypeHelper.GetVehicleTarget(nextVehicleId, vehicle);
                 if (cargoTarget != InstanceID.Empty)
                 {
-                    targets.Add(InstanceHelper.DescribeInstance(cargoTarget, InstanceID.Empty, true));
+                    targets.Add(InstanceHelper.DescribeInstance(cargoTarget, true, true));
                 }
                 else
                 {

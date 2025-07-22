@@ -27,11 +27,6 @@ namespace TransferManagerCE.Data
             return false;
         }
 
-        public override bool IsNodeData()
-        {
-            return false;
-        }
-
         public override bool HasVehicle()
         {
             return true;
@@ -121,7 +116,7 @@ namespace TransferManagerCE.Data
                 tooltip = VehicleUtils.GetVehicleTooltip(vehicleId);
 
                 InstanceID instance = new InstanceID { Vehicle = vehicleId };
-                return InstanceHelper.DescribeInstance(instance, InstanceID.Empty, false);
+                return InstanceHelper.DescribeInstance(instance, true, false);
             }
 
             tooltip = "";
@@ -134,8 +129,8 @@ namespace TransferManagerCE.Data
             if (buildingId != 0)
             {
                 InstanceID instance = new InstanceID { Building = buildingId };
-                tooltip = $"{InstanceHelper.DescribeInstance(instance, InstanceID.Empty, true)}";
-                return InstanceHelper.DescribeInstance(instance, InstanceID.Empty, false);
+                tooltip = $"{InstanceHelper.DescribeInstance(instance, true, true)}";
+                return InstanceHelper.DescribeInstance(instance, true, false);
             }
 
             tooltip = "";

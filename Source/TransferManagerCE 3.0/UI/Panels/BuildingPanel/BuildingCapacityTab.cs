@@ -10,6 +10,7 @@ namespace TransferManagerCE.UI
     {
         const float fTEXT_SCALE = 0.9f;
 
+        private UIPanel? m_panelTabPanel = null;
         private UIGroup? m_panelOutsideSettings = null;
         private SettingsSlider? m_sliderOutsideCargoCapacity = null;
         private SettingsSlider? m_sliderOutsideResidentCapacity = null;
@@ -45,15 +46,22 @@ namespace TransferManagerCE.UI
             {
                 tabSettings.autoLayout = true;
                 tabSettings.autoLayoutDirection = LayoutDirection.Vertical;
-                tabSettings.padding = new RectOffset(10, 10, 10, 10);
+                tabSettings.padding = new RectOffset(10, 10, 0, 10);
                 tabSettings.autoLayoutPadding = new RectOffset(0, 0, 0, 8);
 
-                m_panelOutsideSettings = UIGroup.AddGroup(tabSettings, Localization.Get("GROUP_OUTSIDE_SETTINGS"), fTEXT_SCALE, tabSettings.width - 20, 240);
+                m_panelTabPanel = tabSettings.AddUIComponent<UIPanel>();
+                m_panelTabPanel.width = tabSettings.width - tabSettings.padding.left - tabSettings.padding.right;
+                m_panelTabPanel.height = tabSettings.height - tabSettings.padding.top - tabSettings.padding.bottom;
+                m_panelTabPanel.backgroundSprite = "InfoviewPanel";
+                m_panelTabPanel.color = new Color32(150, 150, 150, 255);
+                m_panelTabPanel.autoLayout = true;
+                m_panelTabPanel.autoLayoutDirection = LayoutDirection.Vertical;
+                m_panelTabPanel.autoLayoutPadding = new RectOffset(10, 0, 6, 0);
+                m_panelTabPanel.clipChildren = true;
+
+                m_panelOutsideSettings = UIGroup.AddGroup(m_panelTabPanel, Localization.Get("GROUP_OUTSIDE_SETTINGS"), fTEXT_SCALE, m_panelTabPanel.width - 20, 240);
                 if (m_panelOutsideSettings is not null)
                 {
-                    // Clear the group background
-                    m_panelOutsideSettings.backgroundSprite = "";
-
                     m_sliderOutsideCargoCapacity = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideCargoCapacity"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 100, 1f, 20, 0, OnOutsideCargoCapacityChanged);
                     m_sliderOutsideResidentCapacity = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideResidentCapacity"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 2000f, 1f, 20, 0, OnOutsideResidentCapacityChanged);
                     m_sliderOutsideTouristFactor0 = SettingsSlider.Create(m_panelOutsideSettings.m_content, LayoutDirection.Horizontal, Localization.Get("sliderOutsideTouristFactor0"), UIFonts.SemiBold, fTEXT_SCALE, 400, 200, 0f, 1000f, 1f, 20, 0, OnOutsideTouristFactor0Changed);
@@ -93,6 +101,8 @@ namespace TransferManagerCE.UI
             // Outside connection settings
             if (bActive && m_panelOutsideSettings is not null)
             {
+                m_panelOutsideSettings.AdjustHeight();
+
                 if (!DependencyUtils.IsAdvancedOutsideConnectionsRunning() && BuildingTypeHelper.IsOutsideConnection(m_buildingId))
                 {
                     m_tabStrip.SetTabVisible((int)BuildingPanel.TabIndex.TAB_CAPACITY, true);
@@ -101,27 +111,27 @@ namespace TransferManagerCE.UI
 
                     if (m_sliderOutsideCargoCapacity is not null)
                     {
-                        m_sliderOutsideCargoCapacity.SetValue(outsideSettings.m_cargoCapacity);
+                        m_sliderOutsideCargoCapacity.Value = outsideSettings.m_cargoCapacity;
                     }
                     if (m_sliderOutsideResidentCapacity is not null)
                     {
-                        m_sliderOutsideResidentCapacity.SetValue(outsideSettings.m_residentCapacity);
+                        m_sliderOutsideResidentCapacity.Value = outsideSettings.m_residentCapacity;
                     }
                     if (m_sliderOutsideTouristFactor0 is not null)
                     {
-                        m_sliderOutsideTouristFactor0.SetValue(outsideSettings.m_touristFactor0);
+                        m_sliderOutsideTouristFactor0.Value = outsideSettings.m_touristFactor0;
                     }
                     if (m_sliderOutsideTouristFactor1 is not null)
                     {
-                        m_sliderOutsideTouristFactor1.SetValue(outsideSettings.m_touristFactor1);
+                        m_sliderOutsideTouristFactor1.Value = outsideSettings.m_touristFactor1;
                     }
                     if (m_sliderOutsideTouristFactor2 is not null)
                     {
-                        m_sliderOutsideTouristFactor2.SetValue(outsideSettings.m_touristFactor2);
+                        m_sliderOutsideTouristFactor2.Value = outsideSettings.m_touristFactor2;
                     }
                     if (m_sliderOutsideDummyTrafficFactor is not null)
                     {
-                        m_sliderOutsideDummyTrafficFactor.SetValue(outsideSettings.m_dummyTrafficFactor);
+                        m_sliderOutsideDummyTrafficFactor.Value = outsideSettings.m_dummyTrafficFactor;
                     }
                 }
                 else

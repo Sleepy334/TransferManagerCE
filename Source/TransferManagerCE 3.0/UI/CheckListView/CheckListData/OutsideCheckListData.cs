@@ -1,5 +1,6 @@
 using SleepyCommon;
-using static TransferManagerCE.TransportUtils;
+using static SleepyCommon.TransportUtils;
+using static TransferManagerCE.TransferManagerUtils;
 
 namespace TransferManagerCE
 {
@@ -47,7 +48,9 @@ namespace TransferManagerCE
 
         public override string GetText()
         {
-            return $"{CitiesUtils.GetOutsideConnectionName(m_outsideConnectionBuildingId)} ({TransportUtils.GetTransportType(m_outsideConnectionBuildingId)})";
+            string transportType = GetTransportDescription(TransportUtils.GetTransportType(m_outsideConnectionBuildingId));
+            OutsideConnectionDirection direction = TransferManagerUtils.GetOutsideConnectionDirection(m_outsideConnectionBuildingId);
+            return $"{CitiesUtils.GetBuildingName(m_outsideConnectionBuildingId, false, false)} | {transportType} | {direction}";
         }
 
         public override bool IsChecked()

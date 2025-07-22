@@ -9,6 +9,8 @@ using TransferManagerCE.TransferRules;
 using static TransferManagerCE.BuildingTypeHelper;
 using SleepyCommon;
 using System.Data;
+using TransferManagerCE.CustomManager;
+using System.Linq;
 
 namespace TransferManagerCE
 {
@@ -119,12 +121,12 @@ namespace TransferManagerCE
         protected void HighlightSelectedBuilding(ToolManager toolManager, RenderManager.CameraInfo cameraInfo)
         {
             // Highlight selected building
-            if (BuildingPanel.IsVisible() && BuildingPanel.Instance.GetBuildingId() != 0)
+            if (BuildingPanel.IsVisible() && BuildingPanel.Instance.Building != 0)
             {
                 Building[] BuildingBuffer = BuildingManager.instance.m_buildings.m_buffer;
                 Vehicle[] VehicleBuffer = VehicleManager.instance.m_vehicles.m_buffer;
 
-                ushort usSourceBuildingId = BuildingPanel.Instance.GetBuildingId();
+                ushort usSourceBuildingId = BuildingPanel.Instance.Building;
                 if (usSourceBuildingId != 0)
                 {
                     Building building = BuildingBuffer[usSourceBuildingId];
@@ -238,25 +240,30 @@ namespace TransferManagerCE
         public void DrawGlobalDistanceCircle(CameraInfo cameraInfo, BuildingType eType, ushort buildingId, Building building, HashSet<CustomTransferReason.Reason> localReasons)
         {
             // Draw global distance setting if any
-            if (SaveGameSettings.GetSettings().GetDistanceRestrictionCount() > 0)
+            if (SaveGameSettings.GetSettings().GetDistanceRestrictionCount() > 0 && BuildingPanel.Instance.IsSettingsTabActive())
             {
-                CustomTransferReason.Reason reason = BuildingTypeHelper.GetGlobalDistanceReason(eType, buildingId);
-
-                // Don't display global restrictiohn if we have a local one as it overrides the global one.
-                if (reason != CustomTransferReason.Reason.None && !localReasons.Contains(reason))
+                int restrictionId = BuildingPanel.Instance.GetRestrictionId();
+                if (restrictionId != -1)
                 {
-                    double dDistance = SaveGameSettings.GetSettings().GetActiveDistanceRestrictionSquaredMeters(reason);
-                    if (dDistance > 0.0)
+                    ReasonRule rule = BuildingRuleSets.GetRule(eType, buildingId, restrictionId);
+
+                    // Try and determine current reason
+                    CustomTransferReason.Reason reason = BuildingPanel.Instance.GetSettingsTab().GetCurrentGlobalDistanceReason(eType, buildingId, rule);
+                    if (reason != CustomTransferReason.Reason.None && TransferManagerModes.IsGlobalDistanceRestrictionsSupported(reason))
                     {
-                        RenderManager.instance.OverlayEffect.DrawCircle(
-                                cameraInfo,
-                                Color.yellow,
-                                building.m_position,
-                                (float)Math.Sqrt(dDistance) * 2.0f, // Range of service matching, we need diameter not radius
-                                building.m_position.y - 1f,
-                                building.m_position.y + 1f,
-                                true,
-                                true);
+                        double dDistance = SaveGameSettings.GetSettings().GetActiveDistanceRestrictionSquaredMeters(reason);
+                        if (dDistance > 0.0)
+                        {
+                            RenderManager.instance.OverlayEffect.DrawCircle(
+                                    cameraInfo,
+                                    Color.yellow,
+                                    building.m_position,
+                                    (float)Math.Sqrt(dDistance) * 2.0f, // Range of service matching, we need diameter not radius
+                                    building.m_position.y - 1f,
+                                    building.m_position.y + 1f,
+                                    true,
+                                    true);
+                        }
                     }
                 }
             }

@@ -9,6 +9,7 @@ using static TransferManagerCE.UI.BuildingPanel;
 using TransferManagerCE.Settings;
 using TransferManagerCE.CustomManager;
 using SleepyCommon;
+using TransferManagerCE.Util;
 
 namespace TransferManagerCE.UI
 {
@@ -40,14 +41,14 @@ namespace TransferManagerCE.UI
         private UIToggleButton? m_btnExcludeOutsideConnecions = null;
         private UIButton? m_btnOutsideClear = null;
 
+
+        private UIPanel? m_otherSettingsPanel = null;
         private UIGroup? m_grpOutsidePriority = null;
-        private SettingsSlider? m_sliderOutsidePriority = null;
-        private UILabel? m_lblCurrentOutsidePriority = null;
+        private SettingsSlider? m_sliderOutsideCargoPriority = null;
+        private SettingsSlider? m_sliderOutsideCitizenPriority = null;
 
         // Warehouse options
         private UIGroup? m_panelGoodsDelivery = null;
-        private UICheckBox? m_chkWarehouseOverride = null;
-        private UICheckBox? m_chkImprovedWarehouseMatching = null;
         private SettingsSlider? m_sliderReserveCargoTrucks = null;
 
         private UIGroup? m_buildingRestrictionGroup = null;
@@ -60,6 +61,8 @@ namespace TransferManagerCE.UI
 
         private int m_iRestrictionTabIndex = 0;
         private bool m_bInSetup = false;
+
+        private static OutsideConnectionCurve s_connectionCurve = new OutsideConnectionCurve();
 
         // ----------------------------------------------------------------------------------------
         public BuildingSettingsTab() :
@@ -264,33 +267,39 @@ namespace TransferManagerCE.UI
                 m_panelGoodsDelivery = UIGroup.AddGroup(m_panelTabPanel, Localization.Get("GROUP_BUILDINGPANEL_GOODS_DELIVERY"), fTEXT_SCALE, m_panelTabPanel.width - 20, 95);
                 if (m_panelGoodsDelivery is not null)
                 {
-                    m_chkWarehouseOverride = UIMyUtils.AddCheckbox(m_panelGoodsDelivery.m_content, Localization.Get("optionWarehouseOverride"), UIFonts.Regular, fTEXT_SCALE, false, OnWarehouseOverrideChanged);
-                    m_chkImprovedWarehouseMatching = UIMyUtils.AddCheckbox(m_panelGoodsDelivery.m_content, Localization.Get("optionImprovedWarehouseTransfer"), UIFonts.Regular, fTEXT_SCALE, false, OnImprovedWarehouseMatchingChanged);
-                    m_sliderReserveCargoTrucks = SettingsSlider.Create(m_panelGoodsDelivery.m_content, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercentLocal"), UIFonts.Regular, fTEXT_SCALE, 400, 280, 0f, 100f, 1f, 0f, 0, OnReserveCargoTrucksChanged);
+                    m_sliderReserveCargoTrucks = SettingsSlider.Create(m_panelGoodsDelivery.m_content, LayoutDirection.Horizontal, Localization.Get("sliderWarehouseReservePercentLocal"), UIFonts.Regular, fTEXT_SCALE, 400, 280, -1f, 100f, 1f, 0f, 0, OnReserveCargoTrucksChanged);
+                    m_sliderReserveCargoTrucks.OffValue = -1;
                 }
 
                 // ------------------------------------------------------------
-                m_grpOutsidePriority = UIGroup.AddGroup(m_pnlMain, Localization.Get("GROUP_BUILDINGPANEL_OUTSIDE_PRIORITY"), fTEXT_SCALE, m_pnlMain.width - 20, 60);
+                m_otherSettingsPanel = m_pnlMain.AddUIComponent<UIPanel>();
+                m_otherSettingsPanel.relativePosition = new Vector2(0, m_tabStripTransferReason.height + 6);
+                m_otherSettingsPanel.width = m_tabStripTransferReason.width;
+                m_otherSettingsPanel.height = 200; // This gets adjusted at the end
+                m_otherSettingsPanel.backgroundSprite = "InfoviewPanel";
+                m_otherSettingsPanel.color = new Color32(150, 150, 150, 255);
+                m_otherSettingsPanel.autoLayout = true;
+                m_otherSettingsPanel.autoLayoutDirection = LayoutDirection.Vertical;
+                m_otherSettingsPanel.autoLayoutPadding = new RectOffset(10, 0, 6, 0);
+                m_otherSettingsPanel.clipChildren = true;
+
+                m_grpOutsidePriority = UIGroup.AddGroup(m_otherSettingsPanel, Localization.Get("GROUP_BUILDINGPANEL_OUTSIDE_PRIORITY"), fTEXT_SCALE, m_pnlMain.width - 20, 120);
                 if (m_grpOutsidePriority is not null)
                 {
                     // Clear the group background
-                    m_grpOutsidePriority.backgroundSprite = "";
-                    m_grpOutsidePriority.relativePosition = new Vector2(0, m_tabStripTransferReason.height + m_panelTabPanel.height + 12);
+                    //m_grpOutsidePriority.backgroundSprite = "";
+                    m_grpOutsidePriority.relativePosition = new Vector2(0, m_tabStripTransferReason.height + m_panelTabPanel.height + 10);
 
                     // Priority
-                    m_sliderOutsidePriority = SettingsSlider.Create(m_grpOutsidePriority.m_content, LayoutDirection.Horizontal, "Priority", UIFonts.Regular, fTEXT_SCALE, 420, 280, -1f, 100, 1f, 0f, 0, OnOutsidePriorityChanged);
-                    m_sliderOutsidePriority.OffValue = -1;
-                    m_sliderOutsidePriority.Percent = true;
+                    m_sliderOutsideCargoPriority = SettingsSlider.Create(m_grpOutsidePriority.m_content, LayoutDirection.Horizontal, Localization.Get("txtCargoPriority"), UIFonts.Regular, fTEXT_SCALE, 420, 280, -1f, 100, 1f, 0f, 0, OnOutsideCargoPriorityChanged);
+                    m_sliderOutsideCargoPriority.OffValue = -1;
+                    m_sliderOutsideCargoPriority.Percent = true;
 
-                    m_lblCurrentOutsidePriority = m_grpOutsidePriority.m_content.AddUIComponent<UILabel>();
-                    m_lblCurrentOutsidePriority.text = Localization.Get("txtOutsideConnectionCurrentPriority");
-                    m_lblCurrentOutsidePriority.textScale = fTEXT_SCALE;
-                    m_lblCurrentOutsidePriority.font = UIFonts.Regular;
-                    m_lblCurrentOutsidePriority.autoSize = false;// true;
-                    m_lblCurrentOutsidePriority.height = iButtonHeight;
-                    m_lblCurrentOutsidePriority.width = 294;
-                    m_lblCurrentOutsidePriority.verticalAlignment = UIVerticalAlignment.Middle;
-                    
+                    m_sliderOutsideCitizenPriority = SettingsSlider.Create(m_grpOutsidePriority.m_content, LayoutDirection.Horizontal, Localization.Get("txtCitizenPriority"), UIFonts.Regular, fTEXT_SCALE, 420, 280, -1f, 100, 1f, 0f, 0, OnOutsideCitizenPriorityChanged);
+                    m_sliderOutsideCitizenPriority.OffValue = -1;
+                    m_sliderOutsideCitizenPriority.Percent = true;
+
+                    m_grpOutsidePriority.AdjustHeight();
                     m_grpOutsidePriority.isVisible = false; // It seems to not be hidden correctly the first time so hide it here
                 }
 
@@ -309,6 +318,7 @@ namespace TransferManagerCE.UI
             m_bInSetup = false;
         }
 
+        // ----------------------------------------------------------------------------------------
         public override bool UpdateTab(bool bActive)
         {
             if (!base.UpdateTab(bActive))
@@ -426,16 +436,7 @@ namespace TransferManagerCE.UI
                             m_sliderOutgoingServiceDistance.Value = restrictionSettings.m_outgoingServiceDistanceMeters / 1000.0f;
 
                             // Try and determine current reason and check global distance
-                            CustomTransferReason.Reason reason = CustomTransferReason.Reason.None;
-                            if (currentRule.m_reasons.Count == 1)
-                            {
-                                reason = currentRule.m_reasons.Single();
-                            }
-                            else if (IsWarehouse(m_eBuildingType))
-                            {
-                                reason = (CustomTransferReason.Reason)GetWarehouseActualTransferReason(m_buildingId);
-                            }
-
+                            CustomTransferReason.Reason reason = GetCurrentGlobalDistanceReason(m_eBuildingType, m_buildingId, currentRule);
                             if (reason != CustomTransferReason.Reason.None && TransferManagerModes.IsGlobalDistanceRestrictionsSupported(reason))
                             {
                                 m_lblDistanceGlobal.Show();
@@ -459,25 +460,32 @@ namespace TransferManagerCE.UI
                         {
                             m_panelImportExport.Show();
 
+                            m_btnExcludeOutsideConnecions.Show();
+                            m_btnOutsideClear.Show();
+
                             // Disable appropriate import/export option
                             if (bIsWarehouse)
                             {
-                                switch (WarehouseUtils.GetWarehouseMode(m_buildingId))
+                                ushort warehouseBuildingId = WarehouseUtils.GetWarehouseBuildingId(m_buildingId);
+
+                                // Disable import / export based on warehouse type as well as rules.
+                                switch (WarehouseUtils.GetWarehouseMode(warehouseBuildingId))
                                 {
                                     case WarehouseUtils.WarehouseMode.Fill:
                                         {
                                             m_chkAllowImport.isEnabled = currentRule.m_import;
-                                            m_chkAllowExport.isEnabled = false;
+                                            m_chkAllowExport.isEnabled = false; // Fill mode cannot export
                                             break;
                                         }
                                     case WarehouseUtils.WarehouseMode.Empty:
                                         {
-                                            m_chkAllowImport.isEnabled = false;
+                                            m_chkAllowImport.isEnabled = false; // Empty mode cannot import
                                             m_chkAllowExport.isEnabled = currentRule.m_export;
                                             break;
                                         }
                                     default:
                                         {
+                                            // Balanced mode can do both
                                             m_chkAllowImport.isEnabled = currentRule.m_import;
                                             m_chkAllowExport.isEnabled = currentRule.m_export;
                                             break;
@@ -489,6 +497,10 @@ namespace TransferManagerCE.UI
                                 m_chkAllowImport.isEnabled = currentRule.m_import;
                                 m_chkAllowExport.isEnabled = currentRule.m_export;
                             }
+
+                            // Import / Export Show outside connections button
+                            m_btnExcludeOutsideConnecions.isEnabled = m_chkAllowImport.isEnabled || m_chkAllowExport.isEnabled;
+                            m_btnOutsideClear.isEnabled = m_btnExcludeOutsideConnecions.isEnabled;
 
                             m_chkAllowImport.isChecked = restrictionSettings.m_bAllowImport;
                             m_chkAllowExport.isChecked = restrictionSettings.m_bAllowExport;
@@ -506,21 +518,33 @@ namespace TransferManagerCE.UI
                         // Warehouse settings
                         if (bIsWarehouse)
                         {
-                            m_panelGoodsDelivery.Show();
-                            m_chkWarehouseOverride.isChecked = settings.m_bWarehouseOverride;
-                            m_chkImprovedWarehouseMatching.isChecked = settings.IsImprovedWarehouseMatching();
-                            m_chkImprovedWarehouseMatching.isEnabled = settings.m_bWarehouseOverride;
-
-                            int iPercent = settings.ReserveCargoTrucksPercent();
-                            m_sliderReserveCargoTrucks.SetValue(iPercent);
-                            m_sliderReserveCargoTrucks.Enable(settings.m_bWarehouseOverride);
-
                             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-                            WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
-                            if (warehouse is not null && m_sliderReserveCargoTrucks.m_label is not null)
+                            if (TransportUtils.GetTransportType(building) == TransportUtils.TransportType.Road)
                             {
-                                int iTrucks = (int)((float)(iPercent * 0.01) * (float)warehouse.m_truckCount);
-                                m_sliderReserveCargoTrucks.m_label.text = Localization.Get("sliderWarehouseReservePercentLocal") + ": " + iPercent + " | Trucks: " + iTrucks;
+                                m_panelGoodsDelivery.Show();
+
+                                // Reserve cargo trucks override
+                                m_sliderReserveCargoTrucks.Value = settings.m_iWarehouseReserveTrucksPercent;
+
+                                // Update label
+                                int iPercent = settings.ReserveCargoTrucksPercent();
+                                WarehouseAI? warehouse = building.Info.GetAI() as WarehouseAI;
+                                if (warehouse is not null && m_sliderReserveCargoTrucks.m_label is not null)
+                                {
+                                    int iTrucks = (int)((float)(iPercent * 0.01) * (float)warehouse.m_truckCount);
+                                    if (settings.m_iWarehouseReserveTrucksPercent == m_sliderReserveCargoTrucks.OffValue)
+                                    {
+                                        m_sliderReserveCargoTrucks.m_label.text = $"{Localization.Get("sliderWarehouseReservePercentLocal")}: Off ({iPercent}% | Trucks: {iTrucks})";
+                                    }
+                                    else
+                                    {
+                                        m_sliderReserveCargoTrucks.m_label.text = $"{Localization.Get("sliderWarehouseReservePercentLocal")}: {iPercent}% | Trucks: {iTrucks}";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                m_panelGoodsDelivery.Hide();
                             }
                         }
                         else
@@ -533,8 +557,32 @@ namespace TransferManagerCE.UI
                         if (BuildingTypeHelper.IsOutsideConnection(m_buildingId))
                         {
                             m_grpOutsidePriority.Show();
-                            m_sliderOutsidePriority.SetValue(settings.m_iOutsidePriority);
-                            m_lblCurrentOutsidePriority.text = $"{Localization.Get("txtOutsideConnectionCurrentPriority")}: {BuildingSettingsFast.GetEffectiveOutsidePriority(m_buildingId)}%";
+
+                            // Import / Export Hide outside connections button
+                            m_btnExcludeOutsideConnecions.Hide();
+                            m_btnOutsideClear.Hide();
+
+                            // Cargo priority
+                            m_sliderOutsideCargoPriority.Value = settings.m_iCargoOutsidePriority;
+                            if (m_sliderOutsideCargoPriority.Value == m_sliderOutsideCargoPriority.OffValue)
+                            {
+                                m_sliderOutsideCargoPriority.Text = $"{Localization.Get("txtCargoPriority")} ({BuildingSettingsFast.GetEffectiveOutsideCargoPriority(m_buildingId)}%)";
+                            }
+                            else
+                            {
+                                m_sliderOutsideCargoPriority.Text = $"{Localization.Get("txtCargoPriority")}";
+                            }
+
+                            // Citizen priority
+                            m_sliderOutsideCitizenPriority.Value = settings.m_iCitizenOutsidePriority;
+                            if (m_sliderOutsideCitizenPriority.Value == m_sliderOutsideCitizenPriority.OffValue)
+                            {
+                                m_sliderOutsideCitizenPriority.Text = $"{Localization.Get("txtCitizenPriority")} ({BuildingSettingsFast.GetEffectiveOutsideCitizenPriority(m_buildingId)}%)";
+                            }
+                            else
+                            {
+                                m_sliderOutsideCitizenPriority.Text = $"{Localization.Get("txtCitizenPriority")}";
+                            }
                         }
                         else
                         {
@@ -551,16 +599,31 @@ namespace TransferManagerCE.UI
                         // Update the panel height depending on building type.
                         if (IsOutsideConnection(m_buildingId))
                         {
-                            m_panelTabPanel.height = m_panelImportExport.height + 20;
-                            m_grpOutsidePriority.relativePosition = new Vector2(10, m_tabStripTransferReason.height + m_panelTabPanel.height + 12);
+                            // Reduce tab panel
+                            m_panelTabPanel.height = m_panelImportExport.height + 12;
+                            
+                            // Show other settings panel
+                            m_otherSettingsPanel.isVisible = true;
+                            float fTabHeight = m_tabStripTransferReason.height + m_panelTabPanel.height + 10;
+                            m_otherSettingsPanel.relativePosition = new Vector2(0, fTabHeight);
+                            m_otherSettingsPanel.height = m_pnlMain.height - fTabHeight - 6;
                         }
                         else
                         {
+                            m_otherSettingsPanel.isVisible = false;
                             m_panelTabPanel.height = m_pnlMain.height - m_tabStripTransferReason.height - 10;
                         }
 
                         // Adjust group heights
                         foreach (UIComponent component in m_panelTabPanel.components)
+                        {
+                            if (component is UIGroup group && component.isVisible)
+                            {
+                                group.AdjustHeight();
+                            }
+                        }
+
+                        foreach (UIComponent component in m_otherSettingsPanel.components)
                         {
                             if (component is UIGroup group && component.isVisible)
                             {
@@ -608,6 +671,27 @@ namespace TransferManagerCE.UI
             return true;
         }
 
+        public CustomTransferReason.Reason GetCurrentGlobalDistanceReason(BuildingType buildingType, ushort buildingId, ReasonRule rule)
+        {
+            // Try and determine current reason and check global distance
+            CustomTransferReason.Reason reason = CustomTransferReason.Reason.None;
+
+            if ((rule.m_incomingDistance || rule.m_outgoingDistance) && rule.m_reasons.Count > 0)
+            {
+                if (rule.m_reasons.Count == 1)
+                {
+                    reason = rule.m_reasons.Single();
+                }
+                else if (IsWarehouse(m_eBuildingType))
+                {
+                    ushort warehouseId = WarehouseUtils.GetWarehouseBuildingId(buildingId);
+                    reason = (CustomTransferReason.Reason)GetWarehouseActualTransferReason(warehouseId);
+                }
+            }
+
+            return reason;
+        }
+
         public void UpdateReasonTabVisibility(BuildingType eType, List<ReasonRule> buildingRules)
         {
             while (m_tabStripTransferReason.Count < buildingRules.Count)
@@ -630,15 +714,17 @@ namespace TransferManagerCE.UI
                 // Add 
                 switch (eType)
                 {
+                    case BuildingType.CargoWarehouse:
                     case BuildingType.Warehouse:
-                    case BuildingType.WarehouseStation:
                     case BuildingType.CargoFerryWarehouseHarbor:
                         {
+                            ushort warehouseBuildingId = WarehouseUtils.GetWarehouseBuildingId(m_buildingId);
+
                             string sName = string.Empty;
-                            string sWarehouseMode = WarehouseUtils.GetLocalisedWarehouseMode(WarehouseUtils.GetWarehouseMode(m_buildingId));
+                            string sWarehouseMode = WarehouseUtils.GetLocalisedWarehouseMode(WarehouseUtils.GetWarehouseMode(warehouseBuildingId));
 
                             // For warehouses we add the actual material to the tab name.
-                            CustomTransferReason.Reason actualTransferReason = BuildingTypeHelper.GetWarehouseActualTransferReason(m_buildingId);
+                            CustomTransferReason.Reason actualTransferReason = BuildingTypeHelper.GetWarehouseActualTransferReason(warehouseBuildingId);
                             if (actualTransferReason != CustomTransferReason.Reason.None && rule.m_reasons.Contains(actualTransferReason))
                             {
                                 sName += $"{actualTransferReason} | {sWarehouseMode}";
@@ -946,12 +1032,29 @@ namespace TransferManagerCE.UI
             UpdateTab(true);
         }
 
-        public void OnOutsidePriorityChanged(float Value)
+        public void OnOutsideCargoPriorityChanged(float Value)
         {
             if (m_bInSetup) { return; }
 
             BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
-            settings.m_iOutsidePriority = (int)Value;
+            settings.m_iCargoOutsidePriority = (int)Value;
+            BuildingSettingsStorage.SetSettings(m_buildingId, settings);
+
+            // Update outside connection panel with this new value
+            if (OutsideConnectionPanel.IsVisible())
+            {
+                OutsideConnectionPanel.Instance.InvalidatePanel();
+            }
+
+            UpdateTab(true);
+        }
+
+        public void OnOutsideCitizenPriorityChanged(float Value)
+        {
+            if (m_bInSetup) { return; }
+
+            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
+            settings.m_iCitizenOutsidePriority = (int)Value;
             BuildingSettingsStorage.SetSettings(m_buildingId, settings);
 
             // Update outside connection panel with this new value
@@ -1038,28 +1141,6 @@ namespace TransferManagerCE.UI
             {
                 OutsideConnectionPanel.Instance.InvalidatePanel();
             }
-
-            UpdateTab(true);
-        }
-
-        public void OnWarehouseOverrideChanged(bool bChecked)
-        {
-            if (m_bInSetup) { return; }
-
-            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
-            settings.m_bWarehouseOverride = bChecked;
-            BuildingSettingsStorage.SetSettings(m_buildingId, settings);
-
-            UpdateTab(true);
-        }
-
-        public void OnImprovedWarehouseMatchingChanged(bool bChecked)
-        {
-            if (m_bInSetup) { return; }
-
-            BuildingSettings settings = BuildingSettingsStorage.GetSettingsOrDefault(m_buildingId);
-            settings.m_bImprovedWarehouseMatching = bChecked;
-            BuildingSettingsStorage.SetSettings(m_buildingId, settings);
 
             UpdateTab(true);
         }

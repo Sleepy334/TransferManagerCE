@@ -327,7 +327,7 @@ namespace TransferManagerCE.UI
 
             if (m_lblSource is not null)
             {
-                string sText = CitiesUtils.GetBuildingName(m_buildingId, InstanceID.Empty);
+                string sText = CitiesUtils.GetBuildingName(m_buildingId, true, false);
                 if (BuildingTypeHelper.IsOutsideConnection(m_buildingId))
                 {
                     sText += ":" + m_buildingId + " (Outside Connection)";

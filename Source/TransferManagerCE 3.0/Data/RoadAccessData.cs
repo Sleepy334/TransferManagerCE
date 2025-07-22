@@ -25,7 +25,7 @@ namespace TransferManagerCE
         {
             if (m_description is null)
             {
-                m_description = InstanceHelper.DescribeInstance(m_source, InstanceID.Empty);
+                m_description = InstanceHelper.DescribeInstance(m_source, true, false);
             }
             return m_description;
         }

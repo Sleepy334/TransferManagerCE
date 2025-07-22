@@ -27,5 +27,26 @@ namespace TransferManagerCE
                 return NetworkMode.OtherServices;
             }
         }
+
+        public static CustomTransferReason.Reason GetTransferReason(NetworkMode mode)
+        {
+            switch (mode)
+            {
+                case NetworkMode.Goods:
+                    {
+                        return CustomTransferReason.Reason.Goods;
+                    }
+                case NetworkMode.PedestrianZone:
+                    {
+                        return CustomTransferReason.Reason.Fire; 
+                    }
+                case NetworkMode.OtherServices:
+                    {
+                        return CustomTransferReason.Reason.Garbage;
+                    }
+            }
+
+            return CustomTransferReason.Reason.None;
+        }
     }
 }

@@ -152,28 +152,28 @@ public class TransferIssueContainer : IComparable, IEquatable<TransferIssueConta
     {
         if (m_source is null)
         {
-            m_source = CitiesUtils.GetBuildingName(m_sourceBuildingId, InstanceID.Empty);
+            m_source = CitiesUtils.GetBuildingName(m_sourceBuildingId, true, false);
         }
         return m_source;
     }
 
     public string GetSourceTooltip()
     {
-        return CitiesUtils.GetBuildingName(m_sourceBuildingId, InstanceID.Empty, true);
+        return CitiesUtils.GetBuildingName(m_sourceBuildingId, true, true);
     }
 
     public string GetResponder()
     {
         if (m_target is null)
         {
-            m_target = CitiesUtils.GetBuildingName(m_targetBuildingId, InstanceID.Empty);
+            m_target = CitiesUtils.GetBuildingName(m_targetBuildingId, true, true);
         }
         return m_target;
     }
 
     public string GetResponderTooltip()
     {
-        return CitiesUtils.GetBuildingName(m_targetBuildingId, InstanceID.Empty, true);
+        return CitiesUtils.GetBuildingName(m_targetBuildingId, true, true);
     }
 
     public string GetVehicle()

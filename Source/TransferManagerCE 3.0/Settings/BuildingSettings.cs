@@ -8,7 +8,7 @@ namespace TransferManagerCE
     {
         // Increment this every time the settings change
         // Also increment Serializer.DataVersion
-        public const int iBUILDING_SETTINGS_DATA_VERSION = 18;
+        public const int iBUILDING_SETTINGS_DATA_VERSION = 20;
 
         // Stores a restrictions setting object for each different type of restriction supported by the building
         // eg Dead, DeadMove etc...
@@ -16,10 +16,9 @@ namespace TransferManagerCE
         private static BuildingSettings s_defaultSettings = new BuildingSettings();
 
         // Only 1 setting per building
-        public int m_iOutsidePriority = -1; // -1 = OFF
-        public bool m_bWarehouseOverride = false;
-        public bool m_bImprovedWarehouseMatching = false;
-        public int m_iWarehouseReserveTrucksPercent = 20;
+        public int m_iCargoOutsidePriority = -1; // -1 = OFF
+        public int m_iCitizenOutsidePriority = -1; // -1 = OFF
+        public int m_iWarehouseReserveTrucksPercent = -1; // -1 = OFF
 
         public BuildingSettings()
         {
@@ -27,10 +26,9 @@ namespace TransferManagerCE
 
         public BuildingSettings(BuildingSettings oSecond)
         {
-            m_bWarehouseOverride = oSecond.m_bWarehouseOverride;
-            m_bImprovedWarehouseMatching = oSecond.m_bImprovedWarehouseMatching;
             m_iWarehouseReserveTrucksPercent = oSecond.m_iWarehouseReserveTrucksPercent;
-            m_iOutsidePriority = oSecond.m_iOutsidePriority;
+            m_iCargoOutsidePriority = oSecond.m_iCargoOutsidePriority;
+            m_iCitizenOutsidePriority = oSecond.m_iCitizenOutsidePriority;
 
             foreach (KeyValuePair<int, RestrictionSettings> kvp in oSecond.m_restrictions)
             {
@@ -50,24 +48,17 @@ namespace TransferManagerCE
         {
             //DebugSettings();
 
-            if (m_bWarehouseOverride != s_defaultSettings.m_bWarehouseOverride)
+            if (m_iWarehouseReserveTrucksPercent != s_defaultSettings.m_iWarehouseReserveTrucksPercent)
             {
                 return false;
             }
-            else 
+
+            if (m_iCargoOutsidePriority != s_defaultSettings.m_iCargoOutsidePriority)
             {
-                // We only check these if warehouse override is on
-                if (m_bWarehouseOverride)
-                {
-                    if (m_bImprovedWarehouseMatching != s_defaultSettings.m_bImprovedWarehouseMatching ||
-                        m_iWarehouseReserveTrucksPercent != s_defaultSettings.m_iWarehouseReserveTrucksPercent)
-                    {
-                        return false;
-                    }
-                }
+                return false;
             }
-            
-            if (m_iOutsidePriority != s_defaultSettings.m_iOutsidePriority)
+
+            if (m_iCitizenOutsidePriority != s_defaultSettings.m_iCitizenOutsidePriority)
             {
                 return false;
             }
@@ -87,10 +78,12 @@ namespace TransferManagerCE
         public void SaveData(FastList<byte> Data)
         {
             // Write variables
-            StorageData.WriteBool(m_bWarehouseOverride, Data);
+            StorageData.WriteBool(false, Data); // BWarehouseOverride - Not used
             StorageData.WriteBool(false, Data); // bWarehouseFirstNotUsed
             StorageData.WriteInt32(m_iWarehouseReserveTrucksPercent, Data);
-            StorageData.WriteInt32(m_iOutsidePriority, Data); // Added in v18
+            
+            StorageData.WriteInt32(m_iCargoOutsidePriority, Data); // Added in v18
+            StorageData.WriteInt32(m_iCitizenOutsidePriority, Data); // Added in v18
 
             // Write out restrictions
             StorageData.WriteInt32(RestrictionSettings.iRESTRICTION_SETTINGS_DATA_VERSION, Data);
@@ -102,7 +95,7 @@ namespace TransferManagerCE
                 kvp.Value.SaveData(Data);
             }
 
-            StorageData.WriteBool(m_bImprovedWarehouseMatching, Data);
+            StorageData.WriteBool(false, Data); // v20 - Improved warehouse matching no longer used
             
         }
 
@@ -115,20 +108,31 @@ namespace TransferManagerCE
             }
 
             // Load variables
-            m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
+            bool bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
             bool bWarehouseFirstNotUsed = StorageData.ReadBool(Data, ref iIndex);
+            
             m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
+            if (BuildingSettingsVersion < 20 && !bWarehouseOverride)
+            {
+                m_iWarehouseReserveTrucksPercent = -1; // We now set this to -1 to indicate OFF
+            }
 
             if (BuildingSettingsVersion >= 18)
             {
-                m_iOutsidePriority = StorageData.ReadInt32(Data, ref iIndex);
+                m_iCargoOutsidePriority = StorageData.ReadInt32(Data, ref iIndex);
             } 
             else
             {
-                // No longer used, replaced by m_iOutsidePriority in version 18
+                // No longer used, replaced by m_iCargoOutsidePriority in version 18
                 int iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex); 
             }
-            
+
+            if (BuildingSettingsVersion >= 19)
+            {
+                m_iCitizenOutsidePriority = StorageData.ReadInt32(Data, ref iIndex);
+            }
+
+            // ------------------------------------------------------------------------------------
             // Restriction version was added in BuildingSettings version 12.
             int iRestrctionVersion = 1;
             if (BuildingSettingsVersion >= 12)
@@ -144,10 +148,11 @@ namespace TransferManagerCE
                 m_restrictions[iRestrictionId] = RestrictionSettings.LoadData(iRestrctionVersion, Data, ref iIndex);
             }
 
+            // ------------------------------------------------------------------------------------
             if (BuildingSettingsVersion >= 13)
             {
                 // Introduced in 13
-                m_bImprovedWarehouseMatching = StorageData.ReadBool(Data, ref iIndex);
+                bool bImprovedWarehouseMatching = StorageData.ReadBool(Data, ref iIndex);
             }
         }
 
@@ -205,23 +210,17 @@ namespace TransferManagerCE
                 m_restrictions[iRestrictionId] = settings;
             }
         }
-
-        public bool IsImprovedWarehouseMatching()
-        {
-            if (m_bWarehouseOverride)
-            {
-                return m_bImprovedWarehouseMatching;
-            }
-            return SaveGameSettings.GetSettings().ImprovedWarehouseMatching;
-        }
         
         public int ReserveCargoTrucksPercent()
         {
-            if (m_bWarehouseOverride)
+            if (m_iWarehouseReserveTrucksPercent == -1)
+            {
+                return SaveGameSettings.GetSettings().WarehouseReserveTrucksPercent;
+            }
+            else
             {
                 return m_iWarehouseReserveTrucksPercent;
             }
-            return SaveGameSettings.GetSettings().WarehouseReserveTrucksPercent;
         }
 
         public void ReserveCargoTrucksPercent(int iPercent)
@@ -242,7 +241,7 @@ namespace TransferManagerCE
                 {
                     bChanged = true;
                     incoming.Remove(buildingId);
-                    settings.m_incomingBuildingSettings.SetBuildingRestrictions(incoming);
+                    settings.m_incomingBuildingSettings.SetBuildingRestrictionsDirect(incoming);
                 }
 
                 // Check outgoing building restrictions
@@ -251,7 +250,7 @@ namespace TransferManagerCE
                 {
                     bChanged = true;
                     outgoing.Remove(buildingId);
-                    settings.m_outgoingBuildingSettings.SetBuildingRestrictions(outgoing);
+                    settings.m_outgoingBuildingSettings.SetBuildingRestrictionsDirect(outgoing);
                 }
             }
             return bChanged;
@@ -272,34 +271,26 @@ namespace TransferManagerCE
 
             // Warehouse settings
             string sWarehouse = "";
-            if (s_defaultSettings.m_bWarehouseOverride != m_bWarehouseOverride)
+            if (s_defaultSettings.m_iWarehouseReserveTrucksPercent != m_iWarehouseReserveTrucksPercent)
             {
                 iChanges++;
-                sWarehouse = Utils.AddStringsWithNewLine(sWarehouse, $"Warehouse Override: {m_bWarehouseOverride}");
-
-                if (m_bWarehouseOverride)
-                {
-                    if (s_defaultSettings.m_iWarehouseReserveTrucksPercent != m_iWarehouseReserveTrucksPercent)
-                    {
-                        iChanges++;
-                        sWarehouse = Utils.AddStringsWithNewLine(sWarehouse, $"Warehouse Reserve Trucks (%): {m_iWarehouseReserveTrucksPercent}");
-                    }
-                    if (s_defaultSettings.m_bImprovedWarehouseMatching != m_bImprovedWarehouseMatching)
-                    {
-                        iChanges++;
-                        sWarehouse = Utils.AddStringsWithNewLine(sWarehouse, $"Improved Warehouse Matching: {m_bImprovedWarehouseMatching}");
-                    }
-                }
+                sWarehouse = Utils.AddStringsWithNewLine(sWarehouse, $"Warehouse Reserve Trucks (%): {m_iWarehouseReserveTrucksPercent}");
             }
 
             // Outside priority
             string sOutside = "";
-            if (s_defaultSettings.m_iOutsidePriority != m_iOutsidePriority)
+            if (s_defaultSettings.m_iCargoOutsidePriority != m_iCargoOutsidePriority)
             {
                 iChanges++;
-                sOutside = Utils.AddStringsWithNewLine(sOutside, $"Outside Priority: {m_iOutsidePriority}");
+                sOutside = Utils.AddStringsWithNewLine(sOutside, $"Outside Cargo Priority: {m_iCargoOutsidePriority}");
+            }
+            if (s_defaultSettings.m_iCitizenOutsidePriority != m_iCitizenOutsidePriority)
+            {
+                iChanges++;
+                sOutside = Utils.AddStringsWithNewLine(sOutside, $"Outside Citizen Priority: {m_iCitizenOutsidePriority}");
             }
 
+            // Build message
             string sMessage = "";
 
             if (sRestrictions.Length > 0)

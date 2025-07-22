@@ -93,6 +93,9 @@ namespace TransferManagerCE
                 patchList.Add(typeof(StartPathFindPatches)); // Cargo Station infinite loop bug
                 patchList.Add(typeof(TransportStationAIPatches)); // TransportStationAI.CreateIncomingVehicle bug introduced in H&T update
                 patchList.Add(typeof(WarehouseAIPatches)); // WarehouseAI bugs introduced in H&T update
+                patchList.Add(typeof(WarehouseStationAIPatch)); // Trains head to the wrong side of the cargo warehouse.
+                patchList.Add(typeof(FindCargoStationPatch)); // CargoTruckAI.FindCargoStation has a bad bug and will not find the nearest cargo station quite often
+                patchList.Add(typeof(IntercityBusPatch)); 
 
                 // Outside connection patches
                 if (DependencyUtils.IsAdvancedOutsideConnectionsRunning())

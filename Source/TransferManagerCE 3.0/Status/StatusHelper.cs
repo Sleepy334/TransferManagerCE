@@ -1,50 +1,27 @@
-using System;
 using ColossalFramework;
 using System.Collections.Generic;
 using TransferManagerCE.Data;
+using ICities;
+using TransferManagerCE.Util;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
-using TransferManagerCE.Util;
-using UnityEngine;
-using ICities;
 using static TransferManagerCE.CustomTransferReason;
-using SleepyCommon;
 
 namespace TransferManagerCE
 {
     public class StatusHelper
     {
-        public enum StopType
-        {
-            None,
-            Intercity,
-            TransportLine,
-            CableCar,
-            Evacuation,
-        };
+        private HashSet<CustomTransferReason.Reason> m_buildingReasons = new HashSet<CustomTransferReason.Reason>();
+        private List<StatusData> m_listGeneral = new List<StatusData>();
+        private List<StatusData> m_listServices = new List<StatusData>();
+        private List<StatusData> m_listIncoming = new List<StatusData>();
+        private List<StatusData> m_listOutgoing = new List<StatusData>();
+        private HashSet<ushort> m_setAddedVehicles = new HashSet<ushort>();
+        private BuildingType m_eBuildingType = BuildingType.None;
 
-        public HashSet<CustomTransferReason.Reason> m_buildingReasons;
-        private List<StatusData> m_listGeneral;
-        private List<StatusData> m_listServices;
-        private List<StatusData> m_listIncoming;
-        private List<StatusData> m_listOutgoing;
-        private List<StatusData> m_listIntercityStops;
-        private List<StatusData> m_listLineStops;
-        private HashSet<ushort> m_setAddedVehicles;
-
-        private float m_fParentBuildingSize = 0f;
-        private BuildingType m_eParentBuildingType = BuildingType.None;
-
+        // ----------------------------------------------------------------------------------------
         public StatusHelper()
         {
-            m_listGeneral = new List<StatusData>();
-            m_listServices = new List<StatusData>();
-            m_listIncoming = new List<StatusData>();
-            m_listOutgoing = new List<StatusData>();
-            m_listIntercityStops = new List<StatusData>();
-            m_listLineStops = new List<StatusData>();
-            m_setAddedVehicles = new HashSet<ushort>();
-            m_buildingReasons = new HashSet<CustomTransferReason.Reason>();
         } 
 
         public bool HasBuildingReason(CustomTransferReason.Reason reason)
@@ -60,32 +37,26 @@ namespace TransferManagerCE
             m_listServices.Clear();
             m_listIncoming.Clear();
             m_listOutgoing.Clear();
-            m_listIntercityStops.Clear();
-            m_listLineStops.Clear();
             m_setAddedVehicles.Clear();
             m_buildingReasons.Clear();
-            m_eParentBuildingType = BuildingType.None;
-            m_fParentBuildingSize = 0.0f;
+            m_eBuildingType = BuildingType.None;
 
             if (buildingId != 0)
             {
                 Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
                 if (building.m_flags != 0)
                 {
-                    m_eParentBuildingType = GetBuildingType(building);
-
-                    // Store the parents building size
-                    m_fParentBuildingSize = Mathf.Max(building.Length, building.Width);
+                    m_eBuildingType = GetBuildingType(building);
 
                     // Common to all (Services & Workers etc...)
-                    if (m_eParentBuildingType != BuildingType.OutsideConnection)
+                    if (m_eBuildingType != BuildingType.OutsideConnection)
                     {
-                        AddGeneral(m_eParentBuildingType, buildingId, building);
-                        AddCommonServices(m_eParentBuildingType, buildingId, building);
+                        AddGeneral(m_eBuildingType, buildingId, building);
+                        AddCommonServices(m_eBuildingType, buildingId, building);
                     }
 
                     // Add building specific values
-                    AddBuildingSpecific(m_eParentBuildingType, buildingId, building);
+                    AddBuildingSpecific(false, m_eBuildingType, buildingId, building);
 
                     // Add sub building values as well
                     int iLoopCount = 0;
@@ -96,7 +67,7 @@ namespace TransferManagerCE
                         if (subBuilding.m_flags != 0)
                         {
                             BuildingType eSubBuildingType = GetBuildingType(subBuilding);
-                            AddBuildingSpecific(eSubBuildingType, subBuildingId, subBuilding);
+                            AddBuildingSpecific(true, eSubBuildingType, subBuildingId, subBuilding);
                         }
 
                         // setup for next sub building
@@ -110,7 +81,7 @@ namespace TransferManagerCE
                     }
 
                     // Add vehicles for main building
-                    AddVehicles(m_eParentBuildingType, buildingId, building);
+                    AddVehicles(m_eBuildingType, buildingId, building);
 
                     // Add sub building vehicles as well
                     iLoopCount = 0;
@@ -141,8 +112,6 @@ namespace TransferManagerCE
                 SortAndMergeList("Services", list, m_listServices);
                 SortAndMergeList("Incoming", list, m_listIncoming); 
                 SortAndMergeList("Outgoing", list, m_listOutgoing);
-                SortAndMergeList("Line Stops", list, m_listLineStops);
-                SortAndMergeList("Intercity Stops", list, m_listIntercityStops);
             }
 
             iVehicleCount = m_setAddedVehicles.Count;
@@ -160,10 +129,6 @@ namespace TransferManagerCE
 
                 list.Add(data);
             }
-            else if (data.IsNodeData())
-            {
-                list.Add(data);
-            }
             else if (data.HasVehicle())
             {
                 if (!m_setAddedVehicles.Contains(data.GetVehicleId()))
@@ -172,6 +137,10 @@ namespace TransferManagerCE
                     m_setAddedVehicles.Add(data.GetVehicleId());
                     list.Add(data);
                 }
+            }
+            else
+            {
+                list.Add(data);
             }
         }
 
@@ -233,15 +202,17 @@ namespace TransferManagerCE
             {
                 case BuildingType.Hospital:
                 case BuildingType.UniversityHospital:
+                    AddToList(m_listIncoming, new StatusDataSick(CustomTransferReason.Reason.Sick, eBuildingType, buildingId));
+                    break;
                 case BuildingType.Eldercare:
                 case BuildingType.Childcare:
-                    AddToList(m_listIncoming, new StatusDataBuildingSick(CustomTransferReason.Reason.Sick, eBuildingType, buildingId));
+                    AddToList(m_listOutgoing, new StatusDataSick(CustomTransferReason.Reason.Sick, eBuildingType, buildingId));
                     break;
                 case BuildingType.ServicePoint:
                     // Don't add to service point
                     break;
                 default:
-                    AddToList(m_listServices, new StatusDataBuildingSick(CustomTransferReason.Reason.Sick, eBuildingType, buildingId));
+                    AddToList(m_listServices, new StatusDataSick(CustomTransferReason.Reason.Sick, eBuildingType, buildingId));
                     break;
             }
 
@@ -319,13 +290,27 @@ namespace TransferManagerCE
             }
         }
 
-        private void AddBuildingSpecific(BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId, Building building)
+        private void AddBuildingSpecific(bool bSubBuilding, BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId, Building building)
         {
             // Building specific
             switch (eBuildingType)
             {
-                case BuildingType.Warehouse:
-                case BuildingType.WarehouseStation:
+                case BuildingType.CargoWarehouse:
+                    {
+                        if (!bSubBuilding)
+                        {
+                            // Add warehouse information
+                            ushort warehouseBuildingId = WarehouseUtils.GetWarehouseBuildingId(buildingId);
+
+                            CustomTransferReason.Reason reason = BuildingTypeHelper.GetWarehouseActualTransferReason(warehouseBuildingId);
+                            if (reason != CustomTransferReason.Reason.None)
+                            {
+                                AddToList(m_listIncoming, new StatusDataWarehouse(reason, eBuildingType, warehouseBuildingId));
+                            }
+                        }
+                        break;
+                    }
+                case BuildingType.Warehouse:   
                 case BuildingType.CargoFerryWarehouseHarbor:
                     {
                         CustomTransferReason.Reason reason = BuildingTypeHelper.GetWarehouseActualTransferReason(buildingId);
@@ -398,7 +383,6 @@ namespace TransferManagerCE
                 case BuildingTypeHelper.BuildingType.DisasterShelter:
                     {
                         AddToList(m_listIncoming, new StatusDataShelter(CustomTransferReason.Reason.Food, eBuildingType, buildingId));
-                        AddNetStops(eBuildingType, building, buildingId);
                         break;
                     }
                 case BuildingTypeHelper.BuildingType.GenericExtractor:
@@ -474,10 +458,10 @@ namespace TransferManagerCE
                     }
                 case BuildingTypeHelper.BuildingType.BoilerStation:
                     {
-                        TransferReason material = StatusWaterPlant.GetInputResource(buildingId);
+                        TransferReason material = StatusDataWaterPlant.GetInputResource(buildingId);
                         if (material != TransferReason.None)
                         {
-                            AddToList(m_listIncoming, new StatusWaterPlant((CustomTransferReason.Reason)material, eBuildingType, buildingId));
+                            AddToList(m_listIncoming, new StatusDataWaterPlant((CustomTransferReason.Reason)material, eBuildingType, buildingId));
                         }
                         break;
                     }
@@ -536,21 +520,6 @@ namespace TransferManagerCE
                 case BuildingType.UniversityHospital:
                     {
                         AddToList(m_listIncoming, new StatusDataSchool(CustomTransferReason.Reason.StudentUni, eBuildingType, buildingId));
-                        break;
-                    }
-                case BuildingType.CableCarStation:
-                    {
-                        AddNetStops(eBuildingType, building, buildingId);
-                        break;
-                    }
-                case BuildingType.TransportStation:
-                    {
-                        // Add stops
-                        AddLineStops(eBuildingType, building, buildingId);
-
-                        // Add intercity stops
-                        AddNetStops(eBuildingType, building, buildingId);
-
                         break;
                     }
                 case BuildingType.SnowDump:
@@ -724,10 +693,12 @@ namespace TransferManagerCE
                                                 break;
                                             }
                                         case BuildingType.Warehouse:
-                                        case BuildingType.WarehouseStation:
+                                        case BuildingType.CargoWarehouse:
                                         case BuildingType.CargoFerryWarehouseHarbor:
                                             {
-                                                CustomTransferReason.Reason reason = BuildingTypeHelper.GetWarehouseActualTransferReason(buildingId);
+                                                ushort warehouseBuildingId = WarehouseUtils.GetWarehouseBuildingId(buildingId);
+
+                                                CustomTransferReason.Reason reason = BuildingTypeHelper.GetWarehouseActualTransferReason(warehouseBuildingId);
                                                 if (reason != CustomTransferReason.Reason.None)
                                                 {
                                                     AddToList(m_listIncoming, new StatusDataVehicle(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
@@ -760,221 +731,6 @@ namespace TransferManagerCE
                 }
                 return true;
             });
-        }
-
-        private void AddLineStops(BuildingType eBuildingType, Building building, ushort buildingId)
-        {
-            NetNode[] Nodes = NetManager.instance.m_nodes.m_buffer;
-            Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
-
-            // We use the parents building size always, squared for distance measure
-            float fMaxDistanceSquared = Mathf.Max(64f, m_fParentBuildingSize * m_fParentBuildingSize); 
-
-            // Add line stops
-            uint iSize = TransportManager.instance.m_lines.m_size;
-            for (int i = 0; i < iSize; i++)
-            {
-                TransportLine line = TransportManager.instance.m_lines.m_buffer[i];
-                if (line.m_flags != 0 && line.Complete)
-                {
-                    // Enumerate stops
-                    int iLoopCount = 0;
-                    ushort firstStop = line.m_stops;
-                    ushort stop = firstStop;
-                    while (stop != 0)
-                    {
-                        NetNode node = Nodes[stop];
-                        if (node.m_flags != 0)
-                        {
-                            // Scale allowed distance by size of building, we use FindTransportBuilding so that if there is a nearby transport station then we
-                            // are less likely to think they are our stops.
-                            ushort transportBuildingId = BuildingManager.instance.FindTransportBuilding(node.m_position, fMaxDistanceSquared, line.Info.m_transportType);
-                            if (transportBuildingId == buildingId)
-                            {
-                                int iAdded = 0;
-                                ushort vehicleId = line.m_vehicles;
-                                int iVehicleLoopCount = 0;
-                                while (vehicleId != 0)
-                                {
-                                    Vehicle vehicle = Vehicles[vehicleId];
-                                    if (vehicle.m_flags != 0 && vehicle.m_targetBuilding == stop)
-                                    {
-                                        AddToList(m_listLineStops, new StatusTransportLineStop(eBuildingType, buildingId, node.m_transportLine, stop, vehicleId));
-                                        iAdded++;
-                                    }
-
-                                    vehicleId = vehicle.m_nextLineVehicle;
-
-                                    if (++iVehicleLoopCount >= 32768)
-                                    {
-                                        CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                                        break;
-                                    }
-                                }
-
-                                // If there arent any vehicles for this stop then add a "None" one instead.
-                                if (iAdded == 0)
-                                {
-                                    AddToList(m_listLineStops, new StatusTransportLineStop(eBuildingType, buildingId, node.m_transportLine, stop, 0));
-                                }
-                            }
-                        }
-
-                        stop = TransportLine.GetNextStop(stop);
-                        if (stop == firstStop)
-                        {
-                            break;
-                        }
-
-                        if (++iLoopCount >= 32768)
-                        {
-                            CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        private void AddNetStops(BuildingType eBuildingType, Building building, ushort buildingId)
-        {
-            NetNode[] Nodes = NetManager.instance.m_nodes.m_buffer;
-            Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
-
-            // Find any vehicles heading to the stops
-            Dictionary<ushort, ushort> vehicleNodes = new Dictionary<ushort, ushort>();
-
-            uint uiSize = VehicleManager.instance.m_vehicles.m_size;
-            ushort vehicleID = building.m_ownVehicles;
-            int iLoopCount1 = 0;
-            while (vehicleID != 0 && vehicleID < uiSize)
-            {
-                Vehicle vehicle = Vehicles[vehicleID];
-                if (vehicle.m_flags != 0)
-                {
-                    InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleID, vehicle);
-                    if (target.NetNode != 0)
-                    {
-                        vehicleNodes[vehicleID] = target.NetNode;
-                    }
-                }
-                
-                vehicleID = vehicle.m_nextOwnVehicle;
-
-                if (++iLoopCount1 > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
-                    break;
-                }
-            }
-
-            // Add net/intercity stops
-            int iLoopCount2 = 0;
-            ushort nodeId = building.m_netNode;
-            while (nodeId != 0)
-            {
-                NetNode node = Nodes[nodeId];
-                NetInfo info = node.Info;
-                if ((object)info != null)
-                {
-                    StopType eStopType = GetStopType(eBuildingType, info.m_class.m_layer, node.m_transportLine);
-                    if (eStopType != StopType.None)
-                    {
-                        // Add stops with vehicles first
-                        int iAdded = 0;
-                        foreach (KeyValuePair<ushort, ushort> kvp in vehicleNodes)
-                        {
-                            if (kvp.Value == nodeId)
-                            {
-                                StatusData? data = CreateStatusData(eStopType, eBuildingType, buildingId, node.m_transportLine, nodeId, kvp.Key);
-                                if (data != null)
-                                {
-                                    if (eStopType == StopType.CableCar)
-                                    {
-                                        AddToList(m_listLineStops, data);
-                                    }
-                                    else
-                                    {
-                                        AddToList(m_listIntercityStops, data);
-                                    }
-                                    
-                                    iAdded++;
-                                }
-                            }
-                        }
-
-                        // If there arent any vehicles for this stop then add a "None" one instead.
-                        if (iAdded == 0)
-                        {
-                            StatusData? data = CreateStatusData(eStopType, eBuildingType, buildingId, node.m_transportLine, nodeId, 0);
-                            if (data != null)
-                            {
-                                if (eStopType == StopType.CableCar)
-                                {
-                                    AddToList(m_listLineStops, data);
-                                }
-                                else
-                                {
-                                    AddToList(m_listIntercityStops, data);
-                                }
-                                iAdded++;
-                            }
-                        }
-                    }
-                }
-
-                nodeId = node.m_nextBuildingNode;
-
-                if (++iLoopCount2 > 32768)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                    break;
-                }
-            }
-        }
-
-        private StopType GetStopType(BuildingType eBuildingType, ItemClass.Layer layer, ushort transportLineId)
-        {
-            if (layer == ItemClass.Layer.PublicTransport)
-            {
-                switch (eBuildingType)
-                {
-                    case BuildingType.TransportStation:
-                        {
-                            if (transportLineId == 0)
-                            {
-                                return StopType.Intercity;
-                            }
-                            else
-                            {
-                                return StopType.TransportLine;
-                            }
-                        }
-                    case BuildingType.CableCarStation:
-                        {
-                            return StopType.CableCar;
-                        }
-                    case BuildingType.DisasterShelter:
-                        {
-                            return StopType.Evacuation;
-                        }
-                }
-            }
-
-            return StopType.None;
-        }
-
-        private StatusData? CreateStatusData(StopType stopType, BuildingType eBuildingType, ushort buildingId, ushort LineId, ushort nodeId, ushort vehicleId)
-        {
-            switch (stopType)
-            {
-                case StopType.Intercity: return new StatusIntercityStop(eBuildingType, buildingId, nodeId, vehicleId);
-                case StopType.TransportLine: return new StatusTransportLineStop(eBuildingType, buildingId, LineId, nodeId, vehicleId);
-                case StopType.CableCar: return new StatusCableCarStop(eBuildingType, buildingId, nodeId, vehicleId);
-                case StopType.Evacuation: return new StatusEvacuationStop(eBuildingType, buildingId, nodeId, vehicleId);
-            }
-
-            return null;
         }
     }
 }

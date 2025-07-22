@@ -38,11 +38,13 @@ namespace TransferManagerCE
             if (offer.LocalPark == 0)
             {
                 Init();
+
                 if (offer.Building != 0 && offer.IsOutside())
                 {
                     Building building = Buildings[offer.Building];
                     uiNearestNodeId = FindOutsideConnectionNode(offer.Building, building.m_position);
                 }
+
                 if (uiNearestNodeId == 0)
                 {
                     ushort segmentId = FindStartSegment(material, offer);
@@ -188,12 +190,17 @@ namespace TransferManagerCE
         private static ushort FindStartSegment(CustomTransferReason.Reason material, CustomTransferOffer offer)
         {
             Init();
+
             switch (offer.m_object.Type)
             {
                 case InstanceType.Building:
                     {
                         // We have a specialized function for buildings as they have the m_accessSegment field that we can use.
                         return FindStartSegmentBuilding(offer.Building, material);
+                    }
+                case InstanceType.Vehicle:
+                    {
+                        return FindPathPosition(material, offer.m_object);
                     }
                 case InstanceType.Citizen:
                     {
@@ -203,7 +210,8 @@ namespace TransferManagerCE
                             // We have a specialized function for buildings as they have the m_accessSegment field that we can use.
                             return FindStartSegmentBuilding(offer.GetBuilding(), material);
                         }
-                        break;
+
+                        return FindPathPosition(material, offer.m_object);
                     }
                 case InstanceType.Park:
                     {
@@ -253,16 +261,30 @@ namespace TransferManagerCE
                     {
                         return offer.NetSegment;
                     }
+                default:
+                    {
+                        CDebug.Log($"Type: {offer.m_object.Type} Index: {offer.m_object.Index}");
+                        return FindPathPosition(material, offer.m_object);
+                    }
             }
-
-            return FindPathPosition(material, offer.m_object);
         }
 
         public static ushort FindStartSegmentBuilding(ushort buildingId, CustomTransferReason.Reason material)
         {
             Init();
+
             Building building = Buildings[buildingId];
-            if (building.m_flags != 0)
+
+            // Is there a parent building with road access
+            if (building.m_flags != 0 && 
+               (building.m_flags & Building.Flags.RoadAccessFailed) != 0 &&
+                building.m_parentBuilding != 0)
+            {
+                buildingId = building.m_parentBuilding;
+                building = Buildings[building.m_parentBuilding];
+            }
+
+            if (building.m_flags != 0 && (building.m_flags & Building.Flags.RoadAccessFailed) == 0)
             {
                 InstanceID instance = new InstanceID { Building = buildingId };
 
@@ -284,7 +306,6 @@ namespace TransferManagerCE
                         }
                 }
 
-                // Otherwise can we use the access segment?
                 if (building.m_accessSegment != 0)
                 {
                     NetSegment segment = NetSegments[building.m_accessSegment];
@@ -299,9 +320,9 @@ namespace TransferManagerCE
                         else
                         {
                             // The access segment does not support requested vehicle type.
-                            RoadAccessStorage.AddInstance(new InstanceID { Building = buildingId, });
+                            RoadAccessStorage.AddInstance(instance);
                         }
-                    } 
+                    }
                 }
 
                 // Else try to find a valid start segment
@@ -490,6 +511,17 @@ namespace TransferManagerCE
             });
 
             return nodeId;
+        }
+
+        public static ushort FindBuildingNode(CustomTransferReason.Reason material, ushort buildingId, bool bActive)
+        {
+            ushort segmentId = PathNode.FindStartSegmentBuilding(buildingId, material);
+            if (segmentId != 0)
+            {
+                return PathNode.FindNearestNode(buildingId, segmentId, bActive);
+            }
+
+            return 0;
         }
     }
 }

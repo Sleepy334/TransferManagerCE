@@ -9,7 +9,7 @@ using TransferManagerCE.CustomManager.Stats;
 using TransferManagerCE.Settings;
 using TransferManagerCE.UI;
 using TransferManagerCE.Util;
-using static TransferManagerCE.TransportUtils;
+using static SleepyCommon.TransportUtils;
 
 namespace TransferManagerCE
 {
@@ -20,10 +20,16 @@ namespace TransferManagerCE
         private UICheckBox? m_chkEnableTransferManager = null;
         
         // Outside connection tab
-        private SettingsSlider? m_sliderShipPriority = null;
-        private SettingsSlider? m_sliderPlanePriority = null;
-        private SettingsSlider? m_sliderTrainPriority = null;
-        private SettingsSlider? m_sliderRoadPriority = null;
+        private SettingsSlider? m_sliderShipCargoPriority = null;
+        private SettingsSlider? m_sliderPlaneCargoPriority = null;
+        private SettingsSlider? m_sliderTrainCargoPriority = null;
+        private SettingsSlider? m_sliderRoadCargoPriority = null;
+
+        private SettingsSlider? m_sliderShipCitizenPriority = null;
+        private SettingsSlider? m_sliderPlaneCitizenPriority = null;
+        private SettingsSlider? m_sliderTrainCitizenPriority = null;
+        private SettingsSlider? m_sliderRoadCitizenPriority = null;
+
         private SettingsSlider? m_sliderExportVehicleLimitPercent = null;
 
         // Services tab
@@ -396,16 +402,16 @@ namespace TransferManagerCE
             AddSaveGameSetting(m_chkWarehouseSmarterImportExport);
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
+            // Improved inter-warehouse transfers
+            UISettings.AddDescription(panelGroupWarehouse, "txtNewInterWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtNewInterWarehouseMatching"));
+            m_chkNewInterWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionNewWarehouseTransfer"), oSettings.InterWarehouseTransfer, OnInterWarehouseTransferChanged);
+            AddSaveGameSetting(m_chkNewInterWarehouseMatching);
+            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
+
             // Improved Warehouse Matching
             UISettings.AddDescription(panelGroupWarehouse, "txtImprovedWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtImprovedWarehouseMatching"));
             m_chkImprovedWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionImprovedWarehouseMatching"), oSettings.ImprovedWarehouseMatching, (index) => setOptionImprovedWarehouseMatching(index));
             AddSaveGameSetting(m_chkImprovedWarehouseMatching);
-            groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
-
-            // Improved inter-warehouse matching
-            UISettings.AddDescription(panelGroupWarehouse, "txtNewInterWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtNewInterWarehouseMatching"));
-            m_chkNewInterWarehouseMatching = (UICheckBox)groupWarehouse.AddCheckbox(Localization.Get("optionNewWarehouseTransfer"), oSettings.NewInterWarehouseTransfer, OnNewWarehouseTransferChanged);
-            AddSaveGameSetting(m_chkNewInterWarehouseMatching);
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
 
             // Reserve trucks
@@ -427,18 +433,35 @@ namespace TransferManagerCE
 
             // Priority
             UISettings.AddDescription(txtPanel3, "OutsidePriorityDescription", txtPanel3, 1.0f, Localization.Get("OutsidePriorityDescription"));
-            m_sliderPlanePriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Plane Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsidePlanePriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Plane, value));
-            m_sliderPlanePriority.Percent = true;
-            AddSaveGameSetting(m_sliderPlanePriority);
-            m_sliderTrainPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Train Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideTrainPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Train, value));
-            m_sliderTrainPriority.Percent = true;
-            AddSaveGameSetting(m_sliderTrainPriority);
-            m_sliderShipPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Ship Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideShipPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Ship, value));
-            m_sliderShipPriority.Percent = true;
-            AddSaveGameSetting(m_sliderShipPriority);
-            m_sliderRoadPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Road Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideRoadPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Road, value));
-            m_sliderRoadPriority.Percent = true;
-            AddSaveGameSetting(m_sliderRoadPriority);
+            UISettings.AddDescription(txtPanel3, "txtCargoPriority", txtPanel3, 1.0f, Localization.Get("txtCargoPriority"));
+            m_sliderPlaneCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Plane Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsidePlaneCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Plane, true, value));
+            m_sliderPlaneCargoPriority.Percent = true;
+            AddSaveGameSetting(m_sliderPlaneCargoPriority);
+            m_sliderTrainCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Train Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideTrainCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Train, true, value));
+            m_sliderTrainCargoPriority.Percent = true;
+            AddSaveGameSetting(m_sliderTrainCargoPriority);
+            m_sliderShipCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Ship Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideShipCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Ship, true, value));
+            m_sliderShipCargoPriority.Percent = true;
+            AddSaveGameSetting(m_sliderShipCargoPriority);
+            m_sliderRoadCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Road Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideRoadCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Road, true, value));
+            m_sliderRoadCargoPriority.Percent = true;
+            AddSaveGameSetting(m_sliderRoadCargoPriority);
+            groupImportExport.AddSpace(iSEPARATOR_HEIGHT);
+
+            UISettings.AddDescription(txtPanel3, "txtCitizenPriority", txtPanel3, 1.0f, Localization.Get("txtCitizenPriority"));
+            m_sliderPlaneCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Plane Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsidePlaneCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Plane, false, value));
+            m_sliderPlaneCitizenPriority.Percent = true;
+            AddSaveGameSetting(m_sliderPlaneCitizenPriority);
+            m_sliderTrainCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Train Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideTrainCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Train, false, value));
+            m_sliderTrainCitizenPriority.Percent = true;
+            AddSaveGameSetting(m_sliderTrainCitizenPriority);
+            m_sliderShipCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Ship Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideShipCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Ship, false, value));
+            m_sliderShipCitizenPriority.Percent = true;
+            AddSaveGameSetting(m_sliderShipCitizenPriority);
+            m_sliderRoadCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Road Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideRoadCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Road, false, value));
+            m_sliderRoadCitizenPriority.Percent = true;
+            AddSaveGameSetting(m_sliderRoadCitizenPriority);
+
 
             // Export vehicle limit
             UIHelper groupExportLimits = (UIHelper)helper.AddGroup(Localization.Get("GROUP_EXPORT_LIMITS"));
@@ -664,6 +687,7 @@ namespace TransferManagerCE
             group.AddSpace(iSEPARATOR_HEIGHT);
         }
 
+        // ----------------------------------------------------------------------------------------
         public void SetupAdvanced(UIHelper helper)
         {
             ModSettings oSettings = ModSettings.GetSettings();
@@ -689,10 +713,10 @@ namespace TransferManagerCE
             groupIntercityStops.AddButton(Localization.Get("btnOutsideReset"), () =>
             {
                 ModSettings defaultSettings = new ModSettings();
-                sliderForceTrainSpawnAtCount.SetValue(defaultSettings.ForceTrainSpawnAtCount);
-                sliderForceShipSpawnAtCount.SetValue(defaultSettings.ForceShipSpawnAtCount);
-                sliderForcePlaneSpawnAtCount.SetValue(defaultSettings.ForcePlaneSpawnAtCount);
-                sliderForceBusSpawnAtCount.SetValue(defaultSettings.ForceBusSpawnAtCount);
+                sliderForceTrainSpawnAtCount.Value = defaultSettings.ForceTrainSpawnAtCount;
+                sliderForceShipSpawnAtCount.Value = defaultSettings.ForceShipSpawnAtCount;
+                sliderForcePlaneSpawnAtCount.Value = defaultSettings.ForcePlaneSpawnAtCount;
+                sliderForceBusSpawnAtCount.Value = defaultSettings.ForceBusSpawnAtCount;
             });
 
             UIHelperBase groupSpawnPatches = helper.AddGroup(Localization.Get("GROUP_SPAWN_PATCHES"));
@@ -716,10 +740,13 @@ namespace TransferManagerCE
 
             UIHelperBase groupWarehousePatches = helper.AddGroup(Localization.Get("GROUP_WAREHOUSE_PATCHES"));
             groupWarehousePatches.AddCheckbox(Localization.Get("optionFixFishWarehouses"), oSettings.FixFishWarehouses, (bChecked) => { oSettings.FixFishWarehouses = bChecked; oSettings.Save();});
-            groupWarehousePatches.AddCheckbox(Localization.Get("optionFixCargoWarehouseAccessSegment"), oSettings.FixCargoWarehouseAccessSegment, (bChecked) => { oSettings.FixCargoWarehouseAccessSegment = bChecked; oSettings.Save(); });
-            groupWarehousePatches.AddCheckbox(Localization.Get("optionFixCargoWarehouseExcludeFlag"), oSettings.FixCargoWarehouseExcludeFlag, (bChecked) => { oSettings.FixCargoWarehouseExcludeFlag = bChecked; oSettings.Save(); });
-            groupWarehousePatches.AddCheckbox(Localization.Get("optionFixCargoWarehouseOfferRatio"), oSettings.FixCargoWarehouseOfferRatio, (bChecked) => { oSettings.FixCargoWarehouseOfferRatio = bChecked; oSettings.Save(); });
             groupWarehousePatches.AddCheckbox(Localization.Get("optionRemoveEmptyWarehouseLimit"), oSettings.RemoveEmptyWarehouseLimit, (bChecked) => { oSettings.RemoveEmptyWarehouseLimit = bChecked; oSettings.Save(); });
+
+            UIHelperBase groupCargoWarehousePatches = helper.AddGroup(Localization.Get("GROUP_CARGO_WAREHOUSE_PATCHES"));
+            groupCargoWarehousePatches.AddCheckbox(Localization.Get("optionFixCargoWarehouseAccessSegment"), oSettings.FixCargoWarehouseAccessSegment, (bChecked) => { oSettings.FixCargoWarehouseAccessSegment = bChecked; oSettings.Save(); });
+            groupCargoWarehousePatches.AddCheckbox(Localization.Get("optionFixCargoWarehouseUnspawn"), oSettings.FixCargoWarehouseUnspawn, (bChecked) => { oSettings.FixCargoWarehouseUnspawn = bChecked; oSettings.Save(); });
+            groupCargoWarehousePatches.AddCheckbox(Localization.Get("optionFixCargoWarehouseExcludeFlag"), oSettings.FixCargoWarehouseExcludeFlag, (bChecked) => { oSettings.FixCargoWarehouseExcludeFlag = bChecked; oSettings.Save(); });
+            groupCargoWarehousePatches.AddCheckbox(Localization.Get("optionFixCargoWarehouseOfferRatio"), oSettings.FixCargoWarehouseOfferRatio, (bChecked) => { oSettings.FixCargoWarehouseOfferRatio = bChecked; oSettings.Save(); });
         }
 
         public void SetupMaintenance(UIHelper helper)
@@ -1047,12 +1074,6 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.SetActiveDistanceRestrictionKm(material, fValue);
-
-            // If updating mail restrictions, we also update global Mail2 restrictions
-            if (material == CustomTransferReason.Reason.Mail)
-            {
-                oSettings.SetActiveDistanceRestrictionKm(CustomTransferReason.Reason.Mail2, fValue);
-            }
         }
 
         public void OnLocalizationDropDownChanged(int value)
@@ -1170,28 +1191,17 @@ namespace TransferManagerCE
             oSettings.PreferLocalService = index;
         }
 
-        public void setOptionWarehouseFirst(bool bChecked)
-        {
-            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.WarehouseFirst = bChecked;
-        }
-
-        public void setOptionImprovedWarehouseMatching(bool bChecked)
-        {
-            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.ImprovedWarehouseMatching = bChecked;
-        }
-
         public void setOptionFactoryFirst(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             oSettings.FactoryFirst = bChecked;
         }
 
-        public void setOptionWarehouseReserveTrucks(float fPercent)
+        // ----------------------------------------------------------------------------------------
+        public void setOptionWarehouseFirst(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.WarehouseReserveTrucksPercent = (int)fPercent;
+            oSettings.WarehouseFirst = bChecked;
         }
 
         public void OnWarehouseSmarterImportExport(bool bChecked)
@@ -1200,35 +1210,95 @@ namespace TransferManagerCE
             oSettings.WarehouseSmartImportExport = bChecked;
         }
 
-        public void OnNewWarehouseTransferChanged(bool bChecked)
+        public void OnInterWarehouseTransferChanged(bool bChecked)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
-            oSettings.NewInterWarehouseTransfer = bChecked;
+            oSettings.InterWarehouseTransfer = bChecked;
+
+            UpdateImprovedWarehouseMatchingCheckbox();
         }
 
-        public void OnOutsideConnectionPriority(TransportType type, float fValue)
+        public void setOptionImprovedWarehouseMatching(bool bChecked)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.ImprovedWarehouseMatching = bChecked;
+        }
+
+        private void UpdateImprovedWarehouseMatchingCheckbox()
+        {
+            // ImprovedWarehouseMatching is only available when inter-warehouse matching is ON
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            if (oSettings.InterWarehouseTransfer)
+            {
+                m_chkImprovedWarehouseMatching.isEnabled = true;
+            }
+            else
+            {
+                m_chkImprovedWarehouseMatching.isEnabled = false;
+                m_chkImprovedWarehouseMatching.isChecked = false;
+                oSettings.ImprovedWarehouseMatching = false;
+            }
+        }
+
+        
+
+        public void setOptionWarehouseReserveTrucks(float fPercent)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.WarehouseReserveTrucksPercent = (int)fPercent;
+        }
+
+        public void OnOutsideConnectionPriority(TransportType type, bool bCargo, float fValue)
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
             switch (type)
             {
                 case TransportType.Road:
                     {
-                        oSettings.OutsideRoadPriority = (int)fValue;
+                        if (bCargo)
+                        {
+                            oSettings.OutsideRoadCargoPriority = (int)fValue;
+                        }
+                        else
+                        {
+                            oSettings.OutsideRoadCitizenPriority = (int)fValue;
+                        }
                         break;
                     }
                 case TransportType.Plane:
                     {
-                        oSettings.OutsidePlanePriority = (int)fValue;
+                        if (bCargo)
+                        {
+                            oSettings.OutsidePlaneCargoPriority = (int)fValue;
+                        }
+                        else
+                        {
+                            oSettings.OutsidePlaneCitizenPriority = (int)fValue;
+                        }
                         break;
                     }
                 case TransportType.Train:
                     {
-                        oSettings.OutsideTrainPriority = (int)fValue;
+                        if (bCargo)
+                        {
+                            oSettings.OutsideTrainCargoPriority = (int)fValue;
+                        }
+                        else
+                        {
+                            oSettings.OutsideTrainCitizenPriority = (int)fValue;
+                        }
                         break;
                     }
                 case TransportType.Ship:
                     {
-                        oSettings.OutsideShipPriority = (int)fValue;
+                        if (bCargo)
+                        {
+                            oSettings.OutsideShipCargoPriority = (int)fValue;
+                        }
+                        else
+                        {
+                            oSettings.OutsideShipCitizenPriority = (int)fValue;
+                        }
                         break;
                     }
             }
@@ -1250,8 +1320,8 @@ namespace TransferManagerCE
                 m_dropdownPathDistanceServices.selectedIndex = oSettings.PathDistanceServices;
                 m_dropdownPathDistanceGoods.selectedIndex = oSettings.PathDistanceGoods;
                 m_chkEnablePathFailExclusion.isChecked = oSettings.EnablePathFailExclusion;
-                m_sliderPathDistanceHeuristic.SetValue(oSettings.PathDistanceHeuristic);
-                m_sliderCargoStationDelay.SetValue(oSettings.PathDistanceCargoStationDelay);
+                m_sliderPathDistanceHeuristic.Value = oSettings.PathDistanceHeuristic;
+                m_sliderCargoStationDelay.Value = oSettings.PathDistanceCargoStationDelay;
                 m_chkDisableDummyTraffic.isChecked = oSettings.DisableDummyTraffic;
                 m_chkApplyUnlimited.isChecked = oSettings.ApplyUnlimited;
                 m_chkEmployOvereducatedWorkers.isChecked = oSettings.EmployOverEducatedWorkers;
@@ -1260,14 +1330,25 @@ namespace TransferManagerCE
                 m_chkFactoryFirst.isChecked = oSettings.FactoryFirst;
                 m_chkOverrideGenericIndustriesHandler.isChecked = oSettings.OverrideGenericIndustriesHandler;
 
+                m_chkWarehouseFirst.isChecked = oSettings.WarehouseFirst;
                 m_chkImprovedWarehouseMatching.isChecked = oSettings.ImprovedWarehouseMatching;
                 m_chkWarehouseSmarterImportExport.isChecked = oSettings.WarehouseSmartImportExport;
-                m_chkNewInterWarehouseMatching.isChecked = oSettings.NewInterWarehouseTransfer;
-                m_chkWarehouseFirst.isChecked = oSettings.WarehouseFirst;
-                m_sliderWarehouseReservePercent.SetValue(oSettings.WarehouseReserveTrucksPercent);
+                m_chkNewInterWarehouseMatching.isChecked = oSettings.InterWarehouseTransfer;
+                m_sliderWarehouseReservePercent.Value = oSettings.WarehouseReserveTrucksPercent;
+                UpdateImprovedWarehouseMatchingCheckbox();
 
                 // Import/Export
-                m_sliderExportVehicleLimitPercent.SetValue(oSettings.ExportVehicleLimit);
+                m_sliderTrainCargoPriority.Value = oSettings.OutsideTrainCargoPriority;
+                m_sliderShipCargoPriority.Value = oSettings.OutsideShipCargoPriority;
+                m_sliderPlaneCargoPriority.Value = oSettings.OutsidePlaneCargoPriority;
+                m_sliderRoadCargoPriority.Value = oSettings.OutsideRoadCargoPriority;
+
+                m_sliderTrainCitizenPriority.Value = oSettings.OutsideTrainCitizenPriority;
+                m_sliderShipCitizenPriority.Value = oSettings.OutsideShipCitizenPriority;
+                m_sliderPlaneCitizenPriority.Value = oSettings.OutsidePlaneCitizenPriority;
+                m_sliderRoadCitizenPriority.Value = oSettings.OutsideRoadCitizenPriority;
+
+                m_sliderExportVehicleLimitPercent.Value = oSettings.ExportVehicleLimit;
 
                 // Services
                 m_chkPreferLocal.isChecked = oSettings.PreferLocalService;
@@ -1278,27 +1359,27 @@ namespace TransferManagerCE
                 
                 // Sick collection
                 m_chkOverrideSickCollection.isChecked = oSettings.OverrideSickHandler;
-                m_sliderSickGenerationRate.SetValue(oSettings.RandomSickRate);
-                m_sliderSickHelicopterRate.SetValue(oSettings.SickHelicopterRate);
+                m_sliderSickGenerationRate.Value = oSettings.RandomSickRate;
+                m_sliderSickHelicopterRate.Value = oSettings.SickHelicopterRate;
                 m_chkDisplaySickNotification.isChecked = oSettings.DisplaySickNotification;
-                m_sliderSickWalkRate.SetValue(oSettings.SickWalkRate);
+                m_sliderSickWalkRate.Value = oSettings.SickWalkRate;
 
                 // Crime
                 m_chkPoliceToughOnCrime.isChecked = oSettings.PoliceToughOnCrime;
 
                 // Mail
-                m_sliderMainBuildingMaxMail.SetValue(oSettings.MainBuildingMaxMail);
+                m_sliderMainBuildingMaxMail.Value = oSettings.MainBuildingMaxMail;
                 m_chkMainBuildingPostTruck.isChecked = oSettings.MainBuildingPostTruck;
 
                 //Taxi Move
                 m_chkTaxiMove.isChecked = oSettings.TaxiMove;
-                m_sliderTaxiStandDelay.SetValue(oSettings.TaxiStandDelay);
+                m_sliderTaxiStandDelay.Value = oSettings.TaxiStandDelay;
 
                 foreach (KeyValuePair<CustomTransferReason.Reason, SettingsSlider> kvp in m_sliderLimits)
                 {
                     if (kvp.Value is not null)
                     {
-                        kvp.Value.SetValue(oSettings.GetActiveDistanceRestrictionKm(kvp.Key));
+                        kvp.Value.Value = oSettings.GetActiveDistanceRestrictionKm(kvp.Key);
                     }
                 }
 
@@ -1406,6 +1487,8 @@ namespace TransferManagerCE
             {
                 m_btnResetTransferManagerSettings.isEnabled = bLoaded && oSettings.EnableNewTransferManager;
             }
+
+            UpdateImprovedWarehouseMatchingCheckbox();
         }
 
         private void EnableCheckbox(UICheckBox checkbox, bool value)

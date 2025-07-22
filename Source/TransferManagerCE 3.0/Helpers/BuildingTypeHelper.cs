@@ -43,7 +43,7 @@ namespace TransferManagerCE
             CargoStation,
             CargoFerryWarehouseHarbor,
             Warehouse,
-            WarehouseStation,
+            CargoWarehouse,
             OutsideConnection,
             SpaceElevator,
 
@@ -100,6 +100,7 @@ namespace TransferManagerCE
             AirportMainTerminal,
             AirportCargoTerminal,
             AirportAuxBuilding,
+            AviationClub,
 
             TransportStation,
             TourDepot,
@@ -130,6 +131,9 @@ namespace TransferManagerCE
             ProcessorOil,
             ProcessorLogs,
             ProcessorOre,
+
+            CargoWarehouseRoad,
+            CargoWarehouseTrain,
         }
 
         public enum OutsideType
@@ -444,7 +448,17 @@ namespace TransferManagerCE
                     }
                 case ItemClass.Service.Monument:
                     {
-                        return BuildingType.Monument;
+                        switch (building.Info.GetAI())
+                        {
+                            case PrivateAirportAI:
+                                {
+                                    return BuildingType.AviationClub;
+                                }
+                            default:
+                                {
+                                    return BuildingType.Monument;
+                                }
+                        }
                     }
                 case ItemClass.Service.FireDepartment:
                     {
@@ -468,6 +482,10 @@ namespace TransferManagerCE
                     {
                         switch (building.Info.GetAI())
                         {
+                            case WarehouseStationAI:
+                                {
+                                    return BuildingType.CargoWarehouse;
+                                }
                             case CargoStationAI cargoStation:
                                 {
                                     if (cargoStation.GetType().ToString().Contains("CargoFerryWarehouseHarborAI"))
@@ -609,7 +627,7 @@ namespace TransferManagerCE
                             switch (building.Info.m_buildingAI)
                             {
                                 case WarehouseStationAI: 
-                                    return BuildingType.WarehouseStation;
+                                    return BuildingType.CargoWarehouse;
                                 case ExtractingFacilityAI: 
                                     return BuildingType.ExtractionFacility;
                                 case UniqueFactoryAI: 
@@ -636,7 +654,7 @@ namespace TransferManagerCE
                                             Building subBuilding = BuildingManager.instance.m_buildings.m_buffer[building.m_subBuilding];
                                             if (subBuilding.Info is not null && subBuilding.Info.GetAI() is WarehouseStationAI)
                                             {
-                                                return BuildingType.WarehouseStation;
+                                                return BuildingType.CargoWarehouse;
                                             }
                                         }
                                         return BuildingType.Warehouse;
@@ -700,93 +718,104 @@ namespace TransferManagerCE
                 BuildingType eMainType = GetBuildingType(buildingId);
                 switch (eMainType)
                 {
-                    case BuildingType.WarehouseStation:
+                    case BuildingType.CargoWarehouse:
+                        {
+                            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                            if (building.Info.GetAI() is WarehouseAI)
+                            {
+                                return BuildingSubType.CargoWarehouseRoad;
+                            }
+                            else
+                            {
+                                return BuildingSubType.CargoWarehouseTrain;
+                            }
+                        }
                     case BuildingType.Warehouse:
-                        {
-                            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                            switch (building.Info.GetSubService())
-                            {
-                                case ItemClass.SubService.PlayerIndustryFarming:
+                                {
+                                    Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                                    switch (building.Info.GetSubService())
                                     {
-                                        return BuildingSubType.WarehouseCrops;
+                                        case ItemClass.SubService.PlayerIndustryFarming:
+                                            {
+                                                return BuildingSubType.WarehouseCrops;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryForestry:
+                                            {
+                                                return BuildingSubType.WarehouseLogs;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryOil:
+                                            {
+                                                return BuildingSubType.WarehouseOil;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryOre:
+                                            {
+                                                return BuildingSubType.WarehouseOre;
+                                            }
+                                        default:
+                                            {
+                                                return BuildingSubType.None;
+                                            }
                                     }
-                                case ItemClass.SubService.PlayerIndustryForestry:
+                                }
+                            case BuildingType.ExtractionFacility:
+                                {
+                                    Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                                    switch (building.Info.GetSubService())
                                     {
-                                        return BuildingSubType.WarehouseLogs;
+                                        case ItemClass.SubService.PlayerIndustryFarming:
+                                            {
+                                                return BuildingSubType.ExtractorCrops;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryForestry:
+                                            {
+                                                return BuildingSubType.ExtractorLogs;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryOil:
+                                            {
+                                                return BuildingSubType.ExtractorOil;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryOre:
+                                            {
+                                                return BuildingSubType.ExtractorOre;
+                                            }
+                                        default:
+                                            {
+                                                return BuildingSubType.None;
+                                            }
                                     }
-                                case ItemClass.SubService.PlayerIndustryOil:
+                                }
+                            case BuildingType.ProcessingFacility:
+                                {
+                                    Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                                    switch (building.Info.GetSubService())
                                     {
-                                        return BuildingSubType.WarehouseOil;
+                                        case ItemClass.SubService.PlayerIndustryFarming:
+                                            {
+                                                return BuildingSubType.ProcessorCrops;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryForestry:
+                                            {
+                                                return BuildingSubType.ProcessorLogs;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryOil:
+                                            {
+                                                return BuildingSubType.ProcessorOil;
+                                            }
+                                        case ItemClass.SubService.PlayerIndustryOre:
+                                            {
+                                                return BuildingSubType.ProcessorOre;
+                                            }
+                                        default:
+                                            {
+                                                return BuildingSubType.None;
+                                            }
                                     }
-                                case ItemClass.SubService.PlayerIndustryOre:
-                                    {
-                                        return BuildingSubType.WarehouseOre;
-                                    }
-                                default:
-                                    {
-                                        return BuildingSubType.None;
-                                    }
+                                }
+                            default:
+                                {
+                                    return BuildingSubType.None;
+                                }
                             }
-                        }
-                    case BuildingType.ExtractionFacility:
-                        {
-                            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                            switch (building.Info.GetSubService())
-                            {
-                                case ItemClass.SubService.PlayerIndustryFarming:
-                                    {
-                                        return BuildingSubType.ExtractorCrops;
-                                    }
-                                case ItemClass.SubService.PlayerIndustryForestry:
-                                    {
-                                        return BuildingSubType.ExtractorLogs;
-                                    }
-                                case ItemClass.SubService.PlayerIndustryOil:
-                                    {
-                                        return BuildingSubType.ExtractorOil;
-                                    }
-                                case ItemClass.SubService.PlayerIndustryOre:
-                                    {
-                                        return BuildingSubType.ExtractorOre;
-                                    }
-                                default:
-                                    {
-                                        return BuildingSubType.None;
-                                    }
-                            }
-                        }
-                    case BuildingType.ProcessingFacility:
-                        {
-                            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
-                            switch (building.Info.GetSubService())
-                            {
-                                case ItemClass.SubService.PlayerIndustryFarming:
-                                    {
-                                        return BuildingSubType.ProcessorCrops;
-                                    }
-                                case ItemClass.SubService.PlayerIndustryForestry:
-                                    {
-                                        return BuildingSubType.ProcessorLogs;
-                                    }
-                                case ItemClass.SubService.PlayerIndustryOil:
-                                    {
-                                        return BuildingSubType.ProcessorOil;
-                                    }
-                                case ItemClass.SubService.PlayerIndustryOre:
-                                    {
-                                        return BuildingSubType.ProcessorOre;
-                                    }
-                                default:
-                                    {
-                                        return BuildingSubType.None;
-                                    }
-                            }
-                        }
-                    default:
-                        {
-                            return BuildingSubType.None;
-                        }
-                }
                 
             }
 
@@ -837,7 +866,7 @@ namespace TransferManagerCE
             switch (eType)
             {
                 case BuildingType.Warehouse:
-                case BuildingType.WarehouseStation:
+                case BuildingType.CargoWarehouse:
                 case BuildingType.CargoFerryWarehouseHarbor: 
                     return true;
                 default:
@@ -1107,7 +1136,7 @@ namespace TransferManagerCE
             switch (eType)
             {
                 case BuildingType.Warehouse:
-                case BuildingType.WarehouseStation:
+                case BuildingType.CargoWarehouse:
                 case BuildingType.CargoFerryWarehouseHarbor:
                 case BuildingType.ExtractionFacility:
                 case BuildingType.GenericExtractor:
@@ -1150,6 +1179,7 @@ namespace TransferManagerCE
                 case BuildingType.SnowDump:
                 case BuildingType.PumpingService:
                 case BuildingType.ServicePoint:
+                case BuildingType.AviationClub:
                     return true;
 
                 case BuildingType.ProcessingFacility:

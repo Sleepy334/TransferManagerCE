@@ -186,6 +186,10 @@ namespace TransferManagerCE.UI
             if (m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING))
             {
                 m_tabStrip.SetTabText((int)TabIndex.TAB_PATHING, Localization.Get("tabTransferIssuesPathing") + "(" + listPathing.Count + ")");
+
+                // Make "Pathing" tab compact if lots of tabs are visible
+                m_tabStrip.SetCompactMode((int)TabIndex.TAB_PATHING, m_tabStrip.GetVisibleTabCount() > 5);
+                m_tabStrip.PerformLayout();
             }
 
             if (bActive)

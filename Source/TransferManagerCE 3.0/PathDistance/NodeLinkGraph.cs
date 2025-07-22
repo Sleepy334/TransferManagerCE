@@ -42,6 +42,8 @@ namespace TransferManagerCE
             m_iGameNodeCount = 0;
             m_iGameSegmentCount = 0;
             m_iGameLaneCount = 0;
+
+            Update();
         }
 
         // ----------------------------------------------------------------------------------------
@@ -142,7 +144,7 @@ namespace TransferManagerCE
         }
 
         // ----------------------------------------------------------------------------------------
-        public Dictionary<ushort, NodeLinkData> GenerateGraph()
+        private Dictionary<ushort, NodeLinkData> GenerateGraph()
         {
             Dictionary<ushort, NodeLinkData> allNodeLinks = new Dictionary<ushort, NodeLinkData>();
 

@@ -147,8 +147,8 @@ namespace TransferManagerCE.UI
 
             if (m_tabStrip.IsTabVisible((int)TabIndex.TAB_STATUS))
             {
-                // Make "Transfers" tab compact if Capacity or Pathing are displayed
-                m_tabStrip.SetCompactMode((int)TabIndex.TAB_TRANSFERS, m_tabStrip.IsTabVisible((int)TabIndex.TAB_PATHING) && m_tabStrip.IsTabVisible((int)TabIndex.TAB_CAPACITY));
+                // Make "Transfers" tab compact if lots of tabs are visible
+                m_tabStrip.SetCompactMode((int)TabIndex.TAB_TRANSFERS, m_tabStrip.GetVisibleTabCount() > 5);
                 m_tabStrip.PerformLayout();
             }
 
@@ -169,7 +169,7 @@ namespace TransferManagerCE.UI
         {
             if (m_listOffers is not null)
             {
-                ushort buildingId = BuildingPanel.Instance.GetBuildingId();
+                ushort buildingId = BuildingPanel.Instance.Building;
 
                 List<OfferData> offers;
                 if (buildingId == 0)
@@ -194,7 +194,7 @@ namespace TransferManagerCE.UI
         {
             if (m_listMatches is not null && MatchLogging.Instance is not null)
             {
-                ushort buildingId = BuildingPanel.Instance.GetBuildingId();
+                ushort buildingId = BuildingPanel.Instance.Building;
 
                 List<BuildingMatchData>? listMatches;
                 if (buildingId == 0)

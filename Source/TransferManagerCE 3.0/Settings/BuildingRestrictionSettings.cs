@@ -37,9 +37,14 @@ namespace TransferManagerCE.Settings
             return new HashSet<ushort>(m_buildingsAllowed);
         }
 
-        public void SetBuildingRestrictions(HashSet<ushort> allowedBuildings)
+        public void SetBuildingRestrictionsDirect(HashSet<ushort> allowedBuildings)
         {
             m_buildingsAllowed = allowedBuildings;
+        }
+
+        public void SetBuildingRestrictionsSafe(HashSet<ushort> allowedBuildings)
+        {
+            m_buildingsAllowed = new HashSet<ushort>(allowedBuildings);
         }
 
         public void ClearBuildingRestrictions()
@@ -78,7 +83,7 @@ namespace TransferManagerCE.Settings
             {
                 foreach (ushort id in m_buildingsAllowed)
                 {
-                    sTooltip += "\n- " + CitiesUtils.GetBuildingName(id, InstanceID.Empty);
+                    sTooltip += "\n- " + CitiesUtils.GetBuildingName(id, true, false);
                 }
             }
             else

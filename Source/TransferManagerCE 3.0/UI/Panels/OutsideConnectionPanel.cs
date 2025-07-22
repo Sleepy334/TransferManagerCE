@@ -1,6 +1,5 @@
 using ColossalFramework.UI;
 using SleepyCommon;
-using System.Collections;
 using System.Collections.Generic;
 using TransferManagerCE.Settings;
 using UnityEngine;
@@ -23,8 +22,16 @@ namespace TransferManagerCE.UI
         {
             base.Start();
             name = "OutsideConnectionPanel";
-            width = 780;
-            height = 540;
+            
+            // width / height
+            float fColumnWidth = 0;
+            foreach (float width in UIOutsideRow.ColumnWidths)
+            {
+                fColumnWidth += width;
+            }
+            width = fColumnWidth + 30;
+            height = 580;
+
             if (ModSettings.GetSettings().EnablePanelTransparency)
             {
                 opacity = 0.95f;
@@ -51,14 +58,17 @@ namespace TransferManagerCE.UI
             m_listConnections = ListView.Create<UIOutsideRow>(this, "ScrollbarTrack", 0.8f, width - 20f, height - m_title.height - 10);
             if (m_listConnections is not null)
             {
+                int iColumnIndex = 0;
                 m_listConnections.padding = new RectOffset(iMARGIN, iMARGIN, 4, iMARGIN);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_NAME, Localization.Get("listConnectionName"), "Name", UIOutsideRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_TYPE, Localization.Get("listConnectionType"), "Type", UIOutsideRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listConnectionPriority"), "Match Priority", UIOutsideRow.ColumnWidths[2], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_USAGE, Localization.Get("listConnectionUsage"), "% of busiest connection", UIOutsideRow.ColumnWidths[3], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_OWN, Localization.Get("listConnectionOwn"), "Own Vehicles", UIOutsideRow.ColumnWidths[4], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_GUEST, Localization.Get("listConnectionGuest"), "Guest Vehicles", UIOutsideRow.ColumnWidths[5], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_STUCK, Localization.Get("listConnectionStuck"), "Stuck Vehicles", UIOutsideRow.ColumnWidths[6], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_NAME, Localization.Get("listConnectionName"), "Name", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_TYPE, Localization.Get("listConnectionType"), "Type", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_INOUT, Localization.Get("listConnectionInOut"), "Type", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listConnectionCargoPriority"), "Match Cargo Priority", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_PRIORITY, Localization.Get("listConnectionCitizenPriority"), "Match Citizen Priority", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_USAGE, Localization.Get("listConnectionUsage"), "% of busiest connection", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_OWN, Localization.Get("listConnectionOwn"), "Own Vehicles", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_GUEST, Localization.Get("listConnectionGuest"), "Guest Vehicles", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                m_listConnections.AddColumn(ListViewRowComparer.Columns.COLUMN_STUCK, Localization.Get("listConnectionStuck"), "Stuck Vehicles", UIOutsideRow.ColumnWidths[iColumnIndex++], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
                 m_listConnections.Header.ResizeLastColumn();
             }
 

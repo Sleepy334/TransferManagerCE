@@ -12,17 +12,6 @@ namespace TransferManagerCE.Settings
     {
         private static HashSet<ushort> Empty = new HashSet<ushort>();
 
-        public static bool IsImprovedWarehouseMatching(ushort buildingId)
-        {
-            BuildingSettings? settings = BuildingSettingsStorage.GetSettings(buildingId);
-            if (settings is not null)
-            {
-                return settings.IsImprovedWarehouseMatching();
-            }
-
-            return SaveGameSettings.GetSettings().ImprovedWarehouseMatching;
-        }
-
         public static int ReserveCargoTrucksPercent(ushort buildingId)
         {
             BuildingSettings? settings = BuildingSettingsStorage.GetSettings(buildingId);
@@ -122,12 +111,12 @@ namespace TransferManagerCE.Settings
             return float.MaxValue;
         }
 
-        public static int GetEffectiveOutsidePriority(ushort buildingId)
+        public static int GetEffectiveOutsideCargoPriority(ushort buildingId)
         {
             BuildingSettings? settings = BuildingSettingsStorage.GetSettings(buildingId);
             if (settings is not null)
             {
-                int priority = settings.m_iOutsidePriority;
+                int priority = settings.m_iCargoOutsidePriority;
                 if (priority >= 0)
                 {
                     // Apply building multiplier
@@ -139,10 +128,35 @@ namespace TransferManagerCE.Settings
             BuildingTypeHelper.OutsideType eType = BuildingTypeHelper.GetOutsideConnectionType(buildingId);
             switch (eType)
             {
-                case BuildingTypeHelper.OutsideType.Ship: return SaveGameSettings.GetSettings().OutsideShipPriority;
-                case BuildingTypeHelper.OutsideType.Plane: return SaveGameSettings.GetSettings().OutsidePlanePriority;
-                case BuildingTypeHelper.OutsideType.Train: return SaveGameSettings.GetSettings().OutsideTrainPriority;
-                case BuildingTypeHelper.OutsideType.Road: return SaveGameSettings.GetSettings().OutsideRoadPriority;
+                case BuildingTypeHelper.OutsideType.Ship: return SaveGameSettings.GetSettings().OutsideShipCargoPriority;
+                case BuildingTypeHelper.OutsideType.Plane: return SaveGameSettings.GetSettings().OutsidePlaneCargoPriority;
+                case BuildingTypeHelper.OutsideType.Train: return SaveGameSettings.GetSettings().OutsideTrainCargoPriority;
+                case BuildingTypeHelper.OutsideType.Road: return SaveGameSettings.GetSettings().OutsideRoadCargoPriority;
+                default: return 1;
+            }
+        }
+
+        public static int GetEffectiveOutsideCitizenPriority(ushort buildingId)
+        {
+            BuildingSettings? settings = BuildingSettingsStorage.GetSettings(buildingId);
+            if (settings is not null)
+            {
+                int priority = settings.m_iCitizenOutsidePriority;
+                if (priority >= 0)
+                {
+                    // Apply building multiplier
+                    return priority;
+                }
+            }
+
+            // Apply global multiplier
+            BuildingTypeHelper.OutsideType eType = BuildingTypeHelper.GetOutsideConnectionType(buildingId);
+            switch (eType)
+            {
+                case BuildingTypeHelper.OutsideType.Ship: return SaveGameSettings.GetSettings().OutsideShipCitizenPriority;
+                case BuildingTypeHelper.OutsideType.Plane: return SaveGameSettings.GetSettings().OutsidePlaneCitizenPriority;
+                case BuildingTypeHelper.OutsideType.Train: return SaveGameSettings.GetSettings().OutsideTrainCitizenPriority;
+                case BuildingTypeHelper.OutsideType.Road: return SaveGameSettings.GetSettings().OutsideRoadCitizenPriority;
                 default: return 1;
             }
         }

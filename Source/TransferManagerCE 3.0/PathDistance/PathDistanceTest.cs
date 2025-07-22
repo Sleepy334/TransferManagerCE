@@ -51,6 +51,7 @@ namespace TransferManagerCE
             m_nodesExamined.Clear();
             m_chosenBuildingId = 0;
             m_chosenNodeId = 0;
+            CustomTransferReason.Reason reason = GetTransferReason(mode);
 
             // Set up lane requirements
             m_pathDistance.SetNetworkMode(mode);
@@ -58,7 +59,7 @@ namespace TransferManagerCE
             // Check it is still valid
             PathDistanceCache.UpdateCache(mode);
 
-            ushort uiStartNode = FindBuildingNode(CustomTransferReason.Reason.Goods, buildingId, bStartActive);
+            ushort uiStartNode = PathNode.FindBuildingNode(reason, buildingId, bStartActive);
             if (uiStartNode != 0)
             {
                 m_startNodeId = uiStartNode;
@@ -67,7 +68,7 @@ namespace TransferManagerCE
                 m_pathDistance.Candidates.Clear();
                 foreach (ushort candidateId in candidates)
                 {
-                    ushort nodeId = FindBuildingNode(CustomTransferReason.Reason.Goods, candidateId, !bStartActive);
+                    ushort nodeId = PathNode.FindBuildingNode(reason, candidateId, !bStartActive);
                     if (nodeId != 0 && PathConnectedCache.IsConnected(mode, m_startNodeId, nodeId))
                     {
                         m_pathDistance.Candidates.Add(nodeId, candidateId);
@@ -119,17 +120,6 @@ namespace TransferManagerCE
             }
 
             return chosenPath;
-        }
-
-        private static ushort FindBuildingNode(CustomTransferReason.Reason material, ushort buildingId, bool bActive)
-        {
-            ushort segmentId = PathNode.FindStartSegmentBuilding(buildingId, material);
-            if (segmentId != 0)
-            {
-                return PathNode.FindNearestNode(buildingId, segmentId, bActive);
-            }
-
-            return 0;
         }
     }
 }

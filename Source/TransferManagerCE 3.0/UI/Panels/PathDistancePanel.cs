@@ -46,7 +46,7 @@ namespace TransferManagerCE.UI
         private bool m_bShowConnectionGraph = false;
 
         // Path distance helper
-        PathDistanceTest m_pathDistanceTest = new PathDistanceTest();
+        private PathDistanceTest m_pathDistanceTest = new PathDistanceTest();
 
         private UIInfoLabel? m_infoLabel = null;
 
@@ -81,11 +81,31 @@ namespace TransferManagerCE.UI
             }
         }
 
+        public int Direction
+        {
+            get
+            {
+                return m_direction;
+            }
+        }
+
         public bool ShowConnectionGraph
         {
             get
             {
                 return m_bShowConnectionGraph;
+            }
+        }
+
+        public ushort Building
+        {
+            get
+            {
+                return m_buildingId;
+            }
+            set
+            {
+                SetBuilding(value);
             }
         }
 
@@ -468,7 +488,7 @@ namespace TransferManagerCE.UI
             // Building label
             if (m_buildingId != 0)
             {
-                m_lblStartBuilding.text = InstanceHelper.DescribeInstance(new InstanceID { Building = m_buildingId }, InstanceID.Empty, true);
+                m_lblStartBuilding.text = InstanceHelper.DescribeInstance(new InstanceID { Building = m_buildingId }, true, true);
             }
             else
             {
@@ -509,11 +529,12 @@ namespace TransferManagerCE.UI
                 m_btnSelectBuildings.text = Localization.Get("txtBuildings");
                 m_btnSelectBuildings.StateOn = false;
             }
+            m_btnClearBuildings.isEnabled = m_candidates.Count > 0;
 
             // Update results
             if (m_pathDistanceTest.ChosenBuildingId > 0)
             {
-                m_lblChosenCandidate.text = $"Chosen Candidate: {InstanceHelper.DescribeInstance(new InstanceID { Building = (ushort) m_pathDistanceTest.ChosenBuildingId }, InstanceID.Empty, true)}";
+                m_lblChosenCandidate.text = $"Chosen Candidate: {InstanceHelper.DescribeInstance(new InstanceID { Building = (ushort) m_pathDistanceTest.ChosenBuildingId }, true, true)}";
             }
             else
             {

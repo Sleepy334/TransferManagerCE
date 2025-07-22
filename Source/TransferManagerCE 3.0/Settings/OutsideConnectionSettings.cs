@@ -1,9 +1,5 @@
 ﻿using SleepyCommon;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using TransferManagerCE.Util;
 
 namespace TransferManagerCE.Settings
 {
@@ -59,7 +55,7 @@ namespace TransferManagerCE.Settings
         {
             if (string.IsNullOrEmpty(m_name))
             {
-                return CitiesUtils.GetBuildingName(buildingId, InstanceID.Empty); 
+                return CitiesUtils.GetBuildingName(buildingId, false, false); 
             }
             else
             {

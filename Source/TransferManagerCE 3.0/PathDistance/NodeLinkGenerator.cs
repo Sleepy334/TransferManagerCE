@@ -67,7 +67,7 @@ namespace TransferManagerCE
         {
             if (!m_nodes.Contains(nodeId))
             {
-                m_nodeLinks.Add(nodeId, fTravelTime, direction, false);
+                m_nodeLinks.Add(nodeId, fTravelTime, direction, 0); // Normal node
                 m_nodes.Add(nodeId);
             }
         }
@@ -248,9 +248,6 @@ namespace TransferManagerCE
 
         private bool GetSegmentInfo(ushort segmentId, NetSegment segment, out NetInfo.Direction direction, out float fTravelTime)
         {
-            bool bForwards = false;
-            bool bBackwards = false;
-
             fTravelTime = float.MaxValue;
             direction = NetInfo.Direction.None;
 
@@ -260,6 +257,9 @@ namespace TransferManagerCE
                 NetInfo info = segment.Info;
                 if (info is not null && IsSegmentNetInfoValid(segment))
                 {
+                    bool bForwards = false;
+                    bool bBackwards = false;
+
                     // Cargo Station adjustment.
                     float fCargoTravelTimeAdjustment = 0.0f;
                     if (m_bCargoPathAllowed && IsCargoStationPath(info.GetService(), info.GetAI()))

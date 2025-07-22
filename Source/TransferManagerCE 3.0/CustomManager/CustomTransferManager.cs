@@ -63,30 +63,36 @@ namespace TransferManagerCE.CustomManager
             m_DistanceAlgorithm = PathDistanceTypes.GetDistanceAlgorithm((CustomTransferReason.Reason)material);
 
             // Check we can actually use path distance and set up the path distance object
-            if (m_DistanceAlgorithm == PathDistanceAlgorithm.PathDistance)
+
+            if (m_DistanceAlgorithm != PathDistanceAlgorithm.LineOfSight)
             {
-                if (IsLargeMatchSet())
+                // We need these for path distance or connected line of sight
+                PathDistanceCache.UpdateCache(m_mode);
+                PathConnectedCache.UpdateCache(m_mode);
+
+                if (m_DistanceAlgorithm == PathDistanceAlgorithm.PathDistance)
                 {
-                    // Fall back on simpler algorithm as the match set is large
-                    m_DistanceAlgorithm = PathDistanceAlgorithm.LineOfSight;
-
-                    if (m_logFile is not null)
+                    if (IsLargeMatchSet())
                     {
-                        m_logFile.LogInfo("Large match set detected, path distance disabled.");
+                        // Fall back on simpler algorithm as the match set is large
+                        m_DistanceAlgorithm = PathDistanceAlgorithm.ConnectedLineOfSight;
+
+                        if (m_logFile is not null)
+                        {
+                            m_logFile.LogInfo("Large match set detected, path distance disabled.");
+                        }
                     }
-                }
-                else
-                {
-                    // Create path distance object if needed.
-                    if (m_pathDistance is null)
+                    else
                     {
-                        m_pathDistance = new PathDistance(false, true);
+                        // Create path distance object if needed.
+                        if (m_pathDistance is null)
+                        {
+                            m_pathDistance = new PathDistance(false, true);
+                        }
+
+                        // Set up lane requirements
+                        m_pathDistance.SetNetworkMode(m_mode);
                     }
-
-                    // Set up lane requirements
-                    m_pathDistance.SetNetworkMode(m_mode);
-
-                    PathDistanceCache.UpdateCache(m_mode);
                 }
             }
         }
@@ -145,7 +151,7 @@ namespace TransferManagerCE.CustomManager
                 }
 
                 // If FactoryFirst is set we match factories IN offers first, then
-                if (IsFactoryMaterial(job.material) && SaveGameSettings.GetSettings().FactoryFirst)
+                if (IsFactoryFirstMaterial(job.material) && SaveGameSettings.GetSettings().FactoryFirst)
                 {
                     // We match IN only first as matching OUT factories first can make some very bad matches
                     // Also disable LowPriority check as we always want the closest match
@@ -1222,15 +1228,15 @@ namespace TransferManagerCE.CustomManager
             if (m_bIsWarehouseMaterial)
             {
                 if ((incomingOffer.Unlimited || outgoingOffer.Unlimited) &&
-                (incomingOffer.IsWarehouseStation() || outgoingOffer.IsWarehouseStation()))
+                (incomingOffer.IsCargoWarehouse() || outgoingOffer.IsCargoWarehouse()))
                 {
-                    if (incomingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.CargoStation && outgoingOffer.Unlimited)
+                    if (incomingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.WarehouseTrain && outgoingOffer.Unlimited)
                     {
                         // It's an unlimited train connection so use warehouse amount capped at 15
                         deltaamount = Math.Min(incomingOffer.Amount, iTrainAmount);
                         return true;
                     }
-                    else if (incomingOffer.Unlimited && outgoingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.CargoStation)
+                    else if (incomingOffer.Unlimited && outgoingOffer.GetWarehouseStationOffer() == CustomTransferOffer.WarehouseStationOffer.WarehouseTrain)
                     {
                         // It's an unlimited train connection so use warehouse amount capped at 15
                         deltaamount = Math.Min(outgoingOffer.Amount, iTrainAmount);

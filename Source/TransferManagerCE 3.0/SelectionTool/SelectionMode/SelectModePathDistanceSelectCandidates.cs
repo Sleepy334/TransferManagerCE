@@ -4,14 +4,37 @@ using TransferManagerCE.UI;
 using UnityEngine;
 using UnityEngine.Networking.Types;
 using SleepyCommon;
+using static RenderManager;
 
 namespace TransferManagerCE
 {
     public class SelectionModeSelectCandidates : SelectionModeSelectBuildings
     {
+        // ----------------------------------------------------------------------------------------
         public SelectionModeSelectCandidates(SelectionTool tool) :
             base(tool)
         {
+        }
+
+        // ----------------------------------------------------------------------------------------
+        public override void RenderOverlay(CameraInfo cameraInfo)
+        {
+            base.RenderOverlay(cameraInfo);
+
+            // Now highlight nodes as well
+            NetNode[] NodeBuffer = NetManager.instance.m_nodes.m_buffer;
+
+            CustomTransferReason.Reason material = NetworkModeHelper.GetTransferReason(PathDistancePanel.Instance.Algorithm);
+            bool bStartActive = (PathDistancePanel.Instance.Direction == 0);
+
+            foreach (ushort buildingId in m_buildings)
+            {
+                ushort nodeId = PathNode.FindBuildingNode(material, buildingId, bStartActive);
+                if (nodeId != 0)
+                {
+                    RendererUtils.HighlightNode(cameraInfo, NodeBuffer[nodeId], KnownColor.magenta);
+                }
+            }
         }
 
         // ----------------------------------------------------------------------------------------
@@ -37,15 +60,7 @@ namespace TransferManagerCE
         {
             if (HoverInstance.Building != 0)
             {
-                // Add or remove building
-                if (m_buildings.Contains(HoverInstance.Building))
-                {
-                    m_buildings.Remove(HoverInstance.Building);
-                }
-                else
-                {
-                    m_buildings.Add(HoverInstance.Building);
-                }
+                SelectBuilding(HoverInstance.Building);
 
                 // Update tab to reflect selected building
                 PathDistancePanel.Instance.SetCandidates(m_buildings);
@@ -65,8 +80,14 @@ namespace TransferManagerCE
             sText += "\n";
             sText += $"<color #FFFFFF>{Localization.Get("txtCandidates")}: {m_buildings.Count}</color>\n";
 
-            // Actual buildings
-            sText += base.GetTooltipText2();
+            CustomTransferReason.Reason material = NetworkModeHelper.GetTransferReason(PathDistancePanel.Instance.Algorithm);
+            bool bStartActive = (PathDistancePanel.Instance.Direction == 0);
+
+            // Now describe buildings
+            foreach (ushort buildingId in m_buildings)
+            {
+                sText += $"{CitiesUtils.GetBuildingName(buildingId, true, true)} | Node: {PathNode.FindBuildingNode(material, buildingId, bStartActive)}\n";
+            }
 
             return sText;
         }

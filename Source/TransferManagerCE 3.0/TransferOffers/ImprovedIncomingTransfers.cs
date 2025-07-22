@@ -283,7 +283,7 @@ namespace TransferManagerCE
         private static bool ImprovedWarehouseMatchingIncoming(Building[] Buildings, ref TransferOffer offer)
         {
             // If its a cargo warehouse offer then we need to get the parent warehouse
-            ushort buildingId = CustomTransferOffer.GetTopMostParentBuilding(offer.Building);
+            ushort buildingId = WarehouseUtils.GetWarehouseBuildingId(offer.Building);
 
             Building building = Buildings[buildingId];
             if (building.m_flags != 0 && building.Info is not null)
@@ -292,7 +292,7 @@ namespace TransferManagerCE
                 if (warehouse is not null)
                 {
                     // It's a warehouse, set the priority based on storage level
-                    if (BuildingSettingsFast.IsImprovedWarehouseMatching(buildingId))
+                    if (SaveGameSettings.GetSettings().ImprovedWarehouseMatching)
                     {
                         // Get warehouse mode.
                         WarehouseMode mode = WarehouseUtils.GetWarehouseMode(building);

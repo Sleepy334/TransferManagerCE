@@ -1,4 +1,5 @@
-﻿using TransferManagerCE.TransferRules;
+﻿using SleepyCommon;
+using TransferManagerCE.TransferRules;
 using UnityEngine;
 
 namespace TransferManagerCE.CustomManager
@@ -226,6 +227,7 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Petrol:
                 case CustomTransferReason.Reason.Food:
                 case CustomTransferReason.Reason.Lumber:
+
                 case CustomTransferReason.Reason.Flours:
                 case CustomTransferReason.Reason.Paper:
                 case CustomTransferReason.Reason.PlanedTimber:
@@ -234,6 +236,7 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Glass:
                 case CustomTransferReason.Reason.Metals:
                 case CustomTransferReason.Reason.AnimalProducts:
+
                 case CustomTransferReason.Reason.Goods:
                 case CustomTransferReason.Reason.LuxuryProducts:
                 case CustomTransferReason.Reason.Fish:
@@ -244,7 +247,7 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static bool IsFactoryMaterial(CustomTransferReason.Reason material)
+        public static bool IsFactoryFirstMaterial(CustomTransferReason.Reason material)
         {
             switch (material)
             {
@@ -335,7 +338,7 @@ namespace TransferManagerCE.CustomManager
             }
         }
 
-        public static Color GetTransferReasonColor(CustomTransferReason.Reason material)
+        public static SleepyCommon.KnownColor GetTransferReasonColor(CustomTransferReason.Reason material)
         {
             switch (material)
             {
@@ -368,7 +371,7 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.EvacuateVipB:
                 case CustomTransferReason.Reason.EvacuateVipC:
                 case CustomTransferReason.Reason.EvacuateVipD:
-                    return Color.magenta;
+                    return KnownColor.magenta;
 
                 case CustomTransferReason.Reason.Oil:
                 case CustomTransferReason.Reason.Ore:
@@ -386,22 +389,24 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Glass:
                 case CustomTransferReason.Reason.Metals:
                 case CustomTransferReason.Reason.AnimalProducts:
-                    return Color.cyan;
+                    return KnownColor.cyan;
 
                 case CustomTransferReason.Reason.Goods:
                 case CustomTransferReason.Reason.LuxuryProducts:
                 case CustomTransferReason.Reason.Fish:
-                    return Color.blue;
+                    return KnownColor.blue;
 
                 case CustomTransferReason.Reason.Mail:
                 case CustomTransferReason.Reason.Mail2:
+                    return KnownColor.green;
+
                 case CustomTransferReason.Reason.SortedMail:
                 case CustomTransferReason.Reason.UnsortedMail:
                 case CustomTransferReason.Reason.IncomingMail:
                 case CustomTransferReason.Reason.OutgoingMail:
-                    return Color.green;
+                    return KnownColor.lightGreen;
 
-                default: return Color.yellow;
+                default: return KnownColor.yellow;
             }
         }
 

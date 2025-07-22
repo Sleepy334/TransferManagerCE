@@ -39,12 +39,19 @@ namespace TransferManagerCE.UI
 
         public override bool ShowTab()
         {
-            if (m_buildingId  == 0)
+            if (m_buildingId == 0)
             {
                 return false;
             }
 
-            return BuildingVehicleCount.GetVehicleTypeCount(m_eBuildingType, m_buildingId) > 0;
+            if (BuildingVehicleCount.GetVehicleTypeCount(m_eBuildingType, m_buildingId) > 0)
+            {
+                return true;
+            }
+
+            // Check the actual vehicle array as well
+            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
+            return building.m_ownVehicles != 0;
         }
 
         public void UpdateTabWidth(UITabStrip tabStrip, ushort buildingId)

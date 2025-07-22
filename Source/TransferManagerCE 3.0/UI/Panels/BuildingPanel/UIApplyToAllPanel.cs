@@ -67,7 +67,7 @@ namespace TransferManagerCE.UI
         {
             if (BuildingPanel.Exists)
             {
-                return BuildingPanel.Instance.GetBuildingId();
+                return BuildingPanel.Instance.Building;
             }
             return 0;
         }

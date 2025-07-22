@@ -10,6 +10,14 @@ namespace TransferManagerCE
 {
     public class TransferManagerUtils
     {
+        public enum OutsideConnectionDirection
+        {
+            None,
+            Both,
+            In,
+            Out,
+        }
+
         public static string GetDistanceKm(CustomTransferOffer offer1, CustomTransferOffer offer2)
         {
             return (Math.Sqrt(Vector3.SqrMagnitude(offer1.Position - offer2.Position)) * 0.001).ToString("00.000");
@@ -23,7 +31,7 @@ namespace TransferManagerCE
             stringBuilder.Append(offer.IsIncoming() ? "IN  | " : "OUT | ");
 
             // Describe object
-            string sMessage = InstanceHelper.DescribeInstance(offer.m_object, InstanceID.Empty, true);
+            string sMessage = InstanceHelper.DescribeInstance(offer.m_object, true, true);
             if (bAlign)
             {
                 sMessage = SleepyCommon.Utils.PadToWidth(sMessage, 60, false);
@@ -88,6 +96,8 @@ namespace TransferManagerCE
                         stringBuilder.Append($" | OT:   ");
                     }
                 }
+
+                stringBuilder.Append($" | Transport: {SleepyCommon.Utils.PadToWidth(offer.GetTransportType().ToString(), 6)}");
             }
             else
             {
@@ -143,12 +153,12 @@ namespace TransferManagerCE
                             {
                                 if (offer.Citizen != 0)
                                 {
-                                    int iHealth = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen].m_health;
-                                    stringBuilder.Append($" | Health:{iHealth.ToString("000")}");
+                                    Citizen citizen = Singleton<CitizenManager>.instance.m_citizens.m_buffer[offer.Citizen];
+                                    stringBuilder.Append($" | Age: {citizen.m_age.ToString("000")} | Health:{citizen.m_health.ToString("000")}");
                                 }
                                 else
                                 {
-                                    stringBuilder.Append($" | Health:   ");
+                                    stringBuilder.Append($" | Age:     | Health:   ");
                                 }
                             }
                             break;
@@ -252,7 +262,8 @@ namespace TransferManagerCE
 
             if (offer.IsOutside())
             {
-                stringBuilder.Append($" | OutsidePriority: {offer.GetEffectiveOutsidePriority()}");
+                stringBuilder.Append($" | OutsideCargoPriorityFactor: {offer.GetEffectiveOutsideCargoPriorityFactor()}");
+                stringBuilder.Append($" | OutsideCitizenPriorityFactor: {offer.GetEffectiveOutsideCitizenPriorityFactor()}");
             }
 
             return stringBuilder.ToString();
@@ -265,6 +276,7 @@ namespace TransferManagerCE
             {
                 ref Building building = ref BuildingManager.instance.m_buildings.m_buffer[offer.Building];
                 if (building.m_accessSegment == 0 &&
+                    (building.m_flags & Building.Flags.RoadAccessFailed) == 0 &&
                     (building.m_problems & new Notification.ProblemStruct(Notification.Problem1.RoadNotConnected, Notification.Problem2.NotInPedestrianZone)).IsNone &&
                     building.Info.GetAI() is not OutsideConnectionAI)
                 {
@@ -276,6 +288,26 @@ namespace TransferManagerCE
                     }
                 }
             }
+        }
+
+        public static OutsideConnectionDirection GetOutsideConnectionDirection(ushort buildingId)
+        {
+            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+
+            if ((building.m_flags & Building.Flags.Incoming) != 0 && (building.m_flags & Building.Flags.Outgoing) != 0)
+            {
+                return OutsideConnectionDirection.Both;
+            }
+            else if ((building.m_flags & Building.Flags.Incoming) != 0)
+            {
+                return OutsideConnectionDirection.Out; // Incoming means towards the OC. So OUT from the cities perspective
+            }
+            else if ((building.m_flags & Building.Flags.Outgoing) != 0)
+            {
+                return OutsideConnectionDirection.In;  // Outgoing means towards the City. So IN from the cities perspective
+            }
+
+            return OutsideConnectionDirection.None;
         }
     }
 }

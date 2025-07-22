@@ -77,7 +77,7 @@ namespace TransferManagerCE
                     case BuildingType.PoliceStation:
                     case BuildingType.MedicalHelicopterDepot:
                     case BuildingType.PoliceHelicopterDepot:
-                    case BuildingType.WarehouseStation:
+                    case BuildingType.CargoWarehouse:
                     case BuildingType.FishHarbor:
                     case BuildingType.Hospital:
                     case BuildingType.UniversityHospital:
@@ -130,7 +130,7 @@ namespace TransferManagerCE
                     {
                         return GetVehicleCount(TransferReason.Fish, buildingId, building, iType);
                     }
-                case BuildingType.WarehouseStation:
+                case BuildingType.CargoWarehouse:
                     {
                         if (iType == 0)
                         {
@@ -353,7 +353,7 @@ namespace TransferManagerCE
                         }
                         break;
                     }
-                case BuildingType.WarehouseStation:
+                case BuildingType.CargoWarehouse:
                 case BuildingType.Warehouse:
                     {
                         if (iVehicleType == 0)

@@ -9,7 +9,9 @@ namespace TransferManagerCE.UI
     {
         private UILabel? m_lblName = null;
         private UILabel? m_lblType = null;
-        private UILabel? m_lblPriority = null;
+        private UILabel? m_lblInOut = null;
+        private UILabel? m_lblCargoPriority = null;
+        private UILabel? m_lblCitizenPriority = null;
         private UILabel? m_lblUsage = null;
         private UILabel? m_lblOwn = null;
         private UILabel? m_lblStuck = null;
@@ -19,7 +21,9 @@ namespace TransferManagerCE.UI
         {
             200, // Name
             60, // Type
-            80, // Multiplier
+            60, // In / Out
+            60, // Prioriity
+            60, // Prioriity
             80, // Usage
             100, // Own
             100, // Guest
@@ -32,6 +36,8 @@ namespace TransferManagerCE.UI
             base.Start();
             fullRowSelect = true;
 
+            int iColumnIndex = 0;
+
             m_lblName = AddUIComponent<UILabel>();
             if (m_lblName is not null)
             {
@@ -43,7 +49,7 @@ namespace TransferManagerCE.UI
                 m_lblName.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblName.autoSize = false;
                 m_lblName.height = height;
-                m_lblName.width = ColumnWidths[0];
+                m_lblName.width = ColumnWidths[iColumnIndex++];
             }
 
             m_lblType = AddUIComponent<UILabel>();
@@ -57,21 +63,49 @@ namespace TransferManagerCE.UI
                 m_lblType.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblType.autoSize = false;
                 m_lblType.height = height;
-                m_lblType.width = ColumnWidths[1];
+                m_lblType.width = ColumnWidths[iColumnIndex++];
             }
 
-            m_lblPriority = AddUIComponent<UILabel>();
-            if (m_lblPriority is not null)
+            m_lblInOut = AddUIComponent<UILabel>();
+            if (m_lblInOut is not null)
             {
-                m_lblPriority.name = "m_lblPriority";
-                m_lblPriority.text = "";
-                m_lblPriority.textScale = BuildingPanel.fTEXT_SCALE;
-                m_lblPriority.tooltip = "";
-                m_lblPriority.textAlignment = UIHorizontalAlignment.Center;
-                m_lblPriority.verticalAlignment = UIVerticalAlignment.Middle;
-                m_lblPriority.autoSize = false;
-                m_lblPriority.height = height;
-                m_lblPriority.width = ColumnWidths[2];
+                m_lblInOut.name = "m_lblInOut";
+                m_lblInOut.text = "";
+                m_lblInOut.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblInOut.tooltip = "";
+                m_lblInOut.textAlignment = UIHorizontalAlignment.Center;
+                m_lblInOut.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblInOut.autoSize = false;
+                m_lblInOut.height = height;
+                m_lblInOut.width = ColumnWidths[iColumnIndex++];
+            }
+
+            m_lblCargoPriority = AddUIComponent<UILabel>();
+            if (m_lblCargoPriority is not null)
+            {
+                m_lblCargoPriority.name = "m_lblCargoPriority";
+                m_lblCargoPriority.text = "";
+                m_lblCargoPriority.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblCargoPriority.tooltip = "";
+                m_lblCargoPriority.textAlignment = UIHorizontalAlignment.Center;
+                m_lblCargoPriority.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblCargoPriority.autoSize = false;
+                m_lblCargoPriority.height = height;
+                m_lblCargoPriority.width = ColumnWidths[iColumnIndex++];
+            }
+
+            m_lblCitizenPriority = AddUIComponent<UILabel>();
+            if (m_lblCitizenPriority is not null)
+            {
+                m_lblCitizenPriority.name = "m_lblCitizenPriority";
+                m_lblCitizenPriority.text = "";
+                m_lblCitizenPriority.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblCitizenPriority.tooltip = "";
+                m_lblCitizenPriority.textAlignment = UIHorizontalAlignment.Center;
+                m_lblCitizenPriority.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblCitizenPriority.autoSize = false;
+                m_lblCitizenPriority.height = height;
+                m_lblCitizenPriority.width = ColumnWidths[iColumnIndex++];
             }
 
             m_lblUsage = AddUIComponent<UILabel>();
@@ -85,7 +119,7 @@ namespace TransferManagerCE.UI
                 m_lblUsage.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblUsage.autoSize = false;
                 m_lblUsage.height = height;
-                m_lblUsage.width = ColumnWidths[3];
+                m_lblUsage.width = ColumnWidths[iColumnIndex++];
             }
 
             m_lblOwn = AddUIComponent<UILabel>();
@@ -99,7 +133,7 @@ namespace TransferManagerCE.UI
                 m_lblOwn.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblOwn.autoSize = false;
                 m_lblOwn.height = height;
-                m_lblOwn.width = ColumnWidths[4];
+                m_lblOwn.width = ColumnWidths[iColumnIndex++];
             }
 
             m_lblGuest = AddUIComponent<UILabel>();
@@ -113,7 +147,7 @@ namespace TransferManagerCE.UI
                 m_lblGuest.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblGuest.autoSize = false;
                 m_lblGuest.height = height;
-                m_lblGuest.width = ColumnWidths[5];
+                m_lblGuest.width = ColumnWidths[iColumnIndex++];
             }
 
             m_lblStuck = AddUIComponent<UILabel>();
@@ -127,7 +161,7 @@ namespace TransferManagerCE.UI
                 m_lblStuck.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblStuck.autoSize = false;
                 m_lblStuck.height = height;
-                m_lblStuck.width = ColumnWidths[6];
+                m_lblStuck.width = ColumnWidths[iColumnIndex++];
             }
 
             AfterStart();
@@ -137,7 +171,9 @@ namespace TransferManagerCE.UI
         {
             m_lblName.text = data.GetName();
             m_lblType.text = data.m_eType.ToString();
-            m_lblPriority.text = $"{BuildingSettingsFast.GetEffectiveOutsidePriority(data.m_buildingId)}%";
+            m_lblInOut.text = data.GetDirection();
+            m_lblCargoPriority.text = $"{BuildingSettingsFast.GetEffectiveOutsideCargoPriority(data.m_buildingId)}%";
+            m_lblCitizenPriority.text = $"{BuildingSettingsFast.GetEffectiveOutsideCitizenPriority(data.m_buildingId)}%";
             m_lblUsage.text = data.GetUsage();
             m_lblOwn.text = data.m_ownCount.ToString();
             m_lblGuest.text = data.m_guestCount.ToString();
@@ -146,24 +182,24 @@ namespace TransferManagerCE.UI
 
         protected override void Clear()
         {
-            m_lblName.text = "";
-            m_lblType.text = "";
-            m_lblPriority.text = "";
-            m_lblUsage.text = "";
-            m_lblOwn.text = "";
-            m_lblGuest.text = "";
-            m_lblStuck.text = "";
+            foreach (UIComponent component in components)
+            {
+                if (component is UILabel label)
+                {
+                    label.text = "";
+                }
+            }
         }
 
         protected override void ClearTooltips()
         {
-            m_lblName.tooltip = "";
-            m_lblType.tooltip = "";
-            m_lblPriority.tooltip = "";
-            m_lblUsage.tooltip = "";
-            m_lblOwn.tooltip = "";
-            m_lblGuest.tooltip = "";
-            m_lblStuck.tooltip = "";
+            foreach (UIComponent component in components)
+            {
+                if (component is UILabel label)
+                {
+                    label.tooltip = "";
+                }
+            }
         }
 
         protected override void OnClicked(UIComponent component)
@@ -181,7 +217,7 @@ namespace TransferManagerCE.UI
 
         protected override string GetTooltipText(UIComponent component)
         {
-            return $"Connection #{GetIndex(data.m_buildingId)} | {InstanceHelper.DescribeInstance(new InstanceID() { Building = data.m_buildingId }, InstanceID.Empty, true)}";
+            return $"Connection #{GetIndex(data.m_buildingId)} | {CitiesUtils.GetBuildingName(data.m_buildingId, true, true)}";
         }
 
         protected override Color GetTextColor(UIComponent component, bool hightlightRow)

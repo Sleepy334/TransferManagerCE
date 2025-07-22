@@ -32,7 +32,7 @@ namespace TransferManagerCE
             // Highlight net nodes
             if (BuildingPanel.IsVisible() && Input.GetKey(KeyCode.LeftControl)) 
             {
-                ushort usSourceBuildingId = BuildingPanel.Instance.GetBuildingId();
+                ushort usSourceBuildingId = BuildingPanel.Instance.Building;
                 if (usSourceBuildingId != 0)
                 {
                     Building[] BuildingBuffer = BuildingManager.instance.m_buildings.m_buffer;
@@ -96,7 +96,7 @@ namespace TransferManagerCE
             {
                 if (HoverInstance.Index != 0)
                 {
-                    sTooltip += InstanceHelper.DescribeInstance(HoverInstance, InstanceID.Empty, true);
+                    sTooltip += InstanceHelper.DescribeInstance(HoverInstance, true, true);
 
                     if (HoverInstance.Building != 0)
                     {

@@ -15,7 +15,7 @@ namespace TransferManagerCE
             ConnectedLineOfSight = 1,
             PathDistance = 2
         }
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 37;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 38;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
@@ -40,14 +40,20 @@ namespace TransferManagerCE
         public bool WarehouseFirst = false;
         public bool ImprovedWarehouseMatching = false;
         public bool WarehouseSmartImportExport = false;
-        public bool NewInterWarehouseTransfer = false;
+        public bool InterWarehouseTransfer = false;
         public int WarehouseReserveTrucksPercent = 20; // [0..100]
 
         // Outside connections
-        public int OutsideShipPriority = 100;
-        public int OutsidePlanePriority = 100;
-        public int OutsideTrainPriority = 100;
-        public int OutsideRoadPriority = 100;
+        public int OutsideShipCargoPriority = 100;
+        public int OutsidePlaneCargoPriority = 100;
+        public int OutsideTrainCargoPriority = 100;
+        public int OutsideRoadCargoPriority = 100;
+
+        public int OutsideShipCitizenPriority = 100;
+        public int OutsidePlaneCitizenPriority = 100;
+        public int OutsideTrainCitizenPriority = 100;
+        public int OutsideRoadCitizenPriority = 100;
+
         public int ExportVehicleLimit = 100; // OFF by default
 
         // Services
@@ -74,13 +80,12 @@ namespace TransferManagerCE
         public int MainBuildingMaxMail = 2000; // vanilla = 2000
         public bool MainBuildingPostTruck = true;
 
-
-        
         // Arrays
         private Dictionary<CustomTransferReason.Reason, int> m_ActiveDistanceRestrictions = new Dictionary<CustomTransferReason.Reason, int>();
         private HashSet<CustomTransferReason.Reason> m_ImportRestricted = new HashSet<CustomTransferReason.Reason>();
         private HashSet<CustomTransferReason.Reason> m_WarehouseImportRestricted = new HashSet<CustomTransferReason.Reason>();
         
+        // ----------------------------------------------------------------------------------------
         public SaveGameSettings()
         {
         }
@@ -187,10 +192,15 @@ namespace TransferManagerCE
             StorageData.WriteBool(ImprovedWarehouseMatching, Data); // Version 16
 
             // Import/Export
-            StorageData.WriteInt32(OutsideShipPriority, Data);
-            StorageData.WriteInt32(OutsidePlanePriority, Data);
-            StorageData.WriteInt32(OutsideTrainPriority, Data);
-            StorageData.WriteInt32(OutsideRoadPriority, Data);
+            StorageData.WriteInt32(OutsideShipCargoPriority, Data);
+            StorageData.WriteInt32(OutsidePlaneCargoPriority, Data);
+            StorageData.WriteInt32(OutsideTrainCargoPriority, Data);
+            StorageData.WriteInt32(OutsideRoadCargoPriority, Data);
+
+            StorageData.WriteInt32(OutsideShipCitizenPriority, Data);
+            StorageData.WriteInt32(OutsidePlaneCitizenPriority, Data);
+            StorageData.WriteInt32(OutsideTrainCitizenPriority, Data);
+            StorageData.WriteInt32(OutsideRoadCitizenPriority, Data);
 
             // Services
             StorageData.WriteBool(PreferLocalService, Data);
@@ -221,7 +231,7 @@ namespace TransferManagerCE
             }
 
             StorageData.WriteInt32(ExportVehicleLimit, Data); // New in 17
-            StorageData.WriteBool(NewInterWarehouseTransfer, Data); // Re-introduced in 18
+            StorageData.WriteBool(InterWarehouseTransfer, Data); // Re-introduced in 18
             StorageData.WriteBool(OverrideGenericIndustriesHandler, Data); // Introduced in 19
             StorageData.WriteBool(EnablePathFailExclusion, Data); // Introduced in 20
             StorageData.WriteBool(ImprovedMailTransfers, Data); // Introduced in 21
@@ -328,10 +338,10 @@ namespace TransferManagerCE
             // Import/Export
             if (iDataVersion >= 35)
             {
-                OutsideShipPriority = StorageData.ReadInt32(Data, ref iIndex);
-                OutsidePlanePriority = StorageData.ReadInt32(Data, ref iIndex);
-                OutsideTrainPriority = StorageData.ReadInt32(Data, ref iIndex);
-                OutsideRoadPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsideShipCargoPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsidePlaneCargoPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsideTrainCargoPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsideRoadCargoPriority = StorageData.ReadInt32(Data, ref iIndex);
             }
             else
             {
@@ -341,7 +351,15 @@ namespace TransferManagerCE
                 int OutsideTrainMultiplier = StorageData.ReadInt32(Data, ref iIndex);
                 int OutsideRoadMultiplier = StorageData.ReadInt32(Data, ref iIndex);
             }
-                
+
+            if (iDataVersion >= 38)
+            {
+                OutsideShipCitizenPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsidePlaneCitizenPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsideTrainCitizenPriority = StorageData.ReadInt32(Data, ref iIndex);
+                OutsideRoadCitizenPriority = StorageData.ReadInt32(Data, ref iIndex);
+            }
+
             // Services
             PreferLocalService = StorageData.ReadBool(Data, ref iIndex);
             ImprovedCrimeMatching = StorageData.ReadBool(Data, ref iIndex);
@@ -378,7 +396,7 @@ namespace TransferManagerCE
             }
             if (iDataVersion >= 18)
             {
-                NewInterWarehouseTransfer = StorageData.ReadBool(Data, ref iIndex); // Re-introduced in 18
+                InterWarehouseTransfer = StorageData.ReadBool(Data, ref iIndex); // Re-introduced in 18
             }
             if (iDataVersion >= 19)
             {
@@ -527,7 +545,7 @@ namespace TransferManagerCE
         private void LoadDataVersion8(byte[] Data, ref int iIndex)
         {
             LoadDataVersion7(Data, ref iIndex);
-            NewInterWarehouseTransfer = StorageData.ReadBool(Data, ref iIndex); // No longer used
+            InterWarehouseTransfer = StorageData.ReadBool(Data, ref iIndex);
         }
 
         private void LoadDataVersion7(byte[] Data, ref int iIndex)
@@ -709,10 +727,16 @@ namespace TransferManagerCE
             sMessage += "WarehouseReserveTrucks: " + WarehouseReserveTrucksPercent + "\r\n";
             
             // Import / Export
-            sMessage += "ShipPriority: " + OutsideShipPriority + "\r\n";
-            sMessage += "PlanePriority: " + OutsidePlanePriority + "\r\n";
-            sMessage += "TrainPriority: " + OutsideTrainPriority + "\r\n";
-            sMessage += "RoadPriority: " + OutsideRoadPriority + "\r\n";
+            sMessage += "ShipCargoPriority: " + OutsideShipCargoPriority + "\r\n";
+            sMessage += "PlaneCargoPriority: " + OutsidePlaneCargoPriority + "\r\n";
+            sMessage += "TrainCargoPriority: " + OutsideTrainCargoPriority + "\r\n";
+            sMessage += "RoadCargoPriority: " + OutsideRoadCargoPriority + "\r\n";
+
+            sMessage += "ShipCitizenPriority: " + OutsideShipCitizenPriority + "\r\n";
+            sMessage += "PlaneCitizenPriority: " + OutsidePlaneCitizenPriority + "\r\n";
+            sMessage += "TrainCitizenPriority: " + OutsideTrainCitizenPriority + "\r\n";
+            sMessage += "RoadCitizenPriority: " + OutsideRoadCitizenPriority + "\r\n";
+
             sMessage += "ExportVehicleLimit: " + ExportVehicleLimit + "\r\n";
 
             // Services

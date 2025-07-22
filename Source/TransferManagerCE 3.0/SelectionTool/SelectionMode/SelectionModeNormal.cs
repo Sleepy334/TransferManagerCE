@@ -63,13 +63,44 @@ namespace TransferManagerCE
 
         public override void OnSelectBuilding(ushort buildingId)
         {
-            // Open building panel
-            BuildingPanel.Instance.ShowPanel(buildingId);
+            if (BuildingPanel.Instance.Building == 0)
+            {
+                BuildingPanel.Instance.Building = buildingId;
+                BuildingPanel.Instance.Show();
+            }
+            else if (BuildingPanel.Instance.Building == buildingId)
+            {
+                // Toggle parent / sub buildings.
+                Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+
+                if (building.m_subBuilding != 0)
+                {
+                    // Select sub building
+                    BuildingPanel.Instance.Building = building.m_subBuilding;
+                    BuildingPanel.Instance.Show();
+                }
+                else if (building.m_parentBuilding != 0)
+                {
+                    // Select parent building
+                    BuildingPanel.Instance.Building = building.m_parentBuilding;
+                    BuildingPanel.Instance.Show();
+                }
+                else
+                {
+                    BuildingPanel.Instance.Building = buildingId;
+                    BuildingPanel.Instance.Show();
+                }
+            }
+            else
+            {
+                BuildingPanel.Instance.Building = buildingId;
+                BuildingPanel.Instance.Show();
+            }
         }
 
         public override void UpdateSelection()
         {
-            if (BuildingPanel.IsVisible() && BuildingPanel.Instance.GetBuildingId() != 0)
+            if (BuildingPanel.IsVisible() && BuildingPanel.Instance.Building != 0)
             {
                 m_highlightBuildings.LoadMatches();
             }
@@ -83,7 +114,7 @@ namespace TransferManagerCE
             {
                 if (HoverInstance.Index != 0)
                 {
-                    sTooltip += InstanceHelper.DescribeInstance(HoverInstance, InstanceID.Empty, true);
+                    sTooltip += InstanceHelper.DescribeInstance(HoverInstance, true, true);
 
                     if (HoverInstance.Building != 0)
                     {

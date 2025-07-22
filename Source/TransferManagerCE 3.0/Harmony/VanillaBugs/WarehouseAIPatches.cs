@@ -30,7 +30,6 @@ namespace TransferManagerCE
 
         [HarmonyPatch(typeof(WarehouseAI), "ProduceGoods")]
         [HarmonyTranspiler]
-        //[HarmonyDebug]
         public static IEnumerable<CodeInstruction> WarehouseProduceGoodsTranspiler(ILGenerator generator, IEnumerable<CodeInstruction> instructions)
         {
             bool bRemoveEmptyWarehouseLimit = ModSettings.GetSettings().RemoveEmptyWarehouseLimit;
@@ -43,7 +42,7 @@ namespace TransferManagerCE
             MethodInfo methodRandomizer = AccessTools.Method(typeof(ColossalFramework.Math.Randomizer), nameof(UInt32), new Type[] { typeof(uint) });
             bool bPatchedRandomizerCall = false;
             bool bPatchedEmptyWarehouseTruckLimit = false;
-            bool bPatchedEmptyWarehouseLimit = false;
+            int iPatchedEmptyWarehouseLimit = 0;
             int iDowngradeCallCount = 0;
 
             // Instruction enumerator.
@@ -90,11 +89,15 @@ namespace TransferManagerCE
                     // This makes no sense so we disable the check by setting the float to 1.0 (100%) instead of 0.2 (20%)
                     // We just change all instances to 1.0f as both times it is used make no sense.
                     // if ((float)num < (float)m_storageCapacity * 0.2f)
-                    if (!bPatchedEmptyWarehouseLimit && instruction.opcode == OpCodes.Ldc_R4 && (float)instruction.operand == 0.2f)
+                    if (iPatchedEmptyWarehouseLimit < 2 && instruction.opcode == OpCodes.Ldc_R4 && (float)instruction.operand == 0.2f)
                     {
-                        instruction.operand = 1.0f;
-                        bPatchedEmptyWarehouseLimit = true;
-                        CDebug.Log($"WarehouseProduceGoodsTranspiler - Removed 'Empty' mode warehouse 20% limit", false);
+                        iPatchedEmptyWarehouseLimit++;
+
+                        if (iPatchedEmptyWarehouseLimit == 2)
+                        {
+                            instruction.operand = 1.0f;
+                            CDebug.Log($"WarehouseProduceGoodsTranspiler - Removed 'Empty' mode warehouse 20% limit", false);
+                        }
                     }
                 }
 

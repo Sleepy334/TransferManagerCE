@@ -37,7 +37,7 @@ namespace TransferManagerCE
                         NodeLink link = links[j];
                         float fTravelTime = link.m_fTravelTime;
                         int iNodeCount = 1;
-                        FollowMiddleNodes(startNodeId, startNodeId, link.m_nodeId, link.m_direction, ref fTravelTime, ref iNodeCount);
+                        FollowMiddleNodes(startNodeId, link.m_nodeId, startNodeId, link.m_nodeId, link.m_direction, ref fTravelTime, ref iNodeCount);
                     }
                 }
             }
@@ -49,9 +49,9 @@ namespace TransferManagerCE
             }
         }
 
-        public void FollowMiddleNodes(ushort startNodeId, ushort prevNode, ushort nodeId, NetInfo.Direction direction, ref float fTravelTime, ref int iNodeCount)
+        public void FollowMiddleNodes(ushort startNodeId, ushort firstNode, ushort prevNode, ushort cuurentNodeId, NetInfo.Direction direction, ref float fTravelTime, ref int iNodeCount)
         {
-            if (m_data.TryGetValue(nodeId, out NodeLinkData linkData))
+            if (m_data.TryGetValue(cuurentNodeId, out NodeLinkData linkData))
             {
                 if (linkData.Count == 2)
                 {
@@ -64,7 +64,7 @@ namespace TransferManagerCE
                         {
                             fTravelTime += link.m_fTravelTime;
                             iNodeCount++;
-                            FollowMiddleNodes(startNodeId, nodeId, link.m_nodeId, Min(direction, link.m_direction), ref fTravelTime, ref iNodeCount);
+                            FollowMiddleNodes(startNodeId, firstNode, cuurentNodeId, link.m_nodeId, Min(direction, link.m_direction), ref fTravelTime, ref iNodeCount);
                         }
                     }
                 }
@@ -81,14 +81,14 @@ namespace TransferManagerCE
                         {
                             data = new NodeLinkData(m_data[startNodeId]); // Take a copy as we cant change in place while looping
                         }
-                        data.Add(new NodeLink(nodeId, fTravelTime, direction, true));
+                        data.Add(new NodeLink(cuurentNodeId, fTravelTime, direction, firstNode));
                         m_newLinks[startNodeId] = data;
                     }
                 }
             }
             else
             {
-                CDebug.Log($"ERROR: Node: {nodeId} not found in graph.");
+                CDebug.Log($"ERROR: Node: {cuurentNodeId} not found in graph.");
             }
         }
 

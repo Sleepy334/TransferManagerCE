@@ -3,6 +3,7 @@ using System;
 using ColossalFramework;
 using TransferManagerCE.Settings;
 using SleepyCommon;
+using UnityEngine;
 
 namespace TransferManagerCE
 {
@@ -22,8 +23,14 @@ namespace TransferManagerCE
                 // We occasionally check the target buildings garbage buffer to see if it has been emptied already.
                 if (Singleton<SimulationManager>.instance.m_randomizer.Int32(10U) == 0 && ShouldClearTarget(vehicleID, vehicleData))
                 {
+                    // DEBUG
                     //Building building = BuildingManager.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
                     //CDebug.Log($"Clearing Target - Vehicle: #{vehicleID} Building: #{vehicleData.m_targetBuilding} BuildingType: {building.Info.GetAI().GetType()} GarbageBuffer: {building.m_garbageBuffer}");
+                    //if (Input.GetKey(KeyCode.LeftControl))
+                    //{
+                    //    InstanceHelper.ShowInstance(new InstanceID { Building = vehicleData.m_targetBuilding });
+                    //}
+                    // DEBUG
 
                     // clear target as it has been resolved
                     vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, 0);
@@ -63,24 +70,22 @@ namespace TransferManagerCE
 
         public static bool ShouldClearTarget(ushort vehicleID, Vehicle vehicleData)
         {
-            bool bClearTarget = false;
-
             if (vehicleData.m_targetBuilding != 0 &&
                 (vehicleData.m_flags & (Vehicle.Flags.GoingBack | Vehicle.Flags.WaitingTarget)) == 0 &&
+                (vehicleData.m_flags & Vehicle.Flags.Arriving) == 0 &&
                 (vehicleData.m_flags2 & Vehicle.Flags2.TransferToServicePoint) == 0)
             {
                 // Check there is garbage to go and get.
                 Building building = BuildingManager.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
-                if (building.m_flags != 0)
+                if (building.m_flags != 0 &&
+                    building.m_garbageBuffer < GARBAGE_BUFFER_MIN_LEVEL &&
+                    (building.m_problems & Notification.Problem1.Garbage).IsNone)
                 {
-                    if (building.m_garbageBuffer < GARBAGE_BUFFER_MIN_LEVEL)
-                    {
-                        bClearTarget = true;
-                    }
+                    return true;
                 }
             }
 
-            return bClearTarget;
+            return false;
         }
     }
 }

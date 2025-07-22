@@ -1,4 +1,5 @@
 using ColossalFramework;
+using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -14,7 +15,7 @@ namespace TransferManagerCE
             public float m_multiplier;
         }
 
-        const int iMAX_CANDIDATE_POSITIONS = 30;
+        const int iMAX_CANDIDATE_POSITIONS = 256;
         
         private readonly NetNode[] NetNodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
 
@@ -24,7 +25,6 @@ namespace TransferManagerCE
         // A* Heuristic
         private float[] m_candidatePositionX = new float[iMAX_CANDIDATE_POSITIONS];
         private float[] m_candidatePositionZ = new float[iMAX_CANDIDATE_POSITIONS];
-        private float[] m_candidateLOSMultipliers = new float[iMAX_CANDIDATE_POSITIONS]; // Building LOS multipliers
         private int m_iCandidatePositionCount = 0;
         
         // A* Heuristic support
@@ -47,7 +47,6 @@ namespace TransferManagerCE
         {
             m_candidateData[nodeId] = id;
 
-            // We keep 20 candidates only for speed
             if (m_iCandidatePositionCount < iMAX_CANDIDATE_POSITIONS)
             {
                 NetNode node = NetNodes[nodeId];

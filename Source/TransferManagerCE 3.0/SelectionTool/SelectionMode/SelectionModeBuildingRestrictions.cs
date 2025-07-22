@@ -42,7 +42,7 @@ namespace TransferManagerCE
         {
             if (HoverInstance.Building != 0)
             {
-                ushort buildingId = BuildingPanel.Instance.GetBuildingId();
+                ushort buildingId = BuildingPanel.Instance.Building;
                 if (buildingId != 0 && buildingId != HoverInstance.Building)
                 {
                     int restrictionId = BuildingPanel.Instance.GetRestrictionId();
@@ -52,34 +52,26 @@ namespace TransferManagerCE
                         RestrictionSettings restrictions = settings.GetRestrictionsOrDefault(restrictionId);
 
                         // Get correct array
-                        HashSet<ushort> allowedBuildings;
                         if (m_bIncomingMode)
                         {
-                            allowedBuildings = restrictions.m_incomingBuildingSettings.GetBuildingRestrictionsCopy();
+                            m_buildings = restrictions.m_incomingBuildingSettings.GetBuildingRestrictionsCopy();
                         }
                         else
                         {
-                            allowedBuildings = restrictions.m_outgoingBuildingSettings.GetBuildingRestrictionsCopy();
+                            m_buildings = restrictions.m_outgoingBuildingSettings.GetBuildingRestrictionsCopy();
                         }
 
                         // Add or remove building
-                        if (allowedBuildings.Contains(HoverInstance.Building))
-                        {
-                            allowedBuildings.Remove(HoverInstance.Building);
-                        }
-                        else
-                        {
-                            allowedBuildings.Add(HoverInstance.Building);
-                        }
+                        SelectBuilding(HoverInstance.Building);
 
                         // Update settings
                         if (m_bIncomingMode)
                         {
-                            restrictions.m_incomingBuildingSettings.SetBuildingRestrictions(allowedBuildings);
+                            restrictions.m_incomingBuildingSettings.SetBuildingRestrictionsSafe(m_buildings);
                         }
                         else
                         {
-                            restrictions.m_outgoingBuildingSettings.SetBuildingRestrictions(allowedBuildings);
+                            restrictions.m_outgoingBuildingSettings.SetBuildingRestrictionsSafe(m_buildings);
                         }
 
                         // Now update settings
@@ -91,9 +83,6 @@ namespace TransferManagerCE
                         {
                             BuildingPanel.Instance.UpdateTabs();
                         }
-
-                        // Update selection array
-                        m_buildings = allowedBuildings;
                     }
                 }
             }
@@ -101,7 +90,7 @@ namespace TransferManagerCE
 
         private void UpdateBuildingSelection()
         {
-            ushort buildingId = BuildingPanel.Instance.GetBuildingId();
+            ushort buildingId = BuildingPanel.Instance.Building;
             if (buildingId != 0 && buildingId != m_tool.GetHoverInstance().Building)
             {
                 int restrictionId = BuildingPanel.Instance.GetRestrictionId();

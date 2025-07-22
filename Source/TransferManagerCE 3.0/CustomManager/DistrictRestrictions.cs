@@ -27,7 +27,7 @@ namespace TransferManagerCE.CustomManager
                 case CustomTransferReason.Reason.Sick:
                 case CustomTransferReason.Reason.Sick2:
                 case CustomTransferReason.Reason.Collapsed:
-                // case CustomTransferReason.Reason.Collapsed2: Collapsed2 is artificially limited to P:! so never gets high enough.
+                // case CustomTransferReason.Reason.Collapsed2: Collapsed2 is artificially limited to P:1 so never gets high enough.
                 case CustomTransferReason.Reason.ParkMaintenance:
                 case CustomTransferReason.Reason.Mail:
                 case CustomTransferReason.Reason.Mail2:

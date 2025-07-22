@@ -1,6 +1,9 @@
-﻿using SleepyCommon;
+﻿using Epic.OnlineServices.Presence;
+using ICities;
+using SleepyCommon;
 using TransferManagerCE.UI;
 using UnityEngine;
+using UnityEngine.Networking.Types;
 using static RenderManager;
 using static TransferManagerCE.NodeLinkData;
 
@@ -60,7 +63,26 @@ namespace TransferManagerCE
 
         public override void OnSelectBuilding(ushort buildingId) 
         {
-            PathDistancePanel.Instance.SetBuilding(buildingId);
+            if (BuildingTypeHelper.GetBuildingType(buildingId) == BuildingTypeHelper.BuildingType.CargoWarehouse)
+            {
+                // Toggle building / sub building
+                if (PathDistancePanel.Instance.Building == buildingId)
+                {
+                    Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+                    if (building.m_subBuilding != 0)
+                    {
+                        PathDistancePanel.Instance.Building = building.m_subBuilding;
+                    }
+                }
+                else
+                {
+                    PathDistancePanel.Instance.Building = buildingId;
+                }
+            }
+            else
+            {
+                PathDistancePanel.Instance.SetBuilding(buildingId);
+            }
         }
 
         public override void HandleLeftClick()
@@ -89,7 +111,7 @@ namespace TransferManagerCE
                     foreach (NodeLink nodeLink in nodeLinkData.items)
                     {
                         Color color = KnownColor.cyan;
-                        if (nodeLink.m_bBypassLink)
+                        if (nodeLink.IsBypassNode())
                         {
                             color = KnownColor.darkGreen;
                         }
@@ -129,8 +151,7 @@ namespace TransferManagerCE
                 sTooltip += $"\nCross Lanes: {((node.Info.m_canCrossLanes) ? "Yes" : "No")}";
 
                 // Add connection group
-                PathConnected pathConnected = PathConnectedCache.GetGraph(PathDistancePanel.Instance.Algorithm);
-                int iColor = pathConnected.GetColor(Tool.m_nodeId);
+                int iColor = PathConnectedCache.GetNodeColor(PathDistancePanel.Instance.Algorithm, Tool.m_nodeId);
                 if (iColor != 0)
                 {
                     sTooltip += $"\nConnection Group: {iColor}";
@@ -164,7 +185,47 @@ namespace TransferManagerCE
                     sTooltip += $"\nTravel Time: {nodeData.TravelTime().ToString("F")}";
                     sTooltip += $"\nHeuristic:{nodeData.Heuristic().ToString("F")}";
                     sTooltip += $"\nPriority: {nodeData.Priority}";
+
+                    // Node and segment to get here
                     sTooltip += $"\nPrevious Node: {nodeData.prevId}";
+                    ushort actualNodeId = data.GetActualNode(nodeData.prevId);
+                    if (actualNodeId != nodeData.prevId)
+                    {
+                        sTooltip += $"\nBypass Node: {actualNodeId}";
+                    }
+
+#if DEBUG
+                    ushort segmentId = GetTravelSegment(Tool.m_nodeId, actualNodeId);
+                    if (segmentId != 0)
+                    {
+                        NetSegment segment = NetManager.instance.m_segments.m_buffer[segmentId];
+                        sTooltip += $"\n\nSegment: {segmentId}";
+                        sTooltip += $"\nStart Node: {segment.m_startNode}";
+                        sTooltip += $"\nEnd Node: {segment.m_endNode}";
+                        sTooltip += $"\nStartLeftSegment: {segment.m_startLeftSegment}";
+                        sTooltip += $"\nStartRightSegment: {segment.m_startRightSegment}";
+                        sTooltip += $"\nEndLeftSegment: {segment.m_endLeftSegment}";
+                        sTooltip += $"\nEndRightSegment: {segment.m_endRightSegment}";
+
+                        sTooltip += $"\n\nLanes:";
+                        uint laneId = segment.m_lanes;
+                        int iLoopCount = 0;
+                        while (laneId != 0)
+                        {
+                            NetLane lane = NetManager.instance.m_lanes.m_buffer[laneId];
+                            sTooltip += $"\nLane: {laneId} Flags: #{lane.m_flags} : {DecodeLaneFlags(lane.m_flags)}";
+
+                            laneId = lane.m_nextLane;
+
+                            // Safety check in case we get caught in an infinite loop somehow
+                            if (iLoopCount++ > NetManager.MAX_LANE_COUNT)
+                            {
+                                Debug.Log("Invalid segment lane loop detected");
+                                break;
+                            }
+                        }
+                    }
+#endif
                 }
             }
 
@@ -177,6 +238,50 @@ namespace TransferManagerCE
             {
                 PathDistancePanel.Instance.ShowInfo(GetTooltipText2());
             }
+        }
+
+        private ushort GetTravelSegment(int startNode,  int endNode)
+        {
+            NetNode node = NetManager.instance.m_nodes.m_buffer[endNode];
+
+            // Loop through segments to find neighboring roads
+            for (int i = 0; i < 8; ++i)
+            {
+                ushort segmentId = node.GetSegment(i);
+                if (segmentId != 0)
+                {
+                    NetSegment segment = NetManager.instance.m_segments.m_buffer[segmentId];
+                    if ((segment.m_startNode == startNode || segment.m_endNode == startNode) &&
+                        (segment.m_startNode == endNode || segment.m_endNode == endNode))
+                    {
+                        return segmentId;
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        private string DecodeLaneFlags(ushort flags)
+        {
+            string text = string.Empty;
+
+            if ((flags & (ushort) NetLane.Flags.Left) == (ushort) NetLane.Flags.Left)
+            {
+                text += "Left, ";
+            }
+
+            if ((flags & (ushort)NetLane.Flags.Right) == (ushort)NetLane.Flags.Right)
+            {
+                text += "Right, ";
+            }
+
+            if ((flags & (ushort)NetLane.Flags.Forward) == (ushort)NetLane.Flags.Forward)
+            {
+                text += "Forward, ";
+            }
+
+            return text;
         }
     }
 }

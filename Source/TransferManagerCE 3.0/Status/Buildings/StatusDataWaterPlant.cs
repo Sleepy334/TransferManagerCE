@@ -4,9 +4,9 @@ using static TransferManagerCE.BuildingTypeHelper;
 
 namespace TransferManagerCE.Data
 {
-    public class StatusWaterPlant : StatusDataBuilding
+    public class StatusDataWaterPlant : StatusDataBuilding
     {
-        public StatusWaterPlant(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataWaterPlant(CustomTransferReason.Reason material, BuildingType eBuildingType, ushort BuildingId) :
             base(material, eBuildingType, BuildingId)
         {
         }

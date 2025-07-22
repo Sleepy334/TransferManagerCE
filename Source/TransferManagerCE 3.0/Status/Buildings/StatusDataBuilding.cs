@@ -17,11 +17,6 @@ namespace TransferManagerCE.Data
             return true;
         }
 
-        public override bool IsNodeData()
-        {
-            return false;
-        }
-
         public override string GetMaterialDisplay()
         {
             return GetMaterialDescription();

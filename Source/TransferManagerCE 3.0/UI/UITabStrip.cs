@@ -506,6 +506,20 @@ namespace TransferManagerCE
             return false;
         }
 
+        public int GetVisibleTabCount()
+        {
+            int iVisible = 0;
+            foreach (TabData data in m_tabs)
+            {
+                if (data.visible)
+                {
+                    iVisible++;
+                }
+            }
+
+            return iVisible;
+        }
+
         public override void PerformLayout()
         {
             // Check curent tab is visible

@@ -102,7 +102,7 @@ namespace TransferManagerCE
         {
             if (m_description is null)
             {
-                m_description = InstanceHelper.DescribeInstance(new InstanceID { Building = GetBuildingId() }, InstanceID.Empty);
+                m_description = InstanceHelper.DescribeInstance(new InstanceID { Building = GetBuildingId() }, true, false);
             }
             return m_description;
         }

@@ -173,7 +173,8 @@ namespace TransferManagerCE.Settings
         public bool FixFishWarehouses { get; set; } = true;
 
         public bool FixCargoWarehouseAccessSegment { get; set; } = true;
-
+        public bool FixCargoWarehouseUnspawn { get; set; } = true;
+        
         public bool RemoveEmptyWarehouseLimit { get; set; } = true;
 
         public bool FixCargoWarehouseExcludeFlag { get; set; } = true;

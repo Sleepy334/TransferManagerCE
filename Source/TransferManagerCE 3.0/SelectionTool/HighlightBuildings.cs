@@ -40,14 +40,14 @@ namespace TransferManagerCE
                     }
                 case ModSettings.BuildingHighlightMode.Matches:
                     {
-                        ushort buildingId = BuildingPanel.Instance.GetBuildingId();
+                        ushort buildingId = BuildingPanel.Instance.Building;
                         LoadBuildingMatches(buildingId);
                         break;
                     }
                 case ModSettings.BuildingHighlightMode.Issues:
                     {
                         // Alternate mode load buildings depending on selected building type.
-                        ushort buildingId = BuildingPanel.Instance.GetBuildingId();
+                        ushort buildingId = BuildingPanel.Instance.Building;
 
                         BuildingTypeHelper.BuildingType eType = BuildingTypeHelper.GetBuildingType(buildingId);
                         switch (eType)
@@ -165,7 +165,7 @@ namespace TransferManagerCE
                         {
                             if (usBuildingId != 0 && usBuildingId != usSourceBuildingId)
                             {
-                                Color color = TransferManagerModes.GetTransferReasonColor(matchData.m_material);
+                                KnownColor color = TransferManagerModes.GetTransferReasonColor(matchData.m_material);
                                 m_highlightBuildings.Add(new KeyValuePair<ushort, Color>(usBuildingId, color));
                             }
                         }

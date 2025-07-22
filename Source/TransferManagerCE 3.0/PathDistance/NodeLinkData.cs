@@ -41,7 +41,7 @@ namespace TransferManagerCE
                 int iCount = 0;
                 foreach (NodeLink link in m_nodeLinks)
                 {
-                    if (!link.m_bBypassLink)
+                    if (!link.IsBypassNode())
                     {
                         iCount++;
                     }
@@ -56,9 +56,9 @@ namespace TransferManagerCE
             m_nodeLinks.Add(link);
         }
 
-        public void Add(ushort nodeId, float fTravelTime, NetInfo.Direction direction, bool bBypassLink)
+        public void Add(ushort nodeId, float fTravelTime, NetInfo.Direction direction, ushort bypassNode)
         {
-            m_nodeLinks.Add(new NodeLink(nodeId, fTravelTime, direction, bBypassLink));
+            m_nodeLinks.Add(new NodeLink(nodeId, fTravelTime, direction, bypassNode));
         }
 
         public void Clear()
@@ -101,20 +101,40 @@ namespace TransferManagerCE
             {
                 sText += "\n";
 
-                if (link.m_bBypassLink)
+                if (link.IsBypassNode())
                 {
                     sText += "<color #00AA00>";
                 }
 
                 sText += $"Node: {link.m_nodeId} TravelTime: {link.m_fTravelTime.ToString("N2")} Direction: {link.m_direction}";
-                
-                if (link.m_bBypassLink)
+
+                if (link.IsBypassNode())
                 {
-                    sText += "</color>";
+                    sText += $" BypassNode: {link.m_bypassNode}</color>";
                 }
 
             }
             return sText;
+        }
+
+        public ushort GetActualNode(ushort nodeId)
+        {
+            foreach (NodeLink link in m_nodeLinks)
+            {
+                if (link.m_nodeId == nodeId)
+                {
+                    if (link.IsBypassNode())
+                    {
+                        return link.m_bypassNode;
+                    }
+                    else
+                    {
+                        return nodeId;
+                    }
+                }
+            }
+
+            return nodeId;
         }
     }            
 }

@@ -8,9 +8,9 @@ using static TransferManagerCE.BuildingTypeHelper;
 
 namespace TransferManagerCE.Data
 {
-    public class StatusDataBuildingSick : StatusDataBuilding
+    public class StatusDataSick : StatusDataBuilding
     {
-        public StatusDataBuildingSick(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
+        public StatusDataSick(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }

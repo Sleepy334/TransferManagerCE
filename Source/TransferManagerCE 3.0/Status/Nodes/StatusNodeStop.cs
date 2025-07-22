@@ -21,6 +21,38 @@ namespace TransferManagerCE.Data
             m_color = KnownColor.lightGrey;
         }
 
+        public override int CompareTo(object second)
+        {
+            if (second is StatusNodeStop oSecond)
+            {
+                // Vehicles first
+                if (oSecond.HasVehicle() != HasVehicle())
+                {
+                    return oSecond.HasVehicle().CompareTo(HasVehicle());
+                }
+
+                // Sort vehicles by distance (Ascending)
+                if (oSecond.HasVehicle() && HasVehicle())
+                {
+                    return GetDistance().CompareTo(oSecond.GetDistance());
+                }
+
+                // Wait timer (Descending)
+                if (oSecond.GetWaitTimer() != GetWaitTimer())
+                {
+                    return oSecond.GetWaitTimer().CompareTo(GetWaitTimer());
+                }
+
+                // Finally sort by node so they dont skip around
+                if (oSecond.m_nodeId != m_nodeId)
+                {
+                    return m_nodeId.CompareTo(oSecond.m_nodeId);
+                }
+            }
+
+            return base.CompareTo(second);
+        }
+
         public override string GetMaterialDisplay()
         {
             return GetTransportType().ToString();
@@ -29,11 +61,6 @@ namespace TransferManagerCE.Data
         public override bool IsBuildingData()
         {
             return false;
-        }
-
-        public override bool IsNodeData()
-        {
-            return true;
         }
 
         public override bool HasVehicle()
@@ -96,7 +123,7 @@ namespace TransferManagerCE.Data
             ushort vehicleId = GetVehicleId();
             if (vehicleId != 0)
             {
-                tooltip = InstanceHelper.DescribeInstance(new InstanceID { Vehicle = vehicleId }, InstanceID.Empty, true);
+                tooltip = InstanceHelper.DescribeInstance(new InstanceID { Vehicle = vehicleId }, true, true);
                 return CitiesUtils.GetVehicleName(vehicleId);
             }
 
@@ -106,41 +133,8 @@ namespace TransferManagerCE.Data
 
         protected override string CalculateResponder(out string tooltip)
         {
-            NetManager instance = Singleton<NetManager>.instance;
-
-            string sText = "";
-            tooltip = "";
-
-            ushort buildingId = FindConnectionBuilding(m_nodeId);
-            if (buildingId != 0)
-            {
-                sText = InstanceHelper.DescribeInstance(new InstanceID {  Building =  buildingId }, InstanceID.Empty);
-                tooltip = InstanceHelper.DescribeInstance(new InstanceID { Building = buildingId }, InstanceID.Empty, true);
-            }
-            else
-            {
-                sText = $"Node:{m_nodeId}";
-            }
-
-            // Node
-            if (tooltip.Length > 0)
-            {
-                tooltip += " | ";
-            }
-            tooltip += $"Node:{m_nodeId}";
-
-            // Errors
-            int iErrorCount = GetNodePathError(out string sError, out int iCount);
-            if (iErrorCount > 0)
-            {
-                if (tooltip.Length > 0)
-                {
-                    tooltip += " | ";
-                }
-                tooltip += $"PathFailed ({iErrorCount}/{iCount} {sError})";
-            }
-
-            return sText;
+            tooltip = $"Node:{m_nodeId}";
+            return tooltip;
         }
 
         public override void OnClickResponder()
@@ -151,78 +145,9 @@ namespace TransferManagerCE.Data
             }
         }
 
-        private ushort FindConnectionBuilding(ushort stop)
-        {
-            Vector3 position = Singleton<NetManager>.instance.m_nodes.m_buffer[stop].m_position;
-            BuildingManager instance = Singleton<BuildingManager>.instance;
-            FastList<ushort> outsideConnections = instance.GetOutsideConnections();
-            ushort result = 0;
-            float num = 40000f;
-            for (int i = 0; i < outsideConnections.m_size; i++)
-            {
-                ushort num2 = outsideConnections.m_buffer[i];
-                float num3 = VectorUtils.LengthSqrXZ(instance.m_buildings.m_buffer[num2].m_position - position);
-                if (num3 < num)
-                {
-                    result = num2;
-                    num = num3;
-                }
-            }
-
-            return result;
-        }
-
-        private int GetNodePathError(out string sError, out int iSegmentCount)
-        {
-            NetManager instance = Singleton<NetManager>.instance;
-
-            int iErrorCount = 0;
-            iSegmentCount = 0;
-            sError = "Segments:";
-
-            NetNode node = NetManager.instance.m_nodes.m_buffer[m_nodeId];
-            if (node.m_flags != 0)
-            {
-
-                for (int i = 0; i < 8; i++)
-                {
-                    ushort segmentId = instance.m_nodes.m_buffer[m_nodeId].GetSegment(i);
-                    if (segmentId != 0)
-                    {
-                        iSegmentCount++;
-
-                        NetSegment segment = instance.m_segments.m_buffer[segmentId];
-                        if ((segment.m_flags & NetSegment.Flags.PathFailed) != 0)
-                        {
-                            sError += $" {segmentId}";
-                            iErrorCount++;
-                        }
-                    }
-                }
-            }
-
-            return iErrorCount;
-        }
-
         private void UpdateTextColor()
         {
-            // Update color
-            int iErrorCount = GetNodePathError(out string sError, out int iTotalCount);
-            if (iErrorCount > 0)
-            {
-                if (iErrorCount < iTotalCount)
-                {
-                    m_color = Color.magenta;
-                }
-                else
-                {
-                    m_color = Color.red;
-                }
-            }
-            else
-            {
-                m_color = KnownColor.lightGrey;
-            }
+            m_color = KnownColor.lightGrey;
         }
     }
 }

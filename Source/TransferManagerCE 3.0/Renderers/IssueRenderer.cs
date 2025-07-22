@@ -104,7 +104,7 @@ namespace TransferManagerCE
                 List<RoadAccessData> roadAccessIssues = helper.GetRoadAccess();
                 foreach (RoadAccessData issue in roadAccessIssues)
                 {
-                    RendererUtils.HighlightBuilding(BuildingBuffer, issue.m_source.Building, cameraInfo, KnownColor.purple);
+                    RendererUtils.HighlightBuilding(BuildingBuffer, issue.m_source.Building, cameraInfo, KnownColor.magenta);
                 }
             }
         }

@@ -212,9 +212,15 @@ namespace TransferManagerCE
             restrictions.m_incomingServiceDistanceMeters = iServiceDistance * 1000;
             restrictions.m_outgoingServiceDistanceMeters = iServiceDistance * 1000;
 
-            settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
+            bool bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex); // No longer used
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex); // No longer used
+
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
+            if (!bWarehouseOverride)
+            {
+                settings.m_iWarehouseReserveTrucksPercent = -1; // New default override
+            }
+
             int iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex); // no longer used
             restrictions.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
             restrictions.m_incomingDistrictSettings.m_bAllowLocalPark = StorageData.ReadBool(Data, ref iIndex);
@@ -246,9 +252,15 @@ namespace TransferManagerCE
             restrictions.m_incomingServiceDistanceMeters = iServiceDistance * 1000;
             restrictions.m_outgoingServiceDistanceMeters = iServiceDistance * 1000;
 
-            settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
+            bool bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex); // No longer used
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
+
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
+            if (!bWarehouseOverride)
+            {
+                settings.m_iWarehouseReserveTrucksPercent = -1; // New default value
+            }
+
             int iOutsideMultiplier = StorageData.ReadInt32(Data, ref iIndex); // No longer used
 
             restrictions.m_incomingDistrictSettings.m_bAllowLocalDistrict = StorageData.ReadBool(Data, ref iIndex);
@@ -313,9 +325,14 @@ namespace TransferManagerCE
             restrictions.m_incomingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             restrictions.m_outgoingDistrictSettings.m_iPreferLocalDistricts = (PreferLocal)StorageData.ReadInt32(Data, ref iIndex);
             bool bDistrictAllowServicesNotUsed = StorageData.ReadBool(Data, ref iIndex);
-            settings.m_bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex);
+            bool bWarehouseOverride = StorageData.ReadBool(Data, ref iIndex); // No longer used
             bool bWarehouseFirst = StorageData.ReadBool(Data, ref iIndex);
+
             settings.m_iWarehouseReserveTrucksPercent = StorageData.ReadInt32(Data, ref iIndex);
+            if (!bWarehouseOverride)
+            {
+                settings.m_iWarehouseReserveTrucksPercent = -1; // New default value
+            }
 
             settings.SetRestrictionsDirect(0, restrictions);
 

@@ -35,8 +35,12 @@ namespace TransferManagerCE
 
         public string GetName()
         {
-            InstanceID caller = new InstanceID { Building = m_buildingId };
-            return CitiesUtils.GetBuildingName(m_buildingId, caller);
+            return CitiesUtils.GetBuildingName(m_buildingId, false, false);
+        }
+
+        public string GetDirection()
+        {
+            return TransferManagerUtils.GetOutsideConnectionDirection(m_buildingId).ToString();
         }
 
         public string GetUsage()

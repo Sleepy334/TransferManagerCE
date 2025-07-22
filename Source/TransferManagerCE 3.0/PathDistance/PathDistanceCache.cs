@@ -4,9 +4,9 @@ namespace TransferManagerCE
 {
     public class PathDistanceCache
     {
-        private static NodeLinkGraph m_goodsNodeLoader = null;
-        private static NodeLinkGraph m_pedestrianZoneNodeLoader = null;
-        private static NodeLinkGraph m_otherServicesNodeLoader = null;
+        private static NodeLinkGraph s_goodsNodeLoader = null;
+        private static NodeLinkGraph s_pedestrianZoneNodeLoader = null;
+        private static NodeLinkGraph s_otherServicesNodeLoader = null;
 
         // ----------------------------------------------------------------------------------------
         public static NodeLinkGraph GetLoader(NetworkMode mode, bool bCheckValid)
@@ -15,45 +15,42 @@ namespace TransferManagerCE
             {
                 case NetworkMode.Goods:
                     {
-                        if (m_goodsNodeLoader is null)
+                        if (s_goodsNodeLoader is null)
                         {
-                            m_goodsNodeLoader = new NodeLinkGraph(NetworkMode.Goods);
+                            s_goodsNodeLoader = new NodeLinkGraph(NetworkMode.Goods);
+                        }
+                        else if (bCheckValid)
+                        {
+                            s_goodsNodeLoader.Update();
                         }
 
-                        if (bCheckValid)
-                        {
-                            m_goodsNodeLoader.Update();
-                        }
-
-                        return m_goodsNodeLoader;
+                        return s_goodsNodeLoader;
                     }
                 case NetworkMode.PedestrianZone:
                     {
-                        if (m_pedestrianZoneNodeLoader is null)
+                        if (s_pedestrianZoneNodeLoader is null)
                         {
-                            m_pedestrianZoneNodeLoader = new NodeLinkGraph(NetworkMode.PedestrianZone);
+                            s_pedestrianZoneNodeLoader = new NodeLinkGraph(NetworkMode.PedestrianZone);
+                        }
+                        else if (bCheckValid)
+                        {
+                            s_pedestrianZoneNodeLoader.Update();
                         }
 
-                        if (bCheckValid)
-                        {
-                            m_pedestrianZoneNodeLoader.Update();
-                        }
-
-                        return m_pedestrianZoneNodeLoader;
+                        return s_pedestrianZoneNodeLoader;
                     }
                 case NetworkMode.OtherServices:
                     {
-                        if (m_otherServicesNodeLoader is null)
+                        if (s_otherServicesNodeLoader is null)
                         {
-                            m_otherServicesNodeLoader = new NodeLinkGraph(NetworkMode.OtherServices);
+                            s_otherServicesNodeLoader = new NodeLinkGraph(NetworkMode.OtherServices);
+                        }
+                        else if (bCheckValid)
+                        {
+                            s_otherServicesNodeLoader.Update();
                         }
 
-                        if (bCheckValid)
-                        {
-                            m_otherServicesNodeLoader.Update();
-                        }
-
-                        return m_otherServicesNodeLoader;
+                        return s_otherServicesNodeLoader;
                     }
             }
 
@@ -63,17 +60,17 @@ namespace TransferManagerCE
         // ----------------------------------------------------------------------------------------
         public static void Invalidate()
         {
-            if (m_goodsNodeLoader is not null)
+            if (s_goodsNodeLoader is not null)
             {
-                m_goodsNodeLoader.Invalidate();
+                s_goodsNodeLoader.Invalidate();
             }
-            if (m_pedestrianZoneNodeLoader is not null)
+            if (s_pedestrianZoneNodeLoader is not null)
             {
-                m_pedestrianZoneNodeLoader.Invalidate();
+                s_pedestrianZoneNodeLoader.Invalidate();
             }
-            if (m_otherServicesNodeLoader is not null)
+            if (s_otherServicesNodeLoader is not null)
             {
-                m_otherServicesNodeLoader.Invalidate();
+                s_otherServicesNodeLoader.Invalidate();
             }
 
             // We also need to invalidate the connected data
@@ -84,36 +81,15 @@ namespace TransferManagerCE
         // ----------------------------------------------------------------------------------------
         public static void UpdateCache(NetworkMode mode)
         {
-            switch (mode)
-            {
-                case NetworkMode.Goods:
-                    {
-                        m_goodsNodeLoader = GetLoader(NetworkMode.Goods, true);
-                        break;
-                    }
-                case NetworkMode.PedestrianZone:
-                    {
-                        m_pedestrianZoneNodeLoader = GetLoader(NetworkMode.PedestrianZone, true);
-                        break;
-                    }
-                case NetworkMode.OtherServices:
-                    {
-                        m_otherServicesNodeLoader = GetLoader(NetworkMode.OtherServices, true);
-                        break;
-                    }
-            }
+            GetLoader(mode, true);
         }
 
         // ----------------------------------------------------------------------------------------
         public static void UpdateCache()
         {
-            if (SaveGameSettings.GetSettings().PathDistanceGoods >= 2 ||
-                SaveGameSettings.GetSettings().PathDistanceServices >= 2)
-            {
-                UpdateCache(NetworkMode.Goods);
-                UpdateCache(NetworkMode.PedestrianZone);
-                UpdateCache(NetworkMode.OtherServices);
-            }
+            UpdateCache(NetworkMode.Goods);
+            UpdateCache(NetworkMode.PedestrianZone);
+            UpdateCache(NetworkMode.OtherServices);
         }
     }
 }

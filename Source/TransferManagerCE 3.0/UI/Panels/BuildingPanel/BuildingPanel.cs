@@ -21,8 +21,9 @@ namespace TransferManagerCE.UI
             TAB_CAPACITY = 1,
             TAB_STATUS = 2,
             TAB_VEHICLES = 3,
-            TAB_PATHING = 4,
-            TAB_TRANSFERS = 5,
+            TAB_STOPS = 4,
+            TAB_PATHING = 5,
+            TAB_TRANSFERS = 6,
         }
 
         public const float fTEXT_SCALE = 0.8f;
@@ -39,6 +40,7 @@ namespace TransferManagerCE.UI
         private ushort m_buildingId = 0;
         private List<ushort> m_subBuildingIds = new List<ushort>();
         private BuildingType m_eBuildingType;
+        private int m_lastActiveTabIndex = -1;
 
         private UITitleBar? m_title = null;
         private UITabStrip? m_tabStrip = null;
@@ -66,6 +68,7 @@ namespace TransferManagerCE.UI
             m_buildingTabs.Add(new BuildingCapacityTab());
             m_buildingTabs.Add(new BuildingStatusTab());
             m_buildingTabs.Add(new BuildingVehicleTab());
+            m_buildingTabs.Add(new BuildingStopsTab());
             m_buildingTabs.Add(new BuildingPathingTab());
             m_buildingTabs.Add(new BuildingTransfersTab());
         }
@@ -86,9 +89,16 @@ namespace TransferManagerCE.UI
 
         }
 
-        public ushort GetBuildingId()
+        public ushort Building
         {
-            return m_buildingId;
+            get
+            {
+                return m_buildingId;
+            }
+            set
+            {
+                SetBuilding(value);
+            }
         }
 
         public List<ushort> GetSubBuildingIds()
@@ -121,7 +131,7 @@ namespace TransferManagerCE.UI
             base.Start();
             name = "BuildingPanel";
             width = 820;
-            height = 716;
+            height = 680;
             backgroundSprite = "SubcategoriesPanel";
             if (ModSettings.GetSettings().EnablePanelTransparency)
             {
@@ -265,10 +275,10 @@ namespace TransferManagerCE.UI
 
         public void HandleOffer(TransferOffer offer)
         {
-            if (isVisible && IsTransferTabActive() && GetBuildingId() != 0)
+            if (isVisible && IsTransferTabActive() && Building != 0)
             {
                 HashSet<ushort> buildingIds = InstanceHelper.GetBuildings(offer.m_object);
-                if (buildingIds.Contains(GetBuildingId()))
+                if (buildingIds.Contains(Building))
                 {
                     InvalidatePanel();
                 }
@@ -307,6 +317,16 @@ namespace TransferManagerCE.UI
                 {
                     UpdateTabs();
                     UpdatePanel();
+
+                    // Restore last visible tab if visible
+                    if (m_lastActiveTabIndex != -1)
+                    {
+                        if (m_tabStrip.IsTabVisible(m_lastActiveTabIndex))
+                        {
+                            m_tabStrip.SelectTabIndex(m_lastActiveTabIndex);
+                            m_lastActiveTabIndex = -1;
+                        }
+                    }
                 }
 
                 // Activate selection tool if needed
@@ -321,6 +341,12 @@ namespace TransferManagerCE.UI
             }
             else
             {
+                // Save current tab index
+                if (m_tabStrip is not null)
+                {
+                    m_lastActiveTabIndex = m_tabStrip.GetSelectTabIndex();
+                }
+                
                 SetBuilding(0);
 
                 for (int i = 0; i < m_buildingTabs.Count; ++i)
@@ -355,32 +381,20 @@ namespace TransferManagerCE.UI
                 {
                     m_eBuildingType = BuildingTypeHelper.GetBuildingType(buildingId);
 #if DEBUG
-                    CDebug.Log($"Building type: {m_eBuildingType}");
+                    CDebug.Log($"Building: {buildingId} Building type: {m_eBuildingType}");
 #endif
                     // Update sub buildings (if any)
                     BuildingUtils.GetBuildingSubBuildings(buildingId, m_subBuildingIds);
 
-                    // Update tabs building id's as well
-                    // Setup tabs
-                    foreach (BuildingTab buildingTab in m_buildingTabs)
-                    {
-                        buildingTab.SetTabBuilding(m_buildingId, m_eBuildingType, m_subBuildingIds);
-                    }
+                    // Select building with tool
+                    InstanceHelper.ShowInstance(new InstanceID { Building = buildingId }); 
+                }
 
-                    if (buildingId != 0)
-                    {
-                        // Select building with tool
-                        InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
-
-                        if (SelectionTool.Exists)
-                        {
-                            SelectionTool.Instance.UpdateSelection();
-                        }
-                    }
-
-                    UpdateBuildingName();
-                    UpdateTabs();
-                    UpdatePanel();
+                // Update tabs building id's as well
+                // Setup tabs
+                foreach (BuildingTab buildingTab in m_buildingTabs)
+                {
+                    buildingTab.SetTabBuilding(m_buildingId, m_eBuildingType, m_subBuildingIds);
                 }
 
                 // Tell the settings panel to update as well. (Dont highlight active building)
@@ -388,6 +402,15 @@ namespace TransferManagerCE.UI
                 {
                     SettingsPanel.Instance.InvalidatePanel();
                 }
+
+                if (SelectionTool.Exists)
+                {
+                    SelectionTool.Instance.UpdateSelection();
+                }
+
+                UpdateBuildingName();
+                UpdateTabs();
+                UpdatePanel();
             }
         }
 
@@ -540,7 +563,7 @@ namespace TransferManagerCE.UI
                         }
                         else
                         {
-                            sText = CitiesUtils.GetBuildingName(m_buildingId, InstanceID.Empty);
+                            sText = CitiesUtils.GetBuildingName(m_buildingId, true, false);
                         }
                     }
                     else
@@ -548,7 +571,7 @@ namespace TransferManagerCE.UI
                         m_labelPanel.isVisible = true;
                         m_txtSource.isVisible = false;
 
-                        sText = CitiesUtils.GetBuildingName(m_buildingId, InstanceID.Empty, ModSettings.GetSettings().ShowBuildingId);
+                        sText = CitiesUtils.GetBuildingName(m_buildingId, true, ModSettings.GetSettings().ShowBuildingId);
                         string sDetectedDistricts = CitiesUtils.GetDetectedDistricts(m_buildingId);
                         if (sDetectedDistricts.Length > 0)
                         {

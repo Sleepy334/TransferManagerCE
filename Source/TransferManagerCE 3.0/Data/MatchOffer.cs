@@ -141,17 +141,17 @@ namespace TransferManagerCE.CustomManager
                 case InstanceType.Park:
                 case InstanceType.Building:
                     {
-                        sMessage = InstanceHelper.DescribeInstance(m_object, InstanceID.Empty, bShowId);
+                        sMessage = InstanceHelper.DescribeInstance(m_object, true, bShowId);
                         break;
                     }
                 default:
                     {
-                        sMessage = InstanceHelper.DescribeInstance(m_object, InstanceID.Empty, bShowId);
+                        sMessage = InstanceHelper.DescribeInstance(m_object, true, bShowId);
 
                         // Add building name if not a building.
                         if (m_buildings.Count > 0)
                         {
-                            string sBuildingName = CitiesUtils.GetBuildingName(m_buildings.First(), InstanceID.Empty);
+                            string sBuildingName = CitiesUtils.GetBuildingName(m_buildings.First(), true, false);
                             if (!string.IsNullOrEmpty(sBuildingName))
                             {
                                 if (sMessage.Length > 0)
@@ -184,7 +184,7 @@ namespace TransferManagerCE.CustomManager
         {
             if (m_byLocalPark != 0)
             {
-                return InstanceHelper.DescribeInstance(new InstanceID { Park = m_byLocalPark }, InstanceID.Empty, true);
+                return InstanceHelper.DescribeInstance(new InstanceID { Park = m_byLocalPark }, true, true);
             }
             else
             {

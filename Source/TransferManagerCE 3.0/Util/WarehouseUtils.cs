@@ -19,6 +19,19 @@ namespace TransferManagerCE
             Export
         }
 
+        public static ushort GetWarehouseBuildingId(ushort buildingId)
+        {
+            Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
+            if (building.Info.GetAI() is WarehouseStationAI)
+            {
+                return building.m_parentBuilding;
+            }
+            else
+            {
+                return buildingId;
+            }
+        }
+
         public static WarehouseMode GetWarehouseMode(ushort buildingId)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];

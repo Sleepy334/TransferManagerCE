@@ -84,11 +84,11 @@ namespace TransferManagerCE.Data
         {
             if (m_vehicle.m_targetBuilding != 0)
             {
-                return CitiesUtils.GetBuildingName(m_vehicle.m_targetBuilding, InstanceID.Empty, true);
+                return CitiesUtils.GetBuildingName(m_vehicle.m_targetBuilding, true, true);
             }
             else if (m_vehicle.m_sourceBuilding != 0)
             {
-                return CitiesUtils.GetBuildingName(m_vehicle.m_sourceBuilding, InstanceID.Empty, true);
+                return CitiesUtils.GetBuildingName(m_vehicle.m_sourceBuilding, true, true);
             }
                 
             return GetTarget();

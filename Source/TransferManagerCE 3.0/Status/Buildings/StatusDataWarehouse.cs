@@ -1,6 +1,4 @@
 using SleepyCommon;
-using System;
-using System.Collections.Generic;
 using System.Reflection;
 using static TransferManager;
 using static TransferManagerCE.BuildingTypeHelper;
@@ -16,14 +14,19 @@ namespace TransferManagerCE.Data
 
         protected override string CalculateValue(out string tooltip)
         {
-            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
+            // Look up the warehouse buildings storage level
+            ushort warehouseBuildingId = WarehouseUtils.GetWarehouseBuildingId(m_buildingId);
+
+            Building building = BuildingManager.instance.m_buildings.m_buffer[warehouseBuildingId];
             if (building.Info is not null)
             {
-                
                 int iStorageCapacity = 0;
-
                 switch (building.Info.GetAI())
                 {
+                    case WarehouseStationAI:
+                        {
+                            break;
+                        }
                     case WarehouseAI warehouseAI:
                         {
                             iStorageCapacity = warehouseAI.m_storageCapacity;
@@ -45,7 +48,8 @@ namespace TransferManagerCE.Data
                 if (iStorageCapacity > 0)
                 {
                     WarnText(true, true, iCurrentBuffer, iStorageCapacity);
-                    tooltip = $"{GetMaterialDescription()}: {DisplayBuffer(iCurrentBuffer)}/{DisplayBuffer(iStorageCapacity)}";
+                    int iIncomingAmount = BuildingUtils.GetGuestVehiclesTransferSize(warehouseBuildingId, (TransferReason) GetMaterial());
+                    tooltip = $"{GetMaterialDescription()}: {DisplayBuffer(iCurrentBuffer)}/{DisplayBuffer(iStorageCapacity)}\r\nIncoming: {DisplayBuffer(iIncomingAmount)}";
                     return Utils.MakePercent(iCurrentBuffer, iStorageCapacity);
                 }
                 else

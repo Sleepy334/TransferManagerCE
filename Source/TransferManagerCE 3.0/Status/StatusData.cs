@@ -38,7 +38,7 @@ namespace TransferManagerCE.Data
             return BuildingPanel.Instance.GetStatusHelper().HasBuildingReason(reason);
         }
 
-        public int CompareTo(object second)
+        public virtual int CompareTo(object second)
         {
             if (second is null)
             {
@@ -46,12 +46,6 @@ namespace TransferManagerCE.Data
             }
 
             StatusData oSecond = (StatusData)second;
-
-            // Sort by waiting timer
-            if (IsNodeData() && oSecond.IsNodeData())
-            {
-                return ((StatusNodeStop)oSecond).GetWaitTimer() - ((StatusNodeStop)this).GetWaitTimer();
-            }
 
             // Sort by material
             if (GetMaterialDescription() != oSecond.GetMaterialDescription())
@@ -97,7 +91,6 @@ namespace TransferManagerCE.Data
 
         // Building support
         public abstract bool IsBuildingData();
-        public abstract bool IsNodeData(); 
 
         // Vehicle support
         public abstract bool HasVehicle();
