@@ -58,6 +58,7 @@ namespace TransferManagerCE.CustomManager
         private bool m_bIsHelicopterReason = false;
         private bool m_bIsFactoryFirst = false;
         private float m_fGlobalDistanceRestriction = 0;
+        private bool m_bImproveCargoWarehouseMatching = true;
         private Randomizer m_random = new Randomizer(Thread.CurrentThread.ManagedThreadId);
 
 
@@ -71,7 +72,8 @@ namespace TransferManagerCE.CustomManager
             m_bIsExportRestrictionsSupported = TransferManagerModes.IsExportRestrictionsSupported(material);
             m_bIsWarehouseMaterial = TransferManagerModes.IsWarehouseMaterial(material);
             m_bIsHelicopterReason = TransferManagerModes.IsHelicopterReason(material);
-            
+            m_bImproveCargoWarehouseMatching = SaveGameSettings.GetSettings().ImprovedCargoWarehouseMatching;
+
             // Distance restrictions
             m_bLocalDistanceRestrictionsSupported = BuildingRuleSets.IsLocalDistanceRestrictionsSupported(material);
             m_fGlobalDistanceRestriction = SaveGameSettings.GetSettings().GetActiveDistanceRestrictionSquaredMeters(material);
@@ -653,7 +655,7 @@ namespace TransferManagerCE.CustomManager
             // Cargo Warehouse (Road) <-X-> Outside Connection 
             // Cargo Warehouse (Road) <-X-> Any train offer - Not allowed
 
-            if (m_bIsWarehouseMaterial && (incomingOffer.IsCargoWarehouse() || outgoingOffer.IsCargoWarehouse()))
+            if (m_bIsWarehouseMaterial && m_bImproveCargoWarehouseMatching && (incomingOffer.IsCargoWarehouse() || outgoingOffer.IsCargoWarehouse()))
             {
                 if (incomingOffer.IsCargoWarehouse() && outgoingOffer.IsCargoWarehouse())
                 {

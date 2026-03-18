@@ -1,5 +1,4 @@
 using ColossalFramework.Math;
-using Epic.OnlineServices.Presence;
 using ICities;
 using UnityEngine;
 using static TransferManager;
@@ -29,7 +28,6 @@ namespace TransferManagerCE.Data
                     {
                         return base.GetMaterialDescription();
                     }
-                    break;
             }
         }
 
@@ -59,7 +57,6 @@ namespace TransferManagerCE.Data
                         {
                             return (building.m_customBuffer2 * 0.001).ToString("N1");
                         }
-                        break;
                 }
             }                
 

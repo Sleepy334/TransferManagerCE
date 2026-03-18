@@ -249,11 +249,6 @@ namespace TransferManagerCE.UI
             return result;
         }
 
-        public void InvalidatePanel()
-        {
-            m_bUpdatePanel = true;
-        }
-
         public override void Update()
         {
             if (m_bUpdatePanel)

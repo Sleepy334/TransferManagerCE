@@ -1,5 +1,4 @@
-﻿using Epic.OnlineServices.Presence;
-using ICities;
+﻿using ICities;
 using SleepyCommon;
 using TransferManagerCE.UI;
 using UnityEngine;

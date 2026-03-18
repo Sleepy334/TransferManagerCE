@@ -2,6 +2,7 @@ using ColossalFramework;
 using HarmonyLib;
 using System;
 using UnityEngine;
+using static Notification;
 
 namespace TransferManagerCE
 {
@@ -14,6 +15,9 @@ namespace TransferManagerCE
             new ArgumentType[] { ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Ref })]
         public static void RenderInstancePostFix(RenderManager.CameraInfo cameraInfo, ushort buildingID, int layerMask, BuildingInfo info, ref RenderManager.Instance data)
         {
+            const int NotificationMajorSickIndex = Notification.ProblemCount + (int)Notification.Problem1.Water;
+            const int NotificationEventSadIndex = (Notification.ProblemCount * 3) + (int)NotificationEvent.Type.Sad; // Notification events come after problems in image array
+
             if (SaveGameSettings.GetSettings().DisplaySickNotification)
             {
                 ToolController properties = Singleton<ToolManager>.instance.m_properties;
@@ -27,17 +31,17 @@ namespace TransferManagerCE
                         int iImageIndex;
                         if (building.m_healthProblemTimer > SickHandler.iSICK_MAJOR_PROBLEM_TIMER_VALUE)
                         {
-                            iImageIndex = 72; // NotificationMajorSick
+                            iImageIndex = NotificationMajorSickIndex;
                         }
                         else
                         {
-                            iImageIndex = 209; // Sad balloon
+                            iImageIndex = NotificationEventSadIndex;
                         }
 
                         Vector3 position2 = building.m_position;
                         position2.y += Mathf.Min(info.m_size.y, data.m_dataVector0.y);
                         RenderInstance(cameraInfo, iImageIndex, position2, 1.0f);
-                    }
+                    } 
                 }
             }
         }

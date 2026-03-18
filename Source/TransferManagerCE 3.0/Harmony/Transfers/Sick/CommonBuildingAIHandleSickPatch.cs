@@ -1,5 +1,4 @@
 ﻿using ColossalFramework;
-using Epic.OnlineServices.Presence;
 using HarmonyLib;
 using ICities;
 using System;

@@ -63,6 +63,7 @@ namespace TransferManagerCE
         private UICheckBox? m_chkWarehouseFirst = null;
         private SettingsSlider? m_sliderWarehouseReservePercent = null;
         private UICheckBox? m_chkImprovedWarehouseMatching = null;
+        private UICheckBox? m_chkImprovedCargoWarehouseMatching = null;
         private UICheckBox? m_chkWarehouseSmarterImportExport = null;
         private UICheckBox? m_chkNewInterWarehouseMatching = null;
 
@@ -371,7 +372,7 @@ namespace TransferManagerCE
         {
             SaveGameSettings oSettings = SaveGameSettings.GetSettings();
 
-            // FACTORY GROUP
+            // ------------------- FACTORY GROUP
             UIHelper groupFactory = (UIHelper)helper.AddGroup(Localization.Get("GROUP_FACTORY_OPTIONS"));
             UIPanel panelFactory = (groupFactory as UIHelper).self as UIPanel;
 
@@ -386,7 +387,7 @@ namespace TransferManagerCE
             m_chkOverrideGenericIndustriesHandler = (UICheckBox)groupFactory.AddCheckbox(Localization.Get("optionOverrideGenericIndustriesHandler"), oSettings.OverrideGenericIndustriesHandler, OnOverrideGenericIndustriesHandlerChanged);
             AddSaveGameSetting(m_chkOverrideGenericIndustriesHandler);
 
-            // WAREHOUSE GROUP
+            // ------------------- WAREHOUSE GROUP
             UIHelper groupWarehouse = (UIHelper) helper.AddGroup(Localization.Get("GROUP_WAREHOUSE_OPTIONS"));
             UIPanel panelGroupWarehouse = (groupWarehouse as UIHelper).self as UIPanel;
 
@@ -420,6 +421,15 @@ namespace TransferManagerCE
             m_sliderWarehouseReservePercent.Percent = true;
             AddSaveGameSetting(m_sliderWarehouseReservePercent);
             groupWarehouse.AddSpace(iSEPARATOR_HEIGHT);
+
+            // ------------------- CARGO WAREHOUSE GROUP
+            UIHelper groupCargoWarehouse = (UIHelper)helper.AddGroup(Localization.Get("GROUP_CARGO_WAREHOUSE_OPTIONS"));
+
+            // Improved Cargo Warehouse Matching
+            UISettings.AddDescription(groupCargoWarehouse, "txtImprovedCargoWarehouseMatching", panelGroupWarehouse, 1.0f, Localization.Get("txtImprovedCargoWarehouseMatching"));
+            m_chkImprovedCargoWarehouseMatching = (UICheckBox)groupCargoWarehouse.AddCheckbox(Localization.Get("optionImprovedCargoWarehouseMatching"), oSettings.ImprovedCargoWarehouseMatching, (index) => setOptionImprovedCargoWarehouseMatching(index));
+            AddSaveGameSetting(m_chkImprovedCargoWarehouseMatching);
+            groupCargoWarehouse.AddSpace(iSEPARATOR_HEIGHT);
         }
 
         // ----------------------------------------------------------------------------------------
@@ -1224,6 +1234,12 @@ namespace TransferManagerCE
             oSettings.ImprovedWarehouseMatching = bChecked;
         }
 
+        public void setOptionImprovedCargoWarehouseMatching(bool bChecked)
+        {
+            SaveGameSettings oSettings = SaveGameSettings.GetSettings();
+            oSettings.ImprovedCargoWarehouseMatching = bChecked;
+        }
+
         private void UpdateImprovedWarehouseMatchingCheckbox()
         {
             // ImprovedWarehouseMatching is only available when inter-warehouse matching is ON
@@ -1332,6 +1348,7 @@ namespace TransferManagerCE
 
                 m_chkWarehouseFirst.isChecked = oSettings.WarehouseFirst;
                 m_chkImprovedWarehouseMatching.isChecked = oSettings.ImprovedWarehouseMatching;
+                m_chkImprovedCargoWarehouseMatching.isChecked = oSettings.ImprovedCargoWarehouseMatching;
                 m_chkWarehouseSmarterImportExport.isChecked = oSettings.WarehouseSmartImportExport;
                 m_chkNewInterWarehouseMatching.isChecked = oSettings.InterWarehouseTransfer;
                 m_sliderWarehouseReservePercent.Value = oSettings.WarehouseReserveTrucksPercent;

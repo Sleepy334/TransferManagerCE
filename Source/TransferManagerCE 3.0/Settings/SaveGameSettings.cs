@@ -15,7 +15,7 @@ namespace TransferManagerCE
             ConnectedLineOfSight = 1,
             PathDistance = 2
         }
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 38;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 39;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
 
         // Settings
@@ -39,6 +39,7 @@ namespace TransferManagerCE
         // Warehouse options
         public bool WarehouseFirst = false;
         public bool ImprovedWarehouseMatching = false;
+        public bool ImprovedCargoWarehouseMatching = true; 
         public bool WarehouseSmartImportExport = false;
         public bool InterWarehouseTransfer = false;
         public int WarehouseReserveTrucksPercent = 20; // [0..100]
@@ -252,6 +253,7 @@ namespace TransferManagerCE
             StorageData.WriteInt32(PathDistanceCargoStationDelay, Data); // Version 34
             StorageData.WriteBool(PoliceToughOnCrime, Data); // Version 36
             StorageData.WriteBool(WarehouseSmartImportExport, Data); // Version 37
+            StorageData.WriteBool(ImprovedCargoWarehouseMatching, Data); // Version 39
         }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
@@ -483,6 +485,10 @@ namespace TransferManagerCE
             if (iDataVersion >= 37)
             {
                 WarehouseSmartImportExport = StorageData.ReadBool(Data, ref iIndex);
+            }
+            if (iDataVersion >= 39)
+            {
+                ImprovedCargoWarehouseMatching = StorageData.ReadBool(Data, ref iIndex);
             }
         }
 
