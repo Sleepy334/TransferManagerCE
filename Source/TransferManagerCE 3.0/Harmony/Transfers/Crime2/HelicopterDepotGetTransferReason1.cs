@@ -1,7 +1,6 @@
 using HarmonyLib;
 using static TransferManager;
 using TransferManagerCE;
-using Epic.OnlineServices.Presence;
 
 namespace TransferManagerCE
 {

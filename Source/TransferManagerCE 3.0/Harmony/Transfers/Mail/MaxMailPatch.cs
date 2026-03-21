@@ -1,4 +1,5 @@
-﻿using ColossalFramework;
+﻿using System;
+using ColossalFramework;
 using HarmonyLib;
 using UnityEngine;
 
@@ -7,9 +8,14 @@ namespace TransferManagerCE
     [HarmonyPatch]
     public class MaxMailPatch
     {
-        [HarmonyPatch(typeof(CommonBuildingAI), "HandleCommonConsumption")]
+        // protected int HandleCommonConsumption(ushort buildingID, ref Building data, ref Building.Frame frameData, ref int electricityConsumption, ref int heatingConsumption, ref int waterConsumption, ref int sewageAccumulation, ref int garbageAccumulation,
+        //                                          ref int mailAccumulation, int maxMail, DistrictPolicies.Services policies, ushort mainBuildingID)
+        [HarmonyPatch(typeof(CommonBuildingAI), "HandleCommonConsumption",
+            new Type[] { typeof(ushort), typeof(Building), typeof(Building.Frame), typeof(int), typeof(int), typeof(int), typeof(int), typeof(int), typeof(int), typeof(int), typeof(DistrictPolicies.Services), typeof(ushort) },
+            new ArgumentType[] { ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Ref, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal })]
         [HarmonyPrefix]
-        public static void HandleCommonConsumption(CommonBuildingAI __instance, ushort buildingID, ref Building data, ref Building.Frame frameData, ref int electricityConsumption, ref int heatingConsumption, ref int waterConsumption, ref int sewageAccumulation, ref int garbageAccumulation, ref int mailAccumulation, ref int maxMail, DistrictPolicies.Services policies)
+        public static void HandleCommonConsumption(CommonBuildingAI __instance, ushort buildingID, ref Building data, ref Building.Frame frameData, ref int electricityConsumption, ref int heatingConsumption, ref int waterConsumption, 
+                                                                                ref int sewageAccumulation, ref int garbageAccumulation, ref int mailAccumulation, int maxMail, DistrictPolicies.Services policies, ushort mainBuildingID, ref int __result)
         {
             switch (__instance)
             {

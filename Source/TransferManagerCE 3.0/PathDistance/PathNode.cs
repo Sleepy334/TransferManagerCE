@@ -404,6 +404,7 @@ namespace TransferManagerCE
                                                 fMAX_SEARCH_DISTANCE,
                                                 excludeLaneWidth: false,
                                                 checkPedestrianStreet: true,
+                                                ignoreClosed: false,
                                                 out PathUnit.Position pathStartPosA,
                                                 out pathPosB,
                                                 out distanceSqrA,

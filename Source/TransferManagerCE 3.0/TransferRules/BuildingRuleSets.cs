@@ -217,7 +217,7 @@ namespace TransferManagerCE.TransferRules
             }
         }
         
-        public static List<ReasonRule>  GetRules(BuildingType eBuildingType, ushort buildingId)
+        public static List<ReasonRule> GetRules(BuildingType eBuildingType, ushort buildingId)
         {
             lock (s_dictionaryLock)
             {
@@ -1397,6 +1397,7 @@ namespace TransferManagerCE.TransferRules
                 rule.m_incomingDistrict = true;
                 rule.m_incomingBuilding = true;
                 rule.m_incomingDistance = true;
+                rule.m_import = true;
                 list.Add(rule);
             }
             {
