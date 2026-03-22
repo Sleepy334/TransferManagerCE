@@ -1,8 +1,7 @@
-using ColossalFramework;
 using System;
 using System.Diagnostics;
 using System.Reflection;
-using TransferManagerCE.CustomManager;
+using ColossalFramework;
 using TransferManagerCE.Settings;
 using UnityEngine;
 using static TransferManager;
@@ -11,8 +10,8 @@ namespace TransferManagerCE
 {
     public class MatchStats
     {
-        public const int iSTATS_ARRAY_SIZE = TRANSFER_REASON_COUNT + 1;
-        public const int iMATERIAL_TOTAL_LOCATION = TRANSFER_REASON_COUNT;
+        public static int iSTATS_ARRAY_SIZE;
+        public static int iMATERIAL_TOTAL_LOCATION;
 
         public static MatchStatsData[]? s_Stats = null;
 
@@ -25,6 +24,20 @@ namespace TransferManagerCE
         {
             if (s_Stats is null)
             {
+                TransferManager manager = Singleton<TransferManager>.instance;
+                ushort[] m_incomingCount = (ushort[])typeof(TransferManager).GetField("m_incomingCount", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(manager);
+
+                if(m_incomingCount != null && m_incomingCount.Length > 0)
+                {
+                    iSTATS_ARRAY_SIZE = m_incomingCount.Length + 1;
+                    iMATERIAL_TOTAL_LOCATION = m_incomingCount.Length;
+                }
+                else
+                {
+                    iSTATS_ARRAY_SIZE = TRANSFER_REASON_COUNT + 1;
+                    iMATERIAL_TOTAL_LOCATION = TRANSFER_REASON_COUNT;
+                }
+
                 s_Stats = new MatchStatsData[iSTATS_ARRAY_SIZE];
                 s_lastMatchCount = 0;
                 s_stopWatch = Stopwatch.StartNew();
@@ -33,6 +46,11 @@ namespace TransferManagerCE
 
             if (s_Stats is not null)
             {
+                if(s_Stats.Length != iSTATS_ARRAY_SIZE)
+                {
+                    Array.Resize(ref s_Stats, iSTATS_ARRAY_SIZE);
+                }
+
                 for (int i = 0; i < s_Stats.Length; i++)
                 {
                     s_Stats[i] = new MatchStatsData((TransferReason)i);
@@ -65,7 +83,9 @@ namespace TransferManagerCE
             // Add counts from already existing transfers
             if (incomingAmount is not null && outgoingAmount is not null && incomingCount is not null && outgoingCount is not null)
             {
-                for (int material = 0; material < TRANSFER_REASON_COUNT; material++)
+                iMATERIAL_TOTAL_LOCATION = incomingAmount.Length;
+
+                for (int material = 0; material < iMATERIAL_TOTAL_LOCATION; material++)
                 {
                     // Incoming
                     s_Stats[material].TotalIncomingCount += incomingCount[material];
