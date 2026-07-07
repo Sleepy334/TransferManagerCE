@@ -1,6 +1,6 @@
 using HarmonyLib;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public static class PlayerBuildingAISimulationStepActivePatch
@@ -9,8 +9,7 @@ namespace TransferManagerCE
         [HarmonyPatch(typeof(PlayerBuildingAI), "SimulationStepActive")]
         public static void PostFix(PlayerBuildingAI __instance, ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
-                SaveGameSettings.GetSettings().OverrideSickHandler)
+            if (SaveGameSettings.GetSettings().OverrideSickHandler)
             {
                 SickHandler.HandleSick(__instance, buildingID, ref buildingData, BuildingUtils.GetSickCount(buildingID, buildingData));
             }

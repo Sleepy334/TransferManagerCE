@@ -1,11 +1,11 @@
 using ColossalFramework.Math;
 using System;
-using TransferManagerCE.Util;
+using TransferManagerCore.Util;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataCash : StatusDataBuilding
     {

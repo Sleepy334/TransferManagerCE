@@ -1,19 +1,19 @@
 using ColossalFramework;
 using ColossalFramework.UI;
 using SleepyCommon;
-using TransferManagerCE.Data;
+using TransferManagerCore.Data;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIStatusRow : UIListRow<StatusData>
     {
         private UILabel? m_lblMaterial = null;
         private UILabel? m_lblValue = null;
         private UILabel? m_lblTimer = null;
-        private UILabelLiveTooltip? m_lblVehicle = null;
         private UILabel? m_lblDistance = null;
-        private UITruncateLabel? m_lblResponder = null;
+        private UILabelLiveTooltip? m_lblDescription1 = null;
+        private UILabelLiveTooltip? m_lblDescription2 = null;
         private UIButton? m_btnDelete = null;
 
         public static float[] ColumnWidths =
@@ -22,8 +22,8 @@ namespace TransferManagerCE.UI
             80, // Value
             80, // Timer
             60, // Distance
-            200, // Vehicle
-            200, // Responder
+            200, // Description1
+            200, // Description2
         };
 
         // ----------------------------------------------------------------------------------------
@@ -38,11 +38,13 @@ namespace TransferManagerCE.UI
                 m_lblMaterial.text = "";
                 m_lblMaterial.textScale = BuildingPanel.fTEXT_SCALE;
                 m_lblMaterial.tooltip = "";
-                m_lblMaterial.textAlignment = UIHorizontalAlignment.Left;// oTextAlignment;// UIHorizontalAlignment.Center;
+                m_lblMaterial.textAlignment = UIHorizontalAlignment.Left;
                 m_lblMaterial.verticalAlignment = UIVerticalAlignment.Middle;
                 m_lblMaterial.autoSize = false;
                 m_lblMaterial.height = height;
                 m_lblMaterial.width = ColumnWidths[0];
+                m_lblMaterial.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
+                m_lblMaterial.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
             m_lblValue = AddUIComponent<UILabel>();
@@ -57,6 +59,8 @@ namespace TransferManagerCE.UI
                 m_lblValue.autoSize = false;
                 m_lblValue.height = height;
                 m_lblValue.width = ColumnWidths[1];
+                m_lblValue.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
+                m_lblValue.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
             m_lblTimer = AddUIComponent<UILabel>();
@@ -71,6 +75,8 @@ namespace TransferManagerCE.UI
                 m_lblTimer.autoSize = false;
                 m_lblTimer.height = height;
                 m_lblTimer.width = ColumnWidths[2];
+                m_lblTimer.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
+                m_lblTimer.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
             m_lblDistance = AddUIComponent<UILabel>();
@@ -85,38 +91,40 @@ namespace TransferManagerCE.UI
                 m_lblDistance.autoSize = false;
                 m_lblDistance.height = height;
                 m_lblDistance.width = ColumnWidths[3];
+                m_lblDistance.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
+                m_lblDistance.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
-            m_lblVehicle = AddUIComponent<UILabelLiveTooltip>();
-            if (m_lblVehicle is not null)
+            m_lblDescription1 = AddUIComponent<UILabelLiveTooltip>();
+            if (m_lblDescription1 is not null)
             {
-                m_lblVehicle.name = "m_lblVehicle";
-                m_lblVehicle.text = "";
-                m_lblVehicle.textScale = BuildingPanel.fTEXT_SCALE;
-                m_lblVehicle.tooltip = "";
-                m_lblVehicle.textAlignment = UIHorizontalAlignment.Left;
-                m_lblVehicle.verticalAlignment = UIVerticalAlignment.Middle;
-                m_lblVehicle.autoSize = false;
-                m_lblVehicle.height = height;
-                m_lblVehicle.width = ColumnWidths[4];
-                m_lblVehicle.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
-                m_lblVehicle.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
+                m_lblDescription1.name = "m_lblDescription1";
+                m_lblDescription1.text = "";
+                m_lblDescription1.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblDescription1.tooltip = "";
+                m_lblDescription1.textAlignment = UIHorizontalAlignment.Left;
+                m_lblDescription1.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblDescription1.autoSize = false;
+                m_lblDescription1.height = height;
+                m_lblDescription1.width = ColumnWidths[4];
+                m_lblDescription1.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
+                m_lblDescription1.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
-            m_lblResponder = AddUIComponent<UITruncateLabel>();
-            if (m_lblResponder is not null)
+            m_lblDescription2 = AddUIComponent<UILabelLiveTooltip>();
+            if (m_lblDescription2 is not null)
             {
-                m_lblResponder.name = "m_lblResponder";
-                m_lblResponder.text = "";
-                m_lblResponder.textScale = BuildingPanel.fTEXT_SCALE;
-                m_lblResponder.tooltip = "";
-                m_lblResponder.textAlignment = UIHorizontalAlignment.Left;
-                m_lblResponder.verticalAlignment = UIVerticalAlignment.Middle;
-                m_lblResponder.autoSize = false;
-                m_lblResponder.height = height;
-                m_lblResponder.width = ColumnWidths[5];
-                m_lblResponder.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
-                m_lblResponder.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
+                m_lblDescription2.name = "m_lblDescription2";
+                m_lblDescription2.text = "";
+                m_lblDescription2.textScale = BuildingPanel.fTEXT_SCALE;
+                m_lblDescription2.tooltip = "";
+                m_lblDescription2.textAlignment = UIHorizontalAlignment.Left;
+                m_lblDescription2.verticalAlignment = UIVerticalAlignment.Middle;
+                m_lblDescription2.autoSize = false;
+                m_lblDescription2.height = height;
+                m_lblDescription2.width = ColumnWidths[5];
+                m_lblDescription2.eventMouseEnter += new MouseEventHandler(OnMouseEnter);
+                m_lblDescription2.eventMouseLeave += new MouseEventHandler(OnMouseLeave);
             }
 
             m_btnDelete = AddUIComponent<UIButton>();
@@ -129,33 +137,19 @@ namespace TransferManagerCE.UI
                 m_btnDelete.normalBgSprite = "buttonclose";
                 m_btnDelete.hoveredBgSprite = "buttonclosehover";
                 m_btnDelete.pressedBgSprite = "buttonclosepressed";
-                m_btnDelete.tooltip = Localization.Get("btnDeleteVehicle");
+                m_btnDelete.tooltip = "";
                 m_btnDelete.eventClick += (component, param) =>
                 {
-                    if (data is not null && data.HasVehicle())
+                    if (data is not null && data.CanDelete())
                     {
-                        ushort vehicleId = data.GetVehicleId();
-                        if (vehicleId != 0)
+                        // Clear tooltip
+                        if (m_btnDelete.tooltipBox is not null)
                         {
-                            // Clear tooltip
-                            if (m_btnDelete.tooltipBox is not null)
-                            {
-                                m_btnDelete.tooltip = "";
-                                m_btnDelete.tooltipBox.Hide();
-                            }
-
-                            // Remove vehicle
-                            InstanceID vehicleInstace = new InstanceID { Vehicle = vehicleId };
-                            Singleton<SimulationManager>.instance.AddAction(() =>
-                            {
-                                // If vehicle is stuck we may need to add Created flag to remove it
-                                ref Vehicle vehicle = ref VehicleManager.instance.m_vehicles.m_buffer[vehicleInstace.Vehicle];
-                                vehicle.m_flags |= Vehicle.Flags.Created;
-
-                                // Remove vehicle
-                                Singleton<VehicleManager>.instance.ReleaseVehicle(vehicleInstace.Vehicle);
-                            });
+                            m_btnDelete.tooltip = "";
+                            m_btnDelete.tooltipBox.Hide();
                         }
+
+                        data.OnClickDelete();
                     }
                 };
             }
@@ -178,17 +172,16 @@ namespace TransferManagerCE.UI
             }
 
             m_lblMaterial.text = data.GetMaterialDisplay();
-
             m_lblValue.text = data.GetValue();
             m_lblTimer.text = data.GetTimer();
-            m_lblVehicle.text = data.GetVehicle();
             m_lblDistance.text = data.GetDistanceAsString();
-            m_lblResponder.text = data.GetResponder();
+            m_lblDescription1.text = data.GetDescription1();
+            m_lblDescription2.text = data.GetDescription2();
 
-            if (data.GetVehicleId() != 0)
+            if (data.CanDelete())
             {
                 m_btnDelete.isVisible = true;
-                m_btnDelete.tooltip = $"{Localization.Get("btnDeleteVehicle")} #{data.GetVehicleId()}";
+                m_btnDelete.tooltip = data.GetDeleteTooltip();
             }
             else
             {
@@ -201,9 +194,9 @@ namespace TransferManagerCE.UI
             m_lblMaterial.text = "";
             m_lblValue.text = "";
             m_lblTimer.text = "";
-            m_lblVehicle.text = "";
             m_lblDistance.text = "";
-            m_lblResponder.text = "";
+            m_lblDescription1.text = "";
+            m_lblDescription2.text = "";
             m_btnDelete.text = "";
         }
 
@@ -212,21 +205,21 @@ namespace TransferManagerCE.UI
             m_lblMaterial.tooltip = "";
             m_lblValue.tooltip = "";
             m_lblTimer.tooltip = "";
-            m_lblVehicle.tooltip = "";
             m_lblDistance.tooltip = "";
-            m_lblResponder.tooltip = "";
+            m_lblDescription1.tooltip = "";
+            m_lblDescription2.tooltip = "";
             m_btnDelete.tooltip = "";
         }
 
         protected override void OnClicked(UIComponent component)
         {
-            if (component == m_lblResponder)
+            if (component == m_lblDescription1)
             {
-                data.OnClickResponder();
+                data.OnClickDescription1();
             }
-            else if (component == m_lblVehicle)
+            else if (component == m_lblDescription2)
             {
-                data.OnClickTarget();
+                data.OnClickDescription2();
             }
         }
 
@@ -243,13 +236,17 @@ namespace TransferManagerCE.UI
                 {
                     sTooltip = data.GetTimerTooltip();
                 }
-                else if (component == m_lblVehicle)
+                else if (component == m_lblDescription1)
                 {
-                    sTooltip = data.GetVehicleTooltip();
+                    sTooltip = data.GetDescription1Tooltip();
                 }
-                else if (component == m_lblResponder)
+                else if (component == m_lblDescription2)
                 {
-                    sTooltip = data.GetResponderTooltip();
+                    sTooltip = data.GetDescription2Tooltip();
+                }
+                else if (component == m_btnDelete)
+                {
+                    sTooltip = data.GetDeleteTooltip();
                 }
             }
 

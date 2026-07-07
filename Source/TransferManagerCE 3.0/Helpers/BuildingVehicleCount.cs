@@ -1,12 +1,13 @@
 using ColossalFramework;
 using ColossalFramework.Math;
 using SleepyCommon;
+using System;
 using System.Reflection;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class BuildingVehicleCount
     {
@@ -100,7 +101,6 @@ namespace TransferManagerCE
 
         public static int GetVehicleCount(BuildingType eBuildingType, ushort buildingId, Building building, int iType)
         {
-            // Add vehicle count if generic processing as the vanilla form doesn't show vehicle count
             switch (eBuildingType)
             {
                 case BuildingType.TransportStation:
@@ -255,9 +255,7 @@ namespace TransferManagerCE
                             if (cemeteryAI is not null)
                             {
                                 // Factor in budget
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * cemeteryAI.m_hearseCount + 99) / 100;
+                                return GetAdjustedVehicleCount(cemeteryAI.m_hearseCount, building);
                             }
                         } 
                         break;
@@ -270,9 +268,7 @@ namespace TransferManagerCE
                             PoliceStationAI? buildingAI = building.Info.m_buildingAI as PoliceStationAI;
                             if (buildingAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.PoliceCarCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.PoliceCarCount, building);
                             }
                         }
                         break;
@@ -293,9 +289,7 @@ namespace TransferManagerCE
                             FireStationAI? buildingAI = building.Info.m_buildingAI as FireStationAI;
                             if (buildingAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.m_fireTruckCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_fireTruckCount, building);
                             }
                         }
                         break;
@@ -307,9 +301,7 @@ namespace TransferManagerCE
                             HospitalAI? buildingAI = building.Info?.GetAI() as HospitalAI;
                             if (buildingAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.AmbulanceCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.AmbulanceCount, building);
                             }
                         }
                         break;
@@ -321,11 +313,10 @@ namespace TransferManagerCE
                             PrefabAI buildingAI = building.Info.GetAI();
                             if (buildingAI is not null)
                             {
+
                                 PropertyInfo property = buildingAI.GetType().GetProperty("AmbulanceCount");
                                 int iAmbulanceCount = (int)property.GetValue(buildingAI, new object[] { });
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * iAmbulanceCount + 99) / 100;
+                                return GetAdjustedVehicleCount(iAmbulanceCount, building);
                             }
                         }
                         break;
@@ -342,9 +333,7 @@ namespace TransferManagerCE
                             if (garbageAI is not null)
                             {
                                 // Factor in budget
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * garbageAI.m_garbageTruckCount + 99) / 100;
+                                return GetAdjustedVehicleCount(garbageAI.m_garbageTruckCount, building);
                             }
                         }
                         else
@@ -361,9 +350,7 @@ namespace TransferManagerCE
                             WarehouseAI? warehouseAI = building.Info?.m_buildingAI as WarehouseAI;
                             if (warehouseAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * warehouseAI.m_truckCount + 99) / 100;
+                                return GetAdjustedVehicleCount(warehouseAI.m_truckCount, building);
                             }
                         }
                         break;
@@ -377,9 +364,7 @@ namespace TransferManagerCE
                             ProcessingFacilityAI? buildingAI = building.Info?.m_buildingAI as ProcessingFacilityAI;
                             if (buildingAI is not null && building.Info is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.m_outputVehicleCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_outputVehicleCount, building);
                             }
                         }   
                         break;
@@ -389,9 +374,7 @@ namespace TransferManagerCE
                         FishFarmAI? buildingAI = building.Info?.m_buildingAI as FishFarmAI;
                         if (buildingAI is not null && building.Info is not null)
                         {
-                            int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                            int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                            return (productionRate * buildingAI.m_outputVehicleCount + 99) / 100;
+                            return GetAdjustedVehicleCount(buildingAI.m_outputVehicleCount, building);
                         }
                         break;
                     }
@@ -400,15 +383,13 @@ namespace TransferManagerCE
                         FishingHarborAI? buildingAI = building.Info?.m_buildingAI as FishingHarborAI;
                         if (buildingAI is not null && building.Info is not null)
                         {
-                            int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                            int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
                             if (iVehicleType == 0)
                             {
-                                return (productionRate * buildingAI.m_outputVehicleCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_outputVehicleCount, building);
                             }
                             else if (iVehicleType == 1)
                             {
-                                return (productionRate * buildingAI.m_boatCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_boatCount, building);
                             }
                         }  
                         break;
@@ -418,9 +399,7 @@ namespace TransferManagerCE
                         ExtractingFacilityAI? buildingAI = building.Info?.m_buildingAI as ExtractingFacilityAI;
                         if (buildingAI is not null && building.Info is not null)
                         {
-                            int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                            int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                            return (productionRate * buildingAI.m_outputVehicleCount + 99) / 100;
+                            return GetAdjustedVehicleCount(buildingAI.m_outputVehicleCount, building);
                         }
                         break;
                     }
@@ -428,22 +407,11 @@ namespace TransferManagerCE
                     {
                         if (iVehicleType == 0 && building.m_flags != 0 && building.Info is not null)
                         {
+                            
                             MaintenanceDepotAI? buildingAI = building.Info.m_buildingAI as MaintenanceDepotAI;
                             if (buildingAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-
-                                // Park maintenance adjusts the budget
-                                DistrictManager instance = Singleton<DistrictManager>.instance;
-                                byte district = instance.GetDistrict(building.m_position);
-                                DistrictPolicies.Services servicePolicies = instance.m_districts.m_buffer[district].m_servicePolicies;
-                                if ((servicePolicies & DistrictPolicies.Services.ParkMaintenanceBoost) != 0)
-                                {
-                                    productionRate *= 2;
-                                }
-
-                                return (productionRate * buildingAI.m_maintenanceTruckCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_maintenanceTruckCount, building);
                             }
                         }
                         break;
@@ -455,9 +423,7 @@ namespace TransferManagerCE
                             MaintenanceDepotAI? buildingAI = building.Info.m_buildingAI as MaintenanceDepotAI;
                             if (buildingAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.m_maintenanceTruckCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_maintenanceTruckCount, building);
                             }
                         }
                         break;
@@ -471,9 +437,7 @@ namespace TransferManagerCE
                             HelicopterDepotAI? buildingAI = building.Info.m_buildingAI as HelicopterDepotAI;
                             if (buildingAI is not null && buildingAI.m_helicopterCount < 16384)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.m_helicopterCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_helicopterCount, building);
                             }
                         }
                         break;
@@ -485,9 +449,7 @@ namespace TransferManagerCE
                             SnowDumpAI? buildingAI = building.Info.m_buildingAI as SnowDumpAI;
                             if (buildingAI is not null && buildingAI.m_snowTruckCount < 16384)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.m_snowTruckCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_snowTruckCount, building);
                             }
                         }
                         break;
@@ -499,16 +461,13 @@ namespace TransferManagerCE
                             PostOfficeAI? buildingAI = building.Info.m_buildingAI as PostOfficeAI;
                             if (buildingAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-
                                 if (iVehicleType == 0)
                                 {
-                                    return (productionRate * buildingAI.m_postVanCount + 99) / 100;
+                                    return GetAdjustedVehicleCount(buildingAI.m_postVanCount, building);
                                 }
                                 else if(iVehicleType == 1)
                                 {
-                                    return (productionRate * buildingAI.m_postTruckCount + 99) / 100;
+                                    return GetAdjustedVehicleCount(buildingAI.m_postTruckCount, building);
                                 }
                             }
                         }
@@ -521,9 +480,7 @@ namespace TransferManagerCE
                             PostOfficeAI? buildingAI = building.Info.m_buildingAI as PostOfficeAI;
                             if (buildingAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.m_postTruckCount + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_postTruckCount, building);
                             }
                         }
                         break;
@@ -535,9 +492,7 @@ namespace TransferManagerCE
                             WaterFacilityAI? buildingAI = building.Info.m_buildingAI as WaterFacilityAI;
                             if (buildingAI is not null)
                             {
-                                int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                                return (productionRate * buildingAI.m_pumpingVehicles + 99) / 100;
+                                return GetAdjustedVehicleCount(buildingAI.m_pumpingVehicles, building);
                             }
                         }
                         break;
@@ -545,6 +500,27 @@ namespace TransferManagerCE
             }
 
             return 0;
+        }
+
+        public static int GetAdjustedVehicleCount(int baseCount, Building building)
+        {
+            int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
+            int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
+
+            // Park maintenance depot doubles production rate for vehicle count
+            if (building.Info.GetAI() is MaintenanceDepotAI &&  
+                building.Info.m_class.m_service == ItemClass.Service.Beautification)
+            {
+                DistrictManager instance = Singleton<DistrictManager>.instance;
+                byte district = instance.GetDistrict(building.m_position);
+                DistrictPolicies.Services servicePolicies = instance.m_districts.m_buffer[district].m_servicePolicies;
+                if ((servicePolicies & DistrictPolicies.Services.ParkMaintenanceBoost) != DistrictPolicies.Services.None)
+                {
+                    productionRate *= 2;
+                }
+            }
+
+            return Math.Max(0, (productionRate * baseCount + 99) / 100);
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using static TransferManager;
 
-namespace TransferManagerCE.TransferRules
+namespace TransferManagerCore.TransferRules
 {
     public class ReasonRule
     {

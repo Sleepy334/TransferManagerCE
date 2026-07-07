@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class CheckListView : UIPanel
     {
@@ -93,7 +93,7 @@ namespace TransferManagerCE
                 }
                 else
                 {
-                    CDebug.Log("m_listPanel is null");
+                    Log.Info("m_listPanel is null");
                     return;
                 }
 
@@ -107,7 +107,7 @@ namespace TransferManagerCE
                 }
                 else
                 {
-                    CDebug.Log("m_scrollbarPanel is null");
+                    Log.Info("m_scrollbarPanel is null");
                     return;
                 }
 

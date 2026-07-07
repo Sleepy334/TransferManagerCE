@@ -1,13 +1,13 @@
 using ColossalFramework;
 using System.Collections.Generic;
-using TransferManagerCE.Data;
+using TransferManagerCore.Data;
 using ICities;
-using TransferManagerCE.Util;
+using TransferManagerCore.Util;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
-using static TransferManagerCE.CustomTransferReason;
+using static TransferManagerCore.BuildingTypeHelper;
+using static TransferManagerCore.CustomTransferReason;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class StatusHelper
     {
@@ -129,7 +129,7 @@ namespace TransferManagerCE
 
                 list.Add(data);
             }
-            else if (data.HasVehicle())
+            else if (data.IsVehicleData())
             {
                 if (!m_setAddedVehicles.Contains(data.GetVehicleId()))
                 {
@@ -168,8 +168,12 @@ namespace TransferManagerCE
             if (eBuildingType != BuildingType.ServicePoint)
             {
                 AddToList(m_listGeneral, new StatusDataCitizens(CustomTransferReason.Reason.None, eBuildingType, buildingId));
+#if DEBUG
+                AddToList(m_listGeneral, new StatusDataCitizenInstance(CustomTransferReason.Reason.None, eBuildingType, buildingId));
+#endif
             }
-            
+
+            // Add Worker Counts
             int iTotalWorker = BuildingUtils.GetTotalWorkerPlaces(buildingId, building, out int worker0, out int worker1, out int worker2, out int worker3);
             if (iTotalWorker > 0)
             {
@@ -178,6 +182,68 @@ namespace TransferManagerCE
                 AddToList(m_listGeneral, new StatusDataWorkers(CustomTransferReason.Reason.Worker1, eBuildingType, buildingId));
                 AddToList(m_listGeneral, new StatusDataWorkers(CustomTransferReason.Reason.Worker2, eBuildingType, buildingId));
                 AddToList(m_listGeneral, new StatusDataWorkers(CustomTransferReason.Reason.Worker3, eBuildingType, buildingId));
+            }
+
+            // Import / Export
+            switch (eBuildingType)
+            {
+                case BuildingType.CargoWarehouse:
+                    {
+                        if (building.m_parentBuilding == 0)
+                        {
+                            AddToList(m_listGeneral, new StatusDataImport(eBuildingType, buildingId));
+                            AddToList(m_listGeneral, new StatusDataExport(eBuildingType, buildingId));
+                        }
+                        break;
+                    }
+
+                // Both
+                case BuildingType.ServicePoint:
+                case BuildingType.GenericProcessing:
+                case BuildingType.GenericFactory:
+                case BuildingType.CargoFerryWarehouseHarbor:
+                case BuildingType.Warehouse:
+                case BuildingType.ProcessingFacility:
+                case BuildingType.UniqueFactory:
+                case BuildingType.FishFactory:
+                case BuildingType.PostSortingFacility:
+                case BuildingTypeHelper.BuildingType.PostOffice:
+                    {
+                        AddToList(m_listGeneral, new StatusDataImport(eBuildingType, buildingId));
+                        AddToList(m_listGeneral, new StatusDataExport(eBuildingType, buildingId));
+                        break;
+                    }
+
+                // Import only
+                case BuildingTypeHelper.BuildingType.Commercial:
+                    {
+                        AddToList(m_listGeneral, new StatusDataImport(eBuildingType, buildingId));
+                        break;
+                    }
+
+                // Export only
+                case BuildingType.FishFarm:
+                case BuildingType.FishHarbor:
+                case BuildingType.GenericExtractor:
+                case BuildingType.ExtractionFacility:
+                case BuildingType.Recycling:
+                case BuildingType.WasteProcessing:
+                    {
+                        AddToList(m_listGeneral, new StatusDataExport(eBuildingType, buildingId));
+                        break;
+                    }
+            }
+
+            // Land Value
+            switch (eBuildingType)
+            {
+                case BuildingType.Residential:
+                case BuildingType.Commercial:
+                    {
+                        AddToList(m_listGeneral, new StatusDataLandValue(eBuildingType, buildingId));
+                        break;
+                    }
+
             }
         }
 
@@ -355,8 +421,8 @@ namespace TransferManagerCE
                 case BuildingTypeHelper.BuildingType.Commercial:
                     {
                         CommercialBuildingAI buildingAI = building.Info.GetAI() as CommercialBuildingAI;
-                        AddToList(m_listIncoming, new StatusDataBuildingCommercial((CustomTransferReason.Reason)buildingAI.m_incomingResource, eBuildingType, buildingId));
 
+                        AddToList(m_listIncoming, new StatusDataBuildingCommercial((CustomTransferReason.Reason)buildingAI.m_incomingResource, eBuildingType, buildingId));
                         TransferReason material = StatusDataBuildingCommercial.GetOutgoingTransferReason(buildingAI, buildingId);
                         AddToList(m_listOutgoing, new StatusDataBuildingCommercial((CustomTransferReason.Reason)material, eBuildingType, buildingId));
                         break;
@@ -561,10 +627,10 @@ namespace TransferManagerCE
                                     switch (eBuildingType)
                                     {
                                         case BuildingType.Cemetery:
-                                            AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                         default:
-                                            AddToList(m_listServices, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listServices, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                     }
                                     break;
@@ -577,10 +643,10 @@ namespace TransferManagerCE
                                         case BuildingType.Hospital:
                                         case BuildingType.MedicalHelicopterDepot:
                                         case BuildingType.UniversityHospital:
-                                            AddToList(m_listIncoming, new StatusDataVehicleSick((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listIncoming, new StatusDataVehicleSick((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                         default:
-                                            AddToList(m_listServices, new StatusDataVehicleSick((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listServices, new StatusDataVehicleSick((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                     }
                                     break;
@@ -594,10 +660,10 @@ namespace TransferManagerCE
                                         case BuildingType.WasteTransfer:
                                         case BuildingType.Landfill:
                                         case BuildingType.IncinerationPlant:
-                                            AddToList(m_listIncoming, new StatusDataVehicleGarbage((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listIncoming, new StatusDataVehicleGarbage((CustomTransferReason.Reason)vehicle.m_transferType, actualVehicleId, eBuildingType, buildingId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                         default:
-                                            AddToList(m_listServices, new StatusDataVehicleGarbage((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listServices, new StatusDataVehicleGarbage((CustomTransferReason.Reason)vehicle.m_transferType, actualVehicleId, eBuildingType, buildingId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                     }
                                     break;
@@ -610,10 +676,10 @@ namespace TransferManagerCE
                                         case BuildingType.FireStation:
                                         case BuildingType.FireHelicopterDepot:
                                         case BuildingType.FirewatchTower:
-                                            AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                         default:
-                                            AddToList(m_listServices, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listServices, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                     }
                                     break;
@@ -625,10 +691,10 @@ namespace TransferManagerCE
                                     {
                                         case BuildingType.PoliceHelicopterDepot:
                                         case BuildingType.PoliceStation:
-                                            AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                         default:
-                                            AddToList(m_listServices, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listServices, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                     }
                                     break;
@@ -638,10 +704,10 @@ namespace TransferManagerCE
                                     switch (eBuildingType)
                                     {
                                         case BuildingType.Bank:
-                                            AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                         default:
-                                            AddToList(m_listServices, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listServices, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                     }
                                     break;
@@ -651,7 +717,7 @@ namespace TransferManagerCE
                                     switch (eBuildingType)
                                     {
                                         case BuildingType.PostOffice:
-                                            AddToList(m_listIncoming, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listIncoming, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                         case BuildingType.PostSortingFacility:
                                             switch ((TransferReason)vehicle.m_transferType)
@@ -660,18 +726,18 @@ namespace TransferManagerCE
                                                 case TransferReason.SortedMail:
                                                 case TransferReason.OutgoingMail:
                                                     {
-                                                        AddToList(m_listOutgoing, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                        AddToList(m_listOutgoing, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                                         break;
                                                     }
                                                 case TransferReason.UnsortedMail:
                                                     {
-                                                        AddToList(m_listIncoming, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                        AddToList(m_listIncoming, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                                         break;
                                                     }
                                             }
                                             break;
                                         default:
-                                            AddToList(m_listServices, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                            AddToList(m_listServices, new StatusDataVehicleMail((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                             break;
                                     }
                                     break;
@@ -679,7 +745,7 @@ namespace TransferManagerCE
                             case ParkMaintenanceVehicleAI:
                             case SnowTruckAI:
                                 {
-                                    AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                    AddToList(m_listIncoming, new StatusDataVehicle((CustomTransferReason.Reason)vehicle.m_transferType, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                     break;
                                 }
                             case CargoTruckAI:
@@ -689,7 +755,7 @@ namespace TransferManagerCE
                                         case BuildingType.Commercial:
                                             {
                                                 CommercialBuildingAI buildingAI = building.Info.GetAI() as CommercialBuildingAI;
-                                                AddToList(m_listIncoming, new StatusDataVehicleCommercial((CustomTransferReason.Reason) buildingAI.m_incomingResource, eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                AddToList(m_listIncoming, new StatusDataVehicleCommercial((CustomTransferReason.Reason) buildingAI.m_incomingResource, eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                                 break;
                                             }
                                         case BuildingType.Warehouse:
@@ -701,20 +767,20 @@ namespace TransferManagerCE
                                                 CustomTransferReason.Reason reason = BuildingTypeHelper.GetWarehouseActualTransferReason(warehouseBuildingId);
                                                 if (reason != CustomTransferReason.Reason.None)
                                                 {
-                                                    AddToList(m_listIncoming, new StatusDataVehicle(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                    AddToList(m_listIncoming, new StatusDataVehicle(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                                 }
                                                 break;
                                             }
                                         case BuildingType.GenericProcessing:
                                         case BuildingType.GenericFactory:
                                             {
-                                                AddToList(m_listIncoming, new StatusDataVehicleGenericProcessing(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                AddToList(m_listIncoming, new StatusDataVehicleGenericProcessing(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                                 break;
                                             }
                                         default:
                                             {
                                                 // Add a generic vehicle
-                                                AddToList(m_listIncoming, new StatusDataVehicle(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                                AddToList(m_listIncoming, new StatusDataVehicle(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                                 break;
                                             }
                                     }
@@ -723,7 +789,7 @@ namespace TransferManagerCE
                             default:
                                 {
                                     // Add a generic vehicle
-                                    AddToList(m_listIncoming, new StatusDataVehicle(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, vehicle.m_sourceBuilding, actualVehicleId));
+                                    AddToList(m_listIncoming, new StatusDataVehicle(VehicleUtils.GetTransferType(vehicle), eBuildingType, buildingId, actualVehicleId, vehicle.m_sourceBuilding, new InstanceID { Building = vehicle.m_targetBuilding }));
                                     break;
                                 }
                         }

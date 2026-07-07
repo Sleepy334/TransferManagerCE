@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace TransferManagerCE.Settings
+namespace TransferManagerCore.Settings
 {
     public class XmlInputKey
     {

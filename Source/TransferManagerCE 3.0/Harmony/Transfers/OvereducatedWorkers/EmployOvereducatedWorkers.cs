@@ -3,7 +3,7 @@ using HarmonyLib;
 using System;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class EmployOvereducatedWorkersPatch
@@ -43,7 +43,7 @@ namespace TransferManagerCE
                 // Otherwise scale priority based on filled job level, limit to 6 so we save highest priority for building with timer running
                 iBuildingPriority = Mathf.Clamp((int)((1.19f - fPercentFilled) * 8.0), 1, 6);
             }
-            //CDebug.Log($"buildingID: {buildingID} Workers: {iTotalWorkers} Jobs: {iTotalWorkplaces} Percent: {fPercentFilled} Priority: {iPriority}");
+            //Log.Info($"buildingID: {buildingID} Workers: {iTotalWorkers} Jobs: {iTotalWorkplaces} Percent: {fPercentFilled} Priority: {iPriority}");
 
             if (Singleton<SimulationManager>.instance.m_randomizer.Int32(2u) == 0)
             {

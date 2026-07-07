@@ -3,7 +3,7 @@ using ColossalFramework.UI;
 
 using System;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public interface IUIFastListRow
     {

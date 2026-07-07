@@ -1,6 +1,6 @@
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class CustomTransferReason
     {
@@ -123,8 +123,8 @@ namespace TransferManagerCE
             IntercityBus = 112,
             BiofuelBus = 113,
             Cash = 114,
-            TaxiMove = 115,
-            Mail2 = 116,
+            TaxiMove = 115, // TaxiDepot -> Taxi Stand
+            Mail2 = 116, // Mail trucks to service points and main buildings
             BusinessA = 119,
             BusinessB = 120,
             BusinessC = 121,
@@ -133,7 +133,20 @@ namespace TransferManagerCE
             NatureB = 124,
             NatureC = 125,
             NatureD = 126,
-            Crime2 = 127,
+            Crime2 = 127, // Helicopter crime response to separate for path finding
+
+#if TRANSFER_MANAGER_EXTENDED
+            // Our extra transfer reasons
+            // -----------------------------
+
+            // Prison Helicopter Mod
+            PoliceVanCriminalMove = 223, // Moves criminals from small police station to big police station.
+            CriminalPickup2 = 224, // Prison helicopter call out
+            CriminalMove2 = 225, // Prison helicopter move
+#endif
+
+            // -----------------------------
+
             None = 0xFF
         }
 

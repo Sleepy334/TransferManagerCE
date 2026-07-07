@@ -2,11 +2,11 @@ using ColossalFramework;
 using HarmonyLib;
 using System;
 using System.Runtime.CompilerServices;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class StartPathFindPatches

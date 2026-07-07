@@ -1,14 +1,14 @@
 using SleepyCommon;
 using System;
 using System.Collections.Generic;
-using TransferManagerCE.Settings;
-using TransferManagerCE.TransferRules;
+using TransferManagerCore.Settings;
+using TransferManagerCore.TransferRules;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
-using static TransferManagerCE.CustomManager.TransferManagerModes;
+using static TransferManagerCore.BuildingTypeHelper;
+using static TransferManagerCore.CustomManager.TransferManagerModes;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class DistrictRestrictions
     {
@@ -244,7 +244,7 @@ namespace TransferManagerCE.CustomManager
                     }
                 case DistrictRestrictionSettings.PreferLocal.Unknown:
                     {
-                        CDebug.Log("Error district restriction unknown");
+                        Log.Error("Error district restriction unknown");
                         return true;
                     }
             }

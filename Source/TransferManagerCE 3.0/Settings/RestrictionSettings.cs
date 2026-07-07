@@ -2,9 +2,10 @@
 using SleepyCommon;
 using System;
 using System.Collections.Generic;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
+using TransferManagerCore;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class RestrictionSettings
     {
@@ -303,7 +304,7 @@ namespace TransferManagerCE
                     else
                     {
                         // District doesn't exist any more
-                        CDebug.Log("District missing: " + districtId.m_iDistrictId);
+                        Log.Info("District missing: " + districtId.m_iDistrictId);
                     }
                 }
                 else
@@ -316,7 +317,7 @@ namespace TransferManagerCE
                     else
                     {
                         // District doesn't exist any more
-                        CDebug.Log("Park missing: " + districtId.m_iDistrictId);
+                        Log.Info("Park missing: " + districtId.m_iDistrictId);
                     }
                 }
             }

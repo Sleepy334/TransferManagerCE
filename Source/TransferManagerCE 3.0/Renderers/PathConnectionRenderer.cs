@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using static RenderManager;
 using System;
-using TransferManagerCE.UI;
-using static TransferManagerCE.NetworkModeHelper;
+using TransferManagerCore.UI;
+using static TransferManagerCore.NetworkModeHelper;
+using TransferManagerCore.CustomManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathConnectionRenderer : SimulationManagerBase<PathConnectionRenderer, MonoBehaviour>, IRenderableManager
     {

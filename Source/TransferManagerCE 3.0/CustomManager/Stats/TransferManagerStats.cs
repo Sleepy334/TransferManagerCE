@@ -1,8 +1,8 @@
 ﻿using System;
 using static TransferManager;
-using static TransferManagerCE.CustomManager.PathDistanceTypes;
+using static TransferManagerCore.CustomManager.PathDistanceTypes;
 
-namespace TransferManagerCE.CustomManager.Stats
+namespace TransferManagerCore.CustomManager.Stats
 {
     public class TransferManagerStats
     {

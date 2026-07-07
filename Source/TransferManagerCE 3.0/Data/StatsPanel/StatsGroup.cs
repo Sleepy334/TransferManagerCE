@@ -1,6 +1,6 @@
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class StatsGroup : StatsBase
     {

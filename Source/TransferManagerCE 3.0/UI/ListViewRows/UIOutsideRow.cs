@@ -1,9 +1,9 @@
 using ColossalFramework.UI;
 using SleepyCommon;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIOutsideRow : UIListRow<OutsideContainer>
     {

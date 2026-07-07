@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public abstract class BuildingTab
     {

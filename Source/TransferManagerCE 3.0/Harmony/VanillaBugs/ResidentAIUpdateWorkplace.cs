@@ -4,7 +4,7 @@ using System;
 using System.ComponentModel.Design;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class ResidentAIUpdateWorkplace
@@ -18,7 +18,7 @@ namespace TransferManagerCE
             if (data.m_homeBuilding == 0 && data.m_workBuilding == 0 && data.m_visitBuilding == 0 && data.m_instance == 0 && data.m_vehicle == 0)
             {
 #if DEBUG
-                //CDebug.Log($"Invalid citizen: {citizenID} All 0");
+                //Log.Info($"Invalid citizen: {citizenID} All 0");
 #endif
                 return false;
             }
@@ -28,7 +28,7 @@ namespace TransferManagerCE
             {
                 // Invalid citizen, @Home with MovingIn flag is set but no valid home
 #if DEBUG
-                //CDebug.Log($"Invalid citizen: {citizenID} @Home, HomeBuilding:{data.m_homeBuilding} MovingIn:{(data.m_flags & Citizen.Flags.MovingIn) != 0}");
+                //Log.Info($"Invalid citizen: {citizenID} @Home, HomeBuilding:{data.m_homeBuilding} MovingIn:{(data.m_flags & Citizen.Flags.MovingIn) != 0}");
 #endif
                 return false;
             }

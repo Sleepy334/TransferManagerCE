@@ -1,11 +1,11 @@
 using ColossalFramework;
 using ColossalFramework.UI;
 using ICities;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnifiedUI.Helpers;
 using UnityEngine;
 
-namespace TransferManagerCE {
+namespace TransferManagerCore {
     internal static class UIKeyMappingsExtensions {
         internal static UIKeymappingsPanel AddKeymappingsPanel(this UIHelper helper) {
             return ((UIComponent) helper.self).gameObject.AddComponent<UIKeymappingsPanel>();

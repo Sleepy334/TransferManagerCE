@@ -1,12 +1,13 @@
-using TransferManagerCE.CustomManager;
-using static TransferManagerCE.NetworkModeHelper;
+using TransferManagerCore.CustomManager;
+using static TransferManagerCore.NetworkModeHelper;
 using System.Collections.Generic;
 using ColossalFramework;
 using System;
 using UnityEngine;
 using SleepyCommon;
+using UnityEngine.Networking.Types;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class NodeLinkGenerator
     {
@@ -85,12 +86,20 @@ namespace TransferManagerCE
                         // Add nodes from this segment
                         if (segment.m_startNode != usCurrentNodeId)
                         {
-                            AddNodeLink(segment.m_startNode, fTravelTime, NetInfo.InvertDirection(direction));
+                            NetNode node = NetNodes[segment.m_startNode];
+                            if (node.m_flags != 0 && IsNodeNetInfoValid(segment.m_startNode, node))
+                            {
+                                AddNodeLink(segment.m_startNode, fTravelTime, NetInfo.InvertDirection(direction));
+                            }
                         }
 
                         if (segment.m_endNode != usCurrentNodeId)
                         {
-                            AddNodeLink(segment.m_endNode, fTravelTime, direction);
+                            NetNode node = NetNodes[segment.m_endNode];
+                            if (node.m_flags != 0 && IsNodeNetInfoValid(segment.m_endNode, node))
+                            {
+                                AddNodeLink(segment.m_endNode, fTravelTime, direction);
+                            }
                         }
 
                         // Loop through all sub nodes for this segments lanes
@@ -137,7 +146,7 @@ namespace TransferManagerCE
                 // Safety check in case we get caught in an infinite loop somehow
                 if (iLaneLoopCount++ > NetManager.MAX_LANE_COUNT)
                 {
-                    CDebug.Log("Invalid lane loop detected");
+                    Log.Info("Invalid lane loop detected");
                     break;
                 }
             }
@@ -173,7 +182,10 @@ namespace TransferManagerCE
                 return true;
             }
 
-            if (node.Info is not null && IsServiceValid(node.Info) && (node.Info.m_laneTypes & m_laneTypes) != 0)
+            if (node.Info is not null && 
+                IsServiceValid(node.Info) && 
+                (node.Info.m_laneTypes & m_laneTypes) != 0 &&
+                (node.m_flags2 & (NetNode.Flags2.EventActive | NetNode.Flags2.EventClosed)) == 0)
             {
                 if (m_bCargoPathAllowed && IsCargoStationPath(node.Info.GetService(), node.Info.GetAI()))
                 {
@@ -195,6 +207,7 @@ namespace TransferManagerCE
         {
             return segment.Info is not null &&
                 (segment.Info.m_laneTypes & m_laneTypes) != 0 &&
+                (segment.m_flags2 & (NetSegment.Flags2.EventActive | NetSegment.Flags2.EventClosed)) == 0 &&
                 IsServiceValid(segment.Info) &&
                 IsNetInfoVehicleTypesValid(segment.Info) &&
                 (m_bPedestrianZone || !segment.Info.IsPedestrianZoneRoad());

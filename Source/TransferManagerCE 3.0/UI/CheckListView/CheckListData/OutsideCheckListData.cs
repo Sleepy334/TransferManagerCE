@@ -1,8 +1,8 @@
 using SleepyCommon;
 using static SleepyCommon.TransportUtils;
-using static TransferManagerCE.TransferManagerUtils;
+using static TransferManagerCore.TransferManagerUtils;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class OutsideCheckListData : CheckListData
     {

@@ -1,4 +1,4 @@
-﻿namespace TransferManagerCE.Util
+﻿namespace TransferManagerCore.Util
 {
     public class OutsideConnectionCurve : PercentCurveLookup
     {

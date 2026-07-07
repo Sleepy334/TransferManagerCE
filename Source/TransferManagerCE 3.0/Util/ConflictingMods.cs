@@ -2,7 +2,7 @@ using ColossalFramework.Plugins;
 using SleepyCommon;
 using System.Reflection;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class ConflictingMods
     {
@@ -11,12 +11,16 @@ namespace TransferManagerCE
             string sConflictingMods = "";
             int iTransferManagerCount = 0;
 
+            Log.Info("Checking for conflicting mods");
+
             foreach (PluginManager.PluginInfo plugin in PluginManager.instance.GetPluginsInfo())
             {
                 if (plugin is not null && plugin.isEnabled)
                 {
                     foreach (Assembly assembly in plugin.GetAssemblies())
                     {
+                        //Log.Info($"\r\n{assembly.GetName().Name}");
+
                         switch (assembly.GetName().Name)
                         {
                             case "TransferController":
@@ -39,6 +43,48 @@ namespace TransferManagerCE
                                     sConflictingMods += "Configure Outside Connections' Limits\r\n";
                                     break;
                                 }
+                            case "TaxiStandFix":
+                                {
+                                    sConflictingMods += "Taxi Stand Fix\r\n";
+                                    break;
+                                }
+                            case "OneModFix":
+                                {
+                                    sConflictingMods += "One Mod Fix\r\n";
+                                    break;
+                                }
+#if TRANSFER_MANAGER_EXTENDED
+                            case "TransferManagerCE":
+                                {
+                                    sConflictingMods += "Transfer Manager CE\r\n";
+                                    break;
+                                }
+                            case "MoreTransferReasons":
+                                {
+                                    sConflictingMods += "More Transfer Reasons\r\n";
+                                    break;
+                                }
+                            case "TransferManagerExtended":
+                                {
+                                    iTransferManagerCount++;
+                                    if (iTransferManagerCount > 1)
+                                    {
+                                        sConflictingMods += "Multiple Transfer Manager Extended mods running\r\n";
+                                    }
+
+                                    break;
+                                }
+#else
+                            case "PrisonHelicopter":
+                                {
+                                    sConflictingMods += "Prison Helicopter Mod\r\n";
+                                    break;
+                                }
+                            case "TransferManagerExtended":
+                                {
+                                    sConflictingMods += "Transfer Manager Extended\r\n";
+                                    break;
+                                }
                             case "TransferManagerCE":
                                 {
                                     iTransferManagerCount++;
@@ -49,10 +95,10 @@ namespace TransferManagerCE
 
                                     break;
                                 }
-                                
+#endif
                             default:
                                 {
-                                    //CDebug.Log("Assembly: " + assembly.GetName().Name);
+                                    //Log.Info("Assembly: " + assembly.GetName().Name);
                                     break;
                                 }
                         }
@@ -77,7 +123,7 @@ namespace TransferManagerCE
                 sMessage += sConflictingMods;
                 sMessage += "\r\n";
                 sMessage += "Mod disabled until conflicts resolved, please remove these mods.";
-                Prompt.WarningFormat("Transfer Manager CE", sMessage);
+                Prompt.WarningFormat(TransferManagerMod.Instance.Name, sMessage);
                 return true;
             }
         }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using static TransferManager;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     internal class DispatchedReasons
     {

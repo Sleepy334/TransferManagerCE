@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using TransferManagerCE.Util;
+using TransferManagerCore.Util;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     /// <summary>
     /// TransferJobPool: pool of TransferJobs

@@ -8,7 +8,7 @@ using System.Reflection.Emit;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class TaxiStandAIPatch
@@ -61,7 +61,7 @@ namespace TransferManagerCE
                 yield return instruction1;
             }
 
-            CDebug.Log($"TaxiStandAIProduceGoodsTranspiler - Patching of TaxiStandAI.ProduceGoods {(bPatched ? "succeeded" : "failed")}.", false);
+            Log.Info($"TaxiStandAIProduceGoodsTranspiler - Patching of TaxiStandAI.ProduceGoods {(bPatched ? "succeeded" : "failed")}.");
         }
 
         // Override StartTransfer to dispatch a taxi at the stand (if any) rather than creating one to send.

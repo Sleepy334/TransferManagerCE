@@ -2,7 +2,7 @@ using SleepyCommon;
 using System;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public abstract class CheckListData : IComparable
     {

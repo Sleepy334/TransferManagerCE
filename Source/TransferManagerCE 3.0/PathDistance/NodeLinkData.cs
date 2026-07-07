@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     // Stores a list of nodes linked to the parent node and the travel time to get there.
     public class NodeLinkData

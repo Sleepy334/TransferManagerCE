@@ -1,12 +1,12 @@
 ﻿using ICities;
 using SleepyCommon;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 using UnityEngine.Networking.Types;
 using static RenderManager;
-using static TransferManagerCE.NodeLinkData;
+using static TransferManagerCore.NodeLinkData;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SelectionModePathDistance : SelectionModeBase
     {

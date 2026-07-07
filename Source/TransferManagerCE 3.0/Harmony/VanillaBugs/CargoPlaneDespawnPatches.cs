@@ -1,10 +1,10 @@
 ﻿using HarmonyLib;
 using SleepyCommon;
 using System;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class CargoPlaneDespawnPatches

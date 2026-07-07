@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     /// <summary>
     /// TransferJob: individual work package for match maker thread

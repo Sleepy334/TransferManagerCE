@@ -3,11 +3,11 @@ using System.Reflection;
 using ColossalFramework;
 using ICities;
 using SleepyCommon;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SelectionModeNormal : SelectionModeBase
     {

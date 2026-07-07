@@ -7,11 +7,12 @@ using System.Reflection;
 using System.Reflection.Emit;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class TaxiAIPatch
     {
+        // --------------------------------------------------------------------
         // This transpiler patches TaxiAI.SimulationStep to skip over the transfer offer calls so we can add our own instead
         [HarmonyPatch(typeof(TaxiAI), "SimulationStep", 
             new Type[] { typeof(ushort), typeof(Vehicle), typeof(Vehicle.Frame), typeof(ushort), typeof(Vehicle), typeof(int) }, 
@@ -66,9 +67,10 @@ namespace TransferManagerCE
                 yield return instruction1;
             }
 
-            CDebug.Log($"TaxiAISimulationStepTranspiler - Patching of TaxiAI.SimulationStep {(bPatched ? "succeeded" : "failed")}.", false);
+            Log.Info($"TaxiAISimulationStepTranspiler - Patching of TaxiAI.SimulationStep {(bPatched ? "succeeded" : "failed")}.");
         }
 
+        // --------------------------------------------------------------------
         public static void AddTaxiOffers(TaxiAI __instance, ushort vehicleID, ref Vehicle vehicleData)
         {
             bool bIsAtTaxiStand = IsAtTaxiStand(vehicleData);
@@ -79,23 +81,37 @@ namespace TransferManagerCE
                 vehicleData.m_blockCounter = 0;
             }
 
-            // Check we have capacity left and reduce number of frames this gets handled on
+            // Check we have capacity left and are heading back to depot and request taxi stand or customer
             if (vehicleData.m_transferSize < __instance.m_travelCapacity &&
-                (vehicleData.m_flags & Vehicle.Flags.GoingBack) != 0 && 
-                ((Singleton<SimulationManager>.instance.m_currentFrameIndex >> 4) & 0xF) == (vehicleID & 0xF) &&
-                Singleton<SimulationManager>.instance.m_randomizer.Int32(5u) == 0)
+                (vehicleData.m_flags & Vehicle.Flags.GoingBack) != 0 &&
+                (vehicleData.m_flags & Vehicle.Flags.WaitingTarget) == 0 &&
+                UnityEngine.Random.Range(0, 15) == 0)
             {
-                // Heading back to depot, occasionally add a TaxiMove offer to head to Taxi Stand instead
+                // Heading back to depot, occasionally add a Taxi / TaxiMove offer to head to Taxi Stand or pick up passenger instead
                 TransferManager.TransferOffer offer = default(TransferManager.TransferOffer);
                 offer.Priority = 7;
                 offer.Vehicle = vehicleID;
                 offer.Position = vehicleData.GetLastFramePosition();
                 offer.Amount = 1;
                 offer.Active = true;
-                Singleton<TransferManager>.instance.AddOutgoingOffer((TransferReason)CustomTransferReason.Reason.TaxiMove, offer);
+
+                // Alternate (2/3 Taxi, 1/3 TaxiMove) offers 
+                if (UnityEngine.Random.Range(0, 3) == 0)
+                {
+                    Singleton<TransferManager>.instance.AddOutgoingOffer((TransferReason)CustomTransferReason.Reason.Taxi, offer);
+                }
+                else
+                {
+                    Singleton<TransferManager>.instance.AddOutgoingOffer((TransferReason)CustomTransferReason.Reason.TaxiMove, offer);
+                }
+
+                // Update flag to waiting for target so we dont double offer
+                vehicleData.m_flags &= ~Vehicle.Flags.GoingBack;
+                vehicleData.m_flags |= Vehicle.Flags.WaitingTarget;
             }
         }
 
+        // --------------------------------------------------------------------
         public static bool IsAtTaxiStand(Vehicle vehicleData)
         {
             // WaitingCargo = Waiting at TaxiStand

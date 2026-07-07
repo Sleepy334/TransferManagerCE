@@ -1,8 +1,8 @@
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataWorkers : StatusDataBuilding
     {
@@ -75,16 +75,11 @@ namespace TransferManagerCE.Data
 
         protected override string CalculateTimer(out string tooltip)
         {
-            if ((TransferReason)GetMaterial() == TransferReason.None)
-            {
-                Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-                if (building.m_workerProblemTimer > 0)
-                {
-                    return $"E:{building.m_workerProblemTimer} {base.CalculateTimer(out tooltip)}";
-                }
-            }
+            string sTimer = base.CalculateTimer(out tooltip);
 
-            return base.CalculateTimer(out tooltip);
+            AddTimerText(TimerType.Worker, ref sTimer, ref tooltip);
+
+            return sTimer;
         }
 
         public static TransferReason GetOutgoingTransferReason(Building building)

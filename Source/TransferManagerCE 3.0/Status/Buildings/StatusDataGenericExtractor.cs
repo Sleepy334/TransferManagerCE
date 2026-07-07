@@ -2,18 +2,19 @@
 using System;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
-using static TransferManagerCE.CustomTransferReason;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
-    public class StatusDataGenericExtractor : StatusDataBuilding
+    public class StatusDataGenericExtractor : StatusDataGenericIndustry
     {
+        // --------------------------------------------------------------------
         public StatusDataGenericExtractor(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }
 
+        // --------------------------------------------------------------------
         protected override string CalculateValue(out string tooltip)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
@@ -31,38 +32,14 @@ namespace TransferManagerCE.Data
             return Math.Round((double)building.m_customBuffer1 * 0.001, 1).ToString("N1");
         }
 
+        // --------------------------------------------------------------------
         protected override string CalculateTimer(out string tooltip)
         {
             string sTimer = base.CalculateTimer(out tooltip);
 
-            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            if (building.m_outgoingProblemTimer > 0)
-            {
-                if (string.IsNullOrEmpty(sTimer))
-                {
-                    sTimer += " ";
-                }
-                sTimer += "O:" + building.m_outgoingProblemTimer;
-            }
+            AddTimerText(TimerType.Outgoing, ref sTimer, ref tooltip);
 
             return sTimer;
-        }
-
-        public static TransferReason GetOutgoingTransferReason(Building building)
-        {
-            switch (building.Info.m_class.m_subService)
-            {
-                case ItemClass.SubService.IndustrialForestry:
-                    return TransferManager.TransferReason.Logs;
-                case ItemClass.SubService.IndustrialFarming:
-                    return TransferManager.TransferReason.Grain;
-                case ItemClass.SubService.IndustrialOil:
-                    return TransferManager.TransferReason.Oil;
-                case ItemClass.SubService.IndustrialOre:
-                    return TransferManager.TransferReason.Ore;
-                default:
-                    return TransferManager.TransferReason.None;
-            }
         }
     }
 }

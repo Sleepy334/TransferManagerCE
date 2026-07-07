@@ -6,36 +6,45 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using TransferManagerCE.TransferOffers;
+using TransferManagerCore.TransferOffers;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class IndustrialBuildingAIGoodsPatch
     {
-        private static int? s_maxLoadSize = null;
         private static bool s_bPatched = false;
+        const int iMAX_TRUCKS = 5;
+
+        public static void PatchGenericIndustriesHandler(bool bPatch)
+        {
+            if (bPatch)
+            {
+                PatchGenericIndustriesHandler();
+            }
+            else
+            {
+                UnpatchGenericIndustriesHandler();
+            }
+        }
 
         public static void PatchGenericIndustriesHandler()
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
+            if (!s_bPatched &&
                 SaveGameSettings.GetSettings().OverrideGenericIndustriesHandler)
             {
-                if (!s_bPatched)
-                {
-#if DEBUG
-                    CDebug.Log("Patching generic industries handler...", false);
-#endif
-                    Patcher.Patch(typeof(IndustrialBuildingAIGoodsPatch));
-                }
+                Log.Info("Patching generic industries handler...");
+                Patcher.Patch(typeof(IndustrialBuildingAIGoodsPatch));
             }
-            else if (s_bPatched)
+        }
+
+        public static void UnpatchGenericIndustriesHandler()
+        {
+            if (s_bPatched)
             {
-#if DEBUG
-                CDebug.Log("Unpatching generic industries handler...", false);
-#endif
+                Log.Info("Unpatching generic industries handler...");
                 Patcher.Unpatch(typeof(IndustrialBuildingAI), "SimulationStepActive");
                 s_bPatched = false;
             }
@@ -49,7 +58,7 @@ namespace TransferManagerCE
             // Have we already patched the function, if so just return unaltered.
             if (s_bPatched)
             {
-                CDebug.Log($"ERROR: IndustrialBuildingAI.SimulationStepActive - Already patched!", false);
+                Log.Error($"ERROR: IndustrialBuildingAI.SimulationStepActive - Already patched!");
                 return instructions.AsEnumerable();
             }
 
@@ -153,14 +162,13 @@ namespace TransferManagerCE
                 }
             }
 
-            CDebug.Log($"IndustrialBuildingAIGoodsPatch - Patching of IndustrialBuildingAI.SimulationStepActive {((bOutgoingPatched && bIncomingPatched) ? "succeeded" : "failed")}.", false);
+            Log.Info($"IndustrialBuildingAIGoodsPatch - Patching of IndustrialBuildingAI.SimulationStepActive {((bOutgoingPatched && bIncomingPatched) ? "succeeded" : "failed")}.");
             return newInstructionList.AsEnumerable();
         }
 
         public static void AddIncomingOffer(ushort buildingID, ref Building buildingData)
         {
-            Randomizer random = Singleton<SimulationManager>.instance.m_randomizer;
-            if (random.Int32(2U) == 0)
+            if (Random.Range(0, 2) == 0)
             {
                 TransferReason primary = GetIncomingTransferReason(buildingID, buildingData.Info);
                 if (primary != TransferReason.None)
@@ -168,40 +176,37 @@ namespace TransferManagerCE
                     IndustrialBuildingAI? processingAI = buildingData.Info.GetAI() as IndustrialBuildingAI;
                     if (processingAI is not null)
                     {
-                        // Determine priority based on current storage level
-                        int iProductionCapacity = processingAI.CalculateProductionCapacity((ItemClass.Level)buildingData.m_level, new Randomizer(buildingID), buildingData.Width, buildingData.Length);
-                        int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, 8000 * 2);
-
                         // Factor in trucks on the way but if timer is ticking up, ignore far away trucks
                         TransferReason secondary = GetSecondaryIncomingTransferReason(buildingID, buildingData.Info);
-                        Rerequest.ProblemLevel level = Rerequest.GetLevelIncomingTimer(buildingData.m_incomingProblemTimer);
-                        int iTransferSize = Rerequest.GetNearbyGuestVehiclesTransferSize(buildingData, level, primary, secondary, out int iTotalTrucks);
-                        if (iTotalTrucks < 10)
+
+                        if (buildingData.m_incomingProblemTimer > 0)
                         {
-                            // We clamp priority to 6 until timer starts so we can target the buildings with notification icons first
-                            int iPriority;
-                            if (buildingData.m_incomingProblemTimer > 0)
-                            {
-                                iPriority = 7;
-                            }
-                            else
-                            {
-                                // Calculate a more realistic priority
-                                iPriority = Mathf.Clamp((iStorageCapacity - buildingData.m_customBuffer1 - iTransferSize) * 7 / iStorageCapacity, 0, 6);
-                            }
+                            // Use re-request logic when incoming timer running
+                            Rerequest.RerequestMaterial(primary, secondary, buildingID, buildingData, 3);
+                            return;
+                        }
+                        else
+                        {
+                            // Normal request
+                            // Determine priority based on current storage level
+                            int iProductionCapacity = processingAI.CalculateProductionCapacity((ItemClass.Level)buildingData.m_level, new Randomizer(buildingID), buildingData.Width, buildingData.Length);
+                            int iMaxIncomingLoadSize = MaxIncomingLoadSize(processingAI);
+                            int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, iMaxIncomingLoadSize * 4);
+                            int iTransferSize = BuildingUtils.GetGuestVehiclesTransferSize(buildingData, primary, secondary, out int iTotalIncomingTrucks);
 
-                            TransferOffer offer = default;
-                            offer.Priority = iPriority;
-                            offer.Building = buildingID;
-                            offer.Position = buildingData.m_position;
-                            offer.Amount = 1;
-                            offer.Active = false;
-
-                            // Add new offer
-                            // Alternate primary/secondary offer
-                            if (iPriority >= 3)
+                            // Have we got any room left in storage
+                            int iEmptyStorage = iStorageCapacity - buildingData.m_customBuffer1 - iTransferSize;
+                            if (iEmptyStorage > iMaxIncomingLoadSize && iTotalIncomingTrucks < iMAX_TRUCKS)
                             {
-                                if (secondary != TransferReason.None && random.UInt32(2U) == 0)
+                                // Calculate a more realistic priority, clamp to 3 to leave high numbers for incoming timer
+                                TransferOffer offer = default;
+                                offer.Priority = Mathf.Clamp(iEmptyStorage * 4 / iStorageCapacity, 0, 3);
+                                offer.Building = buildingID;
+                                offer.Position = buildingData.m_position;
+                                offer.Amount = 1;
+                                offer.Active = false;
+
+                                if (secondary != TransferReason.None && Random.Range(0, 2) == 0)
                                 {
                                     Singleton<TransferManager>.instance.AddIncomingOffer(secondary, offer);
                                 }
@@ -235,8 +240,8 @@ namespace TransferManagerCE
                     {
                         // Determine priority based on current storage level
                         int iProductionCapacity = buildingAI.CalculateProductionCapacity((ItemClass.Level)buildingData.m_level, new Randomizer(buildingID), buildingData.Width, buildingData.Length);
-                        int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, 8000 * 2);
                         int iMaxVehicleLoad = MaxOutgoingLoadSize(buildingAI);
+                        int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, iMaxVehicleLoad * 2);
 
                         // We clamp priority to 5 until timer starts so we can target the buildings with notification icons first
                         int iPriority = -1;
@@ -334,26 +339,35 @@ namespace TransferManagerCE
         }
 
         // We call this function incase it is altered by something like Rebalanced Industries
-        // Cache the result as reflection is slow.
-        private static int MaxOutgoingLoadSize(IndustrialBuildingAI instance)
+        public static int MaxIncomingLoadSize(IndustrialBuildingAI instance)
         {
-            if (s_maxLoadSize == null)
+            // We try to call IndustrialBuildingAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
+            MethodInfo infoMaxIncomingLoadSize = typeof(IndustrialBuildingAI).GetMethod("MaxIncomingLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (infoMaxIncomingLoadSize != null)
             {
-                // We try to call IndustrialBuildingAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
-                // Unfortunately it is private so we need to use reflection, so we cache the results.
-                MethodInfo getMaxOutgoingLoadSize = typeof(IndustrialBuildingAI).GetMethod("MaxOutgoingLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
-                if (getMaxOutgoingLoadSize != null)
-                {
-                    s_maxLoadSize = (int)getMaxOutgoingLoadSize.Invoke(instance, null);
-                }
-                else
-                {
-                    // Fall back on default if we fail to get the function
-                    s_maxLoadSize = 8000;
-                }
+                return (int)infoMaxIncomingLoadSize.Invoke(instance, null);
             }
+            else
+            {
+                // Fall back on default if we fail to get the function
+                return 4000;
+            }
+        }
 
-            return s_maxLoadSize.Value;
+        // We call this function incase it is altered by something like Rebalanced Industries
+        public static int MaxOutgoingLoadSize(IndustrialBuildingAI instance)
+        {
+            // We try to call IndustrialBuildingAI.GetMaxLoadSize as some mods such as Industry Rebalanced modify this value
+            MethodInfo infoMaxOutgoingLoadSize = typeof(IndustrialBuildingAI).GetMethod("MaxOutgoingLoadSize", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (infoMaxOutgoingLoadSize != null)
+            {
+                return (int)infoMaxOutgoingLoadSize.Invoke(instance, null);
+            }
+            else
+            {
+                // Fall back on default if we fail to get the function
+                return 8000;
+            }
         }
     }
 }

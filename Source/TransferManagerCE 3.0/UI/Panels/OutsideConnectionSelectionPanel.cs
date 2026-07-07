@@ -2,10 +2,10 @@ using ColossalFramework.UI;
 using SleepyCommon;
 using System.Collections.Generic;
 using System.Linq;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class OutsideConnectionSelectionPanel : UIMainPanel<OutsideConnectionSelectionPanel>
     {

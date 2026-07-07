@@ -1,18 +1,35 @@
+using System;
 using ColossalFramework;
 using SleepyCommon;
 using static RenderManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusTransportLineStop : StatusNodeStop
     {
         private ushort m_lineId;
+        private int m_stopNumber;
 
-        public StatusTransportLineStop(BuildingType eBuildingType, ushort buildingId, ushort LineId, ushort nodeId, ushort vehicleId) :
-            base(eBuildingType, buildingId, nodeId, vehicleId)
+        public StatusTransportLineStop(BuildingType eBuildingType, ushort buildingId, ushort LineId, ushort nodeId) :
+            base(eBuildingType, buildingId, nodeId)
         {
             m_lineId = LineId;
+            m_stopNumber = TransportUtils.GetStopNumber(m_lineId, m_nodeId);
+        }
+
+        public override int CompareTo(object second)
+        {
+            if (second is StatusTransportLineStop oSecond)
+            {
+                // Sort by stop number
+                if (oSecond.m_stopNumber != m_stopNumber)
+                {
+                    return m_stopNumber - oSecond.m_stopNumber;
+                }
+            }
+
+            return base.CompareTo(second);
         }
 
         protected override TransportInfo.TransportType GetTransportType()
@@ -63,25 +80,64 @@ namespace TransferManagerCE.Data
             return line.Info.m_transportType.ToString();
         }
 
-        protected override string CalculateResponder(out string tooltip)
+        protected override double CalculateDistance()
+        {
+            return double.MaxValue;
+        }
+
+        protected override string CalculateTimer(out string tooltip)
+        {
+            int iWaitTimer = GetWaitTimer();
+
+            tooltip = $"Wait Timer: {iWaitTimer}";
+
+            if (iWaitTimer > 0)
+            {
+                return $"W:{iWaitTimer}";
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        protected override string CalculateDescription1(out string tooltip)
         {
             tooltip = CitiesUtils.GetSafeLineName(m_lineId);
             return tooltip;
         }
 
-        public override void OnClickResponder()
+        protected override string CalculateDescription2(out string tooltip)
+        {
+            if (m_lineId != 0 && m_stopNumber != 0)
+            {
+                tooltip = $"Stop: {m_stopNumber} | {InstanceHelper.DescribeInstance(new InstanceID { NetNode = m_nodeId }, true, false)}";
+                return $"Stop: {m_stopNumber}";
+            }
+
+            tooltip = InstanceHelper.DescribeInstance(new InstanceID { NetNode = m_nodeId }, true, false);
+            return InstanceHelper.DescribeInstance(new InstanceID { NetNode = m_nodeId }, false, false);
+        }
+
+        public override void OnClickDescription1()
+        {
+            if (m_nodeId != 0)
+            {
+                // Show line details panel.
+                InstanceID node = new InstanceID { NetNode = m_nodeId };
+                InstanceID line = new InstanceID { TransportLine = m_lineId };
+                WorldInfoPanel.Show<PublicTransportWorldInfoPanel>(InstanceHelper.GetPosition(node), line);
+            }
+        }
+
+        public override void OnClickDescription2()
         {
             if (m_nodeId != 0)
             {
                 // Select node
                 InstanceID node = new InstanceID { NetNode = m_nodeId };
                 InstanceHelper.ShowInstance(node);
-
-                // Show line details panel.
-                InstanceID line = new InstanceID { TransportLine = m_lineId };
-                WorldInfoPanel.Show<PublicTransportWorldInfoPanel>(InstanceHelper.GetPosition(node), line);
             }
         }
-        
     }
 }

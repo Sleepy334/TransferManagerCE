@@ -1,4 +1,4 @@
-﻿namespace TransferManagerCE.Data.StatsPanel
+﻿namespace TransferManagerCore.Data.StatsPanel
 {
     public class StatsSeparator : StatsBase
     {

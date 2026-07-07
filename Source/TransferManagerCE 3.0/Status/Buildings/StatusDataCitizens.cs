@@ -1,7 +1,7 @@
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataCitizens : StatusDataBuilding
     {
@@ -38,13 +38,13 @@ namespace TransferManagerCE.Data
             return "";
         }
 
-        protected override string CalculateVehicle(out string tooltip)
+        protected override string CalculateDescription1(out string tooltip)
         {
             tooltip = ""; 
             return ""; // No vehicles
         }
 
-        protected override string CalculateResponder(out string tooltip)
+        protected override string CalculateDescription2(out string tooltip)
         {
             tooltip = "";
             return ""; // No vehicles

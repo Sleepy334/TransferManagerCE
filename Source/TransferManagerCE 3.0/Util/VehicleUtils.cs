@@ -1,9 +1,12 @@
 using ColossalFramework;
 using SleepyCommon;
 using System.Collections.Generic;
+using static ParadeGroupInfo;
+using UnityEngine;
 using static TransferManager;
+using static ColossalFramework.Packaging.Package;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class VehicleUtils
     {
@@ -91,9 +94,13 @@ namespace TransferManagerCE
 
                 // Add on target if available and different to parent
                 InstanceID cargoTarget = VehicleTypeHelper.GetVehicleTarget(nextVehicleId, vehicle);
-                if (cargoTarget != InstanceID.Empty)
+                if (cargoTarget.Index != 0)
                 {
                     targets.Add(InstanceHelper.DescribeInstance(cargoTarget, true, true));
+                }
+                else if ((vehicle.m_flags & Vehicle.Flags.WaitingTarget) != 0)
+                {
+                    targets.Add("Waiting target");
                 }
                 else
                 {
@@ -151,6 +158,64 @@ namespace TransferManagerCE
         {
             // Post trucks are level5
             return data.Info is not null && data.Info.GetClassLevel() == ItemClass.Level.Level5;
+        }
+
+        public static HashSet<ushort> GetCargoVehicles(ushort vehicleId)
+        {
+            HashSet<ushort> set = new HashSet<ushort>();
+
+            Vehicle[] Vehicles = VehicleManager.instance.m_vehicles.m_buffer;
+            Vehicle parentVehicle = Vehicles[vehicleId];
+
+            ushort nextVehicleId = parentVehicle.m_firstCargo;
+            int iLoopCounter = 0;
+            while (nextVehicleId != 0 && nextVehicleId < Vehicles.Length)
+            {
+                set.Add(nextVehicleId);
+
+                // Next cargo
+                parentVehicle = Vehicles[nextVehicleId];
+                nextVehicleId = parentVehicle.m_nextCargo;
+
+                // Check we arent infinite looping
+                if (++iLoopCounter > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
+
+            return set;
+        }
+
+        public static bool IsVehicleInCargoList(ushort vehicleId, ushort parentVehicleId)
+        {
+            Vehicle[] Vehicles = VehicleManager.instance.m_vehicles.m_buffer;
+            HashSet<ushort> set = new HashSet<ushort>();
+
+            Vehicle parentVehicle = Vehicles[parentVehicleId];
+            ushort nextVehicleId = parentVehicle.m_firstCargo;
+            int iLoopCounter = 0;
+            while (nextVehicleId != 0 && nextVehicleId < Vehicles.Length)
+            {
+                if (vehicleId == nextVehicleId)
+                {
+                    return true;
+                }
+
+                // Next cargo
+                parentVehicle = Vehicles[nextVehicleId];
+                nextVehicleId = parentVehicle.m_nextCargo;
+
+                // Check we arent infinite looping
+                if (++iLoopCounter > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
+
+            return false;
         }
     }
 }

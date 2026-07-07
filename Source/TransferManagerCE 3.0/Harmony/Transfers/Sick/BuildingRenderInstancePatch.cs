@@ -4,7 +4,7 @@ using System;
 using UnityEngine;
 using static Notification;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class BuildingRenderInstancePatch

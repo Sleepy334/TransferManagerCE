@@ -1,17 +1,17 @@
 ﻿using ColossalFramework.UI;
 using UnityEngine;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 using System.Collections.Generic;
-using TransferManagerCE.TransferRules;
+using TransferManagerCore.TransferRules;
 using System.Linq;
-using static TransferManagerCE.UITabStrip;
-using static TransferManagerCE.UI.BuildingPanel;
-using TransferManagerCE.Settings;
-using TransferManagerCE.CustomManager;
+using static TransferManagerCore.UITabStrip;
+using static TransferManagerCore.UI.BuildingPanel;
+using TransferManagerCore.Settings;
+using TransferManagerCore.CustomManager;
 using SleepyCommon;
-using TransferManagerCE.Util;
+using TransferManagerCore.Util;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class BuildingSettingsTab : BuildingTab
     {
@@ -336,12 +336,6 @@ namespace TransferManagerCE.UI
 
             try
             {
-                if (!SaveGameSettings.GetSettings().EnableNewTransferManager)
-                {
-                    m_tabStrip.SetTabVisible((int)TabIndex.TAB_SETTINGS, false);
-                    return false;
-                }
-
                 // Load applicable rule sets for this building
                 List<ReasonRule> buildingRules = BuildingRuleSets.GetRules(m_eBuildingType, m_buildingId);
 

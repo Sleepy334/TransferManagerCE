@@ -4,11 +4,11 @@ using System.Reflection.Emit;
 using System.Reflection;
 using ColossalFramework;
 using static TransferManager;
-using static TransferManagerCE.CustomTransferReason;
+using static TransferManagerCore.CustomTransferReason;
 using UnityEngine;
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class CommonBuildingAIHandleCrime
@@ -17,26 +17,21 @@ namespace TransferManagerCE
 
         public static void PatchCrime2Handler()
         {
-            if (DependencyUtils.IsNaturalDisastersDLC())
+            if (!s_bPatched && 
+                DependencyUtils.IsNaturalDisastersDLC())
             {
-                if (SaveGameSettings.GetSettings().EnableNewTransferManager)
-                {
-                    if (!s_bPatched)
-                    {
-#if DEBUG
-                        CDebug.Log("Patching Crime2 handler...", false);
-#endif
-                        Patcher.Patch(typeof(CommonBuildingAIHandleCrime));
-                    }
-                }
-                else if (s_bPatched)
-                {
-#if DEBUG
-                    CDebug.Log("Unpatching Crime2 handler...", false);
-#endif
-                    Patcher.Unpatch(typeof(CommonBuildingAI), "HandleCrime", HarmonyPatchType.Transpiler);
-                    s_bPatched = false;
-                }
+                Log.Info("Patching Crime2 handler");
+                Patcher.Patch(typeof(CommonBuildingAIHandleCrime));
+            }
+        }
+
+        public static void UnpatchCrime2Handler()
+        {
+            if (s_bPatched)
+            {
+                Log.Info("Unpatching Crime2 handler");
+                Patcher.Unpatch(typeof(CommonBuildingAI), "HandleCrime", HarmonyPatchType.Transpiler);
+                s_bPatched = false;
             }
         }
 
@@ -49,7 +44,7 @@ namespace TransferManagerCE
             // Have we already patched the function, if so just return unaltered.
             if (s_bPatched)
             {
-                CDebug.Log($"ERROR: CommonBuildingAI.HandleCrime - Already patched!", false);
+                Log.Error("CommonBuildingAI.HandleCrime - Already patched!");
                 foreach (var instruction in instructions)
                 {
                     yield return instruction;
@@ -164,11 +159,11 @@ namespace TransferManagerCE
 
             if (bAddedBranch && bAddedLabel && bAddedAddOffers)
             {
-                CDebug.Log("HandleCrimeTranspiler - Patching of CommonBuildingAI.HandleCrime succeeded", false);
+               Log.Info("HandleCrimeTranspiler - Patching of CommonBuildingAI.HandleCrime succeeded");
             }
             else
             {
-                CDebug.Log($"HandleCrimeTranspiler - Patching of CommonBuildingAI.HandleCrime failed. bAddedBranch: {bAddedBranch} bAddedLabel: {bAddedLabel} bAddedAddOffers: {bAddedAddOffers}", false);
+                Log.Error($"HandleCrimeTranspiler - Patching of CommonBuildingAI.HandleCrime failed. bAddedBranch: {bAddedBranch} bAddedLabel: {bAddedLabel} bAddedAddOffers: {bAddedAddOffers}");
             }
         }
 
@@ -180,8 +175,8 @@ namespace TransferManagerCE
                 return;
             }
 
-            // Dont request police when at a police station or prison.
-            if (buildingData.Info is not null && buildingData.Info.GetService() == ItemClass.Service.PoliceDepartment)
+            // Dont request police when at a police station or prison but do request when at a bank
+            if (BuildingTypeHelper.IsPoliceBuilding(buildingData.Info))
             {
                 return;
             }

@@ -1,16 +1,20 @@
 ﻿using ColossalFramework;
 using SleepyCommon;
 using System.Collections.Generic;
-using TransferManagerCE.Data;
+using TransferManagerCore.Data;
+using static ParadeGroupInfo;
 using static RenderManager;
 
-namespace TransferManagerCE.Util
+namespace TransferManagerCore.Util
 {
     internal class BuildingOwnVehicles
     {
         List<VehicleData> m_listInternal = new List<VehicleData>();
-        List<VehicleData> m_listExternal = new List<VehicleData>();
+        List<VehicleData> m_listImporting = new List<VehicleData>();
+        List<VehicleData> m_listExporting = new List<VehicleData>();
         List<VehicleData> m_listReturning = new List<VehicleData>();
+        List<VehicleData> m_listTaxiStand = new List<VehicleData>();
+        List<VehicleData> m_listDummy = new List<VehicleData>();
 
         public List<VehicleData> GetVehicles(ushort buildingId)
         {
@@ -59,22 +63,57 @@ namespace TransferManagerCE.Util
                 }
                     
 
-                if (m_listExternal.Count > 0)
+                if (m_listImporting.Count > 0)
                 {
                     if (list.Count > 0)
                     {
                         list.Add(new VehicleDataSeparator());
                     }
 
-                    list.Add(new VehicleDataHeading(Localization.Get("txtExternalVehicles")));
+                    list.Add(new VehicleDataHeading(Localization.Get("listConnectionImport")));
 
                     // External
-                    m_listExternal.Sort();
-                    foreach (VehicleData vehicleData in m_listExternal)
+                    m_listImporting.Sort();
+                    foreach (VehicleData vehicleData in m_listImporting)
                     {
                         list.Add(vehicleData);
                     }
                 }
+
+                if (m_listExporting.Count > 0)
+                {
+                    if (list.Count > 0)
+                    {
+                        list.Add(new VehicleDataSeparator());
+                    }
+
+                    list.Add(new VehicleDataHeading(Localization.Get("listConnectionExport")));
+
+                    // External
+                    m_listExporting.Sort();
+                    foreach (VehicleData vehicleData in m_listExporting)
+                    {
+                        list.Add(vehicleData);
+                    }
+                }
+
+                if (m_listTaxiStand.Count > 0)
+                {
+                    if (list.Count > 0)
+                    {
+                        list.Add(new VehicleDataSeparator());
+                    }
+
+                    list.Add(new VehicleDataHeading(Localization.Get("txtTaxiStand")));
+
+                    // Returning
+                    m_listTaxiStand.Sort();
+                    foreach (VehicleData vehicleData in m_listTaxiStand)
+                    {
+                        list.Add(vehicleData);
+                    }
+                }
+                
 
                 if (m_listReturning.Count > 0)
                 {
@@ -88,6 +127,23 @@ namespace TransferManagerCE.Util
                     // Returning
                     m_listReturning.Sort();
                     foreach (VehicleData vehicleData in m_listReturning)
+                    {
+                        list.Add(vehicleData);
+                    }
+                }
+
+                if (m_listDummy.Count > 0)
+                {
+                    if (list.Count > 0)
+                    {
+                        list.Add(new VehicleDataSeparator());
+                    }
+
+                    list.Add(new VehicleDataHeading(Localization.Get("txtVehicleDummyTraffic")));
+
+                    // Returning
+                    m_listDummy.Sort();
+                    foreach (VehicleData vehicleData in m_listDummy)
                     {
                         list.Add(vehicleData);
                     }
@@ -123,52 +179,76 @@ namespace TransferManagerCE.Util
 
                     // Add to correct list
                     InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleId, vehicle);
-                    if (target.IsEmpty || (target.Building != 0 && target.Building == vehicle.m_sourceBuilding))
+                    if ((vehicle.m_flags & Vehicle.Flags.DummyTraffic) != 0)
+                    {
+                        m_listDummy.Add(vehicleData);
+                    }
+                    else if (target.IsEmpty || 
+                            (target.Building != 0 && target.Building == vehicle.m_sourceBuilding))
                     {
                         m_listReturning.Add(vehicleData);
                     }
-                    else if ((vehicle.m_flags & Vehicle.Flags.Exporting) != 0 || (vehicle.m_flags & Vehicle.Flags.Importing) != 0)
+                    else if ((vehicle.m_flags & Vehicle.Flags.Importing) != 0 && (vehicle.m_flags & Vehicle.Flags.Exporting) != 0)
                     {
-                        m_listExternal.Add(vehicleData);
+                        AddExternalVehicle(vehicle, target, vehicleData);
+                    }
+                    else if ((vehicle.m_flags & Vehicle.Flags.Exporting) != 0)
+                    {
+                        m_listExporting.Add(vehicleData);
+                    }
+                    else if ((vehicle.m_flags & Vehicle.Flags.Importing) != 0)
+                    {
+                        m_listImporting.Add(vehicleData);
+                    }
+                    else if ((vehicle.m_flags & Vehicle.Flags.GoingBack) != 0)
+                    {
+                        m_listReturning.Add(vehicleData);
+                    }
+                    else if (vehicle.Info is not null && 
+                                vehicle.Info.GetSubService() == ItemClass.SubService.PublicTransportTaxi &&
+                                vehicle.m_targetBuilding != 0 &&
+                                BuildingTypeHelper.GetBuildingType(vehicle.m_targetBuilding) == BuildingTypeHelper.BuildingType.TaxiStand)
+                    {
+                        m_listTaxiStand.Add(vehicleData);
                     }
                     else
                     {
-                        switch (target.Type)
-                        {
-                            case InstanceType.Building:
-                                {
-                                    if (BuildingTypeHelper.IsOutsideConnection(target.Building))
-                                    {
-                                        m_listExternal.Add(vehicleData);
-                                    }
-                                    else
-                                    {
-                                        m_listInternal.Add(vehicleData);
-                                    }
-                                    break;
-                                }
-                            case InstanceType.NetNode:
-                                {
-                                    if (CitiesUtils.IsOutsideConnectionNode(target.NetNode))
-                                    {
-                                        m_listExternal.Add(vehicleData);
-                                    }
-                                    else
-                                    {
-                                        m_listInternal.Add(vehicleData);
-                                    }
-                                        
-                                    break;
-                                }
-                            default:
-                                {
-                                    m_listInternal.Add(vehicleData);
-                                    break;
-                                }
-                        }
+                        // Just add it to internal list
+                        m_listInternal.Add(vehicleData);
                     }
                     return true;
                 });
+            }
+        }
+
+        private void AddExternalVehicle(Vehicle vehicle, InstanceID target, VehicleData vehicleData)
+        {
+            if ((vehicle.m_flags & Vehicle.Flags.TransferToSource) != 0)
+            {
+                if (BuildingTypeHelper.IsOutsideConnection(vehicle.m_sourceBuilding))
+                {
+                    m_listExporting.Add(vehicleData);
+                }
+                else
+                {
+                    m_listImporting.Add(vehicleData);
+                }
+            }
+
+            if ((vehicle.m_flags & Vehicle.Flags.TransferToTarget) != 0)
+            {
+                if (target.Building != 0 && BuildingTypeHelper.IsOutsideConnection(target.Building))
+                {
+                    m_listExporting.Add(vehicleData);
+                }
+                else if (target.NetNode != 0 && CitiesUtils.IsOutsideConnectionNode(target.NetNode))
+                {
+                    m_listExporting.Add(vehicleData);
+                }
+                else
+                {
+                    m_listImporting.Add(vehicleData);
+                }
             }
         }
     }

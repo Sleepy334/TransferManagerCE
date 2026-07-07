@@ -4,9 +4,9 @@ using System.Runtime.InteropServices.ComTypes;
 using UnityEngine;
 using static RenderManager;
 using static TransferManager;
-using static TransferManagerCE.SaveGameSettings;
+using static TransferManagerCore.SaveGameSettings;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class PathDistanceTypes
     {

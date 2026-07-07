@@ -5,7 +5,7 @@ using static TransferManager;
 using UnityEngine;
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     internal class SickHandler
     {

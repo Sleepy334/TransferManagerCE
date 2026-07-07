@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public abstract class ListViewHeaderColumnBase
     {

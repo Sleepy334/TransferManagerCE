@@ -4,11 +4,11 @@ using SleepyCommon;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
-using static TransferManagerCE.NetworkModeHelper;
+using static TransferManagerCore.NetworkModeHelper;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class PathDistancePanel : UIMainPanel<PathDistancePanel>
     {

@@ -6,11 +6,11 @@ using UnityEngine;
 using ColossalFramework.Math;
 using System.Reflection;
 using static Notification;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using SleepyCommon;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public static class BuildingUtils
     {
@@ -290,6 +290,105 @@ namespace TransferManagerCE
             }
 
             return count;
+        }
+
+        public static bool IsVehicleInOwnList(ushort vehicleId, ushort buildingId, Building data)
+        {
+            Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
+            ushort ownVehicleID = data.m_ownVehicles;
+            int num = 0;
+            while (ownVehicleID != (ushort)0)
+            {
+                if (vehicleId == ownVehicleID)
+                {
+                    return true;
+                }
+
+                // Next vehicle in list
+                Vehicle vehicle = Vehicles[(int)ownVehicleID];
+                ownVehicleID = vehicle.m_nextOwnVehicle;
+
+                if (++num > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool IsVehicleInGuestList(ushort vehicleId, ushort buildingId, Building data)
+        {
+            Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
+            ushort guestVehicleID = data.m_guestVehicles;
+            int num = 0;
+            while (guestVehicleID != (ushort)0)
+            {
+                if (vehicleId == guestVehicleID)
+                {
+                    return true;
+                }
+
+                // Next vehicle in list
+                Vehicle vehicle = Vehicles[(int) guestVehicleID];
+                guestVehicleID = vehicle.m_nextGuestVehicle;
+
+                if (++num > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
+
+            return false;
+        }
+
+        public static HashSet<ushort> GetOwnVehicles(ushort buildingId, Building data)
+        {
+            HashSet<ushort> ownVehicles = new HashSet<ushort>();
+
+            Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
+            ushort vehicleID = data.m_ownVehicles;
+            int num = 0;
+            while (vehicleID != (ushort)0)
+            {
+                ownVehicles.Add(vehicleID);
+
+                ref Vehicle vehicle = ref Vehicles[(int)vehicleID];
+                vehicleID = vehicle.m_nextOwnVehicle;
+                if (++num > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
+
+            return ownVehicles;
+        }
+
+        public static HashSet<ushort> GetGuestVehicles(ushort buildingId, Building data)
+        {
+            HashSet<ushort> guestVehicles = new HashSet<ushort>();
+
+            Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
+            ushort vehicleID = data.m_guestVehicles;
+            int num = 0;
+            while (vehicleID != (ushort)0)
+            {
+                guestVehicles.Add(vehicleID);
+
+                ref Vehicle vehicle = ref Vehicles[(int)vehicleID];
+
+                vehicleID = vehicle.m_nextGuestVehicle;
+                if (++num > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
+
+            return guestVehicles;
         }
 
         public static List<uint> GetCitizensInBuilding(ushort usBuildingId, Building building, Citizen.Flags flags)
@@ -639,6 +738,29 @@ namespace TransferManagerCE
                 });
             }
 
+            return iTransferSize;
+        }
+
+        public static int GetGuestVehiclesTransferSize(Building building, TransferReason material1, TransferReason material2, out int iTruckCount)
+        {
+            int iTransferSize = 0;
+            int iTruckCountImpl = 0;
+
+            if (building.m_flags != 0)
+            {
+                EnumerateGuestVehicles(building, (vehicleId, vehicle) =>
+                {
+                    if (vehicle.m_flags != 0 &&
+                        (TransferReason)vehicle.m_transferType == material1 || (material2 != TransferReason.None && (TransferReason)vehicle.m_transferType == material2))
+                    {
+                        iTransferSize += vehicle.m_transferSize;
+                        iTruckCountImpl++;
+                    }
+                    return true;
+                });
+            }
+
+            iTruckCount = iTruckCountImpl;
             return iTransferSize;
         }
 

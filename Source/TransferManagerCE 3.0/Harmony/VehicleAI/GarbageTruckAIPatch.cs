@@ -1,11 +1,11 @@
 ﻿using HarmonyLib;
 using System;
 using ColossalFramework;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using SleepyCommon;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class GarbageTruckAIPatch : VehicleAIPatch
@@ -25,7 +25,7 @@ namespace TransferManagerCE
                 {
                     // DEBUG
                     //Building building = BuildingManager.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
-                    //CDebug.Log($"Clearing Target - Vehicle: #{vehicleID} Building: #{vehicleData.m_targetBuilding} BuildingType: {building.Info.GetAI().GetType()} GarbageBuffer: {building.m_garbageBuffer}");
+                    //Log.Info($"Clearing Target - Vehicle: #{vehicleID} Building: #{vehicleData.m_targetBuilding} BuildingType: {building.Info.GetAI().GetType()} GarbageBuffer: {building.m_garbageBuffer}");
                     //if (Input.GetKey(KeyCode.LeftControl))
                     //{
                     //    InstanceHelper.ShowInstance(new InstanceID { Building = vehicleData.m_targetBuilding });
@@ -45,7 +45,7 @@ namespace TransferManagerCE
                     vehicleData.m_transferSize < __instance.m_cargoCapacity &&
                     !ShouldReturnToSource(vehicleID, ref vehicleData))
                 {
-                    //CDebug.Log($"Adding offer - Vehicle: #{vehicleID} Building: #{vehicleData.m_sourceBuilding}");
+                    //CDebug.Log($"Adding offer - Vehicle: #{vehicleID} Flags: {vehicleData.m_flags} Building: #{vehicleData.m_sourceBuilding}");
 
                     // Add an offer to see if we get another assignment
                     TransferManager.TransferOffer offer = default(TransferManager.TransferOffer);

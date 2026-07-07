@@ -2,11 +2,11 @@ using ColossalFramework;
 using SleepyCommon;
 using System;
 using System.Text;
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class TransferManagerUtils
     {

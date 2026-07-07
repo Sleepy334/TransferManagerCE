@@ -1,11 +1,11 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
 using System.Collections.Generic;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 using static DistrictPolicies;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class DistrictSelectionPatches

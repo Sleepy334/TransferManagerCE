@@ -1,9 +1,9 @@
 using SleepyCommon;
-using TransferManagerCE;
-using TransferManagerCE.UI;
+using TransferManagerCore;
+using TransferManagerCore.UI;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class DistrictCheckListData : CheckListData
     {

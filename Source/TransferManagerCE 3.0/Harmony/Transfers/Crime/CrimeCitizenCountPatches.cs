@@ -1,6 +1,6 @@
 using HarmonyLib;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     // The Building.m_citizenCount field is very buggy and it is very slow to calculate the citizens for all buildings
     // so we cache the value passed into the HandleCrime functions for each building type.

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathCandidates
     {

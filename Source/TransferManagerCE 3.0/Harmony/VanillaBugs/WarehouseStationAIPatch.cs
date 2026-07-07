@@ -1,9 +1,9 @@
 using HarmonyLib;
 using UnityEngine;
 using ColossalFramework.Math;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class WarehouseStationAIPatch

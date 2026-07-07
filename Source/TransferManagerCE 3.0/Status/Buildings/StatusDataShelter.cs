@@ -2,9 +2,9 @@ using SleepyCommon;
 using System;
 using System.Collections.Generic;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataShelter : StatusDataBuilding
     {

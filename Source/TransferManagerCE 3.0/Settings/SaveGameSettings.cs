@@ -1,11 +1,11 @@
-using SleepyCommon;
 using System;
 using System.Collections.Generic;
-using TransferManagerCE.CustomManager;
-using TransferManagerCE.Util;
+using SleepyCommon;
+using TransferManagerCore.CustomManager;
+using TransferManagerCore;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SaveGameSettings
     {
@@ -15,11 +15,8 @@ namespace TransferManagerCE
             ConnectedLineOfSight = 1,
             PathDistance = 2
         }
-        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 39;
+        const int iSAVE_GAME_SETTINGS_DATA_VERSION = 40;
         public static SaveGameSettings s_SaveGameSettings = new SaveGameSettings();
-
-        // Settings
-        public bool EnableNewTransferManager = true;
 
         // General tab
         public int PathDistanceServices = (int) PathDistanceAlgorithm.PathDistance;
@@ -56,6 +53,7 @@ namespace TransferManagerCE
         public int OutsideRoadCitizenPriority = 100;
 
         public int ExportVehicleLimit = 100; // OFF by default
+        public bool Autofill = true;
 
         // Services
         public bool PreferLocalService = false;
@@ -178,7 +176,7 @@ namespace TransferManagerCE
         {
             StorageData.WriteInt32(iSAVE_GAME_SETTINGS_DATA_VERSION, Data); 
             
-            StorageData.WriteBool(EnableNewTransferManager, Data);
+            StorageData.WriteBool(true, Data); // Enable transfer manager no longer used
 
             // General
             StorageData.WriteInt32((int)BalancedMatchMode, Data);
@@ -254,6 +252,7 @@ namespace TransferManagerCE
             StorageData.WriteBool(PoliceToughOnCrime, Data); // Version 36
             StorageData.WriteBool(WarehouseSmartImportExport, Data); // Version 37
             StorageData.WriteBool(ImprovedCargoWarehouseMatching, Data); // Version 39
+            StorageData.WriteBool(Autofill, Data); // Version 40
         }
 
         public static void LoadData(int iGlobalVersion, byte[] Data, ref int iIndex)
@@ -266,14 +265,13 @@ namespace TransferManagerCE
             {
                 int iSaveGameSettingVersion = StorageData.ReadInt32(Data, ref iIndex);
 #if DEBUG
-                CDebug.Log("Global: " + iGlobalVersion + " SaveGameVersion: " + iSaveGameSettingVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
+                Log.Info("Global: " + iGlobalVersion + " SaveGameVersion: " + iSaveGameSettingVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
 #endif
                 if (s_SaveGameSettings is not null)
                 {
                     s_SaveGameSettings.LoadDataInternal(iSaveGameSettingVersion, Data, ref iIndex);
-
 #if DEBUG
-                    CDebug.Log("Settings:\r\n" + s_SaveGameSettings.DebugSettings());
+                    Log.Info("Settings:\r\n" + s_SaveGameSettings.DebugSettings());
 #endif
                 }
             }
@@ -312,7 +310,7 @@ namespace TransferManagerCE
 
         private void LoadDataCurrentVersion(int iDataVersion, byte[] Data, ref int iIndex)
         {
-            EnableNewTransferManager = StorageData.ReadBool(Data, ref iIndex);
+            bool bEnableNewTransferManagerNotUsed = StorageData.ReadBool(Data, ref iIndex);
 
             // General
             BalancedMatchMode = (CustomTransferManager.BalancedMatchModeOption)StorageData.ReadInt32(Data, ref iIndex);
@@ -490,6 +488,10 @@ namespace TransferManagerCE
             {
                 ImprovedCargoWarehouseMatching = StorageData.ReadBool(Data, ref iIndex);
             }
+            if (iDataVersion >= 40)
+            {
+                Autofill = StorageData.ReadBool(Data, ref iIndex);
+            }
         }
 
         private void LoadDataVersion15(byte[] Data, ref int iIndex)
@@ -556,7 +558,7 @@ namespace TransferManagerCE
 
         private void LoadDataVersion7(byte[] Data, ref int iIndex)
         {
-            EnableNewTransferManager = StorageData.ReadBool(Data, ref iIndex);
+            bool bEnableNewTransferManagerNotUsed = StorageData.ReadBool(Data, ref iIndex);
             PreferLocalService = StorageData.ReadBool(Data, ref iIndex);
 
             // Outside connection multipliers are no longer used
@@ -585,7 +587,7 @@ namespace TransferManagerCE
 
         private void LoadDataVersion6(byte[] Data, ref int iIndex)
         {
-            EnableNewTransferManager = StorageData.ReadBool(Data, ref iIndex);
+            bool bEnableNewTransferManagerNotUsed = StorageData.ReadBool(Data, ref iIndex);
             PreferLocalService = StorageData.ReadBool(Data, ref iIndex);
             bool PreferExportShip = StorageData.ReadBool(Data, ref iIndex);
             bool PreferExportPlane = StorageData.ReadBool(Data, ref iIndex);
@@ -626,7 +628,7 @@ namespace TransferManagerCE
 
         private void LoadDataVersion3(byte[] Data, ref int iIndex)
         {
-            EnableNewTransferManager = StorageData.ReadBool(Data, ref iIndex);
+            bool bEnableNewTransferManagerNotUsed = StorageData.ReadBool(Data, ref iIndex);
             PreferLocalService = StorageData.ReadBool(Data, ref iIndex);
             bool PreferExportShip = StorageData.ReadBool(Data, ref iIndex);
             bool PreferExportPlane = StorageData.ReadBool(Data, ref iIndex);
@@ -650,7 +652,7 @@ namespace TransferManagerCE
 
         private void LoadDataVersion2(byte[] Data, ref int iIndex)
         {
-            EnableNewTransferManager = StorageData.ReadBool(Data, ref iIndex);
+            bool bEnableNewTransferManagerNotUsed = StorageData.ReadBool(Data, ref iIndex);
             PreferLocalService = StorageData.ReadBool(Data, ref iIndex);
             bool PreferExportShip = StorageData.ReadBool(Data, ref iIndex);
             bool PreferExportPlane = StorageData.ReadBool(Data, ref iIndex);
@@ -665,7 +667,7 @@ namespace TransferManagerCE
 
         private void LoadDataVersion1(byte[] Data, ref int iIndex)
         {
-            EnableNewTransferManager = StorageData.ReadBool(Data, ref iIndex);
+            bool bEnableNewTransferManagerNotUsed = StorageData.ReadBool(Data, ref iIndex);
             PreferLocalService = StorageData.ReadBool(Data, ref iIndex);
             bool PreferExportShip = StorageData.ReadBool(Data, ref iIndex);
             bool PreferExportPlane = StorageData.ReadBool(Data, ref iIndex);
@@ -726,7 +728,6 @@ namespace TransferManagerCE
         public string DebugSettings()
         {
             string sMessage = "===== Save Game Settings =====\r\n";
-            sMessage += "EnableNewTransferManager: " + EnableNewTransferManager + "\r\n";
 
             // Warehouse
             sMessage += "WarehouseFirst: " + WarehouseFirst + "\r\n";

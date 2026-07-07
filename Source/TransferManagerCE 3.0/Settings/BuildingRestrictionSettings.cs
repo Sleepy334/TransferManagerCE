@@ -1,7 +1,8 @@
 ﻿using SleepyCommon;
 using System.Collections.Generic;
+using TransferManagerCore;
 
-namespace TransferManagerCE.Settings
+namespace TransferManagerCore.Settings
 {
     public class BuildingRestrictionSettings
     {

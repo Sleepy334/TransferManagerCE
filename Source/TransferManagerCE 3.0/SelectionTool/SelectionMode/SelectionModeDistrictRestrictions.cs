@@ -1,11 +1,11 @@
 ﻿using ColossalFramework;
 using SleepyCommon;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 using static RenderManager;
 using static ToolBase;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SelectionModeDistrictRestrictions : SelectionModeBase
     {

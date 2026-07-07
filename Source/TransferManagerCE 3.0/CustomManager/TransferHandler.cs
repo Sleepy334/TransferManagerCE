@@ -1,9 +1,9 @@
 ﻿using System;
-using TransferManagerCE.CustomManager.Stats;
-using TransferManagerCE.Util;
+using TransferManagerCore.CustomManager.Stats;
+using TransferManagerCore.Util;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     internal class TransferHandler
     {
@@ -31,10 +31,17 @@ namespace TransferManagerCE
                 }
                 else if (offerIn.Building != 0)
                 {
-                    PathFindFailure.AddFailPair(new InstanceID { Park = offerOut.Park }, new InstanceID { Building = offerIn.Building }, false);
+                    if (offerIn.Active)
+                    {
+                        PathFindFailure.AddFailPair(offerIn.m_object, new InstanceID { Park = offerOut.Park }, false);
+                    }
+                    else
+                    {
+                        PathFindFailure.AddFailPair(new InstanceID { Park = offerOut.Park }, offerIn.m_object, false);
+                    }
                 } 
             }
-
+             
             if (offerIn.Park != 0)
             {
                 if (Parks[offerIn.Park].TryGetRandomServicePoint(serviceMaterial, out var buildingID2))
@@ -43,7 +50,14 @@ namespace TransferManagerCE
                 }
                 else if (offerOut.Building != 0)
                 {
-                    PathFindFailure.AddFailPair(new InstanceID { Park = offerIn.Park } , new InstanceID { Building = offerOut.Building }, false);
+                    if (offerIn.Active)
+                    {
+                        PathFindFailure.AddFailPair(new InstanceID { Park = offerIn.Park }, offerOut.m_object, false);
+                    }
+                    else
+                    {
+                        PathFindFailure.AddFailPair(offerOut.m_object, new InstanceID { Park = offerIn.Park }, false);
+                    }
                 }
             }
 
@@ -53,6 +67,12 @@ namespace TransferManagerCE
                 ref Vehicle vehicle = ref Vehicles[vehicleId];
                 if (vehicle.m_flags != 0)
                 {
+#if DEBUG
+                    if ((vehicle.m_flags & Vehicle.Flags.WaitingTarget) == 0)
+                    {
+                        CDebug.Log($"IN {material} - Vehicle: {offerIn.Vehicle} Flags: {vehicle.m_flags} Source: {vehicle.m_sourceBuilding} Target: {vehicle.m_targetBuilding} Parent: {vehicle.m_cargoParent}");
+                    }
+#endif
                     VehicleInfo info = vehicle.Info;
                     offerOut.Amount = delta; // Only transfer delta amount
                     info.m_vehicleAI.StartTransfer(vehicleId, ref vehicle, material, offerOut);
@@ -68,6 +88,12 @@ namespace TransferManagerCE
                 ref Vehicle vehicle = ref Vehicles[vehicleId];
                 if (vehicle.m_flags != 0)
                 {
+#if DEBUG
+                    if ((vehicle.m_flags & Vehicle.Flags.WaitingTarget) == 0)
+                    {
+                        CDebug.Log($"OUT {material} - Vehicle: {offerOut.Vehicle} Flags: {vehicle.m_flags} Source: {vehicle.m_sourceBuilding} Target: {vehicle.m_targetBuilding} Parent: {vehicle.m_cargoParent}");
+                    }
+#endif
                     VehicleInfo info = vehicle.Info;
                     offerIn.Amount = delta; // Only transfer delta amount
                     info.m_vehicleAI.StartTransfer(vehicleId, ref vehicle, material, offerIn);

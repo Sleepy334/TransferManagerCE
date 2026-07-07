@@ -1,9 +1,9 @@
 using ColossalFramework.UI;
 using SleepyCommon;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class CheckListRow : UIPanel
     {

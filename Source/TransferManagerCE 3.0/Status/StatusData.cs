@@ -1,30 +1,34 @@
-﻿using SleepyCommon;
+﻿using ColossalFramework;
+using SleepyCommon;
 using System;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public abstract class StatusData : IComparable
     {
+        // --------------------------------------------------------------------
         public CustomTransferReason.Reason m_material;
         public BuildingType m_eBuildingType;
         public ushort m_buildingId;
 
+        // Status information
         protected Color m_color;
 
         private string? m_value = null;
-        private string? m_vehicle = null;
-        private string? m_responder = null;
         private string? m_timer = null;
         private double? m_distance = null;
+        private string? m_description1 = null;
+        private string? m_description2 = null;
 
         private string m_valueTooltip = "";
-        private string m_vehicleTooltip = "";
-        private string m_responderTooltip = "";
         private string m_timerTooltip = "";
+        private string m_description1Tooltip = "";
+        private string m_description2Tooltip = "";
 
+        // --------------------------------------------------------------------
         public StatusData(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort buildingId)
         {
             m_material = reason;
@@ -33,11 +37,13 @@ namespace TransferManagerCE.Data
             m_color = Color.white;
         }
 
+        // --------------------------------------------------------------------
         public bool HasBuildingReason(CustomTransferReason.Reason reason)
         {
             return BuildingPanel.Instance.GetStatusHelper().HasBuildingReason(reason);
         }
 
+        // --------------------------------------------------------------------
         public virtual int CompareTo(object second)
         {
             if (second is null)
@@ -66,17 +72,15 @@ namespace TransferManagerCE.Data
                 }
             }
 
-            // Sort by distance
-            if (GetDistance() < oSecond.GetDistance())
-            {
-                return -1;
-            }
-            else
-            {
-                return 1;
-            }
+            return oSecond.GetValue().CompareTo(GetValue());
         }
 
+        // --------------------------------------------------------------------
+        // Type support
+        public abstract bool IsBuildingData();
+        public abstract bool IsVehicleData();
+
+        // --------------------------------------------------------------------
         public virtual bool IsSeparator()
         {
             return false;
@@ -87,36 +91,55 @@ namespace TransferManagerCE.Data
             return false;
         }
 
+        // --------------------------------------------------------------------
+        public virtual bool CanDelete()
+        {
+            return false;
+        }
+
+        public virtual string GetDeleteTooltip()
+        {
+            return "";
+        }
+
+        public virtual void OnClickDelete()
+        {
+        }
+
+        // --------------------------------------------------------------------
+        public virtual ushort GetVehicleId() { return 0; }
+
+        // --------------------------------------------------------------------
         public abstract string GetMaterialDisplay();
 
-        // Building support
-        public abstract bool IsBuildingData();
-
-        // Vehicle support
-        public abstract bool HasVehicle();
-        public abstract ushort GetVehicleId();
-
+        // --------------------------------------------------------------------
+        // Status information
         protected abstract string CalculateValue(out string tooltip);
-        protected abstract string CalculateVehicle(out string tooltip);
-        protected abstract string CalculateResponder(out string tooltip);
         protected abstract string CalculateTimer(out string tooltip);
         protected abstract double CalculateDistance();
+        protected abstract string CalculateDescription1(out string tooltip);
+        protected abstract string CalculateDescription2(out string tooltip);
 
+        // --------------------------------------------------------------------
         public virtual string GetMaterialDescription()
         {
             return GetMaterial().ToString();
         }
 
+        // --------------------------------------------------------------------
         public virtual CustomTransferReason.Reason GetMaterial()
         {
             return m_material;
         }
 
+        // --------------------------------------------------------------------
+        // Global tooltip
         public virtual string GetTooltip()
         {
             return "";
         }
 
+        // --------------------------------------------------------------------
         public string GetValue()
         {
             if (m_value is null)
@@ -126,53 +149,29 @@ namespace TransferManagerCE.Data
             return m_value;
         }
 
+        // --------------------------------------------------------------------
         public string GetValueTooltip()
         {
             return m_valueTooltip;
         }
 
+        // --------------------------------------------------------------------
         public virtual string GetTimer()
         {
             if (m_timer is null)
             {
-                m_timer = CalculateTimer(out string m_timerTooltip);
+                m_timer = CalculateTimer(out m_timerTooltip);
             }
             return m_timer;
         }
 
+        // --------------------------------------------------------------------
         public string GetTimerTooltip()
         {
             return m_timerTooltip;
         }
 
-        public virtual string GetResponder()
-        {
-            if (m_responder is null)
-            {
-                m_responder = CalculateResponder(out m_responderTooltip);
-            }
-            return m_responder;
-        }
-
-        public string GetResponderTooltip()
-        {
-            return m_responderTooltip;
-        }
-
-        public virtual string GetVehicle()
-        {
-            if (m_vehicle is null)
-            {
-                m_vehicle = CalculateVehicle(out m_vehicleTooltip);
-            }
-            return m_vehicle;
-        }
-
-        public string GetVehicleTooltip()
-        {
-            return m_vehicleTooltip;
-        }
-
+        // --------------------------------------------------------------------
         public virtual double GetDistance()
         {
             if (m_distance is null)
@@ -182,9 +181,10 @@ namespace TransferManagerCE.Data
             return m_distance.Value;
         }
 
+        // --------------------------------------------------------------------
         public virtual string GetDistanceAsString()
         {
-            if (GetVehicleId() != 0)
+            if (IsVehicleData())
             {
                 return GetDistance().ToString("0.00");
             }
@@ -194,34 +194,55 @@ namespace TransferManagerCE.Data
             }
         }
 
-        public virtual ushort GetResponderId()
+        // --------------------------------------------------------------------
+        public virtual string GetDescription1()
         {
-            return 0;
+            if (m_description1 is null)
+            {
+                m_description1 = CalculateDescription1(out m_description1Tooltip);
+            }
+            return m_description1;
         }
 
+        // --------------------------------------------------------------------
+        public string GetDescription1Tooltip()
+        {
+            return m_description1Tooltip;
+        }
+
+        // --------------------------------------------------------------------
+        public virtual string GetDescription2()
+        {
+            if (m_description2 is null)
+            {
+                m_description2 = CalculateDescription2(out m_description2Tooltip);
+            }
+            return m_description2;
+        }
+
+        // --------------------------------------------------------------------
+        public string GetDescription2Tooltip()
+        {
+            return m_description2Tooltip;
+        }
+
+        // --------------------------------------------------------------------
         public virtual Color GetTextColor()
         {
             return m_color;
         }
 
-        public virtual void OnClickTarget()
+        // --------------------------------------------------------------------
+        public virtual void OnClickDescription1()
         {
-            ushort vehicleId = GetVehicleId();
-            if (vehicleId != 0)
-            {
-                InstanceHelper.ShowInstance(new InstanceID { Vehicle = vehicleId });
-            }
         }
 
-        public virtual void OnClickResponder()
+        // --------------------------------------------------------------------
+        public virtual void OnClickDescription2()
         {
-            ushort buildingId = GetResponderId();
-            if (buildingId != 0)
-            {
-                InstanceHelper.ShowInstance(new InstanceID { Building = buildingId });
-            }
         }
 
+        // --------------------------------------------------------------------
         public static string DisplayBuffer(int iBuffer)
         {
             if (iBuffer > 10000)
@@ -234,9 +255,22 @@ namespace TransferManagerCE.Data
             }
         }
 
+        // --------------------------------------------------------------------
         public static string DisplayBufferLong(int iBuffer)
         {
             return $"{iBuffer.ToString("N0")}";
+        }
+
+        // --------------------------------------------------------------------
+        protected ushort FindBuilding(ushort nodeId)
+        {
+            NetNode node = NetManager.instance.m_nodes.m_buffer[nodeId];
+            if (node.m_building != 0)
+            {
+                return node.m_building;
+            }
+
+            return BuildingManager.instance.FindBuilding(node.m_position, 192f, ItemClass.Service.PublicTransport, ItemClass.SubService.None, Building.Flags.None, Building.Flags.None);
         }
     }
 }

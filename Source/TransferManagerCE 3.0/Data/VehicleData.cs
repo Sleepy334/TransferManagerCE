@@ -4,7 +4,7 @@ using System;
 using System.Drawing;
 using UnityEngine;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class VehicleData : IComparable
     {
@@ -40,20 +40,23 @@ namespace TransferManagerCE.Data
             }
 
             VehicleData oSecond = (VehicleData)second;
-            if (m_vehicle.m_transferType == oSecond.m_vehicle.m_transferType)
+            if (m_vehicle.m_transferType != oSecond.m_vehicle.m_transferType)
             {
-                if (GetDistance() < oSecond.GetDistance())
-                {
-                    return -1;
-                }
-                else
-                {
-                    return 1;
-                }
+                return m_vehicle.m_transferType.CompareTo(oSecond.m_vehicle.m_transferType);
+            }
+
+            if (m_vehicle.m_waitCounter != oSecond.m_vehicle.m_waitCounter)
+            {
+                return oSecond.m_vehicle.m_waitCounter.CompareTo(m_vehicle.m_waitCounter);
+            }
+
+            if (GetDistance() < oSecond.GetDistance())
+            {
+                return -1;
             }
             else
             {
-                return m_vehicle.m_transferType.CompareTo(oSecond.m_vehicle.m_transferType);
+                return 1;
             }
         }
 

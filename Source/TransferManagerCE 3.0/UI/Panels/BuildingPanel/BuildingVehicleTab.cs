@@ -2,12 +2,12 @@ using ColossalFramework;
 using ColossalFramework.UI;
 using SleepyCommon;
 using System.Collections.Generic;
-using TransferManagerCE.Data;
-using TransferManagerCE.Util;
+using TransferManagerCore.Data;
+using TransferManagerCore.Util;
 using UnifiedUI.Helpers;
-using static TransferManagerCE.UI.BuildingPanel;
+using static TransferManagerCore.UI.BuildingPanel;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class BuildingVehicleTab : BuildingTab 
     {

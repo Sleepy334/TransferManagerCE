@@ -1,11 +1,11 @@
 ﻿using ColossalFramework;
 using SleepyCommon;
 using System;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SelectionModeNormalDebug : SelectionModeNormal
     {

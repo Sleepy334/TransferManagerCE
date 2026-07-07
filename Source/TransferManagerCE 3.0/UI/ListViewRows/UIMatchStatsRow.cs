@@ -2,7 +2,7 @@ using ColossalFramework.UI;
 using SleepyCommon;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIMatchStatsRow : UIListRow<MatchStatsData>
     {

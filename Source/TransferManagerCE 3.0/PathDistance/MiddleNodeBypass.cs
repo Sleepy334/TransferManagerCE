@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using static TransferManagerCE.NodeLinkData;
+using static TransferManagerCore.NodeLinkData;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     internal class MiddleNodeBypass
     {
@@ -76,7 +76,7 @@ namespace TransferManagerCE
                     if (iNodeCount >= iMIN_LINK_COUNT)
                     {
                         // Add link to new graph
-                        //CDebug.Log($"Adding node link: {startNodeId} LinkNode: {nodeId} TravelTime: {fTravelTime} Direction: {direction}");
+                        //Log.Info($"Adding node link: {startNodeId} LinkNode: {nodeId} TravelTime: {fTravelTime} Direction: {direction}");
                         if (!m_newLinks.TryGetValue(startNodeId, out NodeLinkData data))
                         {
                             data = new NodeLinkData(m_data[startNodeId]); // Take a copy as we cant change in place while looping
@@ -88,7 +88,7 @@ namespace TransferManagerCE
             }
             else
             {
-                CDebug.Log($"ERROR: Node: {cuurentNodeId} not found in graph.");
+                Log.Info($"ERROR: Node: {cuurentNodeId} not found in graph.");
             }
         }
 

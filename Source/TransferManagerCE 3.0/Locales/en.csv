@@ -87,6 +87,7 @@
 "listBuildingPanelStatusColumn3","Responder"
 "listBuildingPanelStatusColumn4","Vehicle"
 "listBuildingPanelStatusColumn5","Timer"
+"listBuildingPanelStopsSourceVehicle","Source / Vehicle"
 
 "labelBuildingPanelOffers","Transfer Offers"
 "labelBuildingPanelMatchOffers","Matches"
@@ -159,15 +160,16 @@
 "tabVehicleAI","Vehicle AI"
 
 "GROUP_VEHICLE_AI","Enable/Disable Vehicle AI"
+"txtVehicleAIDescription","VehicleAI enhances vehicles to look for close by issues to resolve."
 "optionFireTruckAI","Fire Truck"
 "optionFireCopterAI","Fire Copter"
 "optionPostVanAI","Post Van"
 "optionGarbageTruckAI","Garbage Truck"
 "optionPoliceCarAI","Police Car"
 "optionPoliceCopterAI","Police Copter"
-"txtVehicleAIDescription","VehicleAI enhances vehicles to look for close by issues to resolve."
-"tabImportExport","Import/Export"
+"optionCargoTruckAI","Cargo Truck"
 
+"tabImportExport","Import/Export"
 "GROUP_IMPORT_RESTRICTIONS","Allow Import"
 "txtImportRestrictions","Please ensure you have sufficient internal production before disabling these resources."
 "sliderWarehouseReservePercent","Reserve Trucks For Local Delivery (%)"
@@ -246,6 +248,7 @@
 "btnResetRoadAccess","Reset Road Access"
 "tabGame","Game"
 "btnDeleteVehicle","Delete vehicle"
+"btnDeleteIntercityLine","Delete Intercity Line"
 "tabMaintenance","Maintenance"
 "GROUP_Maintenance","Maintenance"
 "btnReleaseGhostVehicles","Release Ghost Vehicles"
@@ -329,7 +332,7 @@
 "reasonSnowMove","Moving Snow"
 
 "tooltipHighlightModeOff","Highlight Mode: Off"
-"tooltipHighlightModeMatches","Highlight Mode: Matches\r\n\r\nKey\r\nRed: Selected Building\r\nMagenta: Services\r\nCyan: Raw Materials\r\nBlue: Goods\r\nGreen: Mail\r\nYellow: Everything else"
+"tooltipHighlightModeMatches","Highlight Mode: Matches\r\n\r\nKey\r\nRed: Selected Building\r\nMagenta: Services\r\nCyan: Raw Materials\r\nBlue: Goods\r\nOrange: Mail\r\nYellow: Everything else"
 "tooltipHighlightModeIssues","Highlight Mode: Issues\r\n\r\nKey\r\nRed: Selected Building\r\nCyan and Gold: Low Priority\r\nBlue and Orange: High Priority\r\nGreen: Other service buildings for this issue type"
 "tooltipHighlightModeSettings","Highlight Mode: Settings\r\n\r\nKey\r\nRed: Building with settings."
 "tooltipHighlightModeIssues2","Highlight Mode: Issues\r\n\r\nKey"
@@ -381,23 +384,35 @@
 "GROUP_PATCHES","Patches"
 "txtAdvancedDescription","These patches are designed to fix issues in the vanilla game code that effect transfers. It is recommended to have them enabled unless troubleshooting an issue you are having."
 
-"GROUP_SPAWN_PATCHES","Spawn Patches"
-"optionForceCargoShipSpawn","Force cargo ships to spawn at outside connections."
-"optionForcePassengerShipSpawn","Force passenger ships to spawn at outside connections."
-"optionForceCargoPlaneSpawn","Force cargo planes to spawn at outside connections."
-"optionForcePassengerPlaneSpawn","Force passenger planes to spawn at outside connections."
-"optionForceAirportGateToSpawn","Force passenger planes to spawn at airport DLC gates."
-"optionForceCargoTrainDespawnOutsideConnections","Force cargo trains to despawn at outside connections."
-"optionForceCargoShipDespawnOutsideConnections","Force cargo ships to despawn at outside connections."
-"optionForceCargoPlaneDespawnOutsideConnections","Force cargo planes to despawn at outside connections."
+"optionFixFindHospital","Patch ResidentAI.FindHospital (Requires restart)."
+"txtFindHospital", "There is a bad vanilla bug in ResidentAI.FindHospital that breaks sick, eldercare and childcare services."
 
 "GROUP_VEHICLE_PATCHES","Vehicle Patches"
 "optionFixCargoTrucksDisappearingOutsideConnections","Fix cargo trucks spawning at outside connections then disappearing."
-"optionResetStopMaxWaitTimeWhenNoPasengers","Reset stop max wait time when no passengers waiting at stop."
 "optionFixBankVansStuckCargoStations","Fix bank vans getting stuck at cargo stations."
 "optionFixPostVansStuckCargoStations","Fix post vans getting stuck at cargo stations."
 "optionFixTransportStationNullReferenceException","Fix transport station null reference exception."
 "optionFixPostTruckCollectingMail","Fix post trucks collecting mail after visiting a service point."
+
+"GROUP_INTERCITY_STOPS","Intercity Stops"
+"optionResetStopMaxWaitTimeWhenNoPasengers","Reset stop max wait time when no passengers waiting at stop."
+"checkForceIntercityStopSpawnAtMaxCount","Force spawn when waiting count exceeds max capacity"
+
+"GROUP_DESPAWN_PATCHES","Despawn Patches"
+"txtDespawnPatches","These patches will trigger a cargo vehicles arrival code just before they reach the edge of the map to significantly increase outside connection throughput."
+"optionForceCargoTrainDespawnOutsideConnections","Force cargo trains to despawn at outside connections."
+"optionForceCargoShipDespawnOutsideConnections","Force cargo ships to despawn at outside connections."
+"optionForceCargoPlaneDespawnOutsideConnections","Force cargo planes to despawn at outside connections."
+
+"GROUP_SPAWN_PATCHES","Spawn Patches"
+"txtSpawnPatches","Vehicles at Outside Connections need to wait for space to spawn. If the outside connection is busy enough, this will eventually lead to the connection failing as the spawn rate is slower than the production rate. These patches remove the space requirement so that vehicles can continue to spawn."
+"optionForceCargoShipSpawn","Force cargo ships to spawn at outside connections."
+"optionForceCargoPlaneSpawn","Force cargo planes to spawn at outside connections."
+"optionForcePassengerShipSpawn","Force passenger ships to spawn at outside connections."
+"optionForcePassengerPlaneSpawn","Force passenger planes to spawn at outside connections."
+
+"txtSpawnPatchesAirportGate","Vehicles at airport DLC gates need to wait for space to spawn. If you place airport gates near each other the code will stop aircraft from spawning even though the planes current gate is empty. This patch changes the space check to just the current gate and excludes surrounding gates."
+"optionForceAirportGateToSpawn","Force passenger planes to spawn at airport DLC gates."
 
 "GROUP_WAREHOUSE_PATCHES","Warehouse Patches"
 "optionRemoveEmptyWarehouseLimit","Remove Empty mode warehouse capacity limitation (Requires restart)."
@@ -414,16 +429,6 @@
 "txtApplyUnlimitedWarning","Warning: This option can produce a large amount of traffic when say a new warehouse is matched with an outside connection."
 "optionApplyUnlimited","Apply Unlimited Offer Flag"
 "txtAdditionalDistricts","Additional Districts"
-
-"GROUP_INTERCITY_STOPS","Intercity Stops"
-"txtIntercityStopSpawnAtCount","Force vehicle to spawn when the waiting passenger count reaches this value.\r\n0 = OFF"
-"sliderForceTrainSpawnAtCount","Train Waiting Passenger Count"
-"sliderForceShipSpawnAtCount","Ship Waiting Passenger Count"
-"sliderForcePlaneSpawnAtCount","Plane Waiting Passenger Count"
-"sliderForceBusSpawnAtCount","Bus Waiting Passenger Count"
-
-"optionFixFindHospital","Patch ResidentAI.FindHospital (Requires restart)."
-"txtFindHospital", "There is a bad vanilla bug in ResidentAI.FindHospital that breaks sick, eldercare and childcare services."
 
 "GROUP_OVEREDUCATED_WORKERS","Overeducated Workers"
 "txtEmployOvereducatedWorkers","When this option is enabled, workers will occasionally apply for lower level jobs."
@@ -485,3 +490,21 @@
 "TransportTypeShip","Ship"
 "TransportTypeTrain","Train"
 "TransportTypeRoad","Road"
+
+"txtClearExtendedReasons","Clear extended reasons to allow unsubscribing from this mod for this save game."
+"btnClearExtendedReasons","Clear Extended Reasons"
+
+"txtTransferManagerTabDescription","The following settings are saved to the game file and are not modifiable unless in game."
+
+"BuildingPanelNext","Select Next Building"
+"BuildingPanelPrev","Select Previous Building"
+
+"txtTaxiStand","Taxi Stand"
+"txtVehicleDummyTraffic","Dummy Traffic"
+
+"GROUP_AUTOFILL","Autofill"
+"txtAutofillDescription","Fill importing cargo vehicles with additional cargo to sell. Any unsold cargo will be refunded upon arrival."
+"optionAutofill","Autofill Importing Cargo Vehicles"
+
+"btnResetIntercityStops","Reset Intercity Stops"
+"btnClearIntercityStops","Clear Intercity Stops"

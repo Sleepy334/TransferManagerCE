@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using static ColossalFramework.Globalization.Locale;
 
-namespace TransferManagerCE.Common
+namespace TransferManagerCore.Common
 {
     /// <summary>
     /// PriorityQueue provides a stack-like interface, except that objects
@@ -171,7 +171,7 @@ namespace TransferManagerCE.Common
             }
             else
             {
-                CDebug.LogError("Key not found.");
+                Log.Error("Key not found.");
             }
         }
 

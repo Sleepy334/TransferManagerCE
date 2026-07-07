@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TransferManagerCE.Common
+namespace TransferManagerCore.Common
 {
     public abstract class PriorityQueueNode
     {

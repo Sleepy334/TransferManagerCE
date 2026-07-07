@@ -3,10 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using static TransferManagerCE.NetworkModeHelper;
-using static TransferManagerCE.NodeLinkData;
+using static TransferManagerCore.NetworkModeHelper;
+using static TransferManagerCore.NodeLinkData;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathDistance
     {
@@ -133,7 +133,7 @@ namespace TransferManagerCE
                     // Safety check in case we get caught in an infinite loop somehow
                     if (iLoopCount++ > NetManager.MAX_NODE_COUNT)
                     {
-                        CDebug.Log($"Invalid loop detected.");
+                        Log.Info($"Invalid loop detected.");
                         break;
                     }
                 } // End while

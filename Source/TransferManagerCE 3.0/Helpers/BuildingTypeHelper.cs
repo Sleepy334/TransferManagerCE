@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 using static RenderManager;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
-using static TransferManagerCE.CustomTransferReason;
+using static TransferManagerCore.BuildingTypeHelper;
+using static TransferManagerCore.CustomTransferReason;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class BuildingTypeHelper
     {
@@ -167,7 +167,7 @@ namespace TransferManagerCE
                 return BuildingType.None;
             }
 
-            //CDebug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
+            //Log.Info($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
 
             switch (building.Info.GetService())
             {
@@ -716,7 +716,7 @@ namespace TransferManagerCE
             }
 
 #if DEBUG
-            //CDebug.Log($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
+            //Log.Info($"Service: {building.Info?.GetService()} SubService: {building.Info?.GetSubService()} AI: {building.Info?.GetAI()}");
 #endif
 
             return BuildingType.None;
@@ -1333,6 +1333,73 @@ namespace TransferManagerCE
                    building.Info.GetService() == ItemClass.Service.PublicTransport &&
                    building.Info.GetSubService() == ItemClass.SubService.PublicTransportPost &&
                    building.Info.GetClassLevel() == ItemClass.Level.Level5;
+        }
+
+        public static bool IsServiceBuilding(BuildingType buildingType)
+        {
+            switch (buildingType)
+            {
+                case BuildingType.Bank:
+                case BuildingType.Cemetery:
+
+                case BuildingType.Childcare:
+                case BuildingType.Eldercare:
+                case BuildingType.Hospital:
+                case BuildingType.MedicalHelicopterDepot:
+
+                case BuildingType.FireHelicopterDepot:
+                case BuildingType.FireStation:
+                case BuildingType.FirewatchTower:
+
+                case BuildingType.HelicopterPrison:
+                case BuildingType.PoliceHelicopterDepot:
+                case BuildingType.PoliceStation:
+
+                case BuildingType.PostOffice:
+                case BuildingType.PostSortingFacility:
+
+                case BuildingType.Landfill:
+                case BuildingType.Recycling:
+                case BuildingType.WasteProcessing:
+                case BuildingType.WasteTransfer:
+                case BuildingType.IncinerationPlant:
+                    
+                case BuildingType.TaxiDepot:
+                case BuildingType.TaxiStand:
+
+                case BuildingType.ServicePoint:
+                case BuildingType.SnowDump:
+                case BuildingType.PumpingService:
+                case BuildingType.ParkMaintenanceDepot:
+                case BuildingType.RoadMaintenanceDepot:
+                    return true;
+                default:
+                    return false;
+
+            }
+        }
+
+        public static bool IsEducationBuilding(BuildingType buildingType)
+        {
+            switch (buildingType)
+            {
+                case BuildingType.University:
+                case BuildingType.UniversityHospital:
+                case BuildingType.ElementartySchool:
+                case BuildingType.HighSchool:
+                    return true;
+                default:
+                    return false;
+
+            }
+        }
+
+        // Banks are listed in the PoliceDepartment section but we do need to respond to crime in them.
+        public static bool IsPoliceBuilding(BuildingInfo info)
+        {
+            return info is not null && 
+                   info.GetService() == ItemClass.Service.PoliceDepartment && 
+                   info.GetSubService() != ItemClass.SubService.PoliceDepartmentBank;
         }
     }
 }

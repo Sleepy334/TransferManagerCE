@@ -3,7 +3,7 @@ using System;
 using System.Threading;
 using static TransferManager;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class TransferManagerThread
     {
@@ -87,7 +87,7 @@ namespace TransferManagerCE.CustomManager
         public void MatchOfferThread()
         {
 #if DEBUG
-            CDebug.Log($"MatchOffersThread: Thread started.");
+            Log.Info($"MatchOffersThread: Thread started.");
 #endif
             CustomTransferManager manager = new CustomTransferManager();
             while (s_runThread)
@@ -126,7 +126,7 @@ namespace TransferManagerCE.CustomManager
                 Interlocked.Decrement(ref s_runningThreads);
             }
 #if DEBUG
-            CDebug.Log($"MatchOffersThread: Thread ended.");
+            Log.Info($"MatchOffersThread: Thread ended.");
 #endif
         }
     }

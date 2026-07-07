@@ -1,8 +1,8 @@
 ﻿using SleepyCommon;
-using TransferManagerCE.TransferRules;
+using TransferManagerCore.TransferRules;
 using UnityEngine;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class TransferManagerModes
     {
@@ -62,7 +62,6 @@ namespace TransferManagerCE.CustomManager
                     }
 
                 // ---------------------------------------------------------------------------------
-                case CustomTransferReason.Reason.Mail:           // We want vans (P:7) to be matched with closest mail first (IN) CloseByOnly: ON, Then buildings (OUT) to Post Offices, CloseByOnly: OFF
                 case CustomTransferReason.Reason.Mail2:          // Buildings (OUT) to Post Offices, CloseByOnly: OFF
                 case CustomTransferReason.Reason.Garbage:        // Match building with closest LandFill
                 case CustomTransferReason.Reason.Dead:           // Matches bodies to cemeteries
@@ -97,6 +96,7 @@ namespace TransferManagerCE.CustomManager
                     }
 
                 // ---------------------------------------------------------------------------------
+                case CustomTransferReason.Reason.Mail:           // We assume there will be lots more mail OUT offers than IN offers so match IN to closest OUT
                 case CustomTransferReason.Reason.Snow:           // Snow - We want trucks (P:7) to be matched with closest segment, and Snow Dump (P:1) to be matched with highest priority segment
                 case CustomTransferReason.Reason.Crime2:         // We usually don't have many Crime2 offers so match them with the closest crime so we see them doing things
                 case CustomTransferReason.Reason.Sick2:          // We usually don't have many Sick2 offers so match them with the closest patient so we see them doing things
@@ -398,13 +398,11 @@ namespace TransferManagerCE.CustomManager
 
                 case CustomTransferReason.Reason.Mail:
                 case CustomTransferReason.Reason.Mail2:
-                    return KnownColor.green;
-
                 case CustomTransferReason.Reason.SortedMail:
                 case CustomTransferReason.Reason.UnsortedMail:
                 case CustomTransferReason.Reason.IncomingMail:
                 case CustomTransferReason.Reason.OutgoingMail:
-                    return KnownColor.lightGreen;
+                    return KnownColor.orange;
 
                 default: return KnownColor.yellow;
             }

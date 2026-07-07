@@ -1,7 +1,7 @@
 using SleepyCommon;
 using UnityEngine;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class VehicleDataMail : VehicleData
     {

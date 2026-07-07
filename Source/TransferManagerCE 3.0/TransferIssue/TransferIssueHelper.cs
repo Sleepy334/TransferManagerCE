@@ -2,13 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using TransferManagerCE.Data;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Data;
+using TransferManagerCore.Settings;
 using UnityEngine;
 using static TransferIssueContainer;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class TransferIssueHelper
     {
@@ -447,8 +447,7 @@ namespace TransferManagerCE
         {
             if (building.m_crimeBuffer > 0 &&
                 (building.m_problems & Notification.Problem1.Crime).IsNotNone &&
-                building.Info is not null && 
-                building.Info.GetService() != ItemClass.Service.PoliceDepartment)
+                !BuildingTypeHelper.IsPoliceBuilding(building.Info))
             {
                 // Cached citizen count
                 int iMaxRate = StatusDataCrime.iMAJOR_CRIME_RATE;

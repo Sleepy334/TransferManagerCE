@@ -2,7 +2,7 @@
 using SleepyCommon;
 using System;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class ListView : UIPanel
     {
@@ -53,7 +53,7 @@ namespace TransferManagerCE.UI
             }
             catch (Exception ex)
             {
-                CDebug.Log(ex);
+                Log.Error(ex);
             }
 
             return null;

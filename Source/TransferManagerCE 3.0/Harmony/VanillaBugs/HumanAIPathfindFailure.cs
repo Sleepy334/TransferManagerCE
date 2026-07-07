@@ -1,12 +1,12 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
 using System.Diagnostics;
-using TransferManagerCE.Settings;
-using TransferManagerCE.UI;
-using TransferManagerCE.Util;
+using TransferManagerCore.Settings;
+using TransferManagerCore.UI;
+using TransferManagerCore.Util;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class HumanAIPathfindFailure
@@ -55,7 +55,7 @@ namespace TransferManagerCE
                     // We have had a path fail on a citizen trying to move into the city. remove it now
                     Singleton<CitizenManager>.instance.ReleaseCitizen(s_citizenId);
 #if DEBUG
-                    //CDebug.Log($"Removing citizen:{s_citizenId} - MovingIn flag still set");
+                    //Log.Info($"Removing citizen:{s_citizenId} - MovingIn flag still set");
 #endif
                 }
             }

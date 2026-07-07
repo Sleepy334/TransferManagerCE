@@ -1,18 +1,18 @@
 ﻿using ColossalFramework;
 using System;
 using UnityEngine;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using static RenderManager;
 using static ToolBase;
 using System.Collections.Generic;
-using TransferManagerCE.TransferRules;
-using static TransferManagerCE.BuildingTypeHelper;
+using TransferManagerCore.TransferRules;
+using static TransferManagerCore.BuildingTypeHelper;
 using SleepyCommon;
 using System.Data;
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 using System.Linq;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public abstract class SelectionModeBase
     {
@@ -138,7 +138,17 @@ namespace TransferManagerCE
                             ref NetSegment segment = ref NetManager.instance.m_segments.m_buffer[building.m_accessSegment];
                             if (segment.m_flags != 0)
                             {
-                                NetTool.RenderOverlay(cameraInfo, ref segment, KnownColor.grey, KnownColor.grey);
+                                NetTool.RenderOverlay(cameraInfo, ref segment, KnownColor.navy, KnownColor.navy);
+                            }
+                        }
+
+                        // Highlight m_eventAccessSegment as well so it is underneath
+                        if (building.m_eventAccessSegment != 0)
+                        {
+                            ref NetSegment segment = ref NetManager.instance.m_segments.m_buffer[building.m_eventAccessSegment];
+                            if (segment.m_flags != 0)
+                            {
+                                NetTool.RenderOverlay(cameraInfo, ref segment, KnownColor.navy, KnownColor.navy);
                             }
                         }
 
@@ -148,14 +158,14 @@ namespace TransferManagerCE
                         // Highlight currently selected building
                         if (BuildingSettingsStorage.HasSettings(usSourceBuildingId))
                         {
-                            RendererUtils.HighlightBuilding(BuildingBuffer, usSourceBuildingId, cameraInfo, Color.red);
+                            RendererUtils.HighlightBuilding(BuildingBuffer, usSourceBuildingId, cameraInfo, Color.red, true);
 
                             // If building has distance restriction then draw the distance as a circle
                             DrawLocalDistanceCircle(cameraInfo, eType, usSourceBuildingId, building, ref localReasons);
                         }
                         else
                         {
-                            RendererUtils.HighlightBuilding(BuildingBuffer, usSourceBuildingId, cameraInfo, Color.white);
+                            RendererUtils.HighlightBuilding(BuildingBuffer, usSourceBuildingId, cameraInfo, Color.white, true);
                         }
 
                         // Draw global distance setting if any

@@ -1,7 +1,7 @@
 using ColossalFramework.UI;
 using SleepyCommon;
 using System.Collections.Generic;
-using TransferManagerCE;
+using TransferManagerCore;
 
 public class StatData
 {

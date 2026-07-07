@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using TransferManagerCE.TransferRules;
+using TransferManagerCore.TransferRules;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class TransferOfferBuildingRestrictions
     {

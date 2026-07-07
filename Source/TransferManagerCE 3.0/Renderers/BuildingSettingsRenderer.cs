@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 using static RenderManager;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class BuildingSettingsRenderer : SimulationManagerBase<BuildingSettingsRenderer, MonoBehaviour>, IRenderableManager
     {

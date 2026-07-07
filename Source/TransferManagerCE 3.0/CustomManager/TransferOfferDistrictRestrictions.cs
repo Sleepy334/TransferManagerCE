@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using TransferManagerCE.Settings;
-using TransferManagerCE.TransferRules;
-using static TransferManagerCE.BuildingTypeHelper;
+using TransferManagerCore.Settings;
+using TransferManagerCore.TransferRules;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class TransferOfferDistrictRestrictions
     {

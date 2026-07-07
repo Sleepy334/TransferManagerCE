@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class ConnectedStorage : IEnumerable<KeyValuePair<ushort, int>>
     {

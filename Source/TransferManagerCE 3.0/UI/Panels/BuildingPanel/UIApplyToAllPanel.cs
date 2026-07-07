@@ -1,9 +1,9 @@
 using ColossalFramework.UI;
 using SleepyCommon;
 using UnityEngine;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIApplyToAll : UIPanel
     {

@@ -2,7 +2,7 @@
 using HarmonyLib;
 using System;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public static class PrivateBuildingAISimulationStepPatch
@@ -11,8 +11,7 @@ namespace TransferManagerCE
         [HarmonyPatch(typeof(PrivateBuildingAI), "SimulationStep")]
         public static void SimulationStepPostFix(PrivateBuildingAI __instance, ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
-                SaveGameSettings.GetSettings().OverrideSickHandler &&
+            if (SaveGameSettings.GetSettings().OverrideSickHandler &&
                 Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.HealthCare))
             {
                 // If we are using our sick handler, we disable the major problem timer so

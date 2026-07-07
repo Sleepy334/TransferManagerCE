@@ -3,16 +3,24 @@ using ICities;
 using SleepyCommon;
 using System.Collections.Generic;
 using System.Diagnostics;
-using TransferManagerCE.TransferRules;
+using TransferManagerCore.TransferRules;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
-    public class BuildingSettingsStorage
+    public static class BuildingSettingsStorage
     {
         private static Dictionary<ushort, BuildingSettings> s_BuildingsSettings = new Dictionary<ushort, BuildingSettings>();
         private static readonly object s_dictionaryLock = new object();
         private static bool s_bInvalidate = false;
+
+        public static int Count
+        {
+            get
+            {
+                return s_BuildingsSettings.Count;
+            }
+        }
 
         public static Dictionary<ushort, BuildingSettings> GetSettingsArray()
         {
@@ -204,7 +212,7 @@ namespace TransferManagerCE
                     Building building = BuildingBuffer[kvp.Key];
                     if (building.m_flags == 0)
                     {
-                        CDebug.Log($"Building: {kvp.Key} is no longer valid.");
+                        Log.Info($"Building: {kvp.Key} is no longer valid.");
                         buildingsToRemove.Add(kvp.Key);
                     }
                     else
@@ -224,7 +232,7 @@ namespace TransferManagerCE
             }
 
             //long stopTicks = stopwatch.ElapsedTicks;
-            //CDebug.Log($"{SleepyCommon.Utils.DisplayTicks(stopTicks - startTicks)}");
+            //Log.Info($"{SleepyCommon.Utils.DisplayTicks(stopTicks - startTicks)}");
         }
     }
 }

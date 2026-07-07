@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class MaxMailTranspiler
@@ -111,7 +111,7 @@ namespace TransferManagerCE
                 yield return instruction;
             }
 
-            CDebug.Log($"Patching of {functionName} {(bPatched ? "succeeded" : "failed")}.", false);
+            Log.Info($"Patching of {functionName} {(bPatched ? "succeeded" : "failed")}.");
         }
 
         // ----------------------------------------------------------------------------------------

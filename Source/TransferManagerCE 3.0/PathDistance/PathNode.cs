@@ -2,11 +2,11 @@ using ColossalFramework;
 using SleepyCommon;
 using System;
 using System.Collections.Generic;
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathNode
     {
@@ -263,7 +263,7 @@ namespace TransferManagerCE
                     }
                 default:
                     {
-                        CDebug.Log($"Type: {offer.m_object.Type} Index: {offer.m_object.Index}");
+                        Log.Info($"Type: {offer.m_object.Type} Index: {offer.m_object.Index}");
                         return FindPathPosition(material, offer.m_object);
                     }
             }
@@ -306,7 +306,8 @@ namespace TransferManagerCE
                         }
                 }
 
-                if (building.m_accessSegment != 0)
+                // Access segment, check its not blocked by a parade
+                if (building.m_accessSegment != 0 && (building.m_flags2 & Building.Flags2.EventRouteClosed) == 0)
                 {
                     NetSegment segment = NetSegments[building.m_accessSegment];
                     if (segment.m_flags != 0)
@@ -316,6 +317,26 @@ namespace TransferManagerCE
                         {
                             // this segment will do
                             return building.m_accessSegment;
+                        }
+                        else
+                        {
+                            // The access segment does not support requested vehicle type.
+                            RoadAccessStorage.AddInstance(instance);
+                        }
+                    }
+                }
+
+                // Event access segment
+                if (building.m_eventAccessSegment != 0)
+                {
+                    NetSegment segment = NetSegments[building.m_eventAccessSegment];
+                    if (segment.m_flags != 0)
+                    {
+                        NetInfo.LaneType laneTypes = PathDistanceTypes.GetLaneTypes(PathDistanceTypes.IsGoodsMaterial(material));
+                        if ((segment.Info.m_laneTypes & laneTypes) != 0)
+                        {
+                            // this segment will do
+                            return building.m_eventAccessSegment;
                         }
                         else
                         {

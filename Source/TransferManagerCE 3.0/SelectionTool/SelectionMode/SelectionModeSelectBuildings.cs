@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public abstract class SelectionModeSelectBuildings : SelectionModeBase
     {

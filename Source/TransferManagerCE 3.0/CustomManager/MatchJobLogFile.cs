@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
-using static TransferManagerCE.CustomManager.TransferRestrictions;
-using static TransferManagerCE.Settings.ModSettings;
+using static TransferManagerCore.CustomManager.TransferRestrictions;
+using static TransferManagerCore.Settings.ModSettings;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class MatchJobLogFile
     {
@@ -21,6 +21,7 @@ namespace TransferManagerCE.CustomManager
             Error,
         }
 
+        // -------------------------------------------------------------------------------------------
         private CustomTransferReason.Reason m_material;
         private LogCandidates m_candidateLogging = LogCandidates.All;
         Dictionary<ExclusionReason, int> m_candidateReasons = new Dictionary<ExclusionReason, int>();
@@ -37,6 +38,20 @@ namespace TransferManagerCE.CustomManager
         private static int s_iLogFileNumber = 1;
 
         // -------------------------------------------------------------------------------------------
+        public static string LogFileFolder
+        {
+            get
+            {
+#if TRANSFER_MANAGER_EXTENDED
+                return Path.Combine(UserSettingsDir, "TransferManagerExtended");
+#else
+                return Path.Combine(UserSettingsDir, "TransferManagerCE");
+#endif
+
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------
         public MatchJobLogFile(CustomTransferReason.Reason material)
         {
             m_material = material;
@@ -50,7 +65,7 @@ namespace TransferManagerCE.CustomManager
                 {
                     if (string.IsNullOrEmpty(s_path))
                     {
-                        string dir = Path.Combine(UserSettingsDir, "TransferManagerCE");
+                        string dir = LogFileFolder;
 
                         // Check if the folder exists
                         if (!Directory.Exists(dir))

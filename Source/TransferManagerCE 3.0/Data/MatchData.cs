@@ -2,11 +2,11 @@ using SleepyCommon;
 using System;
 using System.IO;
 using System.Text;
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class MatchData : IComparable
     {
@@ -125,7 +125,7 @@ namespace TransferManagerCE
             }
             else
             {
-                CDebug.LogError("Tuple Alignment not found.");
+                Log.Error("Tuple Alignment not found.");
             }
         }
 

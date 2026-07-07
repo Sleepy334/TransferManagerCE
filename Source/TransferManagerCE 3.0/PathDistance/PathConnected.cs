@@ -2,10 +2,10 @@
 using SleepyCommon;
 using System.Collections.Generic;
 using System.Diagnostics;
-using static TransferManagerCE.NetworkModeHelper;
-using static TransferManagerCE.NodeLinkData;
+using static TransferManagerCore.NetworkModeHelper;
+using static TransferManagerCore.NodeLinkData;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathConnected
     {
@@ -116,7 +116,7 @@ namespace TransferManagerCE
                             // Check the colors match
                             if (iColor != m_nodes.GetColor(nodeId))
                             {
-                                CDebug.Log($"ERROR: Found node {nodeId} with different color: {iColor} NodeColor: {m_nodes.GetColor(nodeId)}");
+                                Log.Info($"ERROR: Found node {nodeId} with different color: {iColor} NodeColor: {m_nodes.GetColor(nodeId)}");
                             }
                         } 
                         else if (nodeLink.TryGetNodeLinks(nodeId, out links))

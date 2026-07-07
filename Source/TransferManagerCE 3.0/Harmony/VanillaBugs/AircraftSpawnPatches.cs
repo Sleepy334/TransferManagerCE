@@ -3,10 +3,10 @@ using ColossalFramework.Math;
 using HarmonyLib;
 using SleepyCommon;
 using System;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     // CanSpawnAt should return true when near an outside connection so that outside connections don't get blocked up.
     [HarmonyPatch]
@@ -35,7 +35,7 @@ namespace TransferManagerCE
             if (bForceSpawn && CitiesUtils.IsNearOutsideConnection(pos, ItemClass.SubService.PublicTransportPlane))
             {
 #if DEBUG
-                CDebug.Log($"Force spawn: {__instance}");
+                Log.Info($"Force spawn: {__instance}");
 #endif
                 __result = true;
                 return false; // Override vanilla function
@@ -69,7 +69,7 @@ namespace TransferManagerCE
                 CitiesUtils.IsNearOutsideConnection(vehicleData.GetLastFramePosition(), ItemClass.SubService.PublicTransportPlane))
             {
 #if DEBUG
-                CDebug.Log($"Force spawn: {__instance}");
+                Log.Info($"Force spawn: {__instance}");
 #endif
                 // Force spawn at outside connection
                 vehicleData.Spawn(vehicleID);

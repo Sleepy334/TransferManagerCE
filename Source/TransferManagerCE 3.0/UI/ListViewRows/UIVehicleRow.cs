@@ -1,10 +1,10 @@
 using ColossalFramework;
 using ColossalFramework.UI;
 using SleepyCommon;
-using TransferManagerCE.Data;
+using TransferManagerCore.Data;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIVehicleRow : UIListRow<VehicleData>
     {

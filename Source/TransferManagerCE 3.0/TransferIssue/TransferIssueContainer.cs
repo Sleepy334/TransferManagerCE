@@ -1,7 +1,7 @@
 using HarmonyLib;
 using SleepyCommon;
 using System;
-using TransferManagerCE;
+using TransferManagerCore;
 using UnityEngine;
 
 public class TransferIssueContainer : IComparable, IEquatable<TransferIssueContainer>

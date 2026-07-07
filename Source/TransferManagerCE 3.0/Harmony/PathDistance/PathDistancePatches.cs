@@ -1,7 +1,6 @@
 using HarmonyLib;
-using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class PathDistancePatches
@@ -49,6 +48,38 @@ namespace TransferManagerCE
                 // Turned ON
                 PathDistanceCache.Invalidate();
             }
+        }
+
+        // ----------------------------------------------------------------------------------------
+        [HarmonyPatch(typeof(RaceEventAI), "BeginPreparing")]
+        [HarmonyPostfix]
+        public static void BeginBeginPreparingPostfix(ushort eventID, ref EventData data)
+        {
+            PathDistanceCache.Invalidate();
+        }
+
+        // ----------------------------------------------------------------------------------------
+        [HarmonyPatch(typeof(RaceEventAI), "BeginEvent")]
+        [HarmonyPostfix]
+        public static void BeginEventPostfix(ushort eventID, ref EventData data)
+        {
+            PathDistanceCache.Invalidate();
+        }
+
+        // ----------------------------------------------------------------------------------------
+        [HarmonyPatch(typeof(RaceEventAI), "EndEvent")]
+        [HarmonyPostfix]
+        public static void EndEventPostfix(ushort eventID, ref EventData data)
+        {
+            PathDistanceCache.Invalidate();
+        }
+
+        // ----------------------------------------------------------------------------------------
+        [HarmonyPatch(typeof(RaceEventAI), "EndDisorganizing")]
+        [HarmonyPostfix]
+        public static void EndDisorganizing(ushort eventID, ref EventData data)
+        {
+            PathDistanceCache.Invalidate();
         }
     }
 }

@@ -3,10 +3,12 @@ using ColossalFramework;
 using UnityEngine;
 using SleepyCommon;
 using System.Collections.Generic;
-using TransferManagerCE.Data;
-using static TransferManagerCE.BuildingTypeHelper;
+using TransferManagerCore.Data;
+using static TransferManagerCore.BuildingTypeHelper;
+using static TransferManagerCore.StopHelper;
+using UnityEngine.Networking.Types;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class StopHelper
     {
@@ -19,26 +21,39 @@ namespace TransferManagerCE
             Evacuation,
         };
 
-        private List<StatusData> m_listIntercityStops = new List<StatusData>();
-        private List<StatusData> m_listLineStops = new List<StatusData>();
-        private HashSet<ushort> m_setAddedVehicles = new HashSet<ushort>();
+        // ----------------------------------------------------------------------------------------
+        private List<StatusData> m_IntercityStopsIn = new List<StatusData>();
+        private List<StatusData> m_IntercityStopsOut = new List<StatusData>();
+        private List<StatusData> m_CableCarStops = new List<StatusData>();
+        private List<StatusData> m_EvacuationStops = new List<StatusData>();
+        private List<StatusData> m_LineStops = new List<StatusData>();
+        private List<StatusDataVehicle> m_nodeVehicles = new List<StatusDataVehicle>();
+        private HashSet<ushort> m_addedVehicles = new HashSet<ushort>();
+
         private float m_fBuildingSize = 0f;
         private BuildingType m_eBuildingType = BuildingType.None;
 
         // ----------------------------------------------------------------------------------------
         public StopHelper()
         {
-        } 
+        }
 
+        // ----------------------------------------------------------------------------------------
         public List<StatusData> GetStatusList(ushort buildingId, out int iVehicleCount)
         {
             List<StatusData> list = new List<StatusData>();
 
-            m_listIntercityStops.Clear();
-            m_listLineStops.Clear();
-            m_setAddedVehicles.Clear();
+            m_IntercityStopsIn.Clear();
+            m_IntercityStopsOut.Clear();
+            m_CableCarStops.Clear();
+            m_EvacuationStops.Clear();
+            m_LineStops.Clear();
+            m_nodeVehicles.Clear();
+            m_addedVehicles.Clear();
+
             m_eBuildingType = BuildingType.None;
             m_fBuildingSize = 0.0f;
+            iVehicleCount = 0;
 
             if (buildingId != 0)
             {
@@ -74,55 +89,106 @@ namespace TransferManagerCE
                             break;
                         }
                     }
-                }
 
-                SortAndMergeList("Intercity Stops", list, m_listIntercityStops);
-                SortAndMergeList("Line Stops", list, m_listLineStops);
+                    m_nodeVehicles.Sort();
+
+                    // Segment based stops
+                    ProcessNetStops("Intercity Stops (In)", m_IntercityStopsIn, ref list, ref iVehicleCount);
+                    ProcessNetStops("Intercity Stops (Out)", m_IntercityStopsOut, ref list, ref iVehicleCount);
+                    ProcessNetStops("Cable Car Stops", m_CableCarStops, ref list, ref iVehicleCount);
+                    ProcessNetStops("Evacuation Stops", m_EvacuationStops, ref list, ref iVehicleCount);
+
+                    // Normal stops
+                    if (m_LineStops.Count > 0)
+                    {
+                        AddHeading("Line Stops", list);
+                        m_LineStops.Sort();
+
+                        foreach (StatusData data in m_LineStops)
+                        {
+                            list.Add(data);
+
+                            if (data is StatusNodeStop stop)
+                            {
+                                foreach (StatusDataVehicleNode vehicle in m_nodeVehicles)
+                                {
+                                    if (!m_addedVehicles.Contains(vehicle.GetVehicleId()))
+                                    {
+                                        InstanceID target = vehicle.GetTarget();
+                                        if (target.NetNode != 0 && target.NetNode == stop.m_nodeId)
+                                        {
+                                            list.Add(vehicle);
+                                            m_addedVehicles.Add(vehicle.GetVehicleId());
+                                            iVehicleCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
-            iVehicleCount = m_setAddedVehicles.Count;
             return list;
         }
 
+        // ----------------------------------------------------------------------------------------
+        private void ProcessNetStops(string heading, List<StatusData> stops, ref List<StatusData> resultList, ref int iVehicleCount)
+        {
+            // Cable Car stops
+            if (stops.Count > 0)
+            {
+                AddHeading(heading, resultList);
+                stops.Sort();
+
+                foreach (StatusData data in stops)
+                {
+                    resultList.Add(data);
+
+                    // Add vehicles heading to this stop
+                    if (data is StatusSegmentStop stop)
+                    {
+                        Vehicle[] Vehicles = Singleton<VehicleManager>.instance.m_vehicles.m_buffer;
+
+                        foreach (StatusDataVehicleNode vehicle in m_nodeVehicles)
+                        {
+                            if (!m_addedVehicles.Contains(vehicle.GetVehicleId()))
+                            {
+                                InstanceID target = vehicle.GetTarget();
+                                if (target.NetNode != 0 && target.NetNode == stop.m_endNodeId)
+                                {
+                                    resultList.Add(vehicle);
+                                    m_addedVehicles.Add(vehicle.GetVehicleId());
+                                    iVehicleCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ----------------------------------------------------------------------------------------
         private void AddToList(List<StatusData> list, StatusData data)
         {
-            if (data.HasVehicle())
-            {
-                if (!m_setAddedVehicles.Contains(data.GetVehicleId()))
-                {
-                    // Only add vehicle if not already in list
-                    m_setAddedVehicles.Add(data.GetVehicleId());
-                    list.Add(data);
-                }
-            }
-            else
-            {
-                list.Add(data);
-            }
+            list.Add(data);
         }
 
-        private void SortAndMergeList(string sHeader, List<StatusData> list, List<StatusData> listToAdd, bool bSort = true)
+        // ----------------------------------------------------------------------------------------
+        private void AddHeading(string sHeader, List<StatusData> list)
         {
-            if (listToAdd.Count > 0)
+            if (list.Count > 0)
             {
-                if (list.Count > 0)
-                {
-                    list.Add(new StatusDataSeparator());
-                }
-                if (bSort)
-                {
-                    listToAdd.Sort();
-                }
+                list.Add(new StatusDataSeparator());
+            }
 
-                if (!string.IsNullOrEmpty(sHeader))
-                {
-                    list.Add(new StatusDataHeader(sHeader));
-                }
-                
-                list.AddRange(listToAdd);
+            if (!string.IsNullOrEmpty(sHeader))
+            {
+                list.Add(new StatusDataHeader(sHeader));
             }
         }
 
+        // ----------------------------------------------------------------------------------------
         private void AddBuildingSpecific(bool bSubBuilding, BuildingTypeHelper.BuildingType eBuildingType, ushort buildingId, Building building)
         {
             // Building specific
@@ -151,6 +217,7 @@ namespace TransferManagerCE
             }
         }
 
+        // ----------------------------------------------------------------------------------------
         private void AddLineStops(BuildingType eBuildingType, Building building, ushort buildingId)
         {
             NetNode[] Nodes = NetManager.instance.m_nodes.m_buffer;
@@ -180,6 +247,9 @@ namespace TransferManagerCE
                             ushort transportBuildingId = BuildingManager.instance.FindTransportBuilding(node.m_position, fMaxDistanceSquared, line.Info.m_transportType);
                             if (transportBuildingId == buildingId)
                             {
+                                // Add stop to list
+                                AddToList(m_LineStops, new StatusTransportLineStop(eBuildingType, buildingId, node.m_transportLine, stop));
+
                                 int iAdded = 0;
                                 ushort vehicleId = line.m_vehicles;
                                 int iVehicleLoopCount = 0;
@@ -188,7 +258,7 @@ namespace TransferManagerCE
                                     Vehicle vehicle = Vehicles[vehicleId];
                                     if (vehicle.m_flags != 0 && vehicle.m_targetBuilding == stop)
                                     {
-                                        AddToList(m_listLineStops, new StatusTransportLineStop(eBuildingType, buildingId, node.m_transportLine, stop, vehicleId));
+                                        m_nodeVehicles.Add(new StatusDataVehicleLineStop(StopType.TransportLine, eBuildingType, buildingId, vehicleId, node.m_transportLine, vehicle.m_sourceBuilding, new InstanceID { NetNode = stop }));
                                         iAdded++;
                                     }
 
@@ -199,12 +269,6 @@ namespace TransferManagerCE
                                         CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
                                         break;
                                     }
-                                }
-
-                                // If there arent any vehicles for this stop then add a "None" one instead.
-                                if (iAdded == 0)
-                                {
-                                    AddToList(m_listLineStops, new StatusTransportLineStop(eBuildingType, buildingId, node.m_transportLine, stop, 0));
                                 }
                             }
                         }
@@ -225,6 +289,7 @@ namespace TransferManagerCE
             }
         }
 
+        // ----------------------------------------------------------------------------------------
         private void AddNetStops(BuildingType eBuildingType, Building building, ushort buildingId)
         {
             NetNode[] Nodes = NetManager.instance.m_nodes.m_buffer;
@@ -233,66 +298,7 @@ namespace TransferManagerCE
             HashSet<ushort> addedNodes = new HashSet<ushort>();
             HashSet<ushort> addedSegmentIds = new HashSet<ushort>();
 
-            // Find any vehicles heading to the stops and add them
-            uint uiSize = VehicleManager.instance.m_vehicles.m_size;
-            ushort vehicleID = building.m_ownVehicles;
-            int iLoopCount1 = 0;
-            while (vehicleID != 0 && vehicleID < uiSize)
-            {
-                Vehicle vehicle = Vehicles[vehicleID];
-                if (vehicle.m_flags != 0)
-                {
-                    InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleID, vehicle);
-                    if (target.NetNode != 0)
-                    {
-                        NetNode node = Nodes[target.NetNode];
-                        NetInfo info = node.Info;
-
-                        if ((object)info != null)
-                        {
-                            StopType eStopType = GetStopType(eBuildingType, info.m_class.m_layer, node.m_transportLine);
-                            if (eStopType != StopType.None)
-                            {
-                                switch (eStopType)
-                                {
-                                    case StopType.Intercity:
-                                        {
-                                            CreateIntercityLines(eBuildingType, buildingId, target.NetNode, vehicleID, addedSegmentIds);
-                                            break;
-                                        }
-                                    default:
-                                        {
-                                            StatusData? data = CreateStatusData(eStopType, eBuildingType, buildingId, node.m_transportLine, target.NetNode, vehicleID);
-                                            if (data != null)
-                                            {
-                                                if (eStopType == StopType.CableCar || node.m_transportLine != 0)
-                                                {
-                                                    AddToList(m_listLineStops, data);
-                                                }
-                                                else
-                                                {
-                                                    AddToList(m_listIntercityStops, data);
-                                                }
-                                                addedNodes.Add(target.NetNode);
-                                            }
-                                            break;
-                                        }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                vehicleID = vehicle.m_nextOwnVehicle;
-
-                if (++iLoopCount1 > 16384)
-                {
-                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
-                    break;
-                }
-            }
-
-            // Add net/intercity stops that dont have vehicles on the way
+            // Add net/intercity stops
             int iLoopCount2 = 0;
             ushort nodeId = building.m_netNode;
             while (nodeId != 0)
@@ -304,28 +310,28 @@ namespace TransferManagerCE
                     NetInfo info = node.Info;
                     if ((object)info != null)
                     {
-                        StopType eStopType = GetStopType(eBuildingType, info.m_class.m_layer, node.m_transportLine);
+                        StopType eStopType = GetStopType(eBuildingType, nodeId, node);
                         switch (eStopType)
                         {
                             case StopType.Intercity:
+                            case StopType.CableCar:
                                 {
-                                    CreateIntercityLines(eBuildingType, buildingId, nodeId, 0, addedSegmentIds);
+                                    CreateSegmentLines(eStopType, eBuildingType, buildingId, nodeId, addedSegmentIds);
+                                    break;
+                                }
+                            case StopType.TransportLine:
+                            case StopType.Evacuation:
+                                {
+                                    AddToList(m_LineStops, CreateStatusDataLine(eStopType, eBuildingType, buildingId, node.m_transportLine, nodeId));
+                                    break;
+                                }
+                            case StopType.None:
+                                {
                                     break;
                                 }
                             default:
                                 {
-                                    StatusData? data = CreateStatusData(eStopType, eBuildingType, buildingId, node.m_transportLine, nodeId, 0);
-                                    if (data != null)
-                                    {
-                                        if (eStopType == StopType.CableCar || node.m_transportLine != 0)
-                                        {
-                                            AddToList(m_listLineStops, data);
-                                        }
-                                        else
-                                        {
-                                            AddToList(m_listIntercityStops, data);
-                                        }
-                                    }
+                                    Log.Error($"ERROR: StopType: {eStopType} NetNode {nodeId} Node SubService: {node.Info.GetSubService()} Line: {node.m_transportLine} not handled.");
                                     break;
                                 }
                         }
@@ -340,40 +346,100 @@ namespace TransferManagerCE
                     break;
                 }
             }
+
+            // Find any vehicles heading to the stops and add them
+            uint uiSize = VehicleManager.instance.m_vehicles.m_size;
+            ushort vehicleID = building.m_ownVehicles;
+            int iLoopCount1 = 0;
+            while (vehicleID != 0 && vehicleID < uiSize)
+            {
+                Vehicle vehicle = Vehicles[vehicleID];
+                if (vehicle.m_flags != 0)
+                {
+                    InstanceID target = VehicleTypeHelper.GetVehicleTarget(vehicleID, vehicle);
+                    if (target.NetNode != 0)
+                    {
+                        NetNode node = Nodes[target.NetNode];
+                        if (node.m_flags != 0 && node.Info is not null)
+                        {
+                            StopType eStopType = GetStopType(eBuildingType, nodeId, node);
+                            if (eStopType != StopType.None)
+                            {
+                                if (node.m_transportLine != 0)
+                                {
+                                    m_nodeVehicles.Add(new StatusDataVehicleLineStop(eStopType, eBuildingType, buildingId, vehicleID, node.m_transportLine, vehicle.m_sourceBuilding, target));
+                                }
+                                else
+                                {
+                                    m_nodeVehicles.Add(new StatusDataVehicleNode(eStopType, eBuildingType, buildingId, vehicleID, vehicle.m_sourceBuilding, target));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                vehicleID = vehicle.m_nextOwnVehicle;
+
+                if (++iLoopCount1 > 16384)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + System.Environment.StackTrace);
+                    break;
+                }
+            }
         }
 
-        private StopType GetStopType(BuildingType eBuildingType, ItemClass.Layer layer, ushort transportLineId)
+        // ----------------------------------------------------------------------------------------
+        private StopType GetStopType(BuildingType eBuildingType, ushort nodeId, NetNode node)
         {
-            if (layer == ItemClass.Layer.PublicTransport)
+            if (node.Info.m_class.m_layer == ItemClass.Layer.PublicTransport)
             {
-                switch (eBuildingType)
+                if (eBuildingType == BuildingType.DisasterShelter)
                 {
-                    case BuildingType.TransportStation:
-                        {
-                            if (transportLineId == 0)
+                    return StopType.Evacuation;
+                }
+                else
+                {
+                    switch (node.Info.GetSubService())
+                    {
+                        case ItemClass.SubService.PublicTransportBus:
+                        case ItemClass.SubService.PublicTransportTrain:
+                        case ItemClass.SubService.PublicTransportPlane:
+                        case ItemClass.SubService.PublicTransportShip:
                             {
-                                return StopType.Intercity;
+                                if (node.m_transportLine == 0)
+                                {
+                                    return StopType.Intercity;
+                                }
+                                else
+                                {
+                                    return StopType.TransportLine;
+                                }
                             }
-                            else
+                        case ItemClass.SubService.PublicTransportMetro:
+                        case ItemClass.SubService.PublicTransportMonorail:
+                        case ItemClass.SubService.PublicTransportTram:
+                        case ItemClass.SubService.PublicTransportTrolleybus:
                             {
                                 return StopType.TransportLine;
                             }
-                        }
-                    case BuildingType.CableCarStation:
-                        {
-                            return StopType.CableCar;
-                        }
-                    case BuildingType.DisasterShelter:
-                        {
-                            return StopType.Evacuation;
-                        }
+                        case ItemClass.SubService.PublicTransportCableCar:
+                            {
+                                return StopType.CableCar;
+                            }
+                        default:
+                            {
+                                Log.Error($"ERROR: NetNode {nodeId} Service: {node.Info.GetService()} SubService: {node.Info.GetSubService()} Line: {node.m_transportLine} not handled.");
+                                break;
+                            }
+                    }
                 }
             }
 
             return StopType.None;
         }
 
-        private void CreateIntercityLines(BuildingType eBuildingType, ushort buildingId, ushort nodeId, ushort vehicleId, HashSet<ushort> addedSegmentIds)
+        // ----------------------------------------------------------------------------------------
+        private void CreateSegmentLines(StopType stopType, BuildingType eBuildingType, ushort buildingId, ushort nodeId, HashSet<ushort> addedSegmentIds)
         {
             NetManager instance = Singleton<NetManager>.instance;
 
@@ -387,31 +453,47 @@ namespace TransferManagerCE
                     {
                         NetSegment segment = instance.m_segments.m_buffer[segmentId];
 
-                        // Add line
-                        StatusData data;
-                        if (vehicleId != 0 && nodeId == segment.m_endNode)
+                        // Add segment data
+                        switch (stopType)
                         {
-                            data = new StatusIntercityStop(eBuildingType, buildingId, segmentId, segment.m_startNode, segment.m_endNode, vehicleId);
+                            case StopType.Intercity:
+                                {
+                                    StatusIntercityStop stop = new StatusIntercityStop(eBuildingType, buildingId, segmentId, segment.m_startNode, segment.m_endNode);
+                                    if (BuildingTypeHelper.IsOutsideConnection(stop.m_startBuildingId))
+                                    {
+                                        AddToList(m_IntercityStopsIn, stop);
+                                    }
+                                    else
+                                    {
+                                        AddToList(m_IntercityStopsOut, stop);
+                                    }
+                                    addedSegmentIds.Add(segmentId);
+                                    break;
+                                }
+                            case StopType.CableCar:                                ;
+                                {
+                                    AddToList(m_CableCarStops, new StatusCableCarStop(eBuildingType, buildingId, segmentId, segment.m_startNode, segment.m_endNode));
+                                    addedSegmentIds.Add(segmentId);
+                                    break;
+                                }
+                            default:
+                                {
+                                    Log.Error($"StopType: {stopType} not handled");
+                                    break;
+                                }
                         }
-                        else
-                        {
-                            data = new StatusIntercityStop(eBuildingType, buildingId, segmentId, segment.m_startNode, segment.m_endNode, 0);
-                        }
-
-                        AddToList(m_listIntercityStops, data);
-                        addedSegmentIds.Add(segmentId);
                     }
                 }
             }
         }
 
-        private StatusData? CreateStatusData(StopType stopType, BuildingType eBuildingType, ushort buildingId, ushort LineId, ushort nodeId, ushort vehicleId)
+        // ----------------------------------------------------------------------------------------
+        private StatusData? CreateStatusDataLine(StopType stopType, BuildingType eBuildingType, ushort buildingId, ushort LineId, ushort nodeId)
         {
             switch (stopType)
             {
-                case StopType.TransportLine: return new StatusTransportLineStop(eBuildingType, buildingId, LineId, nodeId, vehicleId);
-                case StopType.CableCar: return new StatusCableCarStop(eBuildingType, buildingId, nodeId, vehicleId);
-                case StopType.Evacuation: return new StatusEvacuationStop(eBuildingType, buildingId, nodeId, vehicleId);
+                case StopType.TransportLine: return new StatusTransportLineStop(eBuildingType, buildingId, LineId, nodeId);
+                case StopType.Evacuation: return new StatusEvacuationStop(eBuildingType, buildingId, LineId, nodeId);
             }
 
             return null;

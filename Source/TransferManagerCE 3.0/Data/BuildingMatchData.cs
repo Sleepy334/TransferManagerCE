@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class BuildingMatchData : MatchData
     {

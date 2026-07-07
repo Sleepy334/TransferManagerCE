@@ -1,18 +1,22 @@
 using ColossalFramework;
 using System;
+using UnityEngine;
 using System.Diagnostics;
 using System.Reflection;
-using TransferManagerCE.CustomManager;
-using TransferManagerCE.Settings;
-using UnityEngine;
+using TransferManagerCore.Settings;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class MatchStats
     {
+#if TRANSFER_MANAGER_EXTENDED
+        public const int iSTATS_ARRAY_SIZE = TransferManagerAwakePatch.NEW_TRANSFER_REASON_COUNT + 1;
+        public const int iMATERIAL_TOTAL_LOCATION = TransferManagerAwakePatch.NEW_TRANSFER_REASON_COUNT;
+#else
         public const int iSTATS_ARRAY_SIZE = TRANSFER_REASON_COUNT + 1;
         public const int iMATERIAL_TOTAL_LOCATION = TRANSFER_REASON_COUNT;
+#endif
 
         public static MatchStatsData[]? s_Stats = null;
 
@@ -65,7 +69,7 @@ namespace TransferManagerCE
             // Add counts from already existing transfers
             if (incomingAmount is not null && outgoingAmount is not null && incomingCount is not null && outgoingCount is not null)
             {
-                for (int material = 0; material < TRANSFER_REASON_COUNT; material++)
+                for (int material = 0; material < iMATERIAL_TOTAL_LOCATION; material++)
                 {
                     // Incoming
                     s_Stats[material].TotalIncomingCount += incomingCount[material];

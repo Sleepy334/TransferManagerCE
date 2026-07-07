@@ -1,111 +1,92 @@
-﻿using ColossalFramework;
+﻿using System.Reflection;
+using System;
+using ColossalFramework;
 using HarmonyLib;
 using SleepyCommon;
-using System;
-using System.Diagnostics;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class TransportStationAIPatches
     {
-        //static Stopwatch s_stopwatch = Stopwatch.StartNew();
+        // --------------------------------------------------------------------
+        private static int s_trainPassengerCapacity = 0;
+        private static int s_shipPassengerCapacity = 0;
+        private static int s_planePassengerCapacity = 0;
+        private static int s_busPassengerCapacity = 0;
 
         // --------------------------------------------------------------------
         // We patch the ProduceGoods function to check on waiting passenger counts and force vehicle spawn if needed.
         [HarmonyPatch(typeof(TransportStationAI), "ProduceGoods")]
         [HarmonyPrefix]
-        public static bool ProduceGoodsPrefix(TransportStationAI __instance, ushort buildingID, ref Building buildingData, ref Building.Frame frameData, int productionRate, int finalProductionRate, ref Citizen.BehaviourData behaviour, int aliveWorkerCount, int totalWorkerCount, int workPlaceCount, int aliveVisitorCount, int totalVisitorCount, int visitPlaceCount)
+        public static void ProduceGoodsPrefix(TransportStationAI __instance, ushort buildingID, ref Building buildingData, ref Building.Frame frameData, int productionRate, int finalProductionRate, ref Citizen.BehaviourData behaviour, int aliveWorkerCount, int totalWorkerCount, int workPlaceCount, int aliveVisitorCount, int totalVisitorCount, int visitPlaceCount)
         {
             // We check the passenger count to trigger an early vehicle spawn if needed.
-            if (__instance.m_transportInfo is not null &&
+            if (ModSettings.GetSettings().ForceIntercityStopSpawnAtMaxCount &&
+                __instance.m_transportInfo is not null &&
                 buildingData.m_netNode != 0 &&
                 Singleton<SimulationManager>.instance.m_randomizer.Int32(2U) == 0)
             {
-                int iVehicleCapacity = GetVehicleCapacity(__instance.m_transportInfo.m_transportType);
-                if (iVehicleCapacity > 0)
-                {
-                    //long startTimeTicks = s_stopwatch.ElapsedTicks;
-
-                    NetNode[] Nodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
-                    ushort stop = buildingData.m_netNode;
-                    int iLoopCount = 0;
-                    while (stop != 0)
-                    {
-                        NetNode node = Nodes[stop];
-
-                        if (node.m_maxWaitTime > 0 &&
-                            node.m_maxWaitTime < 250 && // otherwise it will trigger soon anyway
-                            node.m_transportLine == 0 &&
-                            node.Info is not null &&
-                            node.Info.m_class.m_layer == ItemClass.Layer.PublicTransport)
-                        {
-                            if (HasReachedPassengerLimit(stop, __instance.m_transportInfo.m_transportType, iVehicleCapacity))
-                            {
-                                // Set MaxValue so a vehicle is spawned.
-                                Nodes[stop].m_maxWaitTime = byte.MaxValue;
-#if DEBUG
-                                CDebug.Log($"Building: {buildingID} Stop: {stop} - Set to {byte.MaxValue}");
-#endif
-                            }
-                        }
-
-                        stop = node.m_nextBuildingNode;
-                        if (++iLoopCount > 32768)
-                        {
-                            CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
-                            break;
-                        }
-                    }
-
-                    //long jobMatchTimeTicks = s_stopwatch.ElapsedTicks - startTimeTicks;
-                    //CDebug.Log($"buildingID: {buildingID} TransportType: {__instance.m_transportInfo.m_transportType} Time: {(jobMatchTimeTicks * 0.0001).ToString("F")}");
-                }
+                // Add to thread for checking
+                CheckWaitingPassengers(buildingData.m_netNode);
             }
-
-            return true;
         }
 
         // --------------------------------------------------------------------
-        private static int GetVehicleCapacity(TransportInfo.TransportType eType)
+        public static void UpdatePassengerCapacities()
         {
-            int iVehicleCapacity = 0;
-            switch (eType)
-            {
-                case TransportInfo.TransportType.Train:
-                    {
-                        iVehicleCapacity = ModSettings.GetSettings().ForceTrainSpawnAtCount;
-                        break;
-                    }
-                case TransportInfo.TransportType.Ship:
-                    {
-                        iVehicleCapacity = ModSettings.GetSettings().ForceShipSpawnAtCount;
-                        break;
-                    }
-                case TransportInfo.TransportType.Airplane:
-                    {
-                        iVehicleCapacity = ModSettings.GetSettings().ForcePlaneSpawnAtCount;
-                        break;
-                    }
-                case TransportInfo.TransportType.Bus:
-                    {
-                        iVehicleCapacity = ModSettings.GetSettings().ForceBusSpawnAtCount;
-                        break;
-                    }
-            }
-
-            return iVehicleCapacity;
+            s_trainPassengerCapacity = MaxPassengerCapacity(ItemClass.SubService.PublicTransportTrain);
+            s_shipPassengerCapacity = MaxPassengerCapacity(ItemClass.SubService.PublicTransportShip);
+            s_planePassengerCapacity = MaxPassengerCapacity(ItemClass.SubService.PublicTransportPlane);
+            s_busPassengerCapacity = MaxPassengerCapacity(ItemClass.SubService.PublicTransportBus);
         }
 
         // --------------------------------------------------------------------
-        public static bool HasReachedPassengerLimit(ushort stop, TransportInfo.TransportType transportType, int iLimit)
+        private static void CheckWaitingPassengers(ushort nodeId)
         {
-            ushort[] InstanceGrid = Singleton<CitizenManager>.instance.m_citizenGrid;
-            CitizenInstance[] CitizenInstances = Singleton<CitizenManager>.instance.m_instances.m_buffer;
             NetNode[] Nodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
 
+            ushort stop = nodeId;
+            int iLoopCount = 0;
+            while (stop != 0)
+            {
+                NetNode nodeStop = Nodes[stop];
+
+                if (nodeStop.m_maxWaitTime > 0 &&
+                    nodeStop.m_maxWaitTime < 250 && // otherwise it will trigger soon anyway
+                    nodeStop.m_transportLine == 0 &&
+                    nodeStop.Info is not null)
+                {
+                    int iMaxCapacity = GetVehicleCapacity(nodeStop.Info.GetSubService());
+
+                    //CDebug.Log($"Checking Node: {stop} Type: {nodeStop.Info.GetSubService()} Flags: {nodeStop.m_flags} WaitTime: {nodeStop.m_maxWaitTime} MaxCapacity:{iMaxCapacity}");
+
+                    if (iMaxCapacity > 0 && 
+                        HasReachedPassengerLimit(stop, iMaxCapacity))
+                    {
+                        //CDebug.Log($"HasReachedPassengerLimit - FOUND: Node: {stop} WaitTime: {Nodes[stop].m_maxWaitTime} MaxCapacity:{iMaxCapacity}");
+                        //InstanceHelper.ShowInstance(new InstanceID { NetNode = stop });
+                        // Set MaxValue so a vehicle is spawned.
+                        Singleton<NetManager>.instance.m_nodes.m_buffer[stop].m_maxWaitTime = byte.MaxValue;
+                        Log.Info($"Max vehicle capacity found at node #{stop}, updating wait timer.");
+                    }
+                }
+
+                stop = nodeStop.m_nextBuildingNode;
+
+                if (++iLoopCount > 32768)
+                {
+                    CODebugBase<LogChannel>.Error(LogChannel.Core, "Invalid list detected!\n" + Environment.StackTrace);
+                    break;
+                }
+            }
+        }
+
+        // --------------------------------------------------------------------
+        private static bool HasReachedPassengerLimit(ushort stop, int iLimit)
+        {
             if (stop == 0)
             {
                 return false;
@@ -117,7 +98,11 @@ namespace TransferManagerCE
                 return false;
             }
 
-            float searchDistance = (transportType != 0 && transportType != TransportInfo.TransportType.EvacuationBus && transportType != TransportInfo.TransportType.TouristBus) ? 64f : 32f;
+            ushort[] InstanceGrid = Singleton<CitizenManager>.instance.m_citizenGrid;
+            CitizenInstance[] CitizenInstances = Singleton<CitizenManager>.instance.m_instances.m_buffer;
+            NetNode[] Nodes = Singleton<NetManager>.instance.m_nodes.m_buffer;
+
+            float searchDistance = 64f;
             float searchDistanceSquared = searchDistance * searchDistance;
 
             Vector3 position = Nodes[stop].m_position;
@@ -159,9 +144,10 @@ namespace TransferManagerCE
                         }
 
                         citizenInstanceId = nextGridInstance;
+
                         if (++iLoopCount > 65536)
                         {
-                            CDebug.Log("Invalid list detected!\n" + Environment.StackTrace);
+                            Log.Info("Invalid list detected!\n" + Environment.StackTrace);
                             break;
                         }
                     }
@@ -169,6 +155,149 @@ namespace TransferManagerCE
             }
 
             return false;
+        }
+
+        // --------------------------------------------------------------------
+        private static int GetVehicleCapacity(ItemClass.SubService subService)
+        {
+            int iVehicleCapacity = 0;
+
+            // These are the only vehicle types supported by intercity stops
+            switch (subService)
+            {
+                case ItemClass.SubService.PublicTransportTrain:
+                    {
+                        iVehicleCapacity = s_trainPassengerCapacity;
+
+                        break;
+                    }
+                case ItemClass.SubService.PublicTransportShip:
+                    {
+                        iVehicleCapacity = s_shipPassengerCapacity;
+                        break;
+                    }
+                case ItemClass.SubService.PublicTransportPlane:
+                    {
+                        iVehicleCapacity = s_planePassengerCapacity;
+                        break;
+                    }
+                case ItemClass.SubService.PublicTransportBus:
+                    {
+                        iVehicleCapacity = s_busPassengerCapacity;
+                        break;
+                    }
+            }
+
+            return iVehicleCapacity;
+        }
+
+        // --------------------------------------------------------------------
+        private static int MaxPassengerCapacity(ItemClass.SubService subService)
+        {
+            int iCapacity = 0;
+
+            try
+            {
+                FieldInfo m_transferVehiclesInfo = typeof(VehicleManager).GetField("m_transferVehicles", BindingFlags.NonPublic | BindingFlags.Instance);
+                FastList<ushort>[] m_transferVehicles = (FastList<ushort>[])m_transferVehiclesInfo.GetValue(VehicleManager.instance);
+
+                if (m_transferVehicles is not null)
+                {
+                    for (int i = 0; i < 3; ++i)
+                    {
+                        ItemClass.Level level = (ItemClass.Level)i;
+                        int iTransferIndex = GetTransferIndex(ItemClass.Service.PublicTransport, subService, level);
+                        FastList<ushort> fastList = m_transferVehicles[iTransferIndex];
+
+                        foreach (ushort prefabIndex in fastList)
+                        {
+                            VehicleInfo info = PrefabCollection<VehicleInfo>.GetPrefab(prefabIndex);
+                            iCapacity = Math.Max(iCapacity, GetVehicleInfoCapacity(info));
+                        }
+                    }
+
+                }
+                else
+                {
+                    Log.Error($"ERROR: Unable to access m_transferVehicles");
+                    iCapacity = GetDefaultValue(subService);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"ERROR: Exception trying to access m_transferVehicles", ex);
+                iCapacity = GetDefaultValue(subService);
+            }
+
+            return iCapacity;
+        }
+
+        // --------------------------------------------------------------------
+        private static int GetTransferIndex(ItemClass.Service service, ItemClass.SubService subService, ItemClass.Level level)
+        {
+            int num = ((subService == ItemClass.SubService.None) ? ((int)(service - 1)) : ((int)(28 + subService - 1)));
+            return (int)(num * 5 + level);
+        }
+
+        // --------------------------------------------------------------------
+        private static int GetVehicleInfoCapacity(VehicleInfo info)
+        {
+            int iVehicleCapacity = GetPassengerCapacity(info.m_vehicleAI);
+
+            // Add trailer capacity
+            if (info.m_trailers is not null)
+            {
+                for (int i = 0; i < info.m_trailers.Length; i++)
+                {
+                    VehicleInfo info2 = info.m_trailers[i].m_info;
+                    if (info2.GetAI() is PassengerTrainAI trailer)
+                    {
+                        iVehicleCapacity += GetPassengerCapacity((VehicleAI)info2.GetAI());
+                    }
+                }
+            }
+
+            return iVehicleCapacity;
+        }
+
+        // --------------------------------------------------------------------
+        private static int GetPassengerCapacity(VehicleAI vehicleAI)
+        {
+            switch (vehicleAI)
+            {
+                case BusAI bus:
+                    {
+                        return bus.m_passengerCapacity;
+                    }
+                case PassengerTrainAI train:
+                    {
+                        return train.m_passengerCapacity;
+                    }
+                case PassengerPlaneAI plane:
+                    {
+                        return plane.m_passengerCapacity;
+                    }
+                case PassengerShipAI ship:
+                    {
+                        return ship.m_passengerCapacity;
+                    }
+            }
+
+            return 0;
+        }
+
+        // --------------------------------------------------------------------
+        private static int GetDefaultValue(ItemClass.SubService subService)
+        {
+            switch (subService)
+            {
+                case ItemClass.SubService.PublicTransportTrain: return 240;
+                case ItemClass.SubService.PublicTransportShip: return 100;
+                case ItemClass.SubService.PublicTransportPlane: return 200;
+                case ItemClass.SubService.PublicTransportBus: return 60;
+            }
+
+            return 0;
         }
     }
 }

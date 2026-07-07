@@ -3,7 +3,7 @@ using ICities;
 using SleepyCommon;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIDistancePanel : UIPanel
     {

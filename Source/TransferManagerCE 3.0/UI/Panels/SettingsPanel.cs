@@ -2,11 +2,11 @@ using ColossalFramework.UI;
 using SleepyCommon;
 using System.Collections;
 using System.Collections.Generic;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 using static RenderManager;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class SettingsPanel : UIMainPanel<SettingsPanel>
     {
@@ -142,7 +142,7 @@ namespace TransferManagerCE.UI
             }
 
             //long stopTicks = stopwatch.ElapsedTicks;
-            //CDebug.Log($"{((double)(stopTicks - startTicks) * 0.0001).ToString("F")}ms");
+            //Log.Info($"{((double)(stopTicks - startTicks) * 0.0001).ToString("F")}ms");
         }
 
         public void OnHighlightBuildingsClick(UIComponent component, UIMouseEventParameter eventParam)

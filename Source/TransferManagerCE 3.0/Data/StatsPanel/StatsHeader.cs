@@ -1,4 +1,4 @@
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class StatsHeader : StatsBase
     {

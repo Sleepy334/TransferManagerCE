@@ -1,9 +1,9 @@
 using SleepyCommon;
 using System;
-using TransferManagerCE.UI;
-using static TransferManagerCE.BuildingTypeHelper;
+using TransferManagerCore.UI;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SettingsData : IComparable
     {

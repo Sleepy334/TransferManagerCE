@@ -1,9 +1,9 @@
 ﻿using ColossalFramework;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
-using TransferManagerCE.Common;
+using TransferManagerCore.Common;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathQueue
     {

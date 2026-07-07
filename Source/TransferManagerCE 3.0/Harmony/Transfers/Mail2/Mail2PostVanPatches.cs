@@ -1,10 +1,10 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class Mail2PostVanPatches

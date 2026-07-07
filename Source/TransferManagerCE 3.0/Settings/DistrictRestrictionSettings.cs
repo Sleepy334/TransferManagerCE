@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
 
-namespace TransferManagerCE.Settings
+namespace TransferManagerCore.Settings
 {
     public class DistrictRestrictionSettings
     {
@@ -291,7 +291,7 @@ namespace TransferManagerCE.Settings
                     {
                         bChanged = true;
                         // District doesn't exist any more
-                        CDebug.Log("District missing: " + districtId.m_iDistrictId);
+                        Log.Info("District missing: " + districtId.m_iDistrictId);
                     }
                 }
                 else
@@ -305,7 +305,7 @@ namespace TransferManagerCE.Settings
                     {
                         bChanged = true;
                         // District doesn't exist any more
-                        CDebug.Log("Park missing: " + districtId.m_iDistrictId);
+                        Log.Info("Park missing: " + districtId.m_iDistrictId);
                     }
                 }
             }

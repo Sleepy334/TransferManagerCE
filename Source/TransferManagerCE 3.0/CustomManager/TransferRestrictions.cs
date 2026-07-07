@@ -1,16 +1,16 @@
 using System;
 using UnityEngine;
-using TransferManagerCE.Util;
+using TransferManagerCore.Util;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
-using TransferManagerCE.TransferRules;
-using TransferManagerCE.Settings;
-using static TransferManagerCE.WarehouseUtils;
+using TransferManagerCore.TransferRules;
+using TransferManagerCore.Settings;
+using static TransferManagerCore.WarehouseUtils;
 using SleepyCommon;
 using ColossalFramework.Math;
 using System.Threading;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class TransferRestrictions
     {
@@ -367,6 +367,14 @@ namespace TransferManagerCE.CustomManager
         {
             if (incomingOffer.IsOutside())
             {
+                // Exporting
+
+                // Chedk the vehicle isnt imnporting as we don't want to match and just send the material straight back out
+                if (outgoingOffer.IsVehicleImporting())
+                {
+                    return ExclusionReason.Import;
+                }
+
                 // Apply priority restrictions to all transfer types
                 if (m_bIsWarehouseMaterial)
                 {
@@ -644,18 +652,9 @@ namespace TransferManagerCE.CustomManager
 
         private ExclusionReason CargoWarehouseCanTransfer(CustomTransferOffer incomingOffer, CustomTransferOffer outgoingOffer, CustomTransferReason.Reason material)
         {
-            // Cargo Warehouse (Train) <----> Outside Connection
-            // Cargo Warehouse (Train) <----> Cargo Warehouse (Train)
-            // Cargo Warehouse (Train) <----> Cargo Station
-            // Cargo Warehouse (Train) <----> Any train based offer
-
-            // Cargo Warehouse (Road) <----> Normal Warehouse
-            // Cargo Warehouse (Road) <----> Local (Road)
-            // Cargo Warehouse (Road) <-X-> Cargo Warehouse (Road) - Not allowed
-            // Cargo Warehouse (Road) <-X-> Outside Connection 
-            // Cargo Warehouse (Road) <-X-> Any train offer - Not allowed
-
-            if (m_bIsWarehouseMaterial && m_bImproveCargoWarehouseMatching && (incomingOffer.IsCargoWarehouse() || outgoingOffer.IsCargoWarehouse()))
+            if (m_bIsWarehouseMaterial && 
+                m_bImproveCargoWarehouseMatching && 
+                (incomingOffer.IsCargoWarehouse() || outgoingOffer.IsCargoWarehouse()))
             {
                 if (incomingOffer.IsCargoWarehouse() && outgoingOffer.IsCargoWarehouse())
                 {
@@ -666,8 +665,9 @@ namespace TransferManagerCE.CustomManager
                         return ExclusionReason.WarehouseStationType;
                     }
                 }
-                else if (incomingOffer.IsCargoWarehouse())
+                else
                 {
+                    // One of the offers is a cargo warehouse
                     if (incomingOffer.GetTransportType() == TransportUtils.TransportType.Train) 
                     {
                         return CargoWarehouseTrainCanTransfer(outgoingOffer);
@@ -677,17 +677,6 @@ namespace TransferManagerCE.CustomManager
                         return CargoWarehouseRoadCanTransfer(outgoingOffer);
                     }
                 }
-                else if (outgoingOffer.IsCargoWarehouse())
-                {
-                    if (outgoingOffer.GetTransportType() == TransportUtils.TransportType.Train)
-                    {
-                        return CargoWarehouseTrainCanTransfer(incomingOffer);
-                    }
-                    else
-                    {
-                        return CargoWarehouseRoadCanTransfer(incomingOffer);
-                    }
-                }
             }
 
             return ExclusionReason.None;
@@ -695,23 +684,10 @@ namespace TransferManagerCE.CustomManager
 
         private ExclusionReason CargoWarehouseRoadCanTransfer(CustomTransferOffer otherOffer)
         {
-            // Cargo Warehouse (Road) <----> Normal Warehouse
-            // Cargo Warehouse (Road) <----> Local (Road)
-            // Cargo Warehouse (Road) <-X-> Cargo Warehouse (Road) - Not allowed
-            // Cargo Warehouse (Road) <-X-> Outside Connection 
-            // Cargo Warehouse (Road) <-X-> Any train offer - Not allowed
-
-            if (otherOffer.IsOutside())
+            // Allowed to connect to anything that isnt a train offer
+            if (otherOffer.GetTransportType() == TransportUtils.TransportType.Train)
             {
-                return ExclusionReason.WarehouseStationType; // Not allowed, force all OC through train connection
-            }
-            else if (BuildingTypeHelper.IsCargoStation(otherOffer.GetBuildingType()))
-            {
-                return ExclusionReason.WarehouseStationType; // Not allowed, force all cargo station material through train connection
-            }
-            else if (otherOffer.GetTransportType() == TransportUtils.TransportType.Train)
-            {
-                return ExclusionReason.WarehouseStationType; // Dont allow road side to connect with a train offer
+                return ExclusionReason.TransportType; 
             }
 
             return ExclusionReason.None;
@@ -719,25 +695,14 @@ namespace TransferManagerCE.CustomManager
 
         private ExclusionReason CargoWarehouseTrainCanTransfer(CustomTransferOffer otherOffer)
         {
-            // Cargo Warehouse (Train) <----> Outside Connection
-            // Cargo Warehouse (Train) <----> Cargo Warehouse (Train)
-            // Cargo Warehouse (Train) <----> Cargo Station
-            // Cargo Warehouse (Train) <----> Any train based offer
-
-            if (otherOffer.IsOutside())
-            {
-                return ExclusionReason.None; // Allowed
-            }
-            else if (BuildingTypeHelper.IsCargoStation(otherOffer.GetBuildingType()))
-            {
-                return ExclusionReason.None;
-            }
-            else if (otherOffer.GetTransportType() == TransportUtils.TransportType.Train)
+            // Only allowed to connect with other cargo warehouse train lines and train outside connections
+            if ((otherOffer.IsCargoWarehouse() || otherOffer.IsOutside()) &&
+                otherOffer.GetTransportType() == TransportUtils.TransportType.Train)
             {
                 return ExclusionReason.None;
             }
 
-            return ExclusionReason.WarehouseStationType;
+            return ExclusionReason.TransportType;
         }
     }
 }

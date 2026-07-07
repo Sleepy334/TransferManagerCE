@@ -6,10 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class WarehouseAIPatches
@@ -62,7 +62,7 @@ namespace TransferManagerCE
                     yield return new CodeInstruction(OpCodes.Pop); // Remove previous value
                     yield return new CodeInstruction(OpCodes.Ldc_I4_2); // Add 2U
                     yield return instruction; // Perform randomizer.
-                    CDebug.Log($"WarehouseProduceGoodsTranspiler - Cargo warehouse offers patched to 50/50.", false);
+                    Log.Info($"WarehouseProduceGoodsTranspiler - Cargo warehouse offers patched to 50/50.");
                     continue;
                 }
 
@@ -81,7 +81,7 @@ namespace TransferManagerCE
                             // Set the compare flag to 0 so the loop doesnt execute
                             instruction.operand = 0;
                             bPatchedEmptyWarehouseTruckLimit = true;
-                            CDebug.Log($"WarehouseProduceGoodsTranspiler - Don't remove 'Empty' mode warehouse trucks when 20% full", false);
+                            Log.Info($"WarehouseProduceGoodsTranspiler - Don't remove 'Empty' mode warehouse trucks when 20% full");
                         }
                     }
 
@@ -96,7 +96,7 @@ namespace TransferManagerCE
                         if (iPatchedEmptyWarehouseLimit == 2)
                         {
                             instruction.operand = 1.0f;
-                            CDebug.Log($"WarehouseProduceGoodsTranspiler - Removed 'Empty' mode warehouse 20% limit", false);
+                            Log.Info($"WarehouseProduceGoodsTranspiler - Removed 'Empty' mode warehouse 20% limit");
                         }
                     }
                 }
@@ -112,7 +112,7 @@ namespace TransferManagerCE
                         {
                             // Exclude should ALWAYS be true for warehouses.
                             instruction.opcode = OpCodes.Ldc_I4_1; // Load true
-                            CDebug.Log("WarehouseProduceGoodsTranspiler - Setting 'Exclude' flag.", false);
+                            Log.Info("WarehouseProduceGoodsTranspiler - Setting 'Exclude' flag.");
                         }
 
                         yield return instruction;

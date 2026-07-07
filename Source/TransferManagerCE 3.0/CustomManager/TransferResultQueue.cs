@@ -2,11 +2,11 @@ using ColossalFramework;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class TransferResultQueue
     {

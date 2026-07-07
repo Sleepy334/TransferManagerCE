@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 
-namespace TransferManagerCE.Patch
+namespace TransferManagerCore.Patch
 {
     /// <summary>
     /// Harmony patch to implement escape key handling.

@@ -4,19 +4,18 @@ using System;
 using UnityEngine;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class RendererUtils
     {
-        public static void HighlightBuilding(Building[] BuildingBuffer, ushort usBuildingId, RenderManager.CameraInfo cameraInfo, UnityEngine.Color color)
+        public static void HighlightBuilding(Building[] BuildingBuffer, ushort usBuildingId, RenderManager.CameraInfo cameraInfo, UnityEngine.Color color, bool bDrawArrow = false)
         {
             ref Building building = ref BuildingBuffer[usBuildingId];
             if (building.m_flags != 0)
             {
-                // Highlight building path
-                if (building.Info is not null)
+                if (bDrawArrow)
                 {
-                    building.Info.m_buildingAI.RenderBuildOverlay(cameraInfo, color, building.m_position, building.m_angle, default(Segment3));
+                    RenderRoadAccessArrow(building, cameraInfo, color);
                 }
 
                 // Highlight building
@@ -41,10 +40,56 @@ namespace TransferManagerCE
             }
         }
 
+        private static void RenderRoadAccessArrow(Building building, RenderManager.CameraInfo cameraInfo, Color color)
+        {
+            GameAreaProperties properties = Singleton<GameAreaManager>.instance.m_properties;
+            if (properties != null && building.Info is not null)
+            {
+                Vector3 position = building.m_position;
+                float angle = building.m_angle;
+
+                Vector3 vector = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                Vector3 vector2 = new Vector3(vector.z, 0f, 0f - vector.x);
+
+                float buildingLength;
+                if (building.Length != 0)
+                {
+                    buildingLength = building.Length;
+                }
+                else
+                {
+                    buildingLength = building.Info.m_cellLength;
+                }
+
+                Quad3 quad = default(Quad3);
+
+                if (building.Info.GetAI() is RaceStandAI)
+                {
+                    // The entrance is at the back not the front
+                    buildingLength = -buildingLength;
+
+                    quad.a = position + 4f * vector - (buildingLength * 4f - 8f) * vector2;
+                    quad.b = position + 4f * vector - buildingLength * 4f * vector2;
+                    quad.c = position - 4f * vector - buildingLength * 4f * vector2;
+                    quad.d = position - 4f * vector - (buildingLength * 4f - 8f) * vector2;
+                }
+                else
+                {
+                    quad.a = position - 4f * vector - (buildingLength * 4f + 8f) * vector2;
+                    quad.b = position - 4f * vector - buildingLength * 4f * vector2;
+                    quad.c = position + 4f * vector - buildingLength * 4f * vector2;
+                    quad.d = position + 4f * vector - (buildingLength * 4f + 8f) * vector2;
+                }
+
+                Singleton<ToolManager>.instance.m_drawCallData.m_overlayCalls++;
+                Singleton<RenderManager>.instance.OverlayEffect.DrawQuad(cameraInfo, properties.m_directionArrow, color, quad, -10f, 1034f, renderLimits: false, alphaBlend: true);
+            }
+        }
+
         public static void HighlightVehicle(Vehicle[] VehicleBuffer, CameraInfo cameraInfo, ushort vehicleId, Color color)
         {
             Vehicle vehicle = VehicleBuffer[vehicleId];
-            if (vehicle.m_cargoParent != 0)
+            if (vehicle.m_cargoParent != 0 && vehicle.m_cargoParent != vehicleId)
             {
                 // Highlight parent instead
                 HighlightVehicle(VehicleBuffer, cameraInfo, vehicle.m_cargoParent, color);

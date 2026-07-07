@@ -2,7 +2,7 @@
 using static TransferManager;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class DeadHandler
     {

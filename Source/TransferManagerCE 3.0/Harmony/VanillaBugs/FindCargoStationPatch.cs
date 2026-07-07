@@ -4,7 +4,7 @@ using HarmonyLib;
 using System;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class FindCargoStationPatch

@@ -1,37 +1,90 @@
 using ColossalFramework;
 using SleepyCommon;
 using System;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
-using static RenderManager;
-using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataVehicle : StatusData
     {
-        public ushort m_responderBuilding;
+        // vehicle information
         public ushort m_vehicleId;
+        public ushort m_sourceBuildingId;
+        public InstanceID m_target;
 
-        public StatusDataVehicle(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
+        // --------------------------------------------------------------------
+        public StatusDataVehicle(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort vehicleId, ushort sourceBuildingId, InstanceID target) :
             base(reason, eBuildingType, BuildingId)
         {
-            m_responderBuilding = responder;
-            m_vehicleId = target;
+            m_sourceBuildingId = sourceBuildingId;
+            m_vehicleId = vehicleId;
+            m_target = target;
             m_color = KnownColor.lightGrey;
         }
 
+        // --------------------------------------------------------------------
         public override bool IsBuildingData()
         {
             return false;
         }
 
-        public override bool HasVehicle()
+        // --------------------------------------------------------------------
+        public override bool IsVehicleData()
         {
             return true;
         }
 
+        // --------------------------------------------------------------------
+        public override bool CanDelete()
+        {
+            return true;
+        }
+
+        // --------------------------------------------------------------------
+        public override string GetDeleteTooltip()
+        {
+            return $"{Localization.Get("btnDeleteVehicle")} #{GetVehicleId()}";
+        }
+
+        // --------------------------------------------------------------------
+        public override void OnClickDelete()
+        {
+            ushort vehicleId = GetVehicleId();
+            if (vehicleId != 0)
+            {
+                // Remove vehicle
+                InstanceID vehicleInstace = new InstanceID { Vehicle = vehicleId };
+                Singleton<SimulationManager>.instance.AddAction(() =>
+                {
+                    // If vehicle is stuck we may need to add Created flag to remove it
+                    ref Vehicle vehicle = ref VehicleManager.instance.m_vehicles.m_buffer[vehicleInstace.Vehicle];
+                    vehicle.m_flags |= Vehicle.Flags.Created;
+
+                    // Remove vehicle
+                    Singleton<VehicleManager>.instance.ReleaseVehicle(vehicleInstace.Vehicle);
+                });
+            }
+        }
+
+        // --------------------------------------------------------------------
+        public override int CompareTo(object second)
+        {
+            if (second is StatusDataVehicle)
+            {
+                StatusDataVehicle oSecond = (StatusDataVehicle)second;
+
+                if (GetDistance() != oSecond.GetDistance())
+                {
+                    return GetDistance().CompareTo(oSecond.GetDistance());
+                }
+            }
+
+            return base.CompareTo(second);
+        }
+
+        // --------------------------------------------------------------------
         public override string GetMaterialDisplay()
         {
             if (m_eBuildingType == BuildingType.OutsideConnection || 
@@ -51,6 +104,7 @@ namespace TransferManagerCE.Data
             } 
         }
 
+        // --------------------------------------------------------------------
         protected override string CalculateValue(out string tooltip)
         {
             ushort vehicleId = GetVehicleId();
@@ -65,6 +119,7 @@ namespace TransferManagerCE.Data
             return "";
         }
 
+        // --------------------------------------------------------------------
         protected override string CalculateTimer(out string tooltip)
         {
             string sTimer = "";
@@ -89,6 +144,7 @@ namespace TransferManagerCE.Data
             return sTimer;
         }
 
+        // --------------------------------------------------------------------
         protected override double CalculateDistance()
         {
             ushort vehicleId = GetVehicleId();
@@ -107,7 +163,8 @@ namespace TransferManagerCE.Data
             return double.MaxValue;
         }
 
-        protected override string CalculateVehicle(out string tooltip)
+        // --------------------------------------------------------------------
+        protected override string CalculateDescription1(out string tooltip)
         {
             ushort vehicleId = GetVehicleId();
             if (vehicleId != 0)
@@ -123,22 +180,32 @@ namespace TransferManagerCE.Data
             return "";
         }
 
-        protected override string CalculateResponder(out string tooltip)
+        // --------------------------------------------------------------------
+        // Status tab = Responder (Vehicle Source)
+        // Stops tab = Vehicle Target
+        protected override string CalculateDescription2(out string tooltip)
         {
-            ushort buildingId = GetResponderId();
-            if (buildingId != 0)
+            // Tooltip
+            InstanceID instance = new InstanceID { Building = GetSourceId() };
+
+            tooltip = $"{InstanceHelper.DescribeInstance(instance, true, true)}";
+
+            if (GetVehicleId() != 0)
             {
-                InstanceID instance = new InstanceID { Building = buildingId };
-                tooltip = $"{InstanceHelper.DescribeInstance(instance, true, true)}";
-                return InstanceHelper.DescribeInstance(instance, true, false);
+                string sState = DescribeVehicleState(GetVehicleId());
+                if (!string.IsNullOrEmpty(sState))
+                {
+                    return sState;
+                }
             }
 
-            tooltip = "";
-            return "";
+            return InstanceHelper.DescribeInstance(instance, false, false);
         }
+
+        // --------------------------------------------------------------------
         public override ushort GetVehicleId()
         {
-            if (HasVehicle())
+            if (m_vehicleId != 0)
             {
                 Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[m_vehicleId];
                 if (vehicle.m_cargoParent != 0)
@@ -154,19 +221,74 @@ namespace TransferManagerCE.Data
             return 0;
         }
 
-        public override ushort GetResponderId()
+        // --------------------------------------------------------------------
+        public ushort GetSourceId()
         {
-            if (m_responderBuilding != 0)
+            if (m_sourceBuildingId != 0)
             {
-                return m_responderBuilding;
+                return m_sourceBuildingId;
             }
-            ushort targetId = GetVehicleId();
-            if (targetId != 0)
+
+            ushort vehicleId = GetVehicleId();
+            if (vehicleId != 0)
             {
-                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[targetId];
+                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[vehicleId];
                 return vehicle.m_sourceBuilding;
             }
+
             return 0;
+        }
+
+        // --------------------------------------------------------------------
+        public InstanceID GetTarget()
+        {
+            return m_target;
+        }
+
+        // --------------------------------------------------------------------
+        public override void OnClickDescription1()
+        {
+            InstanceHelper.ShowInstance(new InstanceID { Vehicle = GetVehicleId() }); 
+        }
+
+        // --------------------------------------------------------------------
+        public override void OnClickDescription2()
+        {
+            InstanceHelper.ShowInstance(new InstanceID { Building = GetSourceId() });
+        }
+
+        // --------------------------------------------------------------------
+        protected string DescribeVehicleState(ushort vehiceId)
+        {
+            if (GetVehicleId() != 0)
+            {
+                Vehicle vehicle = VehicleManager.instance.m_vehicles.m_buffer[GetVehicleId()];
+                if ((vehicle.m_flags & Vehicle.Flags.WaitingLoading) != 0)
+                {
+                    if ((vehicle.m_flags & (Vehicle.Flags.Stopped | Vehicle.Flags.Spawned)) == (Vehicle.Flags.Stopped | Vehicle.Flags.Spawned))
+                    {
+                        return "Loading (Phase 2)";
+                    }
+                    else
+                    {
+                        return "Loading";
+                    }
+                }
+                else if ((vehicle.m_flags & Vehicle.Flags.WaitingSpace) != 0)
+                {
+                    return "Waiting space";
+                }
+                else if ((vehicle.m_flags & Vehicle.Flags.WaitingCargo) != 0)
+                {
+                    return "Waiting cargo";
+                }
+                else if ((vehicle.m_flags & Vehicle.Flags.Congestion) != 0)
+                {
+                    return "Congestion";
+                }
+            }
+
+            return "";
         }
     }
 }

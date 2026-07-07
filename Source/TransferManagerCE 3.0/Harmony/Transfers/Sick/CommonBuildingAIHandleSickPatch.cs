@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using static Notification;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class CommonBuildingAIHandleSickPatch
@@ -18,8 +18,7 @@ namespace TransferManagerCE
         [HarmonyPrefix]
         public static bool HandleSick(ushort buildingID, ref Building buildingData, ref Citizen.BehaviourData behaviour, int citizenCount)
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
-                SaveGameSettings.GetSettings().OverrideSickHandler)
+            if (SaveGameSettings.GetSettings().OverrideSickHandler)
             {
                 Notification.ProblemStruct problemStruct = Notification.RemoveProblems(buildingData.m_problems, Notification.Problem1.DirtyWater | Notification.Problem1.Pollution | Notification.Problem1.Noise);
                 if (behaviour.m_sickCount != 0 && Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.HealthCare))
@@ -101,8 +100,7 @@ namespace TransferManagerCE
         [HarmonyPatch(typeof(CommonBuildingAI), "SimulationStepActive")]
         public static void SimulationStepActivePostfix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
         {
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
-                SaveGameSettings.GetSettings().OverrideSickHandler &&
+            if (SaveGameSettings.GetSettings().OverrideSickHandler &&
                 Singleton<UnlockManager>.instance.Unlocked(ItemClass.Service.HealthCare))
             {
                 // If timer runs out then kill remaining sick cims as punishment

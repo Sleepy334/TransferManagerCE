@@ -1,8 +1,8 @@
 ﻿using HarmonyLib;
 using SleepyCommon;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public static class OutsideConnectionAIPatch
@@ -20,8 +20,7 @@ namespace TransferManagerCE
         {
             s_bInAddConnectionOffers = true;
 
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
-                !DependencyUtils.IsAdvancedOutsideConnectionsRunning() &&
+            if (!DependencyUtils.IsAdvancedOutsideConnectionsRunning() &&
                 OutsideConnectionSettings.HasSettings(buildingID))
             {
                 OutsideConnectionSettings settings = OutsideConnectionSettings.GetSettings(buildingID);

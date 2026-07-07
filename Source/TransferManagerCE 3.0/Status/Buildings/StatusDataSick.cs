@@ -1,12 +1,13 @@
 using ICities;
+using SleepyCommon;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataSick : StatusDataBuilding
     {
@@ -69,7 +70,10 @@ namespace TransferManagerCE.Data
 
                 // Default handling
                 WarnText(false, true, building.m_healthProblemTimer, 1);
-                return BuildingUtils.GetSickCount(m_buildingId, building).ToString();
+
+                tooltip = DescribeSick(m_buildingId, building, out int iCount);
+
+                return iCount.ToString();
             }
 
             return "0";
@@ -77,15 +81,31 @@ namespace TransferManagerCE.Data
 
         protected override string CalculateTimer(out string tooltip)
         {
-            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            if (building.m_healthProblemTimer > 0)
-            {
-                tooltip = $"Sick Timer: {building.m_healthProblemTimer}";
-                return $"S:{building.m_healthProblemTimer}";
-            }
+            string sTimer = base.CalculateTimer(out tooltip);
 
-            tooltip = "";
-            return "";
+            AddTimerText(TimerType.Sick, ref sTimer, ref tooltip);
+
+            return sTimer;
+        }
+
+        private string DescribeSick(ushort buildingId, Building building, out int Count)
+        {
+            int iCount = 0;
+            string sText = "";
+
+            CitizenUtils.EnumerateCitizens(new InstanceID { Building = buildingId }, building.m_citizenUnits, (citizenId, citizen) =>
+            {
+                if (citizen.GetBuildingByLocation() == buildingId && (citizen.m_flags & Citizen.Flags.Sick) == Citizen.Flags.Sick)
+                {
+                    iCount++;
+                    sText += $"{InstanceHelper.DescribeInstance(new InstanceID { Citizen = citizenId }, false, false)} | Age: {citizen.Age} | Health: {citizen.m_health}\r\n";
+                }
+                // continue loop
+                return true;
+            });
+
+            Count = iCount;
+            return sText;
         }
     }
 }

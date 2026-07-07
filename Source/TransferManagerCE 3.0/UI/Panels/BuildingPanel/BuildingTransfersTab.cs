@@ -3,10 +3,10 @@ using SleepyCommon;
 using System.Collections.Generic;
 using UnifiedUI.Helpers;
 using UnityEngine;
-using static TransferManagerCE.BuildingTypeHelper;
-using static TransferManagerCE.UI.BuildingPanel;
+using static TransferManagerCore.BuildingTypeHelper;
+using static TransferManagerCore.UI.BuildingPanel;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class BuildingTransfersTab : BuildingTab
     {

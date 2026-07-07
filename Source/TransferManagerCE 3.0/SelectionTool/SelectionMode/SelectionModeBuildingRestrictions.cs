@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using static TransferManagerCE.SelectionTool;
-using TransferManagerCE.UI;
+using static TransferManagerCore.SelectionTool;
+using TransferManagerCore.UI;
 using UnityEngine;
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SelectionModeBuildingRestrictions : SelectionModeSelectBuildings
     {

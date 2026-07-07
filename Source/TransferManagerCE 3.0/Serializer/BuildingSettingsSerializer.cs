@@ -1,12 +1,12 @@
 using SleepyCommon;
 using System;
 using System.Collections.Generic;
-using TransferManagerCE.Util;
-using static TransferManagerCE.BuildingSettings;
-using static TransferManagerCE.RestrictionSettings;
-using static TransferManagerCE.Settings.DistrictRestrictionSettings;
+using TransferManagerCore;
+using static TransferManagerCore.BuildingSettings;
+using static TransferManagerCore.RestrictionSettings;
+using static TransferManagerCore.Settings.DistrictRestrictionSettings;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class BuildingSettingsSerializer
     {
@@ -46,7 +46,7 @@ namespace TransferManagerCE
                 // Read in the data version for these building settings
                 int iBuildingSettingsVersion = StorageData.ReadInt32(Data, ref iIndex);
 #if DEBUG
-                CDebug.Log("Global: " + iGlobalVersion + " BuildingVersion: " + iBuildingSettingsVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
+                Log.Info("Global: " + iGlobalVersion + " BuildingVersion: " + iBuildingSettingsVersion + " DataLength: " + Data.Length + " Index: " + iIndex);
 #endif
                 // Check we support reading this version
                 if (iBuildingSettingsVersion <= iBUILDING_SETTINGS_DATA_VERSION)
@@ -97,7 +97,7 @@ namespace TransferManagerCE
                                 case 10: settings = LoadDataVersion10(Data, ref iIndex); break;
                                 default:
                                     {
-                                        CDebug.Log("New data version, unable to load!");
+                                        Log.Info("New data version, unable to load!");
                                         break;
                                     }
                             }
@@ -116,13 +116,13 @@ namespace TransferManagerCE
                         }
                         else
                         {
-                            CDebug.Log($"Building Settings: {buildingId} are default, ignoring.");
+                            Log.Info($"Building Settings: {buildingId} are default, ignoring.");
                         }
                     }
                 } 
                 else
                 {
-                    CDebug.Log($"New data version {iBuildingSettingsVersion}, unable to load!");
+                    Log.Info($"New data version {iBuildingSettingsVersion}, unable to load!");
                 }
             }
         }
@@ -299,7 +299,7 @@ namespace TransferManagerCE
                 }
                 else
                 {
-                    CDebug.LogError("Error reading old settings, no restriction object created.");
+                    Log.Error("Error reading old settings, no restriction object created.");
                 }
             }
             return settings;

@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using TransferManagerCore;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class DistrictData : IEquatable<DistrictData>,  IComparable
     {

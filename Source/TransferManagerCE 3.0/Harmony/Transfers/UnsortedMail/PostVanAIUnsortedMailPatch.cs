@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class PostVanAIUnsortedMailPatch
@@ -99,11 +99,11 @@ namespace TransferManagerCE
             /*
             foreach (CodeInstruction instruction in newInstructionList)
             {
-                CDebug.Log(instruction.ToString());
+                Log.Info(instruction.ToString());
             }
             */
 
-            CDebug.Log($"PostVanAIUnsortedMailPatch - Patching of PostVanAI.SetTarget {(bPatched ? "succeeded" : "failed")}.", false);
+            Log.Info($"PostVanAIUnsortedMailPatch - Patching of PostVanAI.SetTarget {(bPatched ? "succeeded" : "failed")}.");
             return newInstructionList.AsEnumerable();
         }
 

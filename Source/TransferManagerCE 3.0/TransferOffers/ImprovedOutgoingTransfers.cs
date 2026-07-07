@@ -1,12 +1,13 @@
 ﻿using System;
 using UnityEngine;
 using ColossalFramework;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using static TransferManager;
-using static TransferManagerCE.WarehouseUtils;
-using TransferManagerCE.CustomManager;
+using static TransferManagerCore.WarehouseUtils;
+using TransferManagerCore.CustomManager;
+using TransferManagerCore.UI;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     internal class ImprovedOutgoingTransfers
     {
@@ -139,9 +140,7 @@ namespace TransferManagerCE
                     if (iReservePercent > 0)
                     {
                         // Max vehicle count
-                        int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                        int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                        int iTotalVehicles = (productionRate * warehouse.m_truckCount + 99) / 100;
+                        int iTotalVehicles = BuildingVehicleCount.GetAdjustedVehicleCount(warehouse.m_truckCount, building);
 
                         // Determine how many free vehicles it has
                         TransferReason actualTransferReason = warehouse.GetActualTransferReason(offer.Building, ref building);

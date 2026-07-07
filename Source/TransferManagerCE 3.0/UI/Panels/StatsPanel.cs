@@ -2,18 +2,18 @@ using ColossalFramework.UI;
 using SleepyCommon;
 using System;
 using System.Collections.Generic;
-using TransferManagerCE.CustomManager;
-using TransferManagerCE.CustomManager.Stats;
-using TransferManagerCE.Data.StatsPanel;
-using TransferManagerCE.Settings;
-using TransferManagerCE.UI;
-using TransferManagerCE.Util;
+using TransferManagerCore.CustomManager;
+using TransferManagerCore.CustomManager.Stats;
+using TransferManagerCore.Data.StatsPanel;
+using TransferManagerCore.Settings;
+using TransferManagerCore.UI;
+using TransferManagerCore.Util;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.CustomTransferReason;
-using static TransferManagerCE.UITabStrip;
+using static TransferManagerCore.CustomTransferReason;
+using static TransferManagerCore.UITabStrip;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class StatsPanel : UIMainPanel<StatsPanel>
     {
@@ -214,64 +214,57 @@ namespace TransferManagerCE
         {
             List<StatsBase> list = new List<StatsBase>();
 
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager)
+            // Match time
+            bool bPathDistance = SaveGameSettings.GetSettings().PathDistanceServices == (int)SaveGameSettings.PathDistanceAlgorithm.PathDistance ||
+                                    SaveGameSettings.GetSettings().PathDistanceGoods == (int)SaveGameSettings.PathDistanceAlgorithm.PathDistance;
+
+            // Transfer manager match statistics
+            list.Add(new StatsHeader("Match Totals"));
+            list.Add(new StatsGroup("Total Match Jobs", $"{TransferManagerStats.s_TotalMatchJobs}"));
+            list.Add(new StatsGroup("Total Match Time", $"{Utils.DisplayTicks(TransferManagerStats.s_TotalMatchTimeTicks)} ms"));
+            if (bPathDistance)
             {
-                // Match time
-                bool bPathDistance = SaveGameSettings.GetSettings().PathDistanceServices == (int)SaveGameSettings.PathDistanceAlgorithm.PathDistance ||
-                                     SaveGameSettings.GetSettings().PathDistanceGoods == (int)SaveGameSettings.PathDistanceAlgorithm.PathDistance;
-
-                // Transfer manager match statistics
-                list.Add(new StatsHeader("Match Totals"));
-                list.Add(new StatsGroup("Total Match Jobs", $"{TransferManagerStats.s_TotalMatchJobs}"));
-                list.Add(new StatsGroup("Total Match Time", $"{Utils.DisplayTicks(TransferManagerStats.s_TotalMatchTimeTicks)} ms"));
-                if (bPathDistance)
-                {
-                    list.Add(new StatsGroup("Total Path Distance Match Jobs", $"{TransferManagerStats.s_TotalPathDistanceMatchJobs}"));
-                }
-                if (ModSettings.GetSettings().StatisticsEnabled)
-                {
-                    list.Add(new StatsGroup("Total Matches", MatchStats.GetTotalMatches().ToString()));
-                    list.Add(new StatsGroup("Matches / Second", MatchStats.GetMatchesPerSecond().ToString("N0")));
-                    list.Add(new StatsGroup("Average Distance", MatchStats.GetAverageDistance()));
-                }
-                list.Add(new StatsSeparator());
-
-                // Cycle
-                CycleJobData cycleData = TransferManagerStats.CycleData.GetLatestCompletedCopy();
-
-                list.Add(new StatsHeader("Latest Match Cycle"));
-                list.Add(new StatsGroup("Cycle Number", $"{cycleData.m_cycle}"));
-                list.Add(new StatsGroup("Cycle Match Job Count", $"{cycleData.m_jobsCompleted}"));
-                list.Add(new StatsGroup("Cycle Simulation Time", $"{Utils.DisplayTicks(cycleData.DurationTicks())} ms"));
-                list.Add(new StatsGroup("Cycle Calculation Time", $"{Utils.DisplayTicks(cycleData.m_totalTicks)} ms"));
-                list.Add(new StatsGroup($"Longest Cycle Match Job Time", $"{Utils.DisplayTicks(cycleData.m_ticks)}ms ({cycleData.m_material})"));
-                list.Add(new StatsSeparator());
-
-                // Job stats
-                list.Add(new StatsHeader("Job Statistics"));
-                list.Add(new StatsGroup("Average Match Job Time", $"{TransferManagerStats.GetAverageMatchTime().ToString("F")} ms"));
-                if (bPathDistance)
-                {
-                    list.Add(new StatsGroup("Average Path Distance Match Job Time", $"{TransferManagerStats.GetAveragePathDistanceMatchTime().ToString("F")} ms"));
-                }                
-                list.Add(new StatsGroup("Longest Match Job Time", $"{((double)TransferManagerStats.s_longestMatchTicks * 0.0001).ToString("F")}ms ({TransferManagerStats.s_longestMaterial})"));
-                list.Add(new StatsGroup("Largest Match Job", $"IN: {TransferManagerStats.s_largestIncoming} OUT: {TransferManagerStats.s_largestOutgoing} ({TransferManagerStats.s_largestMaterial})"));
-                list.Add(new StatsSeparator());
-
-                // Pathing
-                list.Add(new StatsHeader("Pathing"));
-                list.Add(new StatsGroup("Total Citizen Path Fail Count", HumanAIPathfindFailure.s_pathFailCount.ToString()));
-                list.Add(new StatsGroup("Total Vehicle Path Fail Count", CarAIPathfindFailurePatch.s_pathFailCount.ToString()));
-                list.Add(new StatsGroup("Current Path Fail Count", PathFindFailure.GetPathFailureCount().ToString()));
-                list.Add(new StatsGroup("Current Outside Path Fail Count", PathFindFailure.GetOutsidePathFailureCount().ToString()));
-                if (bPathDistance)
-                {
-                    list.Add(new StatsGroup("No Road Access Fail Count", RoadAccessStorage.Count.ToString()));
-                }
+                list.Add(new StatsGroup("Total Path Distance Match Jobs", $"{TransferManagerStats.s_TotalPathDistanceMatchJobs}"));
             }
-            else
+            if (ModSettings.GetSettings().StatisticsEnabled)
             {
-                list.Add(new StatsBase("Transfer Manager Disabled", "Please enable transfer manager to view statistics"));
+                list.Add(new StatsGroup("Total Matches", MatchStats.GetTotalMatches().ToString()));
+                list.Add(new StatsGroup("Matches / Second", MatchStats.GetMatchesPerSecond().ToString("N0")));
+                list.Add(new StatsGroup("Average Distance", MatchStats.GetAverageDistance()));
+            }
+            list.Add(new StatsSeparator());
+
+            // Cycle
+            CycleJobData cycleData = TransferManagerStats.CycleData.GetLatestCompletedCopy();
+
+            list.Add(new StatsHeader("Latest Match Cycle"));
+            list.Add(new StatsGroup("Cycle Number", $"{cycleData.m_cycle}"));
+            list.Add(new StatsGroup("Cycle Match Job Count", $"{cycleData.m_jobsCompleted}"));
+            list.Add(new StatsGroup("Cycle Simulation Time", $"{Utils.DisplayTicks(cycleData.DurationTicks())} ms"));
+            list.Add(new StatsGroup("Cycle Calculation Time", $"{Utils.DisplayTicks(cycleData.m_totalTicks)} ms"));
+            list.Add(new StatsGroup($"Longest Cycle Match Job Time", $"{Utils.DisplayTicks(cycleData.m_ticks)}ms ({cycleData.m_material})"));
+            list.Add(new StatsSeparator());
+
+            // Job stats
+            list.Add(new StatsHeader("Job Statistics"));
+            list.Add(new StatsGroup("Average Match Job Time", $"{TransferManagerStats.GetAverageMatchTime().ToString("F")} ms"));
+            if (bPathDistance)
+            {
+                list.Add(new StatsGroup("Average Path Distance Match Job Time", $"{TransferManagerStats.GetAveragePathDistanceMatchTime().ToString("F")} ms"));
+            }                
+            list.Add(new StatsGroup("Longest Match Job Time", $"{((double)TransferManagerStats.s_longestMatchTicks * 0.0001).ToString("F")}ms ({TransferManagerStats.s_longestMaterial})"));
+            list.Add(new StatsGroup("Largest Match Job", $"IN: {TransferManagerStats.s_largestIncoming} OUT: {TransferManagerStats.s_largestOutgoing} ({TransferManagerStats.s_largestMaterial})"));
+            list.Add(new StatsSeparator());
+
+            // Pathing
+            list.Add(new StatsHeader("Pathing"));
+            list.Add(new StatsGroup("Total Citizen Path Fail Count", HumanAIPathfindFailure.s_pathFailCount.ToString()));
+            list.Add(new StatsGroup("Total Vehicle Path Fail Count", CarAIPathfindFailurePatch.s_pathFailCount.ToString()));
+            list.Add(new StatsGroup("Current Path Fail Count", PathFindFailure.GetPathFailureCount().ToString()));
+            list.Add(new StatsGroup("Current Outside Path Fail Count", PathFindFailure.GetOutsidePathFailureCount().ToString()));
+            if (bPathDistance)
+            {
+                list.Add(new StatsGroup("No Road Access Fail Count", RoadAccessStorage.Count.ToString()));
             }
 
             return list;
@@ -281,61 +274,54 @@ namespace TransferManagerCE
         {
             List<StatsBase> list = new List<StatsBase>();
 
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager)
+            // ------------------------------------------------------------
+            // Dropped reasons indicate performance issues.
+            list.Add(new StatsHeader("General"));
+            list.Add(new StatsGroup("Dropped Reason Count", CustomTransferDispatcher.Instance.DroppedReasons.ToString()));
+            list.Add(new StatsGroup("Invalid Building Objects", $"{TransferManagerStats.s_iInvalidBuildingObjects}"));
+            list.Add(new StatsGroup("Invalid Vehicle Objects", $"{TransferManagerStats.s_iInvalidVehicleObjects}"));
+            list.Add(new StatsGroup("Invalid Citizen Objects", $"{TransferManagerStats.s_iInvalidCitizenObjects}"));
+            list.Add(new StatsSeparator());
+
+            // ------------------------------------------------------------
+            // Threads
+            list.Add(new StatsHeader("Threads"));
+            list.Add(new StatsGroup("Thread Count", $"{TransferManagerThread.ThreadCount}"));
+            list.Add(new StatsGroup("Running Threads", $"{TransferManagerThread.RunningThreads()}"));
+            list.Add(new StatsGroup("Max Running Threads", $"{TransferManagerThread.MaxRunningThreads()}"));
+            list.Add(new StatsSeparator());
+
+            // ------------------------------------------------------------
+            // Job queue
+            list.Add(new StatsHeader("Job Queue"));
+            list.Add(new StatsGroup("Current Job Queue Depth", TransferJobQueue.Instance.Count().ToString()));
+            list.Add(new StatsGroup("Max Job Queue Depth", $"{TransferJobQueue.Instance.GetMaxUsageCount()}"));
+            list.Add(new StatsGroup("Max Job Pool Usage", TransferJobPool.Instance.GetMaxUsageCount().ToString()));
+            list.Add(new StatsSeparator());
+
+            // ------------------------------------------------------------
+            // Result queue
+            list.Add(new StatsHeader("Result Queue"));
+            list.Add(new StatsGroup("Current Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetCount().ToString()));
+            list.Add(new StatsGroup("Max Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetMaxUsageCount().ToString()));
+            list.Add(new StatsSeparator());
+
+            // ------------------------------------------------------------
+            // Cache
+            list.Add(new StatsHeader("Cache"));
+
+            // Node Links
+            list.Add(new StatsGroup("Graph Generation Count", NodeLinkGraph.s_totalGenerations.ToString()));
+            if (NodeLinkGraph.s_totalGenerations > 0)
             {
-                // ------------------------------------------------------------
-                // Dropped reasons indicate performance issues.
-                list.Add(new StatsHeader("General"));
-                list.Add(new StatsGroup("Dropped Reason Count", CustomTransferDispatcher.Instance.DroppedReasons.ToString()));
-                list.Add(new StatsGroup("Invalid Building Objects", $"{TransferManagerStats.s_iInvalidBuildingObjects}"));
-                list.Add(new StatsGroup("Invalid Vehicle Objects", $"{TransferManagerStats.s_iInvalidVehicleObjects}"));
-                list.Add(new StatsGroup("Invalid Citizen Objects", $"{TransferManagerStats.s_iInvalidCitizenObjects}"));
-                list.Add(new StatsSeparator());
-
-                // ------------------------------------------------------------
-                // Threads
-                list.Add(new StatsHeader("Threads"));
-                list.Add(new StatsGroup("Thread Count", $"{TransferManagerThread.ThreadCount}"));
-                list.Add(new StatsGroup("Running Threads", $"{TransferManagerThread.RunningThreads()}"));
-                list.Add(new StatsGroup("Max Running Threads", $"{TransferManagerThread.MaxRunningThreads()}"));
-                list.Add(new StatsSeparator());
-
-                // ------------------------------------------------------------
-                // Job queue
-                list.Add(new StatsHeader("Job Queue"));
-                list.Add(new StatsGroup("Current Job Queue Depth", TransferJobQueue.Instance.Count().ToString()));
-                list.Add(new StatsGroup("Max Job Queue Depth", $"{TransferJobQueue.Instance.GetMaxUsageCount()}"));
-                list.Add(new StatsGroup("Max Job Pool Usage", TransferJobPool.Instance.GetMaxUsageCount().ToString()));
-                list.Add(new StatsSeparator());
-
-                // ------------------------------------------------------------
-                // Result queue
-                list.Add(new StatsHeader("Result Queue"));
-                list.Add(new StatsGroup("Current Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetCount().ToString()));
-                list.Add(new StatsGroup("Max Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetMaxUsageCount().ToString()));
-                list.Add(new StatsSeparator());
-
-                // ------------------------------------------------------------
-                // Cache
-                list.Add(new StatsHeader("Cache"));
-
-                // Node Links
-                list.Add(new StatsGroup("Graph Generation Count", NodeLinkGraph.s_totalGenerations.ToString()));
-                if (NodeLinkGraph.s_totalGenerations > 0)
-                {
-                    list.Add(new StatsGroup("Graph Average Time", $"{Utils.DisplayTicks(NodeLinkGraph.s_totalGenerationTicks / NodeLinkGraph.s_totalGenerations)}ms"));
-                }
-
-                // Path connected
-                list.Add(new StatsGroup("Path Connection Generation Count", PathConnected.s_totalGenerations.ToString()));
-                if (PathConnected.s_totalGenerations > 0)
-                {
-                    list.Add(new StatsGroup("Path Connection Average Time", $"{Utils.DisplayTicks(PathConnected.s_totalGenerationTicks / PathConnected.s_totalGenerations)}ms"));
-                }
+                list.Add(new StatsGroup("Graph Average Time", $"{Utils.DisplayTicks(NodeLinkGraph.s_totalGenerationTicks / NodeLinkGraph.s_totalGenerations)}ms"));
             }
-            else
+
+            // Path connected
+            list.Add(new StatsGroup("Path Connection Generation Count", PathConnected.s_totalGenerations.ToString()));
+            if (PathConnected.s_totalGenerations > 0)
             {
-                list.Add(new StatsBase("Transfer Manager Disabled", "Please enable transfer manager to view statistics"));
+                list.Add(new StatsGroup("Path Connection Average Time", $"{Utils.DisplayTicks(PathConnected.s_totalGenerationTicks / PathConnected.s_totalGenerations)}ms"));
             }
 
             return list;

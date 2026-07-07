@@ -1,7 +1,7 @@
-﻿using TransferManagerCE.CustomManager;
+﻿using TransferManagerCore.CustomManager;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class CycleJobData
     {

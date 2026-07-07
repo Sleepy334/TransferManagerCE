@@ -8,7 +8,7 @@ using static MessageInfo;
 using System;
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class UITabStrip : UIPanel
     {
@@ -228,7 +228,7 @@ namespace TransferManagerCE
                     }
                     else
                     {
-                        CDebug.Log($"ERROR: Unable to compact tab: {iTabIndex} buttonLabel: {buttonLabel} buttonPanel: {buttonPanel} buttonSprite: {buttonSprite}");
+                        Log.Info($"ERROR: Unable to compact tab: {iTabIndex} buttonLabel: {buttonLabel} buttonPanel: {buttonPanel} buttonSprite: {buttonSprite}");
                     }
 
                     // Update state

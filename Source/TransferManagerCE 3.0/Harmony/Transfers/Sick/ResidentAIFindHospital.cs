@@ -2,14 +2,14 @@ using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Reflection;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using ColossalFramework;
 using UnityEngine;
 using static RenderManager;
 using System;
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public static class ResidentAIFindHospital
@@ -66,7 +66,6 @@ namespace TransferManagerCE
         public static bool Prefix(uint citizenID, ushort sourceBuilding, TransferManager.TransferReason reason, ref bool __result)
         {
             if (sourceBuilding != 0 &&
-                SaveGameSettings.GetSettings().EnableNewTransferManager &&
                 SaveGameSettings.GetSettings().OverrideSickHandler)
             {
                 // Bypass vanilla function as we will handle building collection ourselves

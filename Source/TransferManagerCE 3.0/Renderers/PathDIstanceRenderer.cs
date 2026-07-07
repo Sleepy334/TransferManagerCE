@@ -1,11 +1,11 @@
 ﻿using SleepyCommon;
 using System.Collections.Generic;
 using System.Linq;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathDistanceRenderer : SimulationManagerBase<PathDistanceRenderer, MonoBehaviour>, IRenderableManager
     {

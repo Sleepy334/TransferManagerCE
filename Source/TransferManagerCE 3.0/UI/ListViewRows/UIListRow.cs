@@ -2,7 +2,7 @@ using ColossalFramework.UI;
 using SleepyCommon;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public abstract class UIListRow<T> : UIPanel, IUIFastListRow
     {

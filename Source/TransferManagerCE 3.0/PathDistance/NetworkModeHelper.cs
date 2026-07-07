@@ -1,6 +1,6 @@
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class NetworkModeHelper 
     {

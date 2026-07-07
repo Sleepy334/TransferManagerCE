@@ -1,7 +1,7 @@
 using System;
-using TransferManagerCE.Util;
+using TransferManagerCore.Util;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathingContainer : IComparable
     {

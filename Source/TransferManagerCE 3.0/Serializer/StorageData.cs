@@ -2,10 +2,14 @@
 using System;
 using System.Collections.Generic;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class StorageData
     {
+        // Some magic values to check we are line up correctly on the tuple boundaries
+        private const uint uiTUPLE_START = 0xFEFEFEFE;
+        private const uint uiTUPLE_END = 0xFAFAFAFA;
+
         public static void WriteByte(byte Value, FastList<byte> Data)
         {
             Data.Add(Value);
@@ -172,7 +176,7 @@ namespace TransferManagerCE
                 } 
                 else
                 {
-                    CDebug.LogError("Data size not large enough aborting read. ArraySize: " + iArrayCount + " DataSize: " + Data.Length + " Index: " + iIndex);
+                    Log.Error("Data size not large enough aborting read. ArraySize: " + iArrayCount + " DataSize: " + Data.Length + " Index: " + iIndex);
                 }
             }
             return list;
@@ -198,6 +202,34 @@ namespace TransferManagerCE
                 index = index + 2;
             }
             return empty;
+        }
+
+        public static void WriteTupleStart(FastList<byte> Data)
+        {
+            StorageData.WriteUInt32(uiTUPLE_START, Data);
+        }
+
+        public static void WriteTupleEnd(FastList<byte> Data)
+        {
+            StorageData.WriteUInt32(uiTUPLE_END, Data);
+        }
+
+        public static void CheckStartTuple(string sTupleLocation, int iDataVersion, byte[] Data, ref int iIndex)
+        {
+            uint iTupleStart = ReadUInt32(Data, ref iIndex);
+            if (iTupleStart != uiTUPLE_START)
+            {
+                throw new Exception($"Start tuple not found at: {sTupleLocation}");
+            }
+        }
+
+        public static void CheckEndTuple(string sTupleLocation, int iDataVersion, byte[] Data, ref int iIndex)
+        {
+            uint iTupleStart = ReadUInt32(Data, ref iIndex);
+            if (iTupleStart != uiTUPLE_END)
+            {
+                throw new Exception($"End tuple not found at: {sTupleLocation}");
+            }
         }
     }
 }

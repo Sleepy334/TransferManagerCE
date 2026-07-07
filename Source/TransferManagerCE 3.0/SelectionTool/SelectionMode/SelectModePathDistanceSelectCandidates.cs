@@ -1,12 +1,12 @@
 using System.Collections.Generic;
-using static TransferManagerCE.SelectionTool;
-using TransferManagerCE.UI;
+using static TransferManagerCore.SelectionTool;
+using TransferManagerCore.UI;
 using UnityEngine;
 using UnityEngine.Networking.Types;
 using SleepyCommon;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SelectionModeSelectCandidates : SelectionModeSelectBuildings
     {

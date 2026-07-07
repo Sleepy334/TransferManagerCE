@@ -1,10 +1,10 @@
 using ColossalFramework.UI;
 using SleepyCommon;
-using TransferManagerCE.Common;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Common;
+using TransferManagerCore.Settings;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class BuildingCapacityTab : BuildingTab
     {

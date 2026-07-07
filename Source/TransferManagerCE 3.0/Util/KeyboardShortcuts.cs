@@ -2,11 +2,11 @@
 using SleepyCommon;
 using System;
 using System.Collections;
-using TransferManagerCE.Settings;
-using TransferManagerCE.UI;
+using TransferManagerCore.Settings;
+using TransferManagerCore.UI;
 using UnityEngine;
 
-namespace TransferManagerCE.Util
+namespace TransferManagerCore.Util
 {
     internal class KeyboardShortcuts : MonoBehaviour
     {
@@ -23,7 +23,7 @@ namespace TransferManagerCE.Util
             }
             catch (Exception e)
             {
-                CDebug.Log("Exception: " + e.Message);
+                Log.Info("Exception: " + e.Message);
             }
         }
 
@@ -39,7 +39,7 @@ namespace TransferManagerCE.Util
             }
             catch (Exception e)
             {
-                CDebug.Log("Exception: " + e.Message);
+                Log.Info("Exception: " + e.Message);
             }
         }
 
@@ -50,7 +50,9 @@ namespace TransferManagerCE.Util
                     ModSettings.GetSettings().StatsPanelHotkey.IsPressed() ||
                     ModSettings.GetSettings().OutsideConnectionPanelHotkey.IsPressed() ||
                     ModSettings.GetSettings().SettingsPanelHotkey.IsPressed() ||
-                    ModSettings.GetSettings().PathDistancePanelHotkey.IsPressed();
+                    ModSettings.GetSettings().PathDistancePanelHotkey.IsPressed() ||
+                    ModSettings.GetSettings().BuildingPanelNext.IsPressed() ||
+                    ModSettings.GetSettings().BuildingPanelPrev.IsPressed();
         }
 
         private IEnumerator WaitForShortcutHotkeyCoroutine()
@@ -104,7 +106,22 @@ namespace TransferManagerCE.Util
                     // Create panel if needed
                     SettingsPanel.TogglePanel();
                 }
-                
+                else if (ModSettings.GetSettings().BuildingPanelNext.IsPressed())
+                {
+                    if (BuildingPanel.IsVisible())
+                    {
+                        BuildingPanel.Instance.SelectNextBuilding();
+                        continue;
+                    }
+                }
+                else if (ModSettings.GetSettings().BuildingPanelPrev.IsPressed())
+                {
+                    if (BuildingPanel.IsVisible())
+                    {
+                        BuildingPanel.Instance.SelectPrevBuilding();
+                        continue;
+                    }
+                }
             }
         }
     }

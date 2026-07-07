@@ -1,7 +1,7 @@
 using ColossalFramework.UI;
 using SleepyCommon;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIIssueRow : UIListRow<TransferIssueContainer>
     {

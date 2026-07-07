@@ -1,7 +1,7 @@
 using ColossalFramework.UI;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIGeneralStatsRow : UIListRow<StatsBase>
     {

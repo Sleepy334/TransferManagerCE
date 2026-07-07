@@ -1,17 +1,17 @@
 ﻿using System;
+using System.Text;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using ColossalFramework.Math;
-using TransferManagerCE.Settings;
-using static TransferManagerCE.CustomManager.TransferRestrictions;
-using static TransferManagerCE.CustomManager.TransferManagerModes;
-using static TransferManagerCE.CustomManager.PathDistanceTypes;
-using System.Text;
-using static TransferManagerCE.NetworkModeHelper;
-using TransferManagerCE.CustomManager.Stats;
+using TransferManagerCore.Settings;
+using static TransferManagerCore.CustomManager.TransferRestrictions;
+using static TransferManagerCore.CustomManager.TransferManagerModes;
+using static TransferManagerCore.CustomManager.PathDistanceTypes;
+using static TransferManagerCore.NetworkModeHelper;
+using TransferManagerCore.CustomManager.Stats;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public sealed class CustomTransferManager : TransferManager
     {

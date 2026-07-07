@@ -1,11 +1,11 @@
 using ColossalFramework.UI;
 using SleepyCommon;
 using System.Collections.Generic;
-using TransferManagerCE.Settings;
-using TransferManagerCE.TransferRules;
+using TransferManagerCore.Settings;
+using TransferManagerCore.TransferRules;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIBuildingRestrictionsPanel : UIPanel
     {

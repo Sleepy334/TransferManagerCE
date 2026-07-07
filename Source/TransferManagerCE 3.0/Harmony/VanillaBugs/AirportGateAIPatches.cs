@@ -3,9 +3,9 @@ using ColossalFramework;
 using HarmonyLib;
 using System;
 using UnityEngine;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class AirportGateAIPatches
@@ -65,13 +65,13 @@ namespace TransferManagerCE
                         vehicleInfo.m_vehicleAI.SetSource(vehicle, ref vehicles.m_buffer[vehicle], buildingID);
                         vehicleInfo.m_vehicleAI.SetTarget(vehicle, ref vehicles.m_buffer[vehicle], startStop);
 
-                        //CDebug.Log($"AirportGateAI.CreateOutgoingVehicle: buildingID{buildingID} startStop:{startStop} - SPAWNED");
+                        //Log.Info($"AirportGateAI.CreateOutgoingVehicle: buildingID{buildingID} startStop:{startStop} - SPAWNED");
                         return true;
                     }
                 }
             }
 
-            //CDebug.Log($"AirportGateAI.CreateOutgoingVehicle: buildingID{buildingID} startStop:{startStop} - DENIED");
+            //Log.Info($"AirportGateAI.CreateOutgoingVehicle: buildingID{buildingID} startStop:{startStop} - DENIED");
             return false;
         }
 
@@ -102,14 +102,14 @@ namespace TransferManagerCE
                             vehicleInfo.m_vehicleAI.SetSource(vehicle, ref vehicles.m_buffer[vehicle], buildingID);
                             vehicleInfo.m_vehicleAI.SetTarget(vehicle, ref vehicles.m_buffer[vehicle], startStop);
 
-                            //CDebug.Log($"AirportGateAI.CreateIncomingVehicle: buildingID{buildingID} startStop:{startStop} - SPAWNED");
+                            //Log.Info($"AirportGateAI.CreateIncomingVehicle: buildingID{buildingID} startStop:{startStop} - SPAWNED");
                             return true;
                         }
                     }
                 }
             }
 
-            //CDebug.Log($"AirportGateAI.CreateIncomingVehicle: buildingID{buildingID} startStop:{startStop} - DENIED");
+            //Log.Info($"AirportGateAI.CreateIncomingVehicle: buildingID{buildingID} startStop:{startStop} - DENIED");
             return false;
         }
 

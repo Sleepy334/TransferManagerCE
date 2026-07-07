@@ -1,6 +1,6 @@
-using TransferManagerCE.Common;
+using TransferManagerCore.Common;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     // --------------------------------------------------------------------
     public class PathData : PriorityQueueNode

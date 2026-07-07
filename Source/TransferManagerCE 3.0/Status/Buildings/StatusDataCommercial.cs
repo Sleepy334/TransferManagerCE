@@ -4,9 +4,9 @@ using SleepyCommon;
 using System.Reflection;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     // --------------------------------------------------------------------------------------------
     public class StatusDataBuildingCommercial : StatusDataBuilding
@@ -62,28 +62,9 @@ namespace TransferManagerCE.Data
             bool bIncoming = m_material == CustomTransferReason.Reason.Goods || m_material == CustomTransferReason.Reason.Food;
 
             string sTimer = base.CalculateTimer(out tooltip);
-            
-            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            if (building.m_flags != 0)
-            {
-                if (bIncoming && building.m_incomingProblemTimer > 0)
-                {
-                    if (string.IsNullOrEmpty(sTimer))
-                    {
-                        sTimer += " ";
-                    }
-                    sTimer += "I:" + building.m_incomingProblemTimer;
-                }
 
-                if (!bIncoming && building.m_outgoingProblemTimer > 0)
-                {
-                    if (string.IsNullOrEmpty(sTimer))
-                    {
-                        sTimer += " ";
-                    }
-                    sTimer += "O:" + building.m_outgoingProblemTimer;
-                }
-            }
+            AddTimerText(TimerType.Incoming, ref sTimer, ref tooltip);
+            AddTimerText(TimerType.Outgoing, ref sTimer, ref tooltip);
 
             return sTimer;
         }

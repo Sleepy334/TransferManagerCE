@@ -2,11 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TransferManagerCE.TransferRules;
+using TransferManagerCore.TransferRules;
 using UnityEngine;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Settings
+namespace TransferManagerCore.Settings
 {
     internal class BuildingSettingsFast
     {

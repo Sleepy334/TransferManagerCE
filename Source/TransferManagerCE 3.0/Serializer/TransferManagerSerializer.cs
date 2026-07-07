@@ -2,28 +2,123 @@ using ICities;
 using SleepyCommon;
 using System;
 using System.Reflection;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
-    public class Serializer : ISerializableDataExtension
+    public class TransferManagerSerializer : ISerializableDataExtension
     {
-        // Some magic values to check we are line up correctly on the tuple boundaries
-        private const uint uiTUPLE_START = 0xFEFEFEFE;
-        private const uint uiTUPLE_END = 0xFAFAFAFA;
+        // --------------------------------------------------------------------
+        // Serializer Global Version, increment this when updating any save game settings
+        public const ushort DataFileVersion = 56;
 
-        public const string DataID = "TransferManagerCE";
-        public const ushort DataVersion = 54;
+        // --------------------------------------------------------------------
+        private const string TransferManagerExtendedDataID = "TransferManagerExtended";
+        private const string TransferManagerCEDataID = "TransferManagerCE";
 
-        public static Serializer? instance = null;
+#if TRANSFER_MANAGER_EXTENDED
+        private const string TransferManagerDataID = TransferManagerExtendedDataID;
+#else
+        private const string TransferManagerDataID = TransferManagerCEDataID;
+#endif
+
+        string[] TransferManagerIds = 
+        [
+            $"{TransferManagerDataID}.VersionInfo",
+            $"{TransferManagerDataID}.GlobalSettings",
+            $"{TransferManagerDataID}.BuildingSettings",
+            $"{TransferManagerDataID}.OutsideSettings"
+        ];
+
+        // Used to load TMCE settings into TME
+        string[] TransferManagerCEIds = 
+        [
+            $"{TransferManagerCEDataID}.VersionInfo",
+            $"{TransferManagerCEDataID}.GlobalSettings",
+            $"{TransferManagerCEDataID}.BuildingSettings",
+            $"{TransferManagerCEDataID}.OutsideSettings"
+        ];
+
+        // Extended transer reason value
+        public const string TransferReasonID = $"{TransferManagerDataID}.TransferReasons";
+
+        public static TransferManagerSerializer? instance = null;
         private ISerializableData? m_serializableData = null;
 
+        // --------------------------------------------------------------------
         public void OnCreated(ISerializableData serializedData)
         {
             instance = this;
             m_serializableData = serializedData;
         }
 
+        // --------------------------------------------------------------------
+        // From version 55 we save each settings object to its own tuple.
+        public void OnSaveData()
+        {
+            try
+            {
+                if (m_serializableData is not null)
+                {
+                    // --------------------------------------------------------
+                    // Version information
+                    {
+                        FastList<byte> Data = new FastList<byte>();
+
+                        // Write out global data version first
+                        StorageData.WriteUInt16(DataFileVersion, Data);
+
+                        Version modVersion = Assembly.GetExecutingAssembly().GetName().Version;
+                        StorageData.WriteInt32(modVersion.Major, Data);
+                        StorageData.WriteInt32(modVersion.Minor, Data);
+                        StorageData.WriteInt32(modVersion.Build, Data);
+                        StorageData.WriteInt32(modVersion.Revision, Data);
+
+                        m_serializableData.SaveData(TransferManagerIds[0], Data.ToArray());
+                    }
+
+                    // --------------------------------------------------------
+                    // Global Settings
+                    {
+                        FastList<byte> Data = new FastList<byte>();
+                        SaveGameSettings.SaveData(Data);
+                        m_serializableData.SaveData(TransferManagerIds[1], Data.ToArray());
+                    }
+
+                    // --------------------------------------------------------
+                    // Building Settings
+                    {
+                        FastList<byte> Data = new FastList<byte>();
+                        BuildingSettingsSerializer.SaveData(Data);
+                        m_serializableData.SaveData(TransferManagerIds[2], Data.ToArray());
+                    }
+
+                    // --------------------------------------------------------
+                    // OutsideConnectionSettings Settings
+                    {
+                        FastList<byte> Data = new FastList<byte>();
+                        OutsideConnectionSettings.SaveData(Data);
+                        m_serializableData.SaveData(TransferManagerIds[3], Data.ToArray());
+                    }
+
+#if TRANSFER_MANAGER_EXTENDED
+                    // --------------------------------------------------------
+                    // Transfer Reason array entries (We save from TRANSFER_REASON_COUNT to 256.
+                    {
+                        FastList<byte> Data = new FastList<byte>();
+                        TransferManagerAwakePatch.SaveData(Data);
+                        m_serializableData.SaveData(TransferReasonID, Data.ToArray());
+                    }
+#endif
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Could not save data. " + ex.Message);
+            }
+        }
+
+        // --------------------------------------------------------------------
         public void OnLoadData()
         {
             try
@@ -31,62 +126,95 @@ namespace TransferManagerCE
                 // Clear any previous settings
                 TransferManagerMod.Instance.ClearSettings();
 
-                if (m_serializableData is not null)
+                if (m_serializableData is null)
                 {
-                    byte[] Data = m_serializableData.LoadData(DataID);
+                    Log.Error("m_serializableData is null");
+                    return;
+                }
+
+#if TRANSFER_MANAGER_EXTENDED
+                // --------------------------------------------------------
+                // Transfer Reason array data
+                {
+                    byte[] Data = m_serializableData.LoadData(TransferReasonID);
                     if (Data is not null && Data.Length > 0)
                     {
-                        ushort SaveGameFileVersion;
-                        int Index = 0;
-
-                        SaveGameFileVersion = StorageData.ReadUInt16(Data, ref Index);
-#if DEBUG
-                        CDebug.Log("Data length: " + Data.Length.ToString() + "; Data Version: " + SaveGameFileVersion);
+                        if (!TransferManagerAwakePatch.LoadData(Data))
+                        {
+                            Log.Error("Extended transfer reason array data not loaded.");
+                        }
+                    }
+                }
 #endif
-                        if (SaveGameFileVersion <= DataVersion)
-                        {
-                            // Since settings version 30 the mod version is also saved in
-                            // case the settings version isn't updated correctly.
-                            if (SaveGameFileVersion >= 30)
-                            {
-                                int iMajor = StorageData.ReadInt32(Data, ref Index);
-                                int iMinor = StorageData.ReadInt32(Data, ref Index);
-                                int iBuild = StorageData.ReadInt32(Data, ref Index);
-                                int iRevision = StorageData.ReadInt32(Data, ref Index);
-                                CDebug.Log($"Settings written by mod version: {iMajor}.{iMinor}.{iBuild}.{iRevision}");
-                            }
 
-                            CheckStartTuple("SaveGameSettings", SaveGameFileVersion, Data, ref Index);
-                            SaveGameSettings.LoadData(SaveGameFileVersion, Data, ref Index);
-                            CheckEndTuple("SaveGameSettings", SaveGameFileVersion, Data, ref Index);
+                // --------------------------------------------------------
+                // Transfer Manager Settings
+                ushort SaveGameFileVersion = LoadTransferManagerVersionInfo(TransferManagerIds[0], TransferManagerDataID, out int iMajor, out int iMinor, out int iBuild, out int iRevision);
+                if (SaveGameFileVersion > 0)
+                {
+                    Log.Info($"Save Game Version: {SaveGameFileVersion} DataFileVersion: {DataFileVersion}");
 
-                            CheckStartTuple("BuildingSettingsSerializer", SaveGameFileVersion, Data, ref Index);
-                            BuildingSettingsSerializer.LoadData(SaveGameFileVersion, Data, ref Index);
-                            CheckEndTuple("BuildingSettingsSerializer", SaveGameFileVersion, Data, ref Index);
+                    if (SaveGameFileVersion > DataFileVersion)
+                    {
+                        Log.Warning($"Unable to load settings, settings too new.");
 
-                            CheckStartTuple("OutsideConnectionSettings", SaveGameFileVersion, Data, ref Index);
-                            OutsideConnectionSettings.LoadData(SaveGameFileVersion, Data, ref Index);
-                            CheckEndTuple("OutsideConnectionSettings", SaveGameFileVersion, Data, ref Index);
-                        }
-                        else
-                        {
-                            string sMessage = "This saved game was saved with a newer version of Transfer Manager CE.\r\n";
-                            sMessage += "\r\n";
-                            sMessage += "Unable to load Transfer Manager settings.\r\n";
-                            sMessage += "\r\n";
-                            sMessage += "Saved game data version: " + SaveGameFileVersion + "\r\n";
-                            sMessage += "MOD data version: " + DataVersion + "\r\n";
-                            Prompt.Info(TransferManagerMod.Instance.Name, sMessage);
-                        }
+                        string sMessage = $"This saved game was saved with a newer version of {TransferManagerMod.Instance.BaseModName}.\r\n";
+                        sMessage += "\r\n";
+                        sMessage += "Unable to load Transfer Manager settings.\r\n";
+                        sMessage += "\r\n";
+                        sMessage += "Saved game data version: " + SaveGameFileVersion + "\r\n";
+                        sMessage += "MOD data version: " + DataFileVersion + "\r\n";
+                        Prompt.Info(TransferManagerMod.Instance.Name, sMessage);
+                        return;
                     }
                     else
                     {
-                        CDebug.Log("Data is null");
+                        Log.Info($"Settings written by {TransferManagerMod.Instance.BaseModName} v{iMajor}.{iMinor}.{iBuild}.{iRevision}");
+
+                        if (SaveGameFileVersion >= 55)
+                        {
+                            // From data file version 55 onwards each settings object uses its own data tuple.
+                            LoadTransferManagerMultipleDataTuple(SaveGameFileVersion, TransferManagerIds);
+                        }
+                        else
+                        {
+                            LoadTransferManagerSingleDataTuple(TransferManagerDataID, out iMajor, out iMinor, out iBuild, out iRevision);
+                        }
+
+                        return;
                     }
                 }
                 else
                 {
-                    CDebug.Log("m_serializableData is null");
+                    Log.Info($"No settings found for {TransferManagerMod.Instance.ModName}");
+
+#if TRANSFER_MANAGER_EXTENDED
+                    // --------------------------------------------------------
+                    // Try Transfer Manager CE settings import
+                    SaveGameFileVersion = LoadTransferManagerVersionInfo(TransferManagerCEIds[0], TransferManagerCEDataID, out iMajor, out iMinor, out iBuild, out iRevision);
+                    if (SaveGameFileVersion > 0)
+                    {
+                        CDebug.Log($"Settings written by Transfer Manager CE v{iMajor}.{iMinor}.{iBuild}.{iRevision} found attempting to import");
+
+                        if (SaveGameFileVersion > DataFileVersion)
+                        {
+                            CDebug.LogError($"Settings found but too new to import.");
+                            return;
+                        }
+                        else if (SaveGameFileVersion >= 55)
+                        {
+                            LoadTransferManagerMultipleDataTuple(SaveGameFileVersion, TransferManagerCEIds);
+                        }
+                        else
+                        {
+                            LoadTransferManagerSingleDataTuple(TransferManagerCEDataID, out iMajor, out iMinor, out iBuild, out iRevision);
+                        }
+
+                        string sMessage = $"Settings imported from Transfer Manager CE v{iMajor}.{iMinor}.{iBuild}.{iRevision}.\r\n";
+                        Prompt.Info(TransferManagerMod.Instance.Name, sMessage);
+                        return;
+                    }
+#endif
                 }
             }
             catch (Exception ex)
@@ -98,74 +226,171 @@ namespace TransferManagerCE
             }
         }
 
-        public void OnSaveData()
+        // --------------------------------------------------------------------
+        public ushort LoadTransferManagerVersionInfo(string sVersionInfoId, string sSingleTupleId, out int iMajor, out int iMinor, out int iBuild, out int iRevision)
         {
-            try
+            iMajor = 0;
+            iMinor = 0;
+            iBuild = 0;
+            iRevision = 0;
+
+            // --------------------------------------------------------
+            // Version Settings 55+
+            byte[] Data = m_serializableData.LoadData(sVersionInfoId);
+            if (Data is not null && Data.Length > 0)
             {
-                if (m_serializableData is not null)
+                int Index = 0;
+
+                ushort SaveGameFileVersion = StorageData.ReadUInt16(Data, ref Index);
+                iMajor = StorageData.ReadInt32(Data, ref Index);
+                iMinor = StorageData.ReadInt32(Data, ref Index);
+                iBuild = StorageData.ReadInt32(Data, ref Index);
+                iRevision = StorageData.ReadInt32(Data, ref Index);
+
+                return SaveGameFileVersion;
+            }
+
+            // --------------------------------------------------------
+            // Data file version 54 saved the version information to one data tuple.
+            Data = m_serializableData.LoadData(sSingleTupleId);
+            if (Data is not null && Data.Length > 0)
+            {
+                int Index = 0;
+
+                ushort SaveGameFileVersion = StorageData.ReadUInt16(Data, ref Index);
+                if (SaveGameFileVersion >= 30)
                 {
-                    FastList<byte> Data = new FastList<byte>();
-                    // Always write out data version first
-                    StorageData.WriteUInt16(DataVersion, Data);
+                    iMajor = StorageData.ReadInt32(Data, ref Index);
+                    iMinor = StorageData.ReadInt32(Data, ref Index);
+                    iBuild = StorageData.ReadInt32(Data, ref Index);
+                    iRevision = StorageData.ReadInt32(Data, ref Index);
+                }
 
-                    // Now also writes out mod version in case I forget to incrmement settings version
-                    Version modVersion = Assembly.GetExecutingAssembly().GetName().Version;
-                    StorageData.WriteInt32(modVersion.Major, Data);
-                    StorageData.WriteInt32(modVersion.Minor, Data);
-                    StorageData.WriteInt32(modVersion.Build, Data);
-                    StorageData.WriteInt32(modVersion.Revision, Data);
+                return SaveGameFileVersion;
+            }
 
-                    // Global settings
-                    StorageData.WriteUInt32(uiTUPLE_START, Data);
-                    SaveGameSettings.SaveData(Data);
-                    StorageData.WriteUInt32(uiTUPLE_END, Data);
+            return 0;
+        }
 
-                    // Building settings
-                    StorageData.WriteUInt32(uiTUPLE_START, Data);
-                    BuildingSettingsSerializer.SaveData(Data);
-                    StorageData.WriteUInt32(uiTUPLE_END, Data);
+        // --------------------------------------------------------------------
+        public void LoadTransferManagerMultipleDataTuple(ushort SaveGameFileVersion, string[] strDataIds)
+        {
+            // From data file version 55 onwards each settings object uses its own data tuple.
 
-                    // Outside connection settings
-                    StorageData.WriteUInt32(uiTUPLE_START, Data);
-                    OutsideConnectionSettings.SaveData(Data);
-                    StorageData.WriteUInt32(uiTUPLE_END, Data);
-
-                    m_serializableData.SaveData(DataID, Data.ToArray());
+            // --------------------------------------------------------
+            // Global Settings
+            {
+                int iIndex = 0;
+                byte[] Data = m_serializableData.LoadData(strDataIds[1]);
+                if (Data is not null && Data.Length > 0)
+                {
+                    SaveGameSettings.LoadData(SaveGameFileVersion, Data, ref iIndex);
                 }
             }
-            catch (Exception ex)
+
+            // --------------------------------------------------------
+            // Building Settings
             {
-                CDebug.Log("Could not save data. " + ex.Message);
+                int iIndex = 0;
+                byte[] Data = m_serializableData.LoadData(strDataIds[2]);
+                if (Data is not null && Data.Length > 0)
+                {
+                    BuildingSettingsSerializer.LoadData(SaveGameFileVersion, Data, ref iIndex);
+                }
+            }
+
+            // --------------------------------------------------------
+            // Outside Connection Settings
+            {
+                int iIndex = 0;
+                byte[] Data = m_serializableData.LoadData(strDataIds[3]);
+                if (Data is not null && Data.Length > 0)
+                {
+                    OutsideConnectionSettings.LoadData(SaveGameFileVersion, Data, ref iIndex);
+                }
             }
         }
 
-        private void CheckStartTuple(string sTupleLocation, int iDataVersion, byte[] Data, ref int iIndex)
+        // --------------------------------------------------------------------
+        public void LoadTransferManagerSingleDataTuple(string strDataId, out int iMajor, out int iMinor, out int iBuild, out int iRevision)
         {
-            if (iDataVersion >= 17)
+            iMajor = 0;
+            iMinor = 0;
+            iBuild = 0;
+            iRevision = 0;
+
+            // Try and import TransferManagerCE settings
+            byte[] Data = m_serializableData.LoadData(strDataId);
+            if (Data is not null && Data.Length > 0)
             {
-                uint iTupleStart = StorageData.ReadUInt32(Data, ref iIndex);
-                if (iTupleStart != uiTUPLE_START)
+                int Index = 0;
+                ushort SaveGameFileVersion = StorageData.ReadUInt16(Data, ref Index);
+#if DEBUG
+                CDebug.Log($"Settings Found {strDataId} - Data length: {Data.Length} Data Version: {SaveGameFileVersion}");
+#endif
+                if (SaveGameFileVersion <= 54)
                 {
-                    throw new Exception($"Start tuple not found at: {sTupleLocation}");
+                    // Since settings version 30 the mod version is also saved in
+                    // case the settings version isn't updated correctly.
+                    if (SaveGameFileVersion >= 30)
+                    {
+                        iMajor = StorageData.ReadInt32(Data, ref Index);
+                        iMinor = StorageData.ReadInt32(Data, ref Index);
+                        iBuild = StorageData.ReadInt32(Data, ref Index);
+                        iRevision = StorageData.ReadInt32(Data, ref Index);
+#if DEBUG
+                        CDebug.Log($"Settings written by {strDataId} v: {iMajor}.{iMinor}.{iBuild}.{iRevision}");
+#endif
+                    }
+                    
+                    StorageData.CheckStartTuple("SaveGameSettings", SaveGameFileVersion, Data, ref Index);
+                    SaveGameSettings.LoadData(SaveGameFileVersion, Data, ref Index);
+                    StorageData.CheckEndTuple("SaveGameSettings", SaveGameFileVersion, Data, ref Index);
+
+                    StorageData.CheckStartTuple("BuildingSettingsSerializer", SaveGameFileVersion, Data, ref Index);
+                    BuildingSettingsSerializer.LoadData(SaveGameFileVersion, Data, ref Index);
+                    StorageData.CheckEndTuple("BuildingSettingsSerializer", SaveGameFileVersion, Data, ref Index);
+
+                    StorageData.CheckStartTuple("OutsideConnectionSettings", SaveGameFileVersion, Data, ref Index);
+                    OutsideConnectionSettings.LoadData(SaveGameFileVersion, Data, ref Index);
+                    StorageData.CheckEndTuple("OutsideConnectionSettings", SaveGameFileVersion, Data, ref Index);
                 }
             }
         }
 
-        private void CheckEndTuple(string sTupleLocation, int iDataVersion, byte[] Data, ref int iIndex)
-        {
-            if (iDataVersion >= 17)
-            {
-                uint iTupleStart = StorageData.ReadUInt32(Data, ref iIndex);
-                if (iTupleStart != uiTUPLE_END)
-                {
-                    throw new Exception($"End tuple not found at: {sTupleLocation}");
-                }
-            }
-        }
-
+        // --------------------------------------------------------------------
         public void OnReleased()
         {
-            Serializer.instance = (Serializer)null;
+            TransferManagerSerializer.instance = (TransferManagerSerializer) null;
+        }
+
+        // --------------------------------------------------------------------
+        public bool CheckTransferManagerExtendedDataExists()
+        {
+            // Check if TME has been run on this save game
+            if (m_serializableData is not null)
+            {
+                bool tmeDataExists = false;
+
+                string[] dataIds = m_serializableData.EnumerateData();
+                foreach (string dataId in dataIds)
+                {
+                    if (dataId.Contains(TransferManagerExtendedDataID))
+                    {
+                        tmeDataExists = true;
+                        break;
+                    }
+                }
+
+                if (tmeDataExists)
+                {
+                    Log.Info($"Transfer Manager Extended data detected.");
+                }
+
+                return tmeDataExists;
+            }
+
+            return false;
         }
     }
 }

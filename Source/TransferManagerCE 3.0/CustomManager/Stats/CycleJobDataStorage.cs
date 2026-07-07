@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace TransferManagerCE.CustomManager.Stats
+namespace TransferManagerCore.CustomManager.Stats
 {
     public class CycleJobDataStorage
     {

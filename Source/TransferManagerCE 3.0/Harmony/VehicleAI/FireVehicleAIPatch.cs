@@ -3,12 +3,12 @@ using System;
 using ColossalFramework;
 using UnityEngine;
 using System.Collections.Generic;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using ColossalFramework.Math;
 using static TreeManager;
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class FireVehicleAIPatch : VehicleAIPatch
@@ -31,7 +31,7 @@ namespace TransferManagerCE
                     ushort newTarget = FindBuildingWithFire(false, vehicleID, data.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFire);
                     if (newTarget != 0)
                     {
-                        //CDebug.Log($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
+                        //Log.Info($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
                         targetBuilding = newTarget;
                     }
                 }
@@ -56,7 +56,7 @@ namespace TransferManagerCE
                     Building building = Singleton<BuildingManager>.instance.m_buildings.m_buffer[vehicleData.m_targetBuilding];
                     if (building.m_fireIntensity == 0)
                     {
-                        //CDebug.Log($"Fire - Vehicle: {vehicleID} Clearing target: {vehicleData.m_targetBuilding}");
+                        //Log.Info($"Fire - Vehicle: {vehicleID} Clearing target: {vehicleData.m_targetBuilding}");
                         // Clear target
                         vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, 0);
                     }
@@ -64,14 +64,15 @@ namespace TransferManagerCE
 
                 // Periodically search for nearby fires while travelling back to station.
                 if (random.Int32(10U) == 0 &&
-                    (vehicleData.m_flags & (Vehicle.Flags.GoingBack | Vehicle.Flags.WaitingTarget)) != 0 &&
+                    (vehicleData.m_flags & Vehicle.Flags.GoingBack) != 0 &&
+                    (vehicleData.m_flags & Vehicle.Flags.WaitingTarget) == 0 &&
                     vehicleData.m_sourceBuilding != 0 &&
                     !ShouldReturnToSource(vehicleID, ref vehicleData))
                 {
                     ushort newTarget = FindBuildingWithFire(false, vehicleID, vehicleData.GetLastFramePosition(), FIRE_DISTANCE_SEARCH, s_transferFire);
                     if (newTarget != 0)
                     {
-                        //CDebug.Log($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
+                        //Log.Info($"Fire - Vehicle: {vehicleID} Found new target: {newTarget}");
 
                         // clear flag goingback and waiting target
                         vehicleData.m_flags = vehicleData.m_flags & ~Vehicle.Flags.GoingBack & ~Vehicle.Flags.WaitingTarget;
@@ -82,7 +83,7 @@ namespace TransferManagerCE
                         // If the fire truck is stopped, the new target building is close enough that it will not move again so retarget deployed firefighting cims
                         if ((vehicleData.m_flags & Vehicle.Flags.Stopped) != 0)
                         {
-                            //CDebug.Log($"FireTruck - Vehicle: {vehicleID} TargetCimsParentVehicleTarget: {newTarget}");
+                            //Log.Info($"FireTruck - Vehicle: {vehicleID} TargetCimsParentVehicleTarget: {newTarget}");
                             TargetCimsParentVehicleTarget(vehicleID, vehicleData);
                         }
                     }
@@ -125,7 +126,7 @@ namespace TransferManagerCE
 
                         // If the tree is close enough then 
                         float num2 = VectorUtils.LengthSqrXZ(tree.Position - position);
-                        if (num2 < 1600f) // 40m
+                        if (num2 < 4096f) // 64m
                         {
                             // We match it to the buildings intensity so it gets put out at the same time
                             fireIntensity = Math.Min(fireIntensity, buildingData.m_fireIntensity);
@@ -178,7 +179,7 @@ namespace TransferManagerCE
                         }
 
                         // set new target
-                        //CDebug.Log($"FireCopter - Vehicle: {vehicleID} SetTarget: {newTarget}");
+                        //Log.Info($"FireCopter - Vehicle: {vehicleID} SetTarget: {newTarget}");
                         vehicleData.Info.m_vehicleAI.SetTarget(vehicleID, ref vehicleData, newTarget);
                     }
                 }

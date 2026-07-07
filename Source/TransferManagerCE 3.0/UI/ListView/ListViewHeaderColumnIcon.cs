@@ -1,9 +1,9 @@
 ﻿using ColossalFramework.UI;
 using System;
-using TransferManagerCE;
+using TransferManagerCore;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class ListViewHeaderColumnIcon : ListViewHeaderColumnBase
     {

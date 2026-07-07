@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PercentCurveLookup
     {

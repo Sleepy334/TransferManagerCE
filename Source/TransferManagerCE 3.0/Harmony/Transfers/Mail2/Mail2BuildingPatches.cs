@@ -2,10 +2,10 @@
 using HarmonyLib;
 using ICities;
 using System;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class Mail2BuildingPatches

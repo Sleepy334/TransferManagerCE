@@ -1,9 +1,11 @@
 ﻿using ColossalFramework;
 using HarmonyLib;
-using TransferManagerCE.TransferOffers;
+using SleepyCommon;
+using TransferManagerCore.TransferOffers;
+using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public static class CommercialBuildingAISimulationStepActive
@@ -13,10 +15,9 @@ namespace TransferManagerCE
         public static void SimulationStepActivePostfix(ushort buildingID, ref Building buildingData, ref Building.Frame frameData)
         {
             // Re-request more material if storage is empty and timer has reached MajorProblem (64) and trucks aren't close by
-            if (SaveGameSettings.GetSettings().EnableNewTransferManager &&
-                buildingData.m_fireIntensity == 0 && 
+            if (buildingData.m_fireIntensity == 0 && 
                 buildingData.m_customBuffer1 == 0 &&
-                Singleton<SimulationManager>.instance.m_randomizer.UInt32(3U) == 0)
+                Random.Range(0, 2) == 0)
             {
                 // Check if we are running out of time to get material
                 Rerequest.ProblemLevel level = Rerequest.GetLevelIncomingTimer(buildingData.m_incomingProblemTimer);
@@ -36,14 +37,7 @@ namespace TransferManagerCE
                             }
 
                             // Alternate requests
-                            if (secondary != TransferReason.None && Singleton<SimulationManager>.instance.m_randomizer.UInt32(2U) == 0)
-                            {
-                                Rerequest.RerequestMaterial(secondary, incomingTransferReason, buildingID, buildingData);
-                            }
-                            else
-                            {
-                                Rerequest.RerequestMaterial(incomingTransferReason, secondary, buildingID, buildingData);
-                            }
+                            Rerequest.RerequestMaterial(incomingTransferReason, secondary, buildingID, buildingData, 3);
                         }
                     }
                 }

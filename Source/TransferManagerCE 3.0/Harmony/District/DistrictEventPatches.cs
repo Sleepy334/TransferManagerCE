@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     internal class DistrictEventPatches

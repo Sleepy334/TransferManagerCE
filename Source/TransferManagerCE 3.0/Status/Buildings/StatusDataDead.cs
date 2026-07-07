@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataDead : StatusDataBuilding
     {
@@ -45,15 +45,11 @@ namespace TransferManagerCE.Data
         
         protected override string CalculateTimer(out string tooltip)
         {
-            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            if (building.m_deathProblemTimer > 0)
-            {
-                return base.CalculateTimer(out tooltip) + "D:" + building.m_deathProblemTimer.ToString();
-            }
-            else
-            {
-                return base.CalculateTimer(out tooltip);
-            }
+            string sTimer = base.CalculateTimer(out tooltip);
+
+            AddTimerText(TimerType.Death, ref sTimer, ref tooltip);
+
+            return sTimer;
         }
     }
 }

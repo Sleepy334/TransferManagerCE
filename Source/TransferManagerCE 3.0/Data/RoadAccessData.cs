@@ -1,7 +1,7 @@
 using SleepyCommon;
 using System;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class RoadAccessData : IComparable
     {

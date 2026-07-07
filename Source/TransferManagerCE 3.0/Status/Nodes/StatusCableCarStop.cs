@@ -1,12 +1,12 @@
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
-    public class StatusCableCarStop : StatusNodeStop
+    public class StatusCableCarStop : StatusSegmentStop
     {
-        public StatusCableCarStop(BuildingType eBuildingType, ushort buildingId, ushort nodeId, ushort targetVehicleId) :
-            base(eBuildingType, buildingId, nodeId, targetVehicleId)
+        public StatusCableCarStop(BuildingType eBuildingType, ushort buildingId, ushort segmentId, ushort startNodeId, ushort endNodeId) :
+            base(eBuildingType, buildingId, segmentId, startNodeId, endNodeId)
         {
         }
 
@@ -16,6 +16,11 @@ namespace TransferManagerCE.Data
         }
 
         public override string GetMaterialDescription()
+        {
+            return "CableCar Stop";
+        }
+
+        public override string GetMaterialDisplay()
         {
             return "CableCar Stop";
         }

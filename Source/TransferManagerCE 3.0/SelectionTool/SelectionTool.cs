@@ -2,12 +2,12 @@
 using ColossalFramework;
 using ColossalFramework.UI;
 using SleepyCommon;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 using static ColossalFramework.IO.EncodedArray;
 using static RenderManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class SelectionTool : DefaultTool
     {
@@ -96,7 +96,7 @@ namespace TransferManagerCE
                     }
                     catch (Exception e)
                     {
-                        CDebug.Log("Selection tool failed to load: ", e);
+                        Log.Error("Selection tool failed to load: ", e);
                     }
                     finally
                     {

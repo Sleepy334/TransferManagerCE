@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class BuildingMatches
     {

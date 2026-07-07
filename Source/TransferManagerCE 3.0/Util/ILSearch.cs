@@ -2,7 +2,7 @@ using HarmonyLib;
 using SleepyCommon;
 using System.Collections.Generic;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class ILSearch
     {
@@ -49,12 +49,12 @@ namespace TransferManagerCE
                 if (TranspilerUtils.CompareInstructions(instruction, search))
                 {
                     m_iSearchIndex++; // Look for next instruction
-                    if (m_bDebug) CDebug.Log($"Occurance: {m_iFoundCount} SearchIndex: {m_iSearchIndex} - Found Instruction: {instruction.ToString()}.");
+                    if (m_bDebug) Log.Info($"Occurance: {m_iFoundCount} SearchIndex: {m_iSearchIndex} - Found Instruction: {instruction.ToString()}.");
                 }
                 else
                 {
                     m_iSearchIndex = 0;
-                    if (m_bDebug) CDebug.Log($"Occurance: {m_iFoundCount} SearchIndex: {m_iSearchIndex} - Not found: {search.ToString()} Instruction: {instruction.ToString()}.");
+                    if (m_bDebug) Log.Info($"Occurance: {m_iFoundCount} SearchIndex: {m_iSearchIndex} - Not found: {search.ToString()} Instruction: {instruction.ToString()}.");
                 }
 
                 // Check if we have found the pattern
@@ -62,14 +62,14 @@ namespace TransferManagerCE
                 {
                     m_iFoundCount++;
                     m_iSearchIndex = 0; // Reset search index
-                    if (m_bDebug) CDebug.Log($"Found occurrance {m_iFoundCount}.");
+                    if (m_bDebug) Log.Info($"Found occurrance {m_iFoundCount}.");
 
                     if (m_iFoundCount == Occurrance)
                     {
                         // Found location disable searching
                         m_bSearch = false;
 
-                        if (m_bDebug) CDebug.Log($"Search success.");
+                        if (m_bDebug) Log.Info($"Search success.");
                     }
                 }
             }   

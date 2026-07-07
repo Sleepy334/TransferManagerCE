@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class IntercityBusPatch
@@ -23,7 +23,7 @@ namespace TransferManagerCE
             // Have we already patched the function, if so just return unaltered.
             if (s_bPatched)
             {
-                CDebug.Log($"ERROR: TransportStationAI.CreateConnectionLines - Already patched!", false);
+                Log.Error($"ERROR: TransportStationAI.CreateConnectionLines - Already patched!");
                 return instructions.AsEnumerable();
             }
             s_bPatched = true;
@@ -32,14 +32,14 @@ namespace TransferManagerCE
             FieldInfo fieldInfo = typeof(TransportStationAI).GetField("m_info", BindingFlags.Instance | BindingFlags.Public);
             if (fieldInfo == null)
             {
-                CDebug.Log($"ERROR: TransportStationAI.m_info not found");
+                Log.Error($"ERROR: TransportStationAI.m_info not found");
                 return instructions.AsEnumerable();
             }
 
             MethodInfo methodAddBusLines = typeof(IntercityBusPatch).GetMethod("AddBusLines", BindingFlags.Static | BindingFlags.Public);
             if (methodAddBusLines == null)
             {
-                CDebug.Log($"ERROR: IntercityBusPatch.AddBusLines not found");
+                Log.Error($"ERROR: IntercityBusPatch.AddBusLines not found");
                 return instructions.AsEnumerable();
             }
 
@@ -81,7 +81,7 @@ namespace TransferManagerCE
                 }
             }
 
-            CDebug.Log($"TransportStationAI.CreateConnectionLines patch {((bPatched) ? "succeeded" : "failed")}.", false);
+            Log.Info($"TransportStationAI.CreateConnectionLines patch {((bPatched) ? "succeeded" : "failed")}.");
             return newInstructionList.AsEnumerable();
         }
 

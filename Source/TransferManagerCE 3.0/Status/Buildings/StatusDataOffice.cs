@@ -2,9 +2,9 @@ using ColossalFramework.Math;
 using ICities;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataOffice : StatusDataBuilding
     {
@@ -65,21 +65,10 @@ namespace TransferManagerCE.Data
 
         protected override string CalculateTimer(out string tooltip)
         {
-            bool bIncoming = m_material == CustomTransferReason.Reason.Goods || m_material == CustomTransferReason.Reason.Food;
-
             string sTimer = base.CalculateTimer(out tooltip);
-            
-            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            if (building.m_flags != 0 && building.m_outgoingProblemTimer > 0)
-            {
-                if (!string.IsNullOrEmpty(sTimer))
-                {
-                    sTimer += " ";
-                }
-                sTimer += "O:" + building.m_outgoingProblemTimer;
-            }
 
-            tooltip = "";
+            AddTimerText(TimerType.Outgoing, ref sTimer, ref tooltip);
+
             return sTimer;
         }
 

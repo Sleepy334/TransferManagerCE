@@ -2,18 +2,18 @@
 using ColossalFramework.UI;
 using System.Collections;
 using System.Collections.Generic;
-using TransferManagerCE.Settings;
-using TransferManagerCE.Util;
+using TransferManagerCore.Settings;
+using TransferManagerCore.Util;
 using UnityEngine;
 using System;
 using System.Linq;
-using static TransferManagerCE.UITabStrip;
-using static TransferManagerCE.PathingContainer;
+using static TransferManagerCore.UITabStrip;
+using static TransferManagerCore.PathingContainer;
 using static TransferIssueContainer;
 using SleepyCommon;
 using static RenderManager;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class TransferIssuePanel : UIMainPanel<TransferIssuePanel>
     {

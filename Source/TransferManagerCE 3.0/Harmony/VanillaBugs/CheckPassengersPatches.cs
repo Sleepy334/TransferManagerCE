@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class CheckPassengersPatches

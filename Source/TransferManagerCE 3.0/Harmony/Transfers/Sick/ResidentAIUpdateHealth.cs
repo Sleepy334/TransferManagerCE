@@ -2,7 +2,7 @@ using HarmonyLib;
 using ColossalFramework;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     // We can randomly make people sick so the hospitals have something to do.
     [HarmonyPatch]

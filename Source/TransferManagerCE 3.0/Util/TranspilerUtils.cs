@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------------------
 using HarmonyLib;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class TranspilerUtils
     {

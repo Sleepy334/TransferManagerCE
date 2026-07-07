@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
-using TransferManagerCE.Settings;
+using TransferManagerCore.Settings;
 using UnityEngine;
 using static RenderManager;
-using TransferManagerCE.UI;
-using static TransferManagerCE.UI.TransferIssuePanel;
+using TransferManagerCore.UI;
+using static TransferManagerCore.UI.TransferIssuePanel;
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class IssueRenderer : SimulationManagerBase<IssueRenderer, MonoBehaviour>, IRenderableManager
     {
@@ -71,7 +71,7 @@ namespace TransferManagerCE
             }
             else
             {
-                CDebug.Log($"m_issueHelper is null");
+                Log.Info($"m_issueHelper is null");
             }
         }
 

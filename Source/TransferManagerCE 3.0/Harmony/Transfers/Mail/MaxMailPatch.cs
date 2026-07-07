@@ -3,7 +3,7 @@ using ColossalFramework;
 using HarmonyLib;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
     public class MaxMailPatch

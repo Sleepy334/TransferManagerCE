@@ -2,7 +2,7 @@
 using SleepyCommon;
 using UnityEngine;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class ListViewHeaderColumnLabel : ListViewHeaderColumnBase
     {

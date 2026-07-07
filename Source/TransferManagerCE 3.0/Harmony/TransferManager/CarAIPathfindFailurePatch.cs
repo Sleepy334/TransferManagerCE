@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using SleepyCommon;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch(typeof(CarAI), "PathfindFailure")]
     public class CarAIPathfindFailurePatch

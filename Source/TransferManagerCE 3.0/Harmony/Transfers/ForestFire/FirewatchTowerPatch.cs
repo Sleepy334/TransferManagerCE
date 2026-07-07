@@ -2,7 +2,7 @@
 using UnityEngine;
 using ColossalFramework;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     [HarmonyPatch]
 

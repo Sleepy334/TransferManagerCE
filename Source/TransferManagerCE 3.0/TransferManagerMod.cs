@@ -1,14 +1,14 @@
 ﻿using SleepyCommon;
-using System;
 using System.Reflection;
-using TransferManagerCE.Util;
+using TransferManagerCore.Util;
 using UnityEngine;
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 using ColossalFramework.UI;
-using TransferManagerCE.Settings;
-using TransferManagerCE.UI;
+using TransferManagerCore.Settings;
+using TransferManagerCore.UI;
+using ColossalFramework;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class TransferManagerMod : UserModBase
     {
@@ -36,20 +36,23 @@ namespace TransferManagerCE
             }
         }
 
+        public override string BaseModName
+        {
+            get
+            {
+#if TRANSFER_MANAGER_EXTENDED
+                return $"Transfer Manager Extended";
+#else
+                return $"Transfer Manager CE";
+#endif
+            }
+        }
+
         public override string ModName
         {
             get
             {
-                return $"Transfer Manager CE {Edition}{Config}" ;
-            }
-        }
-
-        public override string Version
-        {
-            get
-            {
-                Version version = Assembly.GetExecutingAssembly().GetName().Version;
-                return $"v{version.Major}.{version.Minor}.{version.Build}";
+                return $"{BaseModName} {Edition}{Config}" ;
             }
         }
 
@@ -58,16 +61,54 @@ namespace TransferManagerCE
 			get { return "More realistic response to service requests."; }
 		}
 
-		
+        public override void OnEnabled()
+        {
+            base.OnEnabled();
+
+#if TRANSFER_MANAGER_EXTENDED
+            Patcher.Patch(typeof(TransferManagerAwakePatch));
+
+            // Add our patch call to pre load level function just in case TransferManager.Awake has already been called
+            Singleton<LoadingManager>.instance.m_levelPreLoaded += OnPreLoadLevel;
+#endif
+        }
+
+        public void OnPreLoadLevel()
+        {
+#if TRANSFER_MANAGER_EXTENDED
+            if (!TransferManagerAwakePatch.IsTransferReasonArraysPatched())
+            {
+                // Force patching of arrays
+                TransferManagerAwakePatch.PatchTransferArraysManually();
+            }
+#endif
+        }
 
         public override void OnLevelLoaded()
         {
+            DependencyUtils.LogPlugins();
+
             // Check for mod conflicts
             if (ConflictingMods.ConflictingModsFound())
             {
                 IsLoaded = false;
                 return;
             }
+
+#if TRANSFER_MANAGER_EXTENDED
+            // Check arrays have actually been extended
+            if (!TransferManagerAwakePatch.IsTransferReasonArraysPatched())
+            {
+                string strMessage = "Error: Transfer reason arrays unpatched.\r\n";
+                strMessage += "\r\n";
+                strMessage += "\r\nThis can happen if you enable the Transfer Manager Extended mod after the transfer reason arrays have already been created. Please restart Cities Skylines.";
+                strMessage += "\r\n";
+                strMessage += "\r\nMod disabled for this load.";
+                Prompt.Info(ModName, strMessage);
+                IsLoaded = false;
+                return;
+            }
+#endif
 
             if (m_modManagerGameObject is null)
             {
@@ -127,6 +168,19 @@ namespace TransferManagerCE
 
             // Generate path distance cache if needed
             PathDistanceCache.UpdateCache();
+
+
+            // Update passenger capacities for spawn patch
+            TransportStationAIPatches.UpdatePassengerCapacities();
+
+#if !TRANSFER_MANAGER_EXTENDED
+            // We run this if Transfer Manager Extended data detected.
+            if (TransferManager.TRANSFER_REASON_COUNT == 128 &&
+                TransferManagerSerializer.instance.CheckTransferManagerExtendedDataExists())
+            {
+                ClearExtendedReasons.Clear();
+            }
+#endif
         }
 
         public override void OnLevelUnloading()
@@ -138,7 +192,7 @@ namespace TransferManagerCE
             }
 
             // Remove patches first so objects aren't called after being destroyed
-            RemoveHarmonyPathes();
+            RemoveHarmonyPatches();
 
             // Delete mod objects
             TransferManagerThread.StopThreads();
@@ -192,14 +246,14 @@ namespace TransferManagerCE
                 sMessage += "Harmony not found.\r\n";
                 sMessage += "\r\n";
                 sMessage += "Mod disabled until dependencies resolved, please subscribe to Harmony.";
-                Prompt.ErrorFormat("Transfer Manager CE", sMessage);
+                Prompt.ErrorFormat(BaseModName, sMessage);
                 return false;
             }
 
             return true;
         }
 
-        public void RemoveHarmonyPathes()
+        public void RemoveHarmonyPatches()
         {
             if (IsLoaded && DependencyUtils.IsHarmonyRunning())
             {
@@ -221,10 +275,15 @@ namespace TransferManagerCE
                     "Dead",
                 };
 
+#if TRANSFER_MANAGER_EXTENDED
+                m_atlas = ResourceLoader.CreateTextureAtlas($"TransferManagerExtendedAtlas", spriteNames, Assembly.GetExecutingAssembly(), $"TransferManagerExtended.Resources.");
+#else
                 m_atlas = ResourceLoader.CreateTextureAtlas("TransferManagerCEAtlas", spriteNames, Assembly.GetExecutingAssembly(), "TransferManagerCE.Resources.");
+#endif
+
                 if (m_atlas is null)
                 {
-                    CDebug.Log("Loading of resources failed.");
+                    Log.Error("Loading of resources failed.");
                 }
 
                 UITextureAtlas defaultAtlas = ResourceLoader.GetAtlas("Ingame");

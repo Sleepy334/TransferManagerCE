@@ -1,8 +1,8 @@
 using SleepyCommon;
 using System;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class OutsideContainer : IComparable
     {
@@ -29,7 +29,16 @@ namespace TransferManagerCE
             {
                 return 1;
             }
+
             OutsideContainer oSecond = (OutsideContainer)second;
+
+            // Sort by usage
+            if (GetTotal() != oSecond.GetTotal())
+            {
+                return oSecond.GetTotal().CompareTo(GetTotal());
+            }
+
+            // Sort by type
             return m_eType.CompareTo(oSecond.m_eType);
         }
 

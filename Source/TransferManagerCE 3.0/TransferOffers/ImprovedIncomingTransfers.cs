@@ -1,12 +1,11 @@
 ﻿using System;
 using UnityEngine;
 using ColossalFramework;
-using TransferManagerCE.Settings;
 using static TransferManager;
-using static TransferManagerCE.WarehouseUtils;
-using TransferManagerCE.CustomManager;
+using static TransferManagerCore.WarehouseUtils;
+using TransferManagerCore.TransferOffers;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     internal class ImprovedIncomingTransfers
     {
@@ -209,9 +208,7 @@ namespace TransferManagerCE
                     if (buildingAI is not null)
                     {
                         // Get total vehicle count, Factor in budget
-                        int budget = Singleton<EconomyManager>.instance.GetBudget(building.Info.m_class);
-                        int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
-                        int iTotalVehicles = (productionRate * buildingAI.m_postVanCount + 99) / 100;
+                        int iTotalVehicles = BuildingVehicleCount.GetAdjustedVehicleCount(buildingAI.m_postVanCount, building);
 
                         // Determine how many free vehicles it has
                         int iCurrentCount = BuildingUtils.GetOwnVehicleCount(building, TransferReason.Mail);
@@ -229,20 +226,19 @@ namespace TransferManagerCE
             return true; // Add normally
         }
 
-        // We cap commercial building priority to 6 until the incoming timer starts
+        // We cap commercial building priority to 3 until the incoming timer starts
         // so that we can ensure we are matching the most urgent offers first
         private static bool HandleIncomingCommercialOffer(Building[] Buildings, ref TransferOffer offer)
         {
-            if (offer.Priority == 7 && offer.Building != 0)
+            if (offer.Building != 0)
             {
                 Building building = Buildings[offer.Building];
                 if (building.m_flags != 0 &&
-                    building.m_incomingProblemTimer == 0 &&
                     building.Info is not null &&
                     building.Info.GetService() == ItemClass.Service.Commercial)
                 {
-                    // Cap priority to 6.
-                    offer.Priority = 6;
+                    // Cap priority to 3. 4+ are saved for when incomingTimer is running
+                    offer.Priority = Rerequest.GetPriority(offer.Priority, building.m_incomingProblemTimer);
                 }
             }
 
@@ -263,7 +259,7 @@ namespace TransferManagerCE
                         if (instance.m_sourceBuilding != 0 && BuildingTypeHelper.IsOutsideConnection(instance.m_sourceBuilding))
                         {
                             // Taxi's do not work when cims coming from outside connections
-                            //CDebug.Log($"Citizen: {offer.Citizen} {citizen.m_flags} Waiting for taxi at outside connection {instance.m_sourceBuilding} - SKIPPING");
+                            //Log.Info($"Citizen: {offer.Citizen} {citizen.m_flags} Waiting for taxi at outside connection {instance.m_sourceBuilding} - SKIPPING");
 
                             // Speed up waiting
                             if (instance.m_waitCounter > 0)

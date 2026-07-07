@@ -1,8 +1,8 @@
 using ColossalFramework.UI;
 using SleepyCommon;
-using TransferManagerCE.Util;
+using TransferManagerCore.Util;
 
-namespace TransferManagerCE.UI
+namespace TransferManagerCore.UI
 {
     public class UIPathRow : UIListRow<PathingContainer>
     {

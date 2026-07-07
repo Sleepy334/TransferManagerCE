@@ -1,11 +1,11 @@
 using SleepyCommon;
 using System.Reflection;
-using TransferManagerCE.Settings;
-using TransferManagerCE.UI;
+using TransferManagerCore.Settings;
+using TransferManagerCore.UI;
 using UnifiedUI.Helpers;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class UnifiedUIButton
     {
@@ -19,7 +19,7 @@ namespace TransferManagerCE
                 Texture2D icon = TextureResources.LoadDllResource(Assembly.GetExecutingAssembly(), "Transfer.png", 32, 32);
                 if (icon is null)
                 {
-                    CDebug.Log("Failed to load icon from resources");
+                    Log.Info("Failed to load icon from resources");
                     return;
                 }
 

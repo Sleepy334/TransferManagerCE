@@ -5,7 +5,7 @@ using System.Xml.Schema;
 using System.Xml.Serialization;
 using UnityEngine;
 
-namespace TransferManagerCE.Settings
+namespace TransferManagerCore.Settings
 {
     public class UnsavedKeyMapping : SavedInputKey
     {

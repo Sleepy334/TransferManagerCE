@@ -1,10 +1,10 @@
 using SleepyCommon;
 using System;
 using System.Text;
-using TransferManagerCE.CustomManager;
+using TransferManagerCore.CustomManager;
 using static TransferManager;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class OfferData : MatchOffer, IComparable
     {
@@ -50,7 +50,7 @@ namespace TransferManagerCE
             }
         }
 
-        public void Show()
+        public override void Show()
         {
             InstanceHelper.ShowInstance(m_object);
         }

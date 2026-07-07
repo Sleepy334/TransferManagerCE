@@ -1,6 +1,6 @@
-using static TransferManagerCE.NetworkModeHelper;
+using static TransferManagerCore.NetworkModeHelper;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class PathConnectedCache
     {

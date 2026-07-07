@@ -2,17 +2,19 @@
 using System;
 using UnityEngine;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
-    public class StatusDataBuildingGenericProcessing : StatusDataBuilding
+    public class StatusDataBuildingGenericProcessing : StatusDataGenericIndustry
     {
+        // --------------------------------------------------------------------
         public StatusDataBuildingGenericProcessing(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId) :
             base(reason, eBuildingType, BuildingId)
         {
         }
 
+        // --------------------------------------------------------------------
         protected override string CalculateValue(out string tooltip)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
@@ -22,7 +24,7 @@ namespace TransferManagerCE.Data
                 if (m_material == outgoingMaterial)
                 {
                     int iProductionCapacity = processingAI.CalculateProductionCapacity((ItemClass.Level)building.m_level, new Randomizer(m_buildingId), building.Width, building.Length);
-                    int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, 8000 * 2);
+                    int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, IndustrialBuildingAIGoodsPatch.MaxOutgoingLoadSize(processingAI) * 2);
 
                     WarnText(false, true, building.m_customBuffer2, iStorageCapacity);
                     tooltip = MakeTooltip(building.m_customBuffer2, iStorageCapacity);
@@ -31,7 +33,7 @@ namespace TransferManagerCE.Data
                 else
                 {
                     int iProductionCapacity = processingAI.CalculateProductionCapacity((ItemClass.Level)building.m_level, new Randomizer(m_buildingId), building.Width, building.Length);
-                    int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, 8000 * 2);
+                    int iStorageCapacity = Mathf.Max(iProductionCapacity * 500, IndustrialBuildingAIGoodsPatch.MaxIncomingLoadSize(processingAI) * 4);
 
                     WarnText(true, false, building.m_customBuffer1, iStorageCapacity);
                     tooltip = MakeTooltip(building.m_customBuffer1, iStorageCapacity);
@@ -43,41 +45,18 @@ namespace TransferManagerCE.Data
             return "";
         }
 
+        // --------------------------------------------------------------------
         protected override string CalculateTimer(out string tooltip)
         {
             string sTimer = base.CalculateTimer(out tooltip);
 
-            Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
-            if (building.m_flags != 0)
-            {
-                CustomTransferReason.Reason outgoingMaterial = (CustomTransferReason.Reason)GetOutgoingTransferReason(building);
-                if (m_material == outgoingMaterial)
-                {
-                    if (building.m_outgoingProblemTimer > 0)
-                    {
-                        if (string.IsNullOrEmpty(sTimer))
-                        {
-                            sTimer += " ";
-                        }
-                        sTimer += "O:" + building.m_outgoingProblemTimer;
-                    }
-                }
-                else
-                {
-                    if (building.m_incomingProblemTimer > 0)
-                    {
-                        if (string.IsNullOrEmpty(sTimer))
-                        {
-                            sTimer += " ";
-                        }
-                        sTimer += "I:" + building.m_incomingProblemTimer;
-                    }
-                }
-            }
+            AddTimerText(TimerType.Incoming, ref sTimer, ref tooltip);
+            AddTimerText(TimerType.Outgoing, ref sTimer, ref tooltip);
 
             return sTimer;
         }
 
+        // --------------------------------------------------------------------
         public static TransferReason GetIncomingTransferReason(ushort buildingId)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingId];
@@ -108,6 +87,7 @@ namespace TransferManagerCE.Data
             }
         }
 
+        // --------------------------------------------------------------------
         public static TransferReason GetSecondaryIncomingTransferReason(ushort buildingID)
         {
             Building building = BuildingManager.instance.m_buildings.m_buffer[buildingID];
@@ -135,23 +115,6 @@ namespace TransferManagerCE.Data
             }
 
             return TransferManager.TransferReason.None;
-        }
-
-        public static TransferReason GetOutgoingTransferReason(Building building)
-        {
-            switch (building.Info.m_class.m_subService)
-            {
-                case ItemClass.SubService.IndustrialForestry:
-                    return TransferManager.TransferReason.Lumber;
-                case ItemClass.SubService.IndustrialFarming:
-                    return TransferManager.TransferReason.Food;
-                case ItemClass.SubService.IndustrialOil:
-                    return TransferManager.TransferReason.Petrol;
-                case ItemClass.SubService.IndustrialOre:
-                    return TransferManager.TransferReason.Coal;
-                default:
-                    return TransferManager.TransferReason.Goods;
-            }
         }
     }
 }

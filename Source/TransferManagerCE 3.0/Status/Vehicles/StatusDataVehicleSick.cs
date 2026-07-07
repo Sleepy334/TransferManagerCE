@@ -1,13 +1,13 @@
 using SleepyCommon;
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataVehicleSick : StatusDataVehicle
     {
-        public StatusDataVehicleSick(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) : 
-            base(reason, eBuildingType, BuildingId, responder, target)
+        public StatusDataVehicleSick(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort vehicleId, ushort sourceBuildingId, InstanceID target) : 
+            base(reason, eBuildingType, BuildingId, vehicleId, sourceBuildingId, target)
         {
         }
 
@@ -52,11 +52,11 @@ namespace TransferManagerCE.Data
 
                 if (strCitizenName.Length > 0)
                 {
-                    return $"{strCitizenName}\n#{GetVehicleId()}:{GetVehicle()}\n#{GetResponderId()}:{GetResponder()}";
+                    return $"{strCitizenName}\n#{GetVehicleId()}:{GetDescription1()}\n#{GetSourceId()}:{GetDescription2()}";
                 }
                 else
                 {
-                    return $"#{GetVehicleId()}:{GetVehicle()}\n#{GetResponderId()}:{GetResponder()}";
+                    return $"#{GetVehicleId()}:{GetDescription1()}\n#{GetSourceId()}:{GetDescription2()}";
                 }
             }
 

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     // The m_citizenCount field is very buggy and it is very slow to calculate the citizens for all buildings
     // so we cache the value passed into the HandleCrime functions for each building type.

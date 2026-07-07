@@ -1,12 +1,11 @@
-using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
-    public class StatusEvacuationStop : StatusNodeStop
+    public class StatusEvacuationStop : StatusTransportLineStop
     {
-        public StatusEvacuationStop(BuildingType eBuildingType, ushort buildingId, ushort nodeId, ushort targetVehicleId) :
-            base(eBuildingType, buildingId, nodeId, targetVehicleId)
+        public StatusEvacuationStop(BuildingType eBuildingType, ushort buildingId, ushort LineId, ushort nodeId) :
+             base(eBuildingType, buildingId, LineId, nodeId)
         {
         }
 
@@ -18,6 +17,16 @@ namespace TransferManagerCE.Data
         public override string GetMaterialDescription()
         {
             return "Evacuation Stop";
+        }
+
+        public override string GetMaterialDisplay()
+        {
+            return GetMaterialDescription();
+        }
+
+        public override void OnClickDescription1()
+        {
+            // Disaable opening transport line panel for evacuation lines
         }
     }
 }

@@ -1,9 +1,9 @@
 using ColossalFramework.UI;
 using SleepyCommon;
-using TransferManagerCE.UI;
+using TransferManagerCore.UI;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     public class InfoPanelButtons
     {
@@ -68,7 +68,7 @@ namespace TransferManagerCE
             catch
             {
                 // Don't really care; just use default relative Y.
-                CDebug.Log("couldn't find ProblemsPanel relative position");
+                Log.Info("couldn't find ProblemsPanel relative position");
             }
 
             m_button = infoPanel.component.AddUIComponent<UIButton>();
@@ -159,7 +159,7 @@ namespace TransferManagerCE
                     }
                     else
                     {
-                        CDebug.Log("ERROR: Selection tool is null");
+                        Log.Info("ERROR: Selection tool is null");
                         BuildingPanel.Instance.Show();
                     }
                 };

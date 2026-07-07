@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using static TransferManager;
 
-namespace TransferManagerCE.CustomManager
+namespace TransferManagerCore.CustomManager
 {
     public class MatchOffer
     {
@@ -197,7 +197,7 @@ namespace TransferManagerCE.CustomManager
             return $"{Amount}{(Unlimited ? "*" : "")}";
         }
 
-        public void Show()
+        public virtual void Show()
         {
             Vector3 position = InstanceHelper.GetPosition(m_object);
             if (position != Vector3.zero)

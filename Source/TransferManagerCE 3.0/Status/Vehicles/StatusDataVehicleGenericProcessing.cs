@@ -1,16 +1,16 @@
 using static TransferManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.Data
+namespace TransferManagerCore.Data
 {
     public class StatusDataVehicleGenericProcessing : StatusDataVehicle
     {
-        public StatusDataVehicleGenericProcessing(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort responder, ushort target) :
-            base(reason, eBuildingType, BuildingId, responder, target)
+        public StatusDataVehicleGenericProcessing(CustomTransferReason.Reason reason, BuildingType eBuildingType, ushort BuildingId, ushort vehicleId, ushort sourceBuildingId, InstanceID target) :
+            base(reason, eBuildingType, BuildingId, vehicleId, sourceBuildingId, target)
         {
         }
 
-        protected override string CalculateVehicle(out string tooltip)
+        protected override string CalculateDescription1(out string tooltip)
         {
             tooltip = "";
 
@@ -21,11 +21,11 @@ namespace TransferManagerCE.Data
             }
             else
             {
-                return base.CalculateVehicle(out tooltip);
+                return base.CalculateDescription1(out tooltip);
             }
         }
 
-        protected override string CalculateResponder(out string tooltip)
+        protected override string CalculateDescription2(out string tooltip)
         {
             tooltip = "";
 
@@ -36,7 +36,7 @@ namespace TransferManagerCE.Data
             }
             else
             {
-                return base.CalculateResponder(out tooltip);
+                return base.CalculateDescription2(out tooltip);
             }
         }
 

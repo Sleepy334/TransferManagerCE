@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Security.Cryptography;
-using TransferManagerCE.CustomManager;
-using static TransferManagerCE.BuildingTypeHelper;
+using TransferManagerCore.CustomManager;
+using static TransferManagerCore.BuildingTypeHelper;
 
-namespace TransferManagerCE.TransferRules
+namespace TransferManagerCore.TransferRules
 {
     public class BuildingRuleSets
     {
@@ -351,6 +351,7 @@ namespace TransferManagerCE.TransferRules
 
                 Warehouse();
                 OutsideConnection();
+                CargoStation();
 
                 CoalPowerPlant();
                 PetrolPowerPlant();
@@ -674,20 +675,21 @@ namespace TransferManagerCE.TransferRules
                 list.Add(rule);
             }
 
-            // CrimeMove
+#if TRANSFER_MANAGER_EXTENDED
+            // CrimeMove supported when Prison Helicopter Mod enabled
             {
                 ReasonRule rule = new ReasonRule();
                 rule.m_id = 1;
                 rule.m_name = Localization.Get("reasonCrimeMove"); //"Moving Criminals";
                 rule.AddReason(CustomTransferReason.Reason.CriminalMove);
+                rule.AddReason(CustomTransferReason.Reason.CriminalPickup2);
+                rule.AddReason(CustomTransferReason.Reason.CriminalMove2);
                 rule.m_incomingDistrict = true;
-                rule.m_outgoingDistrict = true;
                 rule.m_incomingBuilding = true;
-                rule.m_outgoingBuilding = true;
                 rule.m_incomingDistance = true;
-                rule.m_outgoingDistance = true;
                 list.Add(rule);
             }
+#endif
 
             BuildingRules[BuildingType.PoliceHelicopterDepot] = list;
         }
@@ -1721,6 +1723,42 @@ namespace TransferManagerCE.TransferRules
                 list.Add(rule);
             }
             BuildingRules[BuildingType.OutsideConnection] = list;
+        }
+
+        private static void CargoStation()
+        {
+            List<ReasonRule> list = new List<ReasonRule>();
+
+            {
+                ReasonRule rule = new ReasonRule();
+                rule.m_id = 0;
+                rule.m_name = Localization.Get("reasonGoods"); //"Goods";
+                rule.AddReason(CustomTransferReason.Reason.Oil);
+                rule.AddReason(CustomTransferReason.Reason.Ore);
+                rule.AddReason(CustomTransferReason.Reason.ForestProducts);
+                rule.AddReason(CustomTransferReason.Reason.Crops);
+                rule.AddReason(CustomTransferReason.Reason.Goods);
+                rule.AddReason(CustomTransferReason.Reason.Coal);
+                rule.AddReason(CustomTransferReason.Reason.Lumber);
+                rule.AddReason(CustomTransferReason.Reason.Petrol);
+                rule.AddReason(CustomTransferReason.Reason.Food);
+                rule.AddReason(CustomTransferReason.Reason.PlanedTimber);
+                rule.AddReason(CustomTransferReason.Reason.Paper);
+                rule.AddReason(CustomTransferReason.Reason.Glass);
+                rule.AddReason(CustomTransferReason.Reason.Metals);
+                rule.AddReason(CustomTransferReason.Reason.Petroleum);
+                rule.AddReason(CustomTransferReason.Reason.Plastics);
+                rule.AddReason(CustomTransferReason.Reason.AnimalProducts);
+                rule.AddReason(CustomTransferReason.Reason.Flours);
+                rule.AddReason(CustomTransferReason.Reason.LuxuryProducts);
+                rule.AddReason(CustomTransferReason.Reason.Fish);
+                rule.m_outgoingDistrict = true;
+                rule.m_outgoingBuilding = true;
+                rule.m_outgoingDistance = true;
+                rule.m_export = true;
+                list.Add(rule);
+            }
+            BuildingRules[BuildingType.CargoStation] = list;
         }
     }
 }

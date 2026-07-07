@@ -5,7 +5,7 @@
 using ColossalFramework.UI;
 using UnityEngine;
 
-namespace TransferManagerCE
+namespace TransferManagerCore
 {
     /// <summary>
     /// UI scrollbars.
