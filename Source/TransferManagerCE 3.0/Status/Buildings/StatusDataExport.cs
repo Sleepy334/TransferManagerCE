@@ -1,6 +1,7 @@
 using static TransferManager;
 using static TransferManagerCore.BuildingTypeHelper;
 
+using SleepyCommon;
 namespace TransferManagerCore.Data
 {
     public class StatusDataExport : StatusDataBuilding
@@ -12,12 +13,12 @@ namespace TransferManagerCore.Data
 
         public override string GetMaterialDescription()
         {
-            return "Export";
+            return GetLocalizedLabel("status_Export", "Export");
         }
 
         protected override string CalculateValue(out string tooltip)
         {
-            tooltip = "Amount Exported";
+            tooltip = Localization.Get("tip_AmountExported");
 
             if (m_buildingId != 0)
             {

@@ -172,11 +172,11 @@ namespace TransferManagerCore.CustomManager
         {
             if (Active)
             {
-                return "Active";
+                return Localization.Get("disp_Active");
             }
             else
             {
-                return "Passive";
+                return Localization.Get("disp_Passive");
             }
         }
 

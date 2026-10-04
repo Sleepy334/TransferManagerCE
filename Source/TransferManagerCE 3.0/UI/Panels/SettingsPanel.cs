@@ -66,7 +66,7 @@ namespace TransferManagerCore.UI
             m_title = UITitleBar.Create(this, Localization.Get("titleSettingsPanel"), "Transfer", TransferManagerMod.Instance.LoadResources(), OnCloseClick);
             if (m_title != null)
             {
-                m_title.AddButton("btnHighlight", atlas, "InfoIconLevel", "Highlight Matches", OnHighlightBuildingsClick);
+                m_title.AddButton("btnHighlight", atlas, "InfoIconLevel", Localization.Get("tip_HighlightMatches"), OnHighlightBuildingsClick);
                 m_title.SetupButtons();
             }
 

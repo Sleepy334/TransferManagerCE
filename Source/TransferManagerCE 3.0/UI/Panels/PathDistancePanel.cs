@@ -134,7 +134,7 @@ namespace TransferManagerCore.UI
             m_title = UITitleBar.Create(this, "Path Distance", "Transfer", TransferManagerMod.Instance.LoadResources(), OnCloseClick);
             if (m_title != null)
             {
-                m_title.AddButton("btnSelectionTool", atlas, "LineDetailButton", "Activate Selection Tool", OnSelectionToolClick);
+                m_title.AddButton("btnSelectionTool", atlas, "LineDetailButton", Localization.Get("tip_ActivateSelectionTool"), OnSelectionToolClick);
                 m_title.SetupButtons();
             }
 
@@ -274,7 +274,7 @@ namespace TransferManagerCore.UI
             AddSpacer(mainPanel);
 
             // ----------------------------------------------------------------
-            m_lblChosenCandidate = AddLabel(mainPanel, "Chosen Candidate");
+            m_lblChosenCandidate = AddLabel(mainPanel, Localization.Get("label_ChosenCandidate"));
             m_lblChosenCandidate.eventMouseEnter += (c, e) =>
             {
                 m_lblChosenCandidate.textColor = new Color32(13, 183, 255, 255);
@@ -290,9 +290,9 @@ namespace TransferManagerCore.UI
                     InstanceHelper.ShowInstance(new InstanceID { Building = (ushort)m_pathDistanceTest.ChosenBuildingId });
                 }
             };
-            m_lblTravelTime = AddLabel(mainPanel, "Travel Time");
-            m_lblNodesExamined = AddLabel(mainPanel, "Nodes Examined");
-            m_lblTime = AddLabel(mainPanel, "Time");
+            m_lblTravelTime = AddLabel(mainPanel, Localization.Get("label_TravelTime"));
+            m_lblNodesExamined = AddLabel(mainPanel, Localization.Get("label_NodesExamined"));
+            m_lblTime = AddLabel(mainPanel, Localization.Get("label_Time"));
 
             AddSpacer(mainPanel);
 
@@ -303,7 +303,7 @@ namespace TransferManagerCore.UI
             pnlCalculate.height = 50;
             pnlCalculate.autoLayout = false;
 
-            m_btnCalculate = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, pnlCalculate, "Calculate", "", 200, iButtonHeight, (c, e) =>
+            m_btnCalculate = UIMyUtils.AddButton(UIMyUtils.ButtonStyle.DropDown, pnlCalculate, Localization.Get("btn_Calculate"), "", 200, iButtonHeight, (c, e) =>
             {
                 bool bStartActive = (m_direction == 0);
                 m_pathDistanceTest.FindNearestNeighbour(m_algorithm, bStartActive, m_buildingId, m_candidates.ToArray());
@@ -496,7 +496,7 @@ namespace TransferManagerCore.UI
             }
 
             // Update selection tool icon
-            string sTooltip = "Path Distance Tool: ";
+            string sTooltip = Localization.Get("tip_PathDistanceTool");
             if (SelectionTool.Active && 
                 SelectionTool.Instance.GetNewMode() == SelectionTool.SelectionToolMode.PathDistance)
             {
@@ -534,15 +534,15 @@ namespace TransferManagerCore.UI
             // Update results
             if (m_pathDistanceTest.ChosenBuildingId > 0)
             {
-                m_lblChosenCandidate.text = $"Chosen Candidate: {InstanceHelper.DescribeInstance(new InstanceID { Building = (ushort) m_pathDistanceTest.ChosenBuildingId }, true, true)}";
+                m_lblChosenCandidate.text = $"{Localization.Get("label_ChosenCandidate")}: {InstanceHelper.DescribeInstance(new InstanceID { Building = (ushort) m_pathDistanceTest.ChosenBuildingId }, true, true)}";
             }
             else
             {
-                m_lblChosenCandidate.text = "Chosen Candidate: ";
+                m_lblChosenCandidate.text = $"{Localization.Get("label_ChosenCandidate")}: ";
             }
-            m_lblTravelTime.text = $"Travel Time: {m_pathDistanceTest.TravelTime}";
-            m_lblNodesExamined.text = $"Nodes Examined: {m_pathDistanceTest.GetExaminedNodes().Count}";
-            m_lblTime.text = $"Calculation Time: {Utils.DisplayTicks(m_pathDistanceTest.Ticks)}ms";
+            m_lblTravelTime.text = $"{Localization.Get("label_TravelTime")}: {m_pathDistanceTest.TravelTime}";
+            m_lblNodesExamined.text = $"{Localization.Get("label_NodesExamined")}: {m_pathDistanceTest.GetExaminedNodes().Count}";
+            m_lblTime.text = $"{Localization.Get("label_CalculationTime")}: {Utils.DisplayTicks(m_pathDistanceTest.Ticks)}ms";
             
             if (m_buildingId != 0 && m_candidates.Count > 0)
             {

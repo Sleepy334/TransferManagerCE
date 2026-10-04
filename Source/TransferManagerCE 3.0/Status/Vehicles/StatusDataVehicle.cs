@@ -111,7 +111,7 @@ namespace TransferManagerCore.Data
             if (vehicleId != 0)
             {
                 string sValue = CitiesUtils.GetVehicleTransferValue(GetVehicleId(), out int current, out int max);
-                tooltip = $"Vehicle Load: {DisplayBufferLong(current)} / {DisplayBufferLong(max)}";
+                tooltip = $"{Localization.Get("tip_VehicleLoad")}: {DisplayBufferLong(current)} / {DisplayBufferLong(max)}";
                 return sValue;
             }
 
@@ -267,24 +267,24 @@ namespace TransferManagerCore.Data
                 {
                     if ((vehicle.m_flags & (Vehicle.Flags.Stopped | Vehicle.Flags.Spawned)) == (Vehicle.Flags.Stopped | Vehicle.Flags.Spawned))
                     {
-                        return "Loading (Phase 2)";
+                        return GetLocalizedLabel("vehstate_LoadingPhase2", "Loading (Phase 2)");
                     }
                     else
                     {
-                        return "Loading";
+                        return GetLocalizedLabel("vehstate_Loading", "Loading");
                     }
                 }
                 else if ((vehicle.m_flags & Vehicle.Flags.WaitingSpace) != 0)
                 {
-                    return "Waiting space";
+                    return GetLocalizedLabel("vehstate_WaitingSpace", "Waiting space");
                 }
                 else if ((vehicle.m_flags & Vehicle.Flags.WaitingCargo) != 0)
                 {
-                    return "Waiting cargo";
+                    return GetLocalizedLabel("vehstate_WaitingCargo", "Waiting cargo");
                 }
                 else if ((vehicle.m_flags & Vehicle.Flags.Congestion) != 0)
                 {
-                    return "Congestion";
+                    return GetLocalizedLabel("vehstate_Congestion", "Congestion");
                 }
             }
 

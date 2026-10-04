@@ -5,6 +5,7 @@ using UnityEngine;
 using static TransferManager;
 using static TransferManagerCore.BuildingTypeHelper;
 
+using SleepyCommon;
 namespace TransferManagerCore.Data
 {
     public class StatusDataCash : StatusDataBuilding
@@ -23,7 +24,7 @@ namespace TransferManagerCore.Data
                 {
                     case BuildingType.Bank:
                         {
-                            tooltip = "Percent of Cash Capacity";
+                            tooltip = Localization.Get("tip_PercentOfCashCapacity");
                             return "0"; // TODO
                         }
                     case BuildingType.ServicePoint:

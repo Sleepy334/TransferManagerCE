@@ -119,6 +119,18 @@ public class TransferIssueContainer : IComparable, IEquatable<TransferIssueConta
         return m_issue;
     }
 
+    // Returns the localized name for an issue type, falling back to the enum name if not yet translated.
+    public string GetLocalizedIssue()
+    {
+        string sKey = "issue_" + m_issue.ToString();
+        string sValue = Localization.Get(sKey);
+        if (sValue is null || sValue.Length == 0 || sValue == sKey)
+        {
+            return m_issue.ToString();
+        }
+        return sValue;
+    }
+
     public int GetPriority()
     {
         return Mathf.Clamp(m_priority, 0, 7);

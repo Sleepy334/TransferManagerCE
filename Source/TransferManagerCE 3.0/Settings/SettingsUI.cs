@@ -471,31 +471,31 @@ namespace TransferManagerCore
             // Priority
             UISettings.AddDescription(txtPanel3, "OutsidePriorityDescription", txtPanel3, 1.0f, Localization.Get("OutsidePriorityDescription"));
             UISettings.AddDescription(txtPanel3, "txtCargoPriority", txtPanel3, 1.0f, Localization.Get("txtCargoPriority"));
-            m_sliderPlaneCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Plane Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsidePlaneCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Plane, true, value));
+            m_sliderPlaneCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("priority_plane"), 400, 200, 0f, 100f, 1f, (float)oSettings.OutsidePlaneCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Plane, true, value));
             m_sliderPlaneCargoPriority.Percent = true;
             AddSaveGameSetting(m_sliderPlaneCargoPriority);
-            m_sliderTrainCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Train Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideTrainCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Train, true, value));
+            m_sliderTrainCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("priority_train"), 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideTrainCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Train, true, value));
             m_sliderTrainCargoPriority.Percent = true;
             AddSaveGameSetting(m_sliderTrainCargoPriority);
-            m_sliderShipCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Ship Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideShipCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Ship, true, value));
+            m_sliderShipCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("priority_ship"), 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideShipCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Ship, true, value));
             m_sliderShipCargoPriority.Percent = true;
             AddSaveGameSetting(m_sliderShipCargoPriority);
-            m_sliderRoadCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Road Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideRoadCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Road, true, value));
+            m_sliderRoadCargoPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("priority_road"), 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideRoadCargoPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Road, true, value));
             m_sliderRoadCargoPriority.Percent = true;
             AddSaveGameSetting(m_sliderRoadCargoPriority);
             groupImportExport.AddSpace(iSEPARATOR_HEIGHT);
 
             UISettings.AddDescription(txtPanel3, "txtCitizenPriority", txtPanel3, 1.0f, Localization.Get("txtCitizenPriority"));
-            m_sliderPlaneCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Plane Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsidePlaneCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Plane, false, value));
+            m_sliderPlaneCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("priority_plane"), 400, 200, 0f, 100f, 1f, (float)oSettings.OutsidePlaneCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Plane, false, value));
             m_sliderPlaneCitizenPriority.Percent = true;
             AddSaveGameSetting(m_sliderPlaneCitizenPriority);
-            m_sliderTrainCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Train Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideTrainCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Train, false, value));
+            m_sliderTrainCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("priority_train"), 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideTrainCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Train, false, value));
             m_sliderTrainCitizenPriority.Percent = true;
             AddSaveGameSetting(m_sliderTrainCitizenPriority);
-            m_sliderShipCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Ship Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideShipCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Ship, false, value));
+            m_sliderShipCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("priority_ship"), 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideShipCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Ship, false, value));
             m_sliderShipCitizenPriority.Percent = true;
             AddSaveGameSetting(m_sliderShipCitizenPriority);
-            m_sliderRoadCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, "Road Priority", 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideRoadCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Road, false, value));
+            m_sliderRoadCitizenPriority = SettingsSlider.CreateSettingsStyle(groupImportExport, LayoutDirection.Horizontal, Localization.Get("priority_road"), 400, 200, 0f, 100f, 1f, (float)oSettings.OutsideRoadCitizenPriority, 0, (value) => OnOutsideConnectionPriority(TransportType.Road, false, value));
             m_sliderRoadCitizenPriority.Percent = true;
             AddSaveGameSetting(m_sliderRoadCitizenPriority);
 
@@ -522,12 +522,12 @@ namespace TransferManagerCore
             label.autoSize = false;
             label.width = 300;
             label.height = 20;
-            label.text = "Buildings";
+            label.text = Localization.Get("col_buildings");
             UILabel label2 = paneRestrictionsHeadings.AddUIComponent<UILabel>();
             label2.autoSize = false;
             label2.width = 300;
             label2.height = 20;
-            label2.text = "Warehouses";
+            label2.text = Localization.Get("col_warehouses");
 
             for (int i = 0; i < (int)CustomTransferReason.iLAST_REASON; ++i)
             {
@@ -540,7 +540,7 @@ namespace TransferManagerCore
                     panelMaterialRestrictions.width = panelImportRestrictions.width;
                     panelMaterialRestrictions.height = 20;
 
-                    UICheckBox? chkMaterial = UIMyUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), UIFonts.SemiBold, 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterial(material, index));
+                    UICheckBox? chkMaterial = UIMyUtils.AddCheckbox(panelMaterialRestrictions, CustomTransferReason.GetLocalizedReason(material), UIFonts.SemiBold, 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterial(material, index));
                     if (chkMaterial is not null)
                     {
                         chkMaterial.width = 300;
@@ -549,7 +549,7 @@ namespace TransferManagerCore
 
                     if (TransferManagerModes.IsWarehouseMaterial(material))
                     {
-                        UICheckBox? chkWarehouseMaterial = UIMyUtils.AddCheckbox(panelMaterialRestrictions, material.ToString(), UIFonts.SemiBold, 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterialWarehouses(material, index));
+                        UICheckBox? chkWarehouseMaterial = UIMyUtils.AddCheckbox(panelMaterialRestrictions, CustomTransferReason.GetLocalizedReason(material), UIFonts.SemiBold, 1.0f, !oSettings.IsImportRestricted(material), (index) => OnImportRestrictMaterialWarehouses(material, index));
                         if (chkWarehouseMaterial is not null)
                         {
                             chkWarehouseMaterial.width = 300;
@@ -689,7 +689,7 @@ namespace TransferManagerCore
 
         private void AddDistanceSlider(UIHelper helper, CustomTransferReason.Reason reason)
         {
-            AddDistanceSlider(helper, reason, $"{reason} (km)");
+            AddDistanceSlider(helper, reason, $"{CustomTransferReason.GetLocalizedReason(reason)} (km)");
         }
 
         private void AddDistanceSlider(UIHelper helper, CustomTransferReason.Reason reason, string strLabel)
@@ -1590,14 +1590,14 @@ namespace TransferManagerCore
             {
                 if (reason != CustomTransferReason.Reason.None)
                 {
-                    m_reasonNames.Add(reason.ToString());
+                    m_reasonNames.Add(CustomTransferReason.GetLocalizedReason(reason));
                 }
             }
 
             m_reasonNames.Sort();
 
             // Add None to start of list
-            m_reasonNames.Insert(0, CustomTransferReason.Reason.None.ToString());
+            m_reasonNames.Insert(0, CustomTransferReason.GetLocalizedReason(CustomTransferReason.Reason.None));
         }
 
         private int GetReasonArrayIndex(int iReason)
@@ -1608,7 +1608,7 @@ namespace TransferManagerCore
             int iIndex = 0;
             foreach (string sReason in m_reasonNames)
             {
-                if (reason.ToString().Equals(sReason))
+                if (CustomTransferReason.GetLocalizedReason(reason).Equals(sReason))
                 {
                     return iIndex;
                 }
@@ -1623,7 +1623,7 @@ namespace TransferManagerCore
             // Add the transfer reasons in enum order
             foreach (CustomTransferReason.Reason reason in (CustomTransferReason.Reason[])Enum.GetValues(typeof(CustomTransferReason.Reason)))
             {
-                if (reason.ToString().Equals(sReason))
+                if (CustomTransferReason.GetLocalizedReason(reason).Equals(sReason))
                 {
                     return (int) reason;
                 }

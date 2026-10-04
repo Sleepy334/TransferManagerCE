@@ -721,7 +721,7 @@ namespace TransferManagerCore.UI
                             CustomTransferReason.Reason actualTransferReason = BuildingTypeHelper.GetWarehouseActualTransferReason(warehouseBuildingId);
                             if (actualTransferReason != CustomTransferReason.Reason.None && rule.m_reasons.Contains(actualTransferReason))
                             {
-                                sName += $"{actualTransferReason} | {sWarehouseMode}";
+                                sName += $"{CustomTransferReason.GetLocalizedReason(actualTransferReason)} | {sWarehouseMode}";
                             }
                             else
                             {
@@ -861,18 +861,18 @@ namespace TransferManagerCore.UI
 
         private string GetRestrictionReasons(CustomTransferReason.Reason reason)
         {
-            string sTooltip = "Restriction Reasons:";
-            sTooltip += $"\r\n- {reason}";
+            string sTooltip = Localization.Get("tip_RestrictionReasons");
+            sTooltip += $"\r\n- {CustomTransferReason.GetLocalizedReason(reason)}";
             return sTooltip;
         }
 
         private string GetRestrictionReasons(HashSet<CustomTransferReason.Reason> reasons)
         {
-            string sTooltip = "Restriction Reasons:";
+            string sTooltip = Localization.Get("tip_RestrictionReasons");
 
             foreach (CustomTransferReason.Reason reason in reasons)
             {
-                sTooltip += $"\r\n- {reason}";
+                sTooltip += $"\r\n- {CustomTransferReason.GetLocalizedReason(reason)}";
             }
 
             return sTooltip;

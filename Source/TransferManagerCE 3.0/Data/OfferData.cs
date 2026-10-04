@@ -40,14 +40,7 @@ namespace TransferManagerCore
 
         public string DescribeInOut()
         {
-            if (m_bIncoming)
-            {
-                return "IN";
-            }
-            else
-            {
-                return "OUT";
-            }
+            return m_bIncoming ? Localization.Get("inout_In") : Localization.Get("inout_Out");
         }
 
         public override void Show()
@@ -58,17 +51,17 @@ namespace TransferManagerCore
         public string GetToolTipText()
         {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.Append($"Material: {m_material}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Material")}: {m_material.GetLocalizedReason()}\n");
 
             if (m_byLocalPark != 0)
             {
-                stringBuilder.Append($"Park: {DescribePark()}\n");
+                stringBuilder.Append($"{Localization.Get("tip_Park")}: {DescribePark()}\n");
             }
 
-            stringBuilder.Append($"Object: {DescribeOfferObject(true)}\n");
-            stringBuilder.Append($"Priorty: {Priority}\n");
-            stringBuilder.Append($"Amount: {DescribeAmount()}\n");
-            stringBuilder.Append($"Active: {DescribeActive()}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Object")}: {DescribeOfferObject(true)}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Priority")}: {Priority}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Amount")}: {DescribeAmount()}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Active")}: {(Active ? Localization.Get("tip_ActiveValue") + " (Active)" : Localization.Get("tip_PassiveValue") + " (Passive)")}\n");
 
             return stringBuilder.ToString();
         }

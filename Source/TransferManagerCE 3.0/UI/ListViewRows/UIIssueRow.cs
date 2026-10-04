@@ -140,7 +140,7 @@ namespace TransferManagerCore.UI
         {
             if (data is not null)
             {
-                m_lblMaterial.text = data.m_issue.ToString();
+                m_lblMaterial.text = data.GetLocalizedIssue();
                 m_lblPriority.text = data.GetPriority().ToString();
                 m_lblValue.text = data.m_value.ToString();
                 m_lblTimer.text = data.GetTimer();

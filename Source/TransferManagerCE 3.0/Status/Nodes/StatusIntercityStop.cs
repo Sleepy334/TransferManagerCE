@@ -23,13 +23,13 @@ namespace TransferManagerCore.Data
         // --------------------------------------------------------------------
         public override string GetMaterialDisplay()
         {
-            return "Intercity Stop";
+            return GetLocalizedLabel("status_IntercityStop", "Intercity Stop");
         }
 
         // --------------------------------------------------------------------
         public override string GetMaterialDescription()
         {
-            return "Intercity Stop";
+            return GetLocalizedLabel("status_IntercityStop", "Intercity Stop");
         }
 
         // --------------------------------------------------------------------

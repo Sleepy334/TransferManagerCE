@@ -2,6 +2,7 @@ using UnityEngine;
 using static TransferManager;
 using static TransferManagerCore.BuildingTypeHelper;
 
+using SleepyCommon;
 namespace TransferManagerCore.Data
 {
     public class StatusDataWorkers : StatusDataBuilding
@@ -17,18 +18,18 @@ namespace TransferManagerCore.Data
             {
                 case TransferReason.None:
                     {
-                        return "Workers";
+                        return GetLocalizedLabel("status_Workers", "Workers");
                     }
                 default:
                     {
-                        return GetMaterial().ToString();
+                        return CustomTransferReason.GetLocalizedReason(GetMaterial());
                     }
             }
         }
 
         protected override string CalculateValue(out string tooltip)
         {
-            tooltip = "Current Workers / Total Work Places";
+            tooltip = Localization.Get("tip_CurrentWorkersTotalWorkPlaces");
 
             if (m_buildingId != 0)
             {

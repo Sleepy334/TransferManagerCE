@@ -167,7 +167,7 @@ namespace TransferManagerCore.UI
         protected override void Display()
         {
             m_lblTime.text = data.Time();
-            m_lblMaterial.text = data.m_material.ToString();
+            m_lblMaterial.text = CustomTransferReason.GetLocalizedReason(data.m_material);
             m_lblInOut.text = data.GetInOutStatus();
             m_lblActive.text = data.GetActiveStatus();
             m_lblAmount.text = data.GetAmount();

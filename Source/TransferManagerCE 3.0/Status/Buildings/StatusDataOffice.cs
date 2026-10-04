@@ -22,7 +22,7 @@ namespace TransferManagerCore.Data
                 case CustomTransferReason.Reason.BusinessC:
                 case CustomTransferReason.Reason.BusinessD:
                     {
-                        return "Business";
+                        return GetLocalizedLabel("status_Business", "Business");
                     }
                 default:
                     {

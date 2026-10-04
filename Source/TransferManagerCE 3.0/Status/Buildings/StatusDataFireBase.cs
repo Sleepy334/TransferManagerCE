@@ -12,7 +12,7 @@ namespace TransferManagerCore.Data
 
         protected override string CalculateValue(out string tooltip)
         {
-            tooltip = "Intensity | Damage";
+            tooltip = Localization.Get("tip_IntensityDamage");
 
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
             if (building.m_flags != 0)

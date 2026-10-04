@@ -123,7 +123,19 @@ namespace TransferManagerCore.Data
         // --------------------------------------------------------------------
         public virtual string GetMaterialDescription()
         {
-            return GetMaterial().ToString();
+            return CustomTransferReason.GetLocalizedReason(GetMaterial());
+        }
+
+        // --------------------------------------------------------------------
+        // Returns a localized label, falling back to the supplied text if not yet translated.
+        protected static string GetLocalizedLabel(string key, string fallback)
+        {
+            string sValue = Localization.Get(key);
+            if (sValue is null || sValue.Length == 0 || sValue == key)
+            {
+                return fallback;
+            }
+            return sValue;
         }
 
         // --------------------------------------------------------------------

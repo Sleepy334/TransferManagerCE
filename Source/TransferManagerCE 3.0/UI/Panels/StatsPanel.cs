@@ -1,4 +1,4 @@
-using ColossalFramework.UI;
+﻿using ColossalFramework.UI;
 using SleepyCommon;
 using System;
 using System.Collections.Generic;
@@ -80,8 +80,8 @@ namespace TransferManagerCore
                 m_gameStats = ListView.Create<UIGeneralStatsRow>(tabGame, "ScrollbarTrack", 0.7f, width - 20f, tabGame.height);
                 if (m_gameStats is not null)
                 {
-                    m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("stats_Description"), "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_gameStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("stats_Value"), "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                 }
             }
 
@@ -93,8 +93,8 @@ namespace TransferManagerCore
                 m_generalStats = ListView.Create<UIGeneralStatsRow>(tabGeneral, "ScrollbarTrack", 0.7f, width - 20f, tabGeneral.height);
                 if (m_generalStats is not null)
                 {
-                    m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("stats_Description"), "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_generalStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("stats_Value"), "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                 }
             }
 
@@ -106,8 +106,8 @@ namespace TransferManagerCore
                 m_transferManagerStats = ListView.Create<UIGeneralStatsRow>(tabTransferManager, "ScrollbarTrack", 0.7f, width - 20f, tabTransferManager.height);
                 if (m_transferManagerStats is not null)
                 {
-                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("stats_Description"), "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_transferManagerStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("stats_Value"), "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                 }
             }
 
@@ -119,19 +119,19 @@ namespace TransferManagerCore
                 m_listStats = ListView.Create<UIMatchStatsRow>(tabMatchStats, "ScrollbarTrack", 0.7f, width - 20f, tabMatchStats.height);
                 if (m_listStats is not null)
                 {
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, "Material", "Material", UIMatchStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATERIAL, Localization.Get("stats_Material"), Localization.Get("tip_Material"), UIMatchStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
 
                     // Job stats
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_AVG, "Job Avg", "Average Job Time (ms)", UIMatchStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_LAST, "Job Last", "Last Job Time (ms)", UIMatchStatsRow.ColumnWidths[2], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_MAX, "Job Max", "Max Job Time (ms)", UIMatchStatsRow.ColumnWidths[3], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_AVG, Localization.Get("stats_JobAvg"), Localization.Get("tip_AverageJobTimeMs"), UIMatchStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_LAST, Localization.Get("stats_JobLast"), Localization.Get("tip_LastJobTimeMs"), UIMatchStatsRow.ColumnWidths[2], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_JOB_MAX, Localization.Get("stats_JobMax"), Localization.Get("tip_MaxJobTimeMs"), UIMatchStatsRow.ColumnWidths[3], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
 
                     // Match stats
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_AMOUNT, "Match Amount", "", UIMatchStatsRow.ColumnWidths[4], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_OUT_AMOUNT, "OUT Amount", "", UIMatchStatsRow.ColumnWidths[5], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_IN_AMOUNT, "IN Amount", "", UIMatchStatsRow.ColumnWidths[6], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_DISTANCE, "Avg Dist.", "Average Match Distance (km)", UIMatchStatsRow.ColumnWidths[7], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
-                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_OUTSIDE, "Outside", "", UIMatchStatsRow.ColumnWidths[8], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_AMOUNT, Localization.Get("stats_MatchAmount"), "", UIMatchStatsRow.ColumnWidths[4], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_OUT_AMOUNT, Localization.Get("stats_OUTAmount"), "", UIMatchStatsRow.ColumnWidths[5], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_IN_AMOUNT, Localization.Get("stats_INAmount"), "", UIMatchStatsRow.ColumnWidths[6], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopLeft, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_DISTANCE, Localization.Get("stats_AvgDist"), Localization.Get("tip_AverageMatchDistanceKm"), UIMatchStatsRow.ColumnWidths[7], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
+                    m_listStats.AddColumn(ListViewRowComparer.Columns.COLUMN_MATCH_OUTSIDE, Localization.Get("stats_Outside"), "", UIMatchStatsRow.ColumnWidths[8], iHEADER_HEIGHT, UIHorizontalAlignment.Center, UIAlignAnchor.TopRight, null);
 
                     m_listStats.Header.ResizeLastColumn();
 
@@ -148,8 +148,8 @@ namespace TransferManagerCore
                     m_panelStats = ListView.Create<UIGeneralStatsRow>(tabPanels, "ScrollbarTrack", 0.7f, width - 20f, tabPanels.height);
                     if (m_panelStats is not null)
                     {
-                        m_panelStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, "Description", "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
-                        m_panelStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, "Value", "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
+                        m_panelStats.AddColumn(ListViewRowComparer.Columns.COLUMN_DESCRIPTION, Localization.Get("stats_Description"), "", UIGeneralStatsRow.ColumnWidths[0], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopLeft, null);
+                        m_panelStats.AddColumn(ListViewRowComparer.Columns.COLUMN_VALUE, Localization.Get("stats_Value"), "", UIGeneralStatsRow.ColumnWidths[1], iHEADER_HEIGHT, UIHorizontalAlignment.Left, UIAlignAnchor.TopRight, null);
                     }
                 }
             }
@@ -189,23 +189,23 @@ namespace TransferManagerCore
             List<StatsBase> list = new List<StatsBase>();
 
             // Game resources
-            list.Add(new StatsHeader("Game resources"));
-            list.Add(new StatsGroup("Building Count", $"{BuildingManager.instance.m_buildingCount} / {BuildingManager.instance.m_buildings.m_size}"));
-            list.Add(new StatsGroup("Vehicle Count", $"{VehicleManager.instance.m_vehicleCount} / {VehicleManager.instance.m_vehicles.m_size}"));
-            list.Add(new StatsGroup("Citizen Count", $"{CitizenManager.instance.m_citizenCount} / {CitizenManager.instance.m_citizens.m_size}"));
-            list.Add(new StatsGroup("CitizenUnit Count", $"{CitizenManager.instance.m_unitCount} / {CitizenManager.instance.m_units.m_size}"));
-            list.Add(new StatsGroup("CitizenInstance Count", $"{CitizenManager.instance.m_instanceCount} / {CitizenManager.instance.m_instances.m_size}"));
-            list.Add(new StatsGroup("Path Units", $"{PathManager.instance.m_pathUnitCount} / {PathManager.instance.m_pathUnits.m_size}"));
-            list.Add(new StatsGroup("Node Count", $"{NetManager.instance.m_nodeCount} / {NetManager.instance.m_nodes.m_size}"));
-            list.Add(new StatsGroup("Segment Count", $"{NetManager.instance.m_segmentCount} / {NetManager.instance.m_segments.m_size}"));
+            list.Add(new StatsHeader(Localization.Get("stats_Gameresources")));
+            list.Add(new StatsGroup(Localization.Get("stats_BuildingCount"), $"{BuildingManager.instance.m_buildingCount} / {BuildingManager.instance.m_buildings.m_size}"));
+            list.Add(new StatsGroup(Localization.Get("stats_VehicleCount"), $"{VehicleManager.instance.m_vehicleCount} / {VehicleManager.instance.m_vehicles.m_size}"));
+            list.Add(new StatsGroup(Localization.Get("stats_CitizenCount"), $"{CitizenManager.instance.m_citizenCount} / {CitizenManager.instance.m_citizens.m_size}"));
+            list.Add(new StatsGroup(Localization.Get("stats_CitizenUnitCount"), $"{CitizenManager.instance.m_unitCount} / {CitizenManager.instance.m_units.m_size}"));
+            list.Add(new StatsGroup(Localization.Get("stats_CitizenInstanceCount"), $"{CitizenManager.instance.m_instanceCount} / {CitizenManager.instance.m_instances.m_size}"));
+            list.Add(new StatsGroup(Localization.Get("stats_PathUnits"), $"{PathManager.instance.m_pathUnitCount} / {PathManager.instance.m_pathUnits.m_size}"));
+            list.Add(new StatsGroup(Localization.Get("stats_NodeCount"), $"{NetManager.instance.m_nodeCount} / {NetManager.instance.m_nodes.m_size}"));
+            list.Add(new StatsGroup(Localization.Get("stats_SegmentCount"), $"{NetManager.instance.m_segmentCount} / {NetManager.instance.m_segments.m_size}"));
 
             // Add separator
             list.Add(new StatsSeparator());
 
-            list.Add(new StatsHeader("Simulation"));
-            list.Add(new StatsGroup("Step Average", $"{Utils.DisplayTicks(SimulationManager.instance.m_simulationProfiler.m_averageStepDuration)}ms"));
-            list.Add(new StatsGroup("Step Last ", $"{Utils.DisplayTicks(SimulationManager.instance.m_simulationProfiler.m_lastStepDuration)}ms"));
-            list.Add(new StatsGroup("Step Peak", $"{Utils.DisplayTicks(SimulationManager.instance.m_simulationProfiler.m_peakStepDuration)}ms"));
+            list.Add(new StatsHeader(Localization.Get("stats_Simulation")));
+            list.Add(new StatsGroup(Localization.Get("stats_StepAverage"), $"{Utils.DisplayTicks(SimulationManager.instance.m_simulationProfiler.m_averageStepDuration)}ms"));
+            list.Add(new StatsGroup(Localization.Get("stats_StepLast"), $"{Utils.DisplayTicks(SimulationManager.instance.m_simulationProfiler.m_lastStepDuration)}ms"));
+            list.Add(new StatsGroup(Localization.Get("stats_StepPeak"), $"{Utils.DisplayTicks(SimulationManager.instance.m_simulationProfiler.m_peakStepDuration)}ms"));
 
             return list;
         }
@@ -219,52 +219,52 @@ namespace TransferManagerCore
                                     SaveGameSettings.GetSettings().PathDistanceGoods == (int)SaveGameSettings.PathDistanceAlgorithm.PathDistance;
 
             // Transfer manager match statistics
-            list.Add(new StatsHeader("Match Totals"));
-            list.Add(new StatsGroup("Total Match Jobs", $"{TransferManagerStats.s_TotalMatchJobs}"));
-            list.Add(new StatsGroup("Total Match Time", $"{Utils.DisplayTicks(TransferManagerStats.s_TotalMatchTimeTicks)} ms"));
+            list.Add(new StatsHeader(Localization.Get("stats_MatchTotals")));
+            list.Add(new StatsGroup(Localization.Get("stats_TotalMatchJobs"), $"{TransferManagerStats.s_TotalMatchJobs}"));
+            list.Add(new StatsGroup(Localization.Get("stats_TotalMatchTime"), $"{Utils.DisplayTicks(TransferManagerStats.s_TotalMatchTimeTicks)} ms"));
             if (bPathDistance)
             {
-                list.Add(new StatsGroup("Total Path Distance Match Jobs", $"{TransferManagerStats.s_TotalPathDistanceMatchJobs}"));
+                list.Add(new StatsGroup(Localization.Get("stats_TotalPathDistanceMatchJobs"), $"{TransferManagerStats.s_TotalPathDistanceMatchJobs}"));
             }
             if (ModSettings.GetSettings().StatisticsEnabled)
             {
-                list.Add(new StatsGroup("Total Matches", MatchStats.GetTotalMatches().ToString()));
-                list.Add(new StatsGroup("Matches / Second", MatchStats.GetMatchesPerSecond().ToString("N0")));
-                list.Add(new StatsGroup("Average Distance", MatchStats.GetAverageDistance()));
+                list.Add(new StatsGroup(Localization.Get("stats_TotalMatches"), MatchStats.GetTotalMatches().ToString()));
+                list.Add(new StatsGroup(Localization.Get("stats_MatchesSecond"), MatchStats.GetMatchesPerSecond().ToString("N0")));
+                list.Add(new StatsGroup(Localization.Get("stats_AverageDistance"), MatchStats.GetAverageDistance()));
             }
             list.Add(new StatsSeparator());
 
             // Cycle
             CycleJobData cycleData = TransferManagerStats.CycleData.GetLatestCompletedCopy();
 
-            list.Add(new StatsHeader("Latest Match Cycle"));
-            list.Add(new StatsGroup("Cycle Number", $"{cycleData.m_cycle}"));
-            list.Add(new StatsGroup("Cycle Match Job Count", $"{cycleData.m_jobsCompleted}"));
-            list.Add(new StatsGroup("Cycle Simulation Time", $"{Utils.DisplayTicks(cycleData.DurationTicks())} ms"));
-            list.Add(new StatsGroup("Cycle Calculation Time", $"{Utils.DisplayTicks(cycleData.m_totalTicks)} ms"));
+            list.Add(new StatsHeader(Localization.Get("stats_LatestMatchCycle")));
+            list.Add(new StatsGroup(Localization.Get("stats_CycleNumber"), $"{cycleData.m_cycle}"));
+            list.Add(new StatsGroup(Localization.Get("stats_CycleMatchJobCount"), $"{cycleData.m_jobsCompleted}"));
+            list.Add(new StatsGroup(Localization.Get("stats_CycleSimulationTime"), $"{Utils.DisplayTicks(cycleData.DurationTicks())} ms"));
+            list.Add(new StatsGroup(Localization.Get("stats_CycleCalculationTime"), $"{Utils.DisplayTicks(cycleData.m_totalTicks)} ms"));
             list.Add(new StatsGroup($"Longest Cycle Match Job Time", $"{Utils.DisplayTicks(cycleData.m_ticks)}ms ({cycleData.m_material})"));
             list.Add(new StatsSeparator());
 
             // Job stats
-            list.Add(new StatsHeader("Job Statistics"));
-            list.Add(new StatsGroup("Average Match Job Time", $"{TransferManagerStats.GetAverageMatchTime().ToString("F")} ms"));
+            list.Add(new StatsHeader(Localization.Get("stats_JobStatistics")));
+            list.Add(new StatsGroup(Localization.Get("stats_AverageMatchJobTime"), $"{TransferManagerStats.GetAverageMatchTime().ToString("F")} ms"));
             if (bPathDistance)
             {
-                list.Add(new StatsGroup("Average Path Distance Match Job Time", $"{TransferManagerStats.GetAveragePathDistanceMatchTime().ToString("F")} ms"));
+                list.Add(new StatsGroup(Localization.Get("stats_AveragePathDistanceMatchJobTime"), $"{TransferManagerStats.GetAveragePathDistanceMatchTime().ToString("F")} ms"));
             }                
-            list.Add(new StatsGroup("Longest Match Job Time", $"{((double)TransferManagerStats.s_longestMatchTicks * 0.0001).ToString("F")}ms ({TransferManagerStats.s_longestMaterial})"));
-            list.Add(new StatsGroup("Largest Match Job", $"IN: {TransferManagerStats.s_largestIncoming} OUT: {TransferManagerStats.s_largestOutgoing} ({TransferManagerStats.s_largestMaterial})"));
+            list.Add(new StatsGroup(Localization.Get("stats_LongestMatchJobTime"), $"{((double)TransferManagerStats.s_longestMatchTicks * 0.0001).ToString("F")}ms ({TransferManagerStats.s_longestMaterial})"));
+            list.Add(new StatsGroup(Localization.Get("stats_LargestMatchJob"), $"IN: {TransferManagerStats.s_largestIncoming} OUT: {TransferManagerStats.s_largestOutgoing} ({TransferManagerStats.s_largestMaterial})"));
             list.Add(new StatsSeparator());
 
             // Pathing
-            list.Add(new StatsHeader("Pathing"));
-            list.Add(new StatsGroup("Total Citizen Path Fail Count", HumanAIPathfindFailure.s_pathFailCount.ToString()));
-            list.Add(new StatsGroup("Total Vehicle Path Fail Count", CarAIPathfindFailurePatch.s_pathFailCount.ToString()));
-            list.Add(new StatsGroup("Current Path Fail Count", PathFindFailure.GetPathFailureCount().ToString()));
-            list.Add(new StatsGroup("Current Outside Path Fail Count", PathFindFailure.GetOutsidePathFailureCount().ToString()));
+            list.Add(new StatsHeader(Localization.Get("stats_Pathing")));
+            list.Add(new StatsGroup(Localization.Get("stats_TotalCitizenPathFailCount"), HumanAIPathfindFailure.s_pathFailCount.ToString()));
+            list.Add(new StatsGroup(Localization.Get("stats_TotalVehiclePathFailCount"), CarAIPathfindFailurePatch.s_pathFailCount.ToString()));
+            list.Add(new StatsGroup(Localization.Get("stats_CurrentPathFailCount"), PathFindFailure.GetPathFailureCount().ToString()));
+            list.Add(new StatsGroup(Localization.Get("stats_CurrentOutsidePathFailCount"), PathFindFailure.GetOutsidePathFailureCount().ToString()));
             if (bPathDistance)
             {
-                list.Add(new StatsGroup("No Road Access Fail Count", RoadAccessStorage.Count.ToString()));
+                list.Add(new StatsGroup(Localization.Get("stats_NoRoadAccessFailCount"), RoadAccessStorage.Count.ToString()));
             }
 
             return list;
@@ -276,52 +276,52 @@ namespace TransferManagerCore
 
             // ------------------------------------------------------------
             // Dropped reasons indicate performance issues.
-            list.Add(new StatsHeader("General"));
-            list.Add(new StatsGroup("Dropped Reason Count", CustomTransferDispatcher.Instance.DroppedReasons.ToString()));
-            list.Add(new StatsGroup("Invalid Building Objects", $"{TransferManagerStats.s_iInvalidBuildingObjects}"));
-            list.Add(new StatsGroup("Invalid Vehicle Objects", $"{TransferManagerStats.s_iInvalidVehicleObjects}"));
-            list.Add(new StatsGroup("Invalid Citizen Objects", $"{TransferManagerStats.s_iInvalidCitizenObjects}"));
+            list.Add(new StatsHeader(Localization.Get("stats_General")));
+            list.Add(new StatsGroup(Localization.Get("stats_DroppedReasonCount"), CustomTransferDispatcher.Instance.DroppedReasons.ToString()));
+            list.Add(new StatsGroup(Localization.Get("stats_InvalidBuildingObjects"), $"{TransferManagerStats.s_iInvalidBuildingObjects}"));
+            list.Add(new StatsGroup(Localization.Get("stats_InvalidVehicleObjects"), $"{TransferManagerStats.s_iInvalidVehicleObjects}"));
+            list.Add(new StatsGroup(Localization.Get("stats_InvalidCitizenObjects"), $"{TransferManagerStats.s_iInvalidCitizenObjects}"));
             list.Add(new StatsSeparator());
 
             // ------------------------------------------------------------
             // Threads
-            list.Add(new StatsHeader("Threads"));
-            list.Add(new StatsGroup("Thread Count", $"{TransferManagerThread.ThreadCount}"));
-            list.Add(new StatsGroup("Running Threads", $"{TransferManagerThread.RunningThreads()}"));
-            list.Add(new StatsGroup("Max Running Threads", $"{TransferManagerThread.MaxRunningThreads()}"));
+            list.Add(new StatsHeader(Localization.Get("stats_Threads")));
+            list.Add(new StatsGroup(Localization.Get("stats_ThreadCount"), $"{TransferManagerThread.ThreadCount}"));
+            list.Add(new StatsGroup(Localization.Get("stats_RunningThreads"), $"{TransferManagerThread.RunningThreads()}"));
+            list.Add(new StatsGroup(Localization.Get("stats_MaxRunningThreads"), $"{TransferManagerThread.MaxRunningThreads()}"));
             list.Add(new StatsSeparator());
 
             // ------------------------------------------------------------
             // Job queue
-            list.Add(new StatsHeader("Job Queue"));
-            list.Add(new StatsGroup("Current Job Queue Depth", TransferJobQueue.Instance.Count().ToString()));
-            list.Add(new StatsGroup("Max Job Queue Depth", $"{TransferJobQueue.Instance.GetMaxUsageCount()}"));
-            list.Add(new StatsGroup("Max Job Pool Usage", TransferJobPool.Instance.GetMaxUsageCount().ToString()));
+            list.Add(new StatsHeader(Localization.Get("stats_JobQueue")));
+            list.Add(new StatsGroup(Localization.Get("stats_CurrentJobQueueDepth"), TransferJobQueue.Instance.Count().ToString()));
+            list.Add(new StatsGroup(Localization.Get("stats_MaxJobQueueDepth"), $"{TransferJobQueue.Instance.GetMaxUsageCount()}"));
+            list.Add(new StatsGroup(Localization.Get("stats_MaxJobPoolUsage"), TransferJobPool.Instance.GetMaxUsageCount().ToString()));
             list.Add(new StatsSeparator());
 
             // ------------------------------------------------------------
             // Result queue
-            list.Add(new StatsHeader("Result Queue"));
-            list.Add(new StatsGroup("Current Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetCount().ToString()));
-            list.Add(new StatsGroup("Max Transfer Result Queue Depth", CustomTransferDispatcher.Instance.GetResultQueue().GetMaxUsageCount().ToString()));
+            list.Add(new StatsHeader(Localization.Get("stats_ResultQueue")));
+            list.Add(new StatsGroup(Localization.Get("stats_CurrentTransferResultQueueDepth"), CustomTransferDispatcher.Instance.GetResultQueue().GetCount().ToString()));
+            list.Add(new StatsGroup(Localization.Get("stats_MaxTransferResultQueueDepth"), CustomTransferDispatcher.Instance.GetResultQueue().GetMaxUsageCount().ToString()));
             list.Add(new StatsSeparator());
 
             // ------------------------------------------------------------
             // Cache
-            list.Add(new StatsHeader("Cache"));
+            list.Add(new StatsHeader(Localization.Get("stats_Cache")));
 
             // Node Links
-            list.Add(new StatsGroup("Graph Generation Count", NodeLinkGraph.s_totalGenerations.ToString()));
+            list.Add(new StatsGroup(Localization.Get("stats_GraphGenerationCount"), NodeLinkGraph.s_totalGenerations.ToString()));
             if (NodeLinkGraph.s_totalGenerations > 0)
             {
-                list.Add(new StatsGroup("Graph Average Time", $"{Utils.DisplayTicks(NodeLinkGraph.s_totalGenerationTicks / NodeLinkGraph.s_totalGenerations)}ms"));
+                list.Add(new StatsGroup(Localization.Get("stats_GraphAverageTime"), $"{Utils.DisplayTicks(NodeLinkGraph.s_totalGenerationTicks / NodeLinkGraph.s_totalGenerations)}ms"));
             }
 
             // Path connected
-            list.Add(new StatsGroup("Path Connection Generation Count", PathConnected.s_totalGenerations.ToString()));
+            list.Add(new StatsGroup(Localization.Get("stats_PathConnectionGenerationCount"), PathConnected.s_totalGenerations.ToString()));
             if (PathConnected.s_totalGenerations > 0)
             {
-                list.Add(new StatsGroup("Path Connection Average Time", $"{Utils.DisplayTicks(PathConnected.s_totalGenerationTicks / PathConnected.s_totalGenerations)}ms"));
+                list.Add(new StatsGroup(Localization.Get("stats_PathConnectionAverageTime"), $"{Utils.DisplayTicks(PathConnected.s_totalGenerationTicks / PathConnected.s_totalGenerations)}ms"));
             }
 
             return list;
@@ -332,34 +332,34 @@ namespace TransferManagerCore
             List<StatsBase> list = new List<StatsBase>();
 
             // Issue Panel
-            list.Add(new StatsHeader("Issue Detector"));
-            list.Add(new StatsGroup("Update Count", $"{TransferIssueHelper.s_totalUpdates}"));
-            list.Add(new StatsGroup("Update Last", $"{(TransferIssueHelper.s_lastUpdateTicks * 0.0001).ToString("F")}ms"));
-            list.Add(new StatsGroup("Update Peak", $"{(TransferIssueHelper.s_maxUpdateTicks * 0.0001).ToString("F")}ms"));
+            list.Add(new StatsHeader(Localization.Get("stats_IssueDetector")));
+            list.Add(new StatsGroup(Localization.Get("stats_UpdateCount"), $"{TransferIssueHelper.s_totalUpdates}"));
+            list.Add(new StatsGroup(Localization.Get("stats_UpdateLast"), $"{(TransferIssueHelper.s_lastUpdateTicks * 0.0001).ToString("F")}ms"));
+            list.Add(new StatsGroup(Localization.Get("stats_UpdatePeak"), $"{(TransferIssueHelper.s_maxUpdateTicks * 0.0001).ToString("F")}ms"));
             if (TransferIssueHelper.s_totalUpdates > 0)
             {
-                list.Add(new StatsGroup("Update Average", $"{((TransferIssueHelper.s_totalUpdateTicks / TransferIssueHelper.s_totalUpdates) * 0.0001).ToString("F")}ms"));
+                list.Add(new StatsGroup(Localization.Get("stats_UpdateAverage"), $"{((TransferIssueHelper.s_totalUpdateTicks / TransferIssueHelper.s_totalUpdates) * 0.0001).ToString("F")}ms"));
             }
             else
             {
-                list.Add(new StatsGroup("Update Average", $"0.00ms"));
+                list.Add(new StatsGroup(Localization.Get("stats_UpdateAverage"), $"0.00ms"));
             }
 
             // Add separator
             list.Add(new StatsSeparator());
 
             // Building Panel
-            list.Add(new StatsHeader("Building Panel")); 
-            list.Add(new StatsGroup("Update Count", $"{BuildingPanel.s_totalUpdates}"));
-            list.Add(new StatsGroup("Update Last", $"{(BuildingPanel.s_lastUpdateTicks * 0.0001).ToString("F")}ms"));
-            list.Add(new StatsGroup("Update Peak", $"{(BuildingPanel.s_maxUpdateTicks * 0.0001).ToString("F")}ms"));
+            list.Add(new StatsHeader(Localization.Get("stats_BuildingPanel"))); 
+            list.Add(new StatsGroup(Localization.Get("stats_UpdateCount"), $"{BuildingPanel.s_totalUpdates}"));
+            list.Add(new StatsGroup(Localization.Get("stats_UpdateLast"), $"{(BuildingPanel.s_lastUpdateTicks * 0.0001).ToString("F")}ms"));
+            list.Add(new StatsGroup(Localization.Get("stats_UpdatePeak"), $"{(BuildingPanel.s_maxUpdateTicks * 0.0001).ToString("F")}ms"));
             if (BuildingPanel.s_totalUpdates > 0)
             {
-                list.Add(new StatsGroup("Update Average", $"{((BuildingPanel.s_totalUpdateTicks / BuildingPanel.s_totalUpdates) * 0.0001).ToString("F")}ms"));
+                list.Add(new StatsGroup(Localization.Get("stats_UpdateAverage"), $"{((BuildingPanel.s_totalUpdateTicks / BuildingPanel.s_totalUpdates) * 0.0001).ToString("F")}ms"));
             }
             else
             {
-                list.Add(new StatsGroup("Update Average", $"0.00ms"));
+                list.Add(new StatsGroup(Localization.Get("stats_UpdateAverage"), $"0.00ms"));
             }
 
             return list;

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using SleepyCommon;
 using static TransferManager;
 
 namespace TransferManagerCore
@@ -29,7 +30,7 @@ namespace TransferManagerCore
         {
             if (m_eInOrOut != InOut.Unknown)
             {
-                return (m_eInOrOut == InOut.In) ? "IN" : "OUT";
+                return (m_eInOrOut == InOut.In) ? Localization.Get("inout_In") : Localization.Get("inout_Out");
             }
             return "";
         }
@@ -89,7 +90,7 @@ namespace TransferManagerCore
 
         public bool Contains(string search)
         {
-            if (m_material.ToString().ToUpper().Contains(search))
+            if (CustomTransferReason.GetLocalizedReason(m_material).ToUpper().Contains(search))
             {
                 return true;
             }

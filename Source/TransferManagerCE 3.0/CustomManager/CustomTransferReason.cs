@@ -1,4 +1,5 @@
 using static TransferManager;
+using SleepyCommon;
 
 namespace TransferManagerCore
 {
@@ -195,6 +196,24 @@ namespace TransferManagerCore
             }
             CustomTransferReason oSecond = (CustomTransferReason)second;
             return oSecond.m_material.CompareTo(m_material);
+        }
+
+        // Returns the localized name for a transfer reason, falling back to the enum name if not yet translated.
+        public static string GetLocalizedReason(Reason reason)
+        {
+            string sKey = "reason_" + reason.ToString();
+            string sValue = Localization.Get(sKey);
+            if (sValue is null || sValue.Length == 0 || sValue == sKey)
+            {
+                return reason.ToString();
+            }
+            return sValue;
+        }
+
+        // Instance helper for the wrapper type.
+        public string GetLocalizedReason()
+        {
+            return GetLocalizedReason(m_material);
         }
 
         // We return more descriptive names for some of the material types.

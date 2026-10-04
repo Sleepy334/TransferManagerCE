@@ -83,7 +83,7 @@ namespace TransferManagerCore
                 m_button.pressedBgSprite = "ToolbarIconGroup6Pressed";
                 m_button.disabledBgSprite = "ToolbarIconGroup6Disabled";
                 m_button.name = "TransferManagerCEButton";
-                m_button.tooltip = "Open Transfer Manager CE";
+                m_button.tooltip = Localization.Get("tip_OpenTransferManagerCe");
                 m_button.atlas = TransferManagerMod.Instance.LoadResources();
 
                 // Buttons to avoid

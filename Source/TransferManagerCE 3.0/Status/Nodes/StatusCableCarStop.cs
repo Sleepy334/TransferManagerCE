@@ -17,12 +17,12 @@ namespace TransferManagerCore.Data
 
         public override string GetMaterialDescription()
         {
-            return "CableCar Stop";
+            return GetLocalizedLabel("status_CableCarStop", "CableCar Stop");
         }
 
         public override string GetMaterialDisplay()
         {
-            return "CableCar Stop";
+            return GetLocalizedLabel("status_CableCarStop", "CableCar Stop");
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TransferManagerCore.Data;
 using ICities;
 using TransferManagerCore.Util;
+using SleepyCommon;
 using static TransferManager;
 using static TransferManagerCore.BuildingTypeHelper;
 using static TransferManagerCore.CustomTransferReason;
@@ -108,10 +109,10 @@ namespace TransferManagerCore
                     }
                 }
 
-                SortAndMergeList("General", list, m_listGeneral, false);
-                SortAndMergeList("Services", list, m_listServices);
-                SortAndMergeList("Incoming", list, m_listIncoming); 
-                SortAndMergeList("Outgoing", list, m_listOutgoing);
+                SortAndMergeList(Localization.Get("status_group_general"), list, m_listGeneral, false);
+                SortAndMergeList(Localization.Get("status_group_services"), list, m_listServices);
+                SortAndMergeList(Localization.Get("status_group_incoming"), list, m_listIncoming); 
+                SortAndMergeList(Localization.Get("status_group_outgoing"), list, m_listOutgoing);
             }
 
             iVehicleCount = m_setAddedVehicles.Count;

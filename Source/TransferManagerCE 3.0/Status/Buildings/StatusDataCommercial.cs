@@ -46,7 +46,7 @@ namespace TransferManagerCore.Data
                                 int iVisitPlaces = GetCustomerPlaces(buildingAI, building);
 
                                 WarnText(true, false, iCustomerCount, iVisitPlaces);
-                                tooltip = "Customers / Total Places"; ;
+                                tooltip = Localization.Get("tip_CustomersTotalPlaces"); ;
                                 return $"{iCustomerCount} / {iVisitPlaces}";
                             }
                     }

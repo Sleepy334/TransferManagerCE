@@ -12,7 +12,7 @@ namespace TransferManagerCore.Data
 
         public override string GetMaterialDescription()
         {
-            return "Land Value";
+            return GetLocalizedLabel("status_LandValue", "Land Value");
         }
 
         protected override string CalculateValue(out string tooltip)

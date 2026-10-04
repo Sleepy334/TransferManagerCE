@@ -79,7 +79,7 @@ namespace TransferManagerCore.Settings
 
         public string Describe(ushort buildingId)
         {
-            string sTooltip = "Allowed Buildings:";
+            string sTooltip = Localization.Get("tip_AllowedBuildings");
             if (m_buildingsAllowed.Count > 0)
             {
                 foreach (ushort id in m_buildingsAllowed)

@@ -100,11 +100,11 @@ namespace TransferManagerCore
         {
             if (m_material == TransferReason.None)
             {
-                return "Total";
+                return Localization.Get("status_Total");
             }
             else
             {
-                return m_material.ToString();
+                return CustomTransferReason.GetLocalizedReason((CustomTransferReason.Reason)m_material);
             }
         }
 

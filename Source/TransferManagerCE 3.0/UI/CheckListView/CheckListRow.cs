@@ -51,7 +51,7 @@ namespace TransferManagerCore
             if (m_btnShow is not null)
             {
                 m_btnShow.name = name;
-                m_btnShow.tooltip = "Show";
+                m_btnShow.tooltip = Localization.Get("tip_Show");
                 m_btnShow.width = height;
                 m_btnShow.height = height;
                 m_btnShow.atlas = atlas;

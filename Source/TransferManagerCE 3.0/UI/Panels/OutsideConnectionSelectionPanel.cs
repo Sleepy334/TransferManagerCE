@@ -96,7 +96,7 @@ namespace TransferManagerCore.UI
                 //m_mainPanel.backgroundSprite = "InfoviewPanel";
                 //m_mainPanel.color = Color.blue;
 
-                m_checkUncheckAll = UIMyUtils.AddCheckbox(m_mainPanel, "Check / Uncheck All", UIFonts.Regular, 0.8f, true, CheckUncheckAll);
+                m_checkUncheckAll = UIMyUtils.AddCheckbox(m_mainPanel, Localization.Get("btn_CheckUncheckAll"), UIFonts.Regular, 0.8f, true, CheckUncheckAll);
 
                 m_chkListView = CheckListView.Create(m_mainPanel, "ScrollbarTrack", 1.0f, m_mainPanel.width - 36, m_mainPanel.height - m_checkUncheckAll.height - 8);
                 m_chkListView.RowHeight = 20;

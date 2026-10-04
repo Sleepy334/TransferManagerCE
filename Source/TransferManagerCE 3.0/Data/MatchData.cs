@@ -132,25 +132,25 @@ namespace TransferManagerCore
         public string GetTooltipText()
         {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.Append($"Time: {Time()}\n");
-            stringBuilder.Append($"Material: {m_material}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Time")}: {Time()}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Material")}: {CustomTransferReason.GetLocalizedReason(m_material)}\n");
             
             if (m_incoming.m_byLocalPark != 0)
             {
-                stringBuilder.Append($"Park: {m_incoming.DescribePark()}");
+                stringBuilder.Append($"{Localization.Get("tip_Park")}: {m_incoming.DescribePark()}\n");
             }
 
-            stringBuilder.Append($"In:\n");
-            stringBuilder.Append($"    Object: {m_incoming.DescribeOfferObject(true)}\n");
-            stringBuilder.Append($"    Priority: {m_incoming.Priority}\n");
-            stringBuilder.Append($"    Amount: {m_incoming.Amount}\n");
-            stringBuilder.Append($"    Active: {m_incoming.DescribeActive()}\n");
-            stringBuilder.Append($"Out:\n");
-            stringBuilder.Append($"    Object: {m_outgoing.DescribeOfferObject(true)}\n");
-            stringBuilder.Append($"    Priorty: {m_outgoing.Priority}\n");
-            stringBuilder.Append($"    Amount: {m_outgoing.Amount}\n");
-            stringBuilder.Append($"    Active: {m_outgoing.DescribeActive()}\n");
-            stringBuilder.Append($"Distance: {GetDistance().ToString("N2")}km\n");
+            stringBuilder.Append($"{Localization.Get("tip_In")}:\n");
+            stringBuilder.Append($"    {Localization.Get("tip_Object")}: {m_incoming.DescribeOfferObject(true)}\n");
+            stringBuilder.Append($"    {Localization.Get("tip_Priority")}: {m_incoming.Priority}\n");
+            stringBuilder.Append($"    {Localization.Get("tip_Amount")}: {m_incoming.Amount}\n");
+            stringBuilder.Append($"    {Localization.Get("tip_Active")}: {(m_incoming.Active ? Localization.Get("tip_ActiveValue") + " (Active)" : Localization.Get("tip_PassiveValue") + " (Passive)")}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Out")}:\n");
+            stringBuilder.Append($"    {Localization.Get("tip_Object")}: {m_outgoing.DescribeOfferObject(true)}\n");
+            stringBuilder.Append($"    {Localization.Get("tip_Priority")}: {m_outgoing.Priority}\n");
+            stringBuilder.Append($"    {Localization.Get("tip_Amount")}: {m_outgoing.Amount}\n");
+            stringBuilder.Append($"    {Localization.Get("tip_Active")}: {(m_outgoing.Active ? Localization.Get("tip_ActiveValue") + " (Active)" : Localization.Get("tip_PassiveValue") + " (Passive)")}\n");
+            stringBuilder.Append($"{Localization.Get("tip_Distance")}: {GetDistance().ToString("N2")}km\n");
 
             return stringBuilder.ToString();
         }

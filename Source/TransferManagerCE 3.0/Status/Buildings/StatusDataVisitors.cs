@@ -1,6 +1,7 @@
 using static TransferManager;
 using static TransferManagerCore.BuildingTypeHelper;
 
+using SleepyCommon;
 namespace TransferManagerCore.Data
 {
     public class StatusDataVisitors : StatusDataBuilding
@@ -16,11 +17,11 @@ namespace TransferManagerCore.Data
             {
                 case TransferReason.None:
                     {
-                        return "Visitors";
+                        return GetLocalizedLabel("status_Visitors", "Visitors");
                     }
                 default:
                     {
-                        return GetMaterial().ToString();
+                        return CustomTransferReason.GetLocalizedReason(GetMaterial());
                     }
 
             }
@@ -28,7 +29,7 @@ namespace TransferManagerCore.Data
 
         protected override string CalculateValue(out string tooltip)
         {
-            tooltip = "Current Visitors / Total Visitor Places";
+            tooltip = Localization.Get("tip_CurrentVisitorsTotalVisitorPlaces");
 
             Building building = BuildingManager.instance.m_buildings.m_buffer[m_buildingId];
             if (building.m_flags != 0)

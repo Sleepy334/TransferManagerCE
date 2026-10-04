@@ -16,7 +16,7 @@ namespace TransferManagerCore.Data
 
         public override string GetMaterialDescription()
         {
-            return "Evacuation Stop";
+            return GetLocalizedLabel("status_EvacuationStop", "Evacuation Stop");
         }
 
         public override string GetMaterialDisplay()

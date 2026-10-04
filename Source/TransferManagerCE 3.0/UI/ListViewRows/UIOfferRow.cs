@@ -134,7 +134,7 @@ namespace TransferManagerCore.UI
 
         protected override void Display()
         {
-            m_lblMaterial.text = data.m_material.ToString();
+            m_lblMaterial.text = data.m_material.GetLocalizedReason();
             m_lblInOut.text = data.DescribeInOut();
             m_lblActive.text = data.DescribeActive();
             m_lblAmount.text = data.DescribeAmount();

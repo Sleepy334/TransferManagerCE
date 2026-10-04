@@ -167,11 +167,11 @@ namespace TransferManagerCore.UI
             m_title = UITitleBar.Create(this, TransferManagerMod.Instance.Name, "Transfer", TransferManagerMod.Instance.LoadResources(), OnTitleCloseClick);
             if (m_title != null)
             {
-                m_title.AddButton("btnStats", atlas, "ThumbStatistics", "Show Statistics Panel", OnStatsClick);
-                m_title.AddButton("btnSettings", atlas, "Options", "Show list of buildings with TMCE settings", OnSettingsClick);
-                m_title.AddButton("btnIssues", atlas, "IconWarning", "Show Issues Panel", OnIssuesClick);
-                m_title.AddButton("btnOutside", atlas, "InfoIconOutsideConnections", "Show Outside Connections Panel", OnOutsideClick);
-                m_title.AddButton("btnHighlight", atlas, "InfoIconLevel", "Highlight Matches", OnHighlightClick);
+                m_title.AddButton("btnStats", atlas, "ThumbStatistics", Localization.Get("tip_ShowStatisticsPanel"), OnStatsClick);
+                m_title.AddButton("btnSettings", atlas, "Options", Localization.Get("tip_ShowListOfBuildingsWithTmceSettings"), OnSettingsClick);
+                m_title.AddButton("btnIssues", atlas, "IconWarning", Localization.Get("tip_ShowIssuesPanel"), OnIssuesClick);
+                m_title.AddButton("btnOutside", atlas, "InfoIconOutsideConnections", Localization.Get("tip_ShowOutsideConnectionsPanel"), OnOutsideClick);
+                m_title.AddButton("btnHighlight", atlas, "InfoIconLevel", Localization.Get("tip_HighlightMatches"), OnHighlightClick);
                 m_title.SetupButtons();
                 UpdateHighlightButtonIcon();
             }
